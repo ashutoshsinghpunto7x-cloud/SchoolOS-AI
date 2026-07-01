@@ -2,7 +2,14 @@ import mongoose from 'mongoose';
 import { env } from './env';
 import { logger } from '../lib/logger';
 
+// Safe to call from multiple entry points (server.ts for local/Docker, app.ts for
+// serverless platforms like Vercel that import the app directly without running
+// server.ts). Skips reconnecting if a connection is already up or in progress.
 export const connectDatabase = async (): Promise<void> => {
+  if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+    return;
+  }
+
   try {
     mongoose.set('strictQuery', true);
 
@@ -15,18 +22,18 @@ export const connectDatabase = async (): Promise<void> => {
       host: mongoose.connection.host,
       db: mongoose.connection.name,
     });
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('MongoDB disconnected — retrying automatically');
+    });
+
+    mongoose.connection.on('reconnected', () => {
+      logger.info('MongoDB reconnected');
+    });
   } catch (error) {
     logger.error('MongoDB connection failed', { error });
-    process.exit(1);
+    throw error;
   }
-
-  mongoose.connection.on('disconnected', () => {
-    logger.warn('MongoDB disconnected — retrying automatically');
-  });
-
-  mongoose.connection.on('reconnected', () => {
-    logger.info('MongoDB reconnected');
-  });
 };
 
 export const disconnectDatabase = async (): Promise<void> => {

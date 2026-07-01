@@ -2,12 +2,18 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env';
+import { connectDatabase } from './config/database';
+import { logger } from './lib/logger';
 import { requestLogger } from './middlewares/requestLogger';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { apiLimiter } from './middlewares/rateLimiter';
 import router from './routes';
 
 const app: Application = express();
+
+// On serverless platforms (e.g. Vercel) this module is imported directly as the
+// request handler and server.ts's start() — which normally calls this — never runs.
+connectDatabase().catch((error) => logger.error('MongoDB connection failed', { error }));
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
