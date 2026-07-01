@@ -54,7 +54,13 @@ export const reportsController = {
       const input = saveReportSchema.parse(req.body);
       const saved = await reportsService.saveReport(
         ctx.schoolId, ctx.userId, ctx.displayName,
-        { ...input, category: input.category as ReportCategory },
+        {
+          name:        input.name,
+          description: input.description,
+          category:    input.category as ReportCategory,
+          filters:     input.filters,
+          isPublic:    input.isPublic,
+        },
       );
 
       auditService.log({
