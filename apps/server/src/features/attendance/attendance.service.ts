@@ -55,11 +55,16 @@ export const attendanceService = {
     if (!student) throw new NotFoundError('Student');
 
     const record = await attendanceRepository.upsert({
-      ...data,
-      schoolId:    ctx.schoolId,
-      markedById:  ctx.userId,
-      markedByName:ctx.displayName,
-      markedAt:    new Date(),
+      studentId:    data.studentId,
+      class:        data.class,
+      section:      data.section,
+      date:         data.date,
+      status:       data.status,
+      note:         data.note,
+      schoolId:     ctx.schoolId,
+      markedById:   ctx.userId,
+      markedByName: ctx.displayName,
+      markedAt:     new Date(),
     });
 
     auditService.log({

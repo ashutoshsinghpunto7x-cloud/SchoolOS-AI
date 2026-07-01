@@ -56,3 +56,5 @@ node_modules/
 dist/
 build/
 coverage/
+.vercel
+.env*
