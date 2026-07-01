@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { principalController } from './principal.controller';
+import { authenticate } from '../../middlewares/authenticate';
+import { authorize } from '../../middlewares/authorize';
+
+const router = Router();
+
+router.use(authenticate);
+router.use(authorize('admin'));
+
+router.get('/dashboard', principalController.getDashboard);
+
+export default router;

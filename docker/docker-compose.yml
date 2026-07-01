@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+
+  server:
+    build:
+      context: ../apps/server
+      dockerfile: Dockerfile
+    container_name: schoolos-server
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: ${MONGODB_URI}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      SCHOOL_NAME: ${SCHOOL_NAME:-Sunrise Academy}
+      # JWT — required; generate with: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-15m}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-7d}
+      # Rate limiting
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-200}
+      # Integration credential encryption — required in production
+      # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      INTEGRATION_ENCRYPTION_KEY: ${INTEGRATION_ENCRYPTION_KEY}
+      # n8n automation (optional — leave blank for simulation mode)
+      N8N_WEBHOOK_URL: ${N8N_WEBHOOK_URL:-}
+      AUTOMATION_WEBHOOK_SECRET: ${AUTOMATION_WEBHOOK_SECRET:-}
+      # AI providers (all optional)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      VAPI_API_KEY: ${VAPI_API_KEY:-}
+      VAPI_PHONE_NUMBER_ID: ${VAPI_PHONE_NUMBER_ID:-}
+      VAPI_ASSISTANT_ID: ${VAPI_ASSISTANT_ID:-}
+      VAPI_WEBHOOK_SECRET: ${VAPI_WEBHOOK_SECRET:-}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-21m00Tcm4TlvDq8ikWAM}
+    networks:
+      - schoolos-network
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:5000/api/v1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  web:
+    build:
+      context: ../apps/web
+      dockerfile: Dockerfile
+    container_name: schoolos-web
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - schoolos-network
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:80']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  schoolos-network:
+    driver: bridge

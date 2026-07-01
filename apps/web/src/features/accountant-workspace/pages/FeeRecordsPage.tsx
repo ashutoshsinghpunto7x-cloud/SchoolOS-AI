@@ -1,0 +1,142 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Search, ChevronDown, ChevronLeft, ChevronRight, FileBarChart } from 'lucide-react';
+import { useFeeList } from '@/features/fees/hooks/useFees';
+import { FeeStatusBadge } from '@/features/fees/components/FeeStatusBadge';
+import type { FeeListOptions, FeeStatus } from '@schoolos/types';
+import { cn } from '@/lib/utils';
+
+const PAGE_SIZE = 20;
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+
+const selectCls = 'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 appearance-none pr-8';
+
+export function FeeRecordsPage() {
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState<FeeListOptions>({ page: 1, limit: PAGE_SIZE, sortBy: 'createdAt', sortOrder: 'desc' });
+  const [searchInput, setSearchInput] = useState('');
+
+  const { data, isLoading } = useFeeList(filters);
+  const rows = data?.data ?? [];
+  const meta = data?.meta;
+  const totalPages = meta?.totalPages ?? 1;
+  const currentPage = filters.page ?? 1;
+
+  function applySearch() {
+    setFilters((f) => ({ ...f, search: searchInput.trim() || undefined, page: 1 }));
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-base font-bold text-gray-900">Fee Records</h1>
+          <p className="text-xs text-gray-500">{meta ? `${meta.total} record${meta.total !== 1 ? 's' : ''}` : 'All students — paid & pending'}</p>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && applySearch()}
+              placeholder="Search student or admission no."
+              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+            />
+          </div>
+          <input
+            type="text"
+            value={filters.class ?? ''}
+            onChange={(e) => setFilters((f) => ({ ...f, class: e.target.value || undefined, page: 1 }))}
+            placeholder="Class"
+            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+          />
+          <div className="relative">
+            <select
+              value={filters.status ?? 'all'}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value === 'all' ? undefined : e.target.value as FeeStatus, page: 1 }))}
+              className={selectCls}
+            >
+              <option value="all">All Status</option>
+              <option value="paid">Paid</option>
+              <option value="pending">Pending</option>
+              <option value="partially_paid">Partial</option>
+              <option value="overdue">Overdue</option>
+              <option value="waived">Waived</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          </div>
+          <button onClick={applySearch} className="h-10 px-4 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-xl text-sm font-semibold">
+            Search
+          </button>
+        </div>
+
+        {/* List */}
+        {isLoading ? (
+          <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+        ) : !rows.length ? (
+          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+            <FileBarChart className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-gray-700">No fee records found</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+            {rows.map((f) => (
+              <div key={f._id} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-9 h-9 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-xs shrink-0">
+                  {f.studentName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{f.studentName}</p>
+                    <FeeStatusBadge status={f.status} size="sm" />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Class {f.class}-{f.section} · {f.description || f.feeHead}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-gray-800">{fmt(f.totalAmount)}</p>
+                  <p className={cn('text-xs font-semibold', f.status === 'paid' ? 'text-emerald-600' : 'text-amber-600')}>
+                    {f.status === 'paid' ? 'Fully Paid' : `${fmt(f.balance)} due`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => setFilters((f) => ({ ...f, page: currentPage - 1 }))}
+              className="h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Prev
+            </button>
+            <p className="text-xs text-gray-400">Page {currentPage} of {totalPages}</p>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => setFilters((f) => ({ ...f, page: currentPage + 1 }))}
+              className="h-9 px-3 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1"
+            >
+              Next <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,20 @@
+{
+  "name": "schoolos-ai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --names \"SERVER,WEB\" --prefix-colors \"blue,green\" \"npm run dev -w apps/server\" \"npm run dev -w apps/web\"",
+    "dev:server": "npm run dev -w apps/server",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w packages/types && npm run build -w packages/utils && npm run build -w apps/server && npm run build -w apps/web",
+    "type-check": "tsc --noEmit -p tsconfig.base.json"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.2"
+  }
+}
