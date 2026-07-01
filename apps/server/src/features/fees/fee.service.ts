@@ -214,7 +214,13 @@ export const feeService = {
 
   async getOutstanding(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedFees> {
     const opts = outstandingSchema.parse(rawQuery);
-    return feeRepository.findOutstanding(ctx.schoolId, opts);
+    return feeRepository.findOutstanding(ctx.schoolId, {
+      class:   opts.class,
+      section: opts.section,
+      feeHead: opts.feeHead,
+      page:    opts.page,
+      limit:   opts.limit,
+    });
   },
 
   async getSummary(ctx: AuthContext, academicYear?: string): Promise<FeeCollectionSummary> {
