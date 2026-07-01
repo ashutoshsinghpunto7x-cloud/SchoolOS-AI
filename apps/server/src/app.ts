@@ -11,9 +11,15 @@ import router from './routes';
 
 const app: Application = express();
 
+// Vercel (and other reverse proxies) set X-Forwarded-For; trust one proxy hop so
+// express-rate-limit and req.ip work correctly.
+app.set('trust proxy', 1);
+
 // On serverless platforms (e.g. Vercel) this module is imported directly as the
 // request handler and server.ts's start() — which normally calls this — never runs.
-connectDatabase().catch((error) => logger.error('MongoDB connection failed', { error }));
+connectDatabase().catch((error) => {
+  logger.error('MongoDB connection failed', { error: String(error), message: (error as Error).message });
+});
 
 // ── Security ──────────────────────────────────────────────────────────────────
 app.use(helmet());
