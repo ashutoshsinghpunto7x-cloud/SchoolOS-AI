@@ -21,7 +21,7 @@ async function resolveTeacher(ctx: AuthContext): Promise<ITeacher & { _id: { toS
     schoolId: ctx.schoolId,
     email: user.email,
     isDeleted: false,
-  }).lean() as (ITeacher & { _id: { toString(): string } }) | null;
+  }).lean() as unknown as (ITeacher & { _id: { toString(): string } }) | null;
 
   if (!teacher) {
     throw new NotFoundError(
