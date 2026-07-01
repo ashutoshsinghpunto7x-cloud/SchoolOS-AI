@@ -16,6 +16,9 @@ export const healthCheck = (_req: Request, res: Response): void => {
   // can remove the instance from rotation until connectivity is restored.
   const status = dbConnected ? 200 : 503;
 
+  const uri = process.env.MONGODB_URI ?? '';
+  const maskedUri = uri ? uri.replace(/:\/\/[^@]+@/, '://***@') : 'NOT SET';
+
   res.status(status).json({
     success: dbConnected,
     message: dbConnected ? 'Server healthy' : 'Database unavailable',
@@ -24,6 +27,7 @@ export const healthCheck = (_req: Request, res: Response): void => {
       database: DB_STATES[dbState] ?? 'unknown',
       uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
+      mongoUri: maskedUri,
     },
   });
 };
