@@ -23,6 +23,7 @@ import {
   Wallet,
   Receipt,
   FileBarChart,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarNavItem } from './SidebarNavItem';
@@ -47,6 +48,10 @@ const NAV_ITEMS_TEACHER = [
   { label: 'History',       icon: ClipboardList,    path: '/teacher/history' },
   { label: 'Timetable',     icon: LayoutGrid,       path: '/teacher/timetable' },
   { label: 'My Profile',    icon: User2,             path: '/teacher/profile' },
+] as const;
+
+const NAV_ITEMS_TEACHER_QUICK_ACTIONS = [
+  { label: 'Add Students',  icon: UserPlus,         path: '/teacher/add-student' },
 ] as const;
 
 const NAV_ITEMS_ACCOUNTANT = [
@@ -135,6 +140,17 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               Teacher Portal
             </p>
             {NAV_ITEMS_TEACHER.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                to={item.path}
+                icon={item.icon}
+                label={item.label}
+              />
+            ))}
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Quick Actions
+            </p>
+            {NAV_ITEMS_TEACHER_QUICK_ACTIONS.map((item) => (
               <SidebarNavItem
                 key={item.path}
                 to={item.path}

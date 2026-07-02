@@ -1,6 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  ArrowRight,
+  Check,
+  X,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -9,6 +12,7 @@ import {
   Pencil,
   CalendarDays,
 } from 'lucide-react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
@@ -37,72 +41,151 @@ function addDays(dateStr: string, n: number) {
   return toDateStr(d);
 }
 
-// ── Status config — only 3 shown in UI ───────────────────────────────────────
+// ── Avatar styling ────────────────────────────────────────────────────────────
 
-const STATUS_OPTS = [
-  { status: 'present'        as AttendanceStatus, label: 'P', color: '#22C55E', bg: '#dcfce7', text: '#15803d' },
-  { status: 'absent'         as AttendanceStatus, label: 'A', color: '#EF4444', bg: '#fee2e2', text: '#b91c1c' },
-  { status: 'leave_approved' as AttendanceStatus, label: 'L', color: '#F59E0B', bg: '#fef3c7', text: '#b45309' },
+const AVATAR_STYLES = [
+  { bg: 'bg-blue-100',   text: 'text-blue-600'   },
+  { bg: 'bg-purple-100', text: 'text-purple-600' },
+  { bg: 'bg-emerald-100',text: 'text-emerald-600'},
+  { bg: 'bg-amber-100',  text: 'text-amber-600'  },
+  { bg: 'bg-rose-100',   text: 'text-rose-600'   },
+  { bg: 'bg-indigo-100', text: 'text-indigo-600' },
 ];
 
-// ── Row ───────────────────────────────────────────────────────────────────────
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+function getAvatarStyle(name: string) {
+  const hash = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return AVATAR_STYLES[hash % AVATAR_STYLES.length];
+}
+
+// ── Row types ─────────────────────────────────────────────────────────────────
+
+type RowStatus = 'present' | 'absent' | 'unmarked';
 
 interface Row {
   studentId: string;
   fullName:  string;
-  admNo:     string;
-  status:    AttendanceStatus;
+  status:    RowStatus;
 }
 
-// ── Student row component ─────────────────────────────────────────────────────
+// ── Active (swipeable) card ───────────────────────────────────────────────────
 
-function StudentRow({
+function ActiveCard({
+  row,
+  index,
+  onMark,
+}: {
+  row:     Row;
+  index:   number;
+  onMark:  (id: string, status: RowStatus) => void;
+}) {
+  const x = useMotionValue(0);
+  const borderColor = useTransform(
+    x,
+    [-120, -30, 0, 30, 120],
+    ['#EF4444', '#EF4444', '#E5E7EB', '#22C55E', '#22C55E'],
+  );
+  const background = useTransform(
+    x,
+    [-120, 0, 120],
+    ['rgba(239,68,68,0.06)', 'rgba(255,255,255,1)', 'rgba(34,197,94,0.06)'],
+  );
+  const { bg, text } = getAvatarStyle(row.fullName);
+
+  function handleDragEnd(_e: unknown, info: { offset: { x: number } }) {
+    if (info.offset.x > 90) onMark(row.studentId, 'present');
+    else if (info.offset.x < -90) onMark(row.studentId, 'absent');
+  }
+
+  return (
+    <motion.div
+      className="flex items-center gap-3 bg-white rounded-2xl border-2 shadow-sm px-4 py-5 cursor-grab active:cursor-grabbing touch-pan-y"
+      style={{ x, borderColor, backgroundColor: background }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={handleDragEnd}
+    >
+      <button
+        type="button"
+        onClick={() => onMark(row.studentId, 'absent')}
+        className="w-11 h-11 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-red-500/30 hover:bg-red-600 transition-colors"
+        aria-label="Mark absent"
+      >
+        <X className="w-5 h-5" strokeWidth={3} />
+      </button>
+
+      <div className="flex-1 min-w-0 flex flex-col items-center text-center gap-1.5">
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm text-gray-400 font-mono">{index + 1}</span>
+          <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
+            {getInitials(row.fullName)}
+          </div>
+          <span className="text-lg font-bold text-gray-900 truncate max-w-[160px]">{row.fullName}</span>
+        </div>
+        <p className="text-xs text-gray-400">Swipe to mark attendance</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onMark(row.studentId, 'present')}
+        className="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/30 hover:bg-emerald-600 transition-colors"
+        aria-label="Mark present"
+      >
+        <Check className="w-5 h-5" strokeWidth={3} />
+      </button>
+    </motion.div>
+  );
+}
+
+// ── Compact row (marked or awaiting turn) ─────────────────────────────────────
+
+function CompactRow({
   row,
   index,
   editable,
-  onChange,
+  onUndo,
 }: {
   row:      Row;
   index:    number;
   editable: boolean;
-  onChange: (id: string, s: AttendanceStatus) => void;
+  onUndo:   (id: string) => void;
 }) {
+  const { bg, text } = getAvatarStyle(row.fullName);
+  const marked = row.status !== 'unmarked';
+
   return (
-    <div className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-3">
-      {/* Index */}
+    <button
+      type="button"
+      disabled={!marked || !editable}
+      onClick={() => onUndo(row.studentId)}
+      className={cn(
+        'w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-3 text-left transition-colors',
+        marked && editable && 'hover:bg-gray-50',
+        !marked && 'cursor-default',
+      )}
+    >
       <span className="text-sm text-gray-400 w-6 text-right shrink-0 font-mono">{index + 1}</span>
-
-      {/* Name */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
-        <p className="text-xs text-gray-400">{row.admNo}</p>
+      <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
+        {getInitials(row.fullName)}
       </div>
+      <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
 
-      {/* P / A / L buttons */}
-      <div className="flex items-center gap-2 shrink-0">
-        {STATUS_OPTS.map((opt) => {
-          const isSelected = row.status === opt.status;
-          return (
-            <button
-              key={opt.status}
-              type="button"
-              disabled={!editable}
-              onClick={() => onChange(row.studentId, opt.status)}
-              className={cn(
-                'w-9 h-9 rounded-full text-xs font-bold transition-all duration-150 flex items-center justify-center',
-                isSelected
-                  ? 'text-white shadow-sm scale-110'
-                  : 'bg-gray-100 text-gray-400 hover:bg-gray-200',
-                !editable && 'cursor-default',
-              )}
-              style={isSelected ? { backgroundColor: opt.color } : {}}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+      {marked && (
+        <div
+          className={cn(
+            'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
+            row.status === 'present' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600',
+          )}
+        >
+          {row.status === 'present' ? <Check className="w-4 h-4" strokeWidth={3} /> : <X className="w-4 h-4" strokeWidth={3} />}
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -112,12 +195,9 @@ function SkeletonRow() {
   return (
     <div className="flex items-center px-4 py-3 border-b border-gray-50 gap-3 animate-pulse">
       <div className="w-6 h-4 bg-gray-100 rounded shrink-0" />
+      <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0" />
       <div className="flex-1 space-y-1.5">
         <div className="h-4 bg-gray-100 rounded w-32" />
-        <div className="h-3 bg-gray-100 rounded w-20" />
-      </div>
-      <div className="flex gap-2 shrink-0">
-        {[0, 1, 2].map((i) => <div key={i} className="w-9 h-9 rounded-full bg-gray-100" />)}
       </div>
     </div>
   );
@@ -131,7 +211,6 @@ function SubmittedScreen({
   date,
   presentCount,
   absentCount,
-  leaveCount,
   onEdit,
   onViewStudents,
   onDashboard,
@@ -141,7 +220,6 @@ function SubmittedScreen({
   date:         string;
   presentCount: number;
   absentCount:  number;
-  leaveCount:   number;
   onEdit:       () => void;
   onViewStudents: () => void;
   onDashboard:  () => void;
@@ -177,10 +255,6 @@ function SubmittedScreen({
           <div>
             <p className="text-2xl font-bold text-red-500">{absentCount}</p>
             <p className="text-xs text-gray-400 font-medium mt-0.5">Absent</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-amber-500">{leaveCount}</p>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">Leave</p>
           </div>
         </div>
       </div>
@@ -242,12 +316,11 @@ export function TeacherAttendancePage() {
       (existingAttendance ?? []).map((a) => [a.studentId, a.status as AttendanceStatus]),
     );
     setRows(
-      students.map((s) => ({
-        studentId: s._id,
-        fullName:  s.fullName,
-        admNo:     s.admissionNumber,
-        status:    existMap.get(s._id) ?? 'present',
-      })),
+      students.map((s) => {
+        const existing = existMap.get(s._id);
+        const status: RowStatus = existing === 'present' ? 'present' : existing === 'absent' ? 'absent' : 'unmarked';
+        return { studentId: s._id, fullName: s.fullName, status };
+      }),
     );
   }, [students.length, existingAttendance, date]);
 
@@ -258,10 +331,15 @@ export function TeacherAttendancePage() {
 
   const presentCount = rows.filter((r) => r.status === 'present').length;
   const absentCount  = rows.filter((r) => r.status === 'absent').length;
-  const leaveCount   = rows.filter((r) => r.status === 'leave_approved').length;
+  const unmarkedCount = rows.filter((r) => r.status === 'unmarked').length;
+  const activeIndex = rows.findIndex((r) => r.status === 'unmarked');
 
-  function changeStatus(studentId: string, status: AttendanceStatus) {
+  function markStatus(studentId: string, status: RowStatus) {
     setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status } : r));
+  }
+
+  function undoStatus(studentId: string) {
+    setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status: 'unmarked' } : r));
   }
 
   function markAllPresent() {
@@ -274,7 +352,9 @@ export function TeacherAttendancePage() {
       class:   cls,
       section: section,
       date,
-      records: rows.map((r) => ({ studentId: r.studentId, status: r.status })),
+      records: rows
+        .filter((r): r is Row & { status: AttendanceStatus } => r.status !== 'unmarked')
+        .map((r) => ({ studentId: r.studentId, status: r.status })),
     });
     await invalidateWorkspace();
     setSubmitted(true);
@@ -293,7 +373,6 @@ export function TeacherAttendancePage() {
         date={date}
         presentCount={presentCount}
         absentCount={absentCount}
-        leaveCount={leaveCount}
         onEdit={() => { setSubmitted(false); setEditMode(true); }}
         onViewStudents={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
         onDashboard={() => navigate('/teacher')}
@@ -359,13 +438,9 @@ export function TeacherAttendancePage() {
 
       {isLoading ? (
         <div className="flex-1">
-          <div className="flex gap-4 px-6 py-5 justify-center">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="flex-1 max-w-[90px] h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />
-            ))}
-          </div>
-          <div className="mx-4 h-12 bg-white rounded-xl border border-gray-100 animate-pulse mb-4" />
-          <div className="mx-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="mx-4 mt-4 h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />
+          <div className="mx-4 mt-4 h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
+          <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
             {Array.from({ length: 7 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         </div>
@@ -381,25 +456,24 @@ export function TeacherAttendancePage() {
             </div>
           )}
 
-          {/* Stat counters */}
-          <div className="flex gap-3 px-4 py-5 justify-center">
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[100px]">
-              <p className="text-3xl font-bold text-[#5B5CEB]">{presentCount}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Present</p>
+          {/* Swipe hint legend */}
+          {editable && rows.length > 0 && (
+            <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-center gap-4">
+              <div className="flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 text-emerald-500" />
+                <div className="text-xs font-semibold text-emerald-600">Swipe Right<br /><span className="text-emerald-500">Present</span></div>
+              </div>
+              <div className="w-px h-8 bg-gray-100" />
+              <div className="flex items-center gap-2">
+                <ArrowLeft className="w-5 h-5 text-red-400" />
+                <div className="text-xs font-semibold text-red-500">Swipe Left<br /><span className="text-red-400">Absent</span></div>
+              </div>
             </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[100px]">
-              <p className="text-3xl font-bold text-red-500">{absentCount}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Absent</p>
-            </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[100px]">
-              <p className="text-3xl font-bold text-amber-500">{leaveCount}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Leave</p>
-            </div>
-          </div>
+          )}
 
           {/* Mark All Present */}
           {editable && rows.length > 0 && (
-            <div className="px-4 mb-4">
+            <div className="px-4 mt-4">
               <button
                 type="button"
                 onClick={markAllPresent}
@@ -410,8 +484,20 @@ export function TeacherAttendancePage() {
             </div>
           )}
 
+          {/* Active swipeable card */}
+          {editable && activeIndex !== -1 && (
+            <div className="px-4 mt-4">
+              <ActiveCard
+                key={rows[activeIndex].studentId}
+                row={rows[activeIndex]}
+                index={activeIndex}
+                onMark={markStatus}
+              />
+            </div>
+          )}
+
           {/* Student list */}
-          <div className="flex-1 mx-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-2">
+          <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-2">
             {rows.length === 0 ? (
               <div className="py-12 text-center">
                 <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
@@ -424,16 +510,34 @@ export function TeacherAttendancePage() {
                 </button>
               </div>
             ) : (
-              rows.map((row, i) => (
-                <StudentRow
-                  key={row.studentId}
-                  row={row}
-                  index={i}
-                  editable={editable}
-                  onChange={changeStatus}
-                />
-              ))
+              rows
+                .filter((_, i) => i !== activeIndex || !editable)
+                .map((row) => (
+                  <CompactRow
+                    key={row.studentId}
+                    row={row}
+                    index={rows.findIndex((r) => r.studentId === row.studentId)}
+                    editable={editable}
+                    onUndo={undoStatus}
+                  />
+                ))
             )}
+          </div>
+
+          {/* Stat counters */}
+          <div className="flex gap-3 px-4 pb-4 justify-center">
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
+              <p className="text-2xl font-bold text-gray-900">{rows.length}</p>
+              <p className="text-xs text-gray-500 font-semibold mt-1">Total Students</p>
+            </div>
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
+              <p className="text-2xl font-bold text-emerald-500">{presentCount}</p>
+              <p className="text-xs text-gray-500 font-semibold mt-1">Present</p>
+            </div>
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
+              <p className="text-2xl font-bold text-red-500">{absentCount}</p>
+              <p className="text-xs text-gray-500 font-semibold mt-1">Absent</p>
+            </div>
           </div>
 
           {/* Save Attendance button */}
@@ -442,7 +546,7 @@ export function TeacherAttendancePage() {
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={isPending}
+                disabled={isPending || unmarkedCount > 0}
                 className="w-full h-14 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#5B5CEB]/25"
               >
                 {isPending ? (
@@ -450,6 +554,8 @@ export function TeacherAttendancePage() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Saving…
                   </>
+                ) : unmarkedCount > 0 ? (
+                  `Mark ${unmarkedCount} more student${unmarkedCount !== 1 ? 's' : ''}`
                 ) : (
                   'Save Attendance'
                 )}

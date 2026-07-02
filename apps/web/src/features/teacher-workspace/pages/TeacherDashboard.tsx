@@ -4,9 +4,6 @@ import {
   Clock,
   ChevronRight,
   AlertCircle,
-  BookOpen,
-  User2,
-  UserPlus,
   CalendarCheck,
   Users,
   Calculator,
@@ -16,6 +13,7 @@ import {
   Music2,
   Dumbbell,
   Calendar,
+  BookOpen,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -69,13 +67,38 @@ function getSubjectStyle(subjectName: string) {
   return { icon: Calendar, ...fallback };
 }
 
+// ── Current period helper ─────────────────────────────────────────────────────
+
+function toMinutes(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getCurrentPeriod(classes: TodayClass[]): { cls: TodayClass; isNow: boolean } | null {
+  if (!classes.length) return null;
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const sorted = [...classes].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
+
+  const current = sorted.find(
+    (c) => nowMinutes >= toMinutes(c.startTime) && nowMinutes < toMinutes(c.endTime),
+  );
+  if (current) return { cls: current, isNow: true };
+
+  const next = sorted.find((c) => toMinutes(c.startTime) > nowMinutes);
+  if (next) return { cls: next, isNow: false };
+
+  return null;
+}
+
 // ── Today class card ──────────────────────────────────────────────────────────
 
 function TodayClassCard({
   cls,
+  isNow,
   onPress,
 }: {
   cls: TodayClass;
+  isNow: boolean;
   onPress: () => void;
 }) {
   const isMarked = cls.attendanceMarked;
@@ -97,9 +120,16 @@ function TodayClassCard({
 
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
-        <p className="text-xs text-gray-400 font-medium">
-          {cls.startTime} - {cls.endTime}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-xs text-gray-400 font-medium">
+            {cls.startTime} - {cls.endTime}
+          </p>
+          {isNow && (
+            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+              Now
+            </span>
+          )}
+        </div>
         <p className="text-sm font-bold text-gray-900 truncate leading-tight mt-0.5">
           {cls.subjectName}
         </p>
@@ -139,10 +169,15 @@ function TodayClassCard({
           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
             {pct}%
           </span>
-        ) : (
+        ) : isNow ? (
           <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Pending
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-xs font-bold text-[#5B5CEB] bg-[#5B5CEB]/10 px-2.5 py-1 rounded-full">
+            <Clock className="w-3 h-3" />
+            Starts {cls.startTime}
           </span>
         )}
         <ChevronRight
@@ -178,35 +213,6 @@ function SkeletonCard() {
   );
 }
 
-// ── Quick action button ───────────────────────────────────────────────────────
-
-function QuickAction({
-  icon: Icon,
-  label,
-  color,
-  bg,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  color: string;
-  bg: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-center gap-2.5 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-    >
-      <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center', bg)}>
-        <Icon className={cn('w-6 h-6', color)} />
-      </div>
-      <span className="text-xs font-semibold text-gray-700 text-center leading-tight">{label}</span>
-    </button>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function TeacherDashboard() {
@@ -223,6 +229,8 @@ export function TeacherDashboard() {
   function goToAttendance(cls: TodayClass) {
     navigate(`/teacher/attendance/${cls.class}/${cls.section}`);
   }
+
+  const currentPeriod = data ? getCurrentPeriod(data.todayClasses) : null;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -304,119 +312,25 @@ export function TeacherDashboard() {
                 <p className="text-xs text-red-500 mt-0.5">{(error as Error)?.message}</p>
               </div>
             </div>
-          ) : !data?.todayClasses.length ? (
+          ) : !currentPeriod ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
               <div className="w-14 h-14 bg-[#5B5CEB]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <CalendarCheck className="w-7 h-7 text-[#5B5CEB]" />
               </div>
-              <p className="text-base font-semibold text-gray-700">No classes today</p>
+              <p className="text-base font-semibold text-gray-700">
+                {data?.todayClasses.length ? 'No more classes today' : 'No classes today'}
+              </p>
               <p className="text-sm text-gray-400 mt-1">Enjoy your free day!</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {data.todayClasses.map((cls) => (
-                <TodayClassCard
-                  key={`${cls.class}-${cls.section}-${cls.slotId}`}
-                  cls={cls}
-                  onPress={() => goToAttendance(cls)}
-                />
-              ))}
-            </div>
+            <TodayClassCard
+              key={`${currentPeriod.cls.class}-${currentPeriod.cls.section}-${currentPeriod.cls.slotId}`}
+              cls={currentPeriod.cls}
+              isNow={currentPeriod.isNow}
+              onPress={() => goToAttendance(currentPeriod.cls)}
+            />
           )}
         </section>
-
-        {/* ── Quick Actions ────────────────────────────────────────────────── */}
-        <section>
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-4 gap-2.5">
-            <QuickAction
-              icon={UserPlus}
-              label="Add Students"
-              color="text-[#5B5CEB]"
-              bg="bg-[#5B5CEB]/10"
-              onClick={() => navigate('/teacher/add-student')}
-            />
-            <QuickAction
-              icon={BookOpen}
-              label="My Classes"
-              color="text-emerald-600"
-              bg="bg-emerald-100"
-              onClick={() => navigate('/teacher/classes')}
-            />
-            <QuickAction
-              icon={CalendarCheck}
-              label="History"
-              color="text-amber-600"
-              bg="bg-amber-100"
-              onClick={() => navigate('/teacher/history')}
-            />
-            <QuickAction
-              icon={User2}
-              label="My Profile"
-              color="text-rose-600"
-              bg="bg-rose-100"
-              onClick={() => navigate('/teacher/profile')}
-            />
-          </div>
-        </section>
-
-        {/* ── Week overview strip ───────────────────────────────────────────── */}
-        {data && data.weekSchedule.length > 0 && (
-          <section>
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">
-              This Week
-            </h2>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              {[...data.weekSchedule]
-                .sort((a, b) => a.dayOfWeek - b.dayOfWeek)
-                .slice(0, 6)
-                .map(({ dayOfWeek, entries }) => {
-                  const DAY_SHORT = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                  const isToday = dayOfWeek === data.todayDayOfWeek;
-                  return (
-                    <div
-                      key={dayOfWeek}
-                      className={cn(
-                        'flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0',
-                        isToday && 'bg-[#5B5CEB]/5',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'text-xs font-bold w-8 shrink-0',
-                          isToday ? 'text-[#5B5CEB]' : 'text-gray-400',
-                        )}
-                      >
-                        {DAY_SHORT[dayOfWeek]}
-                      </span>
-                      <div className="flex-1 flex flex-wrap gap-1.5">
-                        {entries.slice(0, 3).map((e, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
-                          >
-                            {e.subjectName} · {e.class}-{e.section}
-                          </span>
-                        ))}
-                        {entries.length > 3 && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full">
-                            +{entries.length - 3}
-                          </span>
-                        )}
-                      </div>
-                      {isToday && (
-                        <span className="text-[9px] font-bold text-[#5B5CEB] uppercase tracking-wide shrink-0">
-                          Today
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-          </section>
-        )}
       </div>
     </div>
   );
