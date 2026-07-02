@@ -183,7 +183,8 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </nav>
 
       {/* ── Bottom section ─────────────────────────────────────────────── */}
-      <div className="border-t border-gray-100/80 px-3 py-3 space-y-0.5">
+      {/* Extra bottom padding on mobile so Log Out isn't hidden behind the fixed mobile bottom nav bar */}
+      <div className="border-t border-gray-100/80 px-3 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-3 space-y-0.5">
         <SidebarNavItem to="/settings" icon={Settings} label="Settings" />
 
         {/* Current user */}
