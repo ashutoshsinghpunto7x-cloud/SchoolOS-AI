@@ -8,6 +8,14 @@ import {
   User2,
   UserPlus,
   CalendarCheck,
+  Users,
+  Calculator,
+  FlaskConical,
+  Globe2,
+  Palette,
+  Music2,
+  Dumbbell,
+  Calendar,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -32,6 +40,35 @@ function todayDateStr() {
   });
 }
 
+// ── Subject styling ───────────────────────────────────────────────────────────
+
+const SUBJECT_STYLES: Record<string, { icon: React.ElementType; bg: string; text: string }> = {
+  maths:       { icon: Calculator,   bg: 'bg-indigo-100', text: 'text-indigo-600' },
+  mathematics: { icon: Calculator,   bg: 'bg-indigo-100', text: 'text-indigo-600' },
+  science:     { icon: FlaskConical, bg: 'bg-rose-100',   text: 'text-rose-600'   },
+  hindi:       { icon: BookOpen,     bg: 'bg-purple-100', text: 'text-purple-600' },
+  english:     { icon: BookOpen,     bg: 'bg-blue-100',   text: 'text-blue-600'   },
+  'social science': { icon: Globe2,  bg: 'bg-teal-100',   text: 'text-teal-600'   },
+  art:         { icon: Palette,      bg: 'bg-amber-100',  text: 'text-amber-600'  },
+  music:       { icon: Music2,       bg: 'bg-pink-100',   text: 'text-pink-600'   },
+  'physical education': { icon: Dumbbell, bg: 'bg-orange-100', text: 'text-orange-600' },
+};
+
+const FALLBACK_STYLES = [
+  { bg: 'bg-indigo-100', text: 'text-indigo-600' },
+  { bg: 'bg-purple-100', text: 'text-purple-600' },
+  { bg: 'bg-rose-100',   text: 'text-rose-600'   },
+  { bg: 'bg-teal-100',   text: 'text-teal-600'   },
+];
+
+function getSubjectStyle(subjectName: string) {
+  const key = subjectName.trim().toLowerCase();
+  if (SUBJECT_STYLES[key]) return SUBJECT_STYLES[key];
+  const hash = [...key].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const fallback = FALLBACK_STYLES[hash % FALLBACK_STYLES.length];
+  return { icon: Calendar, ...fallback };
+}
+
 // ── Today class card ──────────────────────────────────────────────────────────
 
 function TodayClassCard({
@@ -45,87 +82,69 @@ function TodayClassCard({
   const pct = cls.totalStudents > 0
     ? Math.round((cls.attendanceCount / cls.totalStudents) * 100)
     : 0;
+  const { icon: SubjectIcon, bg, text } = getSubjectStyle(cls.subjectName);
 
   return (
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md hover:border-[#5B5CEB]/20 transition-all duration-200 group"
+      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#5B5CEB]/20 transition-all duration-200 group"
     >
-      {/* Card top strip */}
-      <div
-        className={cn(
-          'px-4 pt-4 pb-3 border-b',
-          isMarked ? 'border-emerald-50' : 'border-amber-50',
-        )}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            {/* Time */}
-            <p
-              className={cn(
-                'text-[10px] font-bold uppercase tracking-widest mb-1',
-                isMarked ? 'text-emerald-500' : 'text-amber-500',
-              )}
-            >
-              {cls.slotName} · {cls.startTime}–{cls.endTime}
-            </p>
-
-            {/* Subject */}
-            <p className="text-base font-bold text-gray-900 truncate leading-tight">
-              {cls.subjectName}
-            </p>
-
-            {/* Class badge */}
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs font-semibold px-2 py-0.5 bg-[#5B5CEB]/10 text-[#5B5CEB] rounded-full">
-                {cls.class} – {cls.section}
-              </span>
-            </div>
-          </div>
-
-          {/* Status icon */}
-          <div
-            className={cn(
-              'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-              isMarked ? 'bg-emerald-100' : 'bg-amber-100',
-            )}
-          >
-            {isMarked ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            ) : (
-              <Clock className="w-5 h-5 text-amber-600" />
-            )}
-          </div>
-        </div>
+      {/* Subject icon */}
+      <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', bg)}>
+        <SubjectIcon className={cn('w-5 h-5', text)} />
       </div>
 
-      {/* Card bottom */}
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="flex-1 min-w-0 mr-3">
-          {isMarked ? (
-            <>
-              <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-                <span>
-                  <span className="font-semibold text-gray-700">{cls.attendanceCount}</span>
-                  {' / '}{cls.totalStudents} students
-                </span>
-                <span className="font-bold text-emerald-600">{pct}%</span>
-              </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-emerald-500 rounded-full"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </>
-          ) : (
-            <p className="text-sm text-gray-400">
-              {cls.totalStudents} student{cls.totalStudents !== 1 ? 's' : ''} · tap to mark
-            </p>
-          )}
-        </div>
+      {/* Time / subject / class badge */}
+      <div className="min-w-0 shrink-0 w-40">
+        <p className="text-xs text-gray-400 font-medium">
+          {cls.startTime} - {cls.endTime}
+        </p>
+        <p className="text-sm font-bold text-gray-900 truncate leading-tight mt-0.5">
+          {cls.subjectName}
+        </p>
+        <span className="inline-block text-xs font-semibold text-[#5B5CEB] bg-[#5B5CEB]/10 px-2 py-0.5 rounded-full mt-1">
+          {cls.class} - {cls.section}
+        </span>
+      </div>
 
+      {/* Progress / status */}
+      <div className="flex-1 min-w-0 hidden sm:block">
+        {isMarked ? (
+          <>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1.5">
+              <Users className="w-3.5 h-3.5 text-gray-400" />
+              <span>
+                <span className="font-semibold text-gray-700">{cls.attendanceCount}</span>
+                {' / '}{cls.totalStudents} students
+              </span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-gray-400">
+            {cls.totalStudents} student{cls.totalStudents !== 1 ? 's' : ''} · tap to mark
+          </p>
+        )}
+      </div>
+
+      {/* Status pill */}
+      <div className="flex items-center gap-2 shrink-0">
+        {isMarked ? (
+          <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+            {pct}%
+          </span>
+        ) : (
+          <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+            <Clock className="w-3 h-3" />
+            Pending
+          </span>
+        )}
         <ChevronRight
           className={cn(
             'w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5',
@@ -223,19 +242,34 @@ export function TeacherDashboard() {
 
         {/* Stat cards */}
         <div className="flex gap-3 mt-5">
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10">
-            <p className="text-2xl font-bold text-white">{markedCount}</p>
-            <p className="text-[11px] text-white/70 font-semibold mt-0.5">Marked Today</p>
+          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-2xl font-bold text-white">{markedCount}</p>
+              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Marked Today</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-[18px] h-[18px] text-white" />
+            </div>
           </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10">
-            <p className={cn('text-2xl font-bold', pendingCount > 0 ? 'text-amber-200' : 'text-white')}>
-              {pendingCount}
-            </p>
-            <p className="text-[11px] text-white/70 font-semibold mt-0.5">Pending</p>
+          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
+            <div>
+              <p className={cn('text-2xl font-bold', pendingCount > 0 ? 'text-amber-200' : 'text-white')}>
+                {pendingCount}
+              </p>
+              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Pending</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <Clock className="w-[18px] h-[18px] text-white" />
+            </div>
           </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10">
-            <p className="text-2xl font-bold text-white">{totalCount}</p>
-            <p className="text-[11px] text-white/70 font-semibold mt-0.5">Classes Today</p>
+          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-2xl font-bold text-white">{totalCount}</p>
+              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Classes Today</p>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <Users className="w-[18px] h-[18px] text-white" />
+            </div>
           </div>
         </div>
       </div>
