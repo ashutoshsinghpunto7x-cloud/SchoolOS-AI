@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // ── Static routes first (must precede /:id) ───────────────────────────────────
 router.post('/payment',                              feeController.recordPayment);
+router.get('/payments/receipt/:receiptNumber',       feeController.getPaymentByReceipt);
 router.get('/outstanding',                           feeController.getOutstanding);
 router.get('/summary',                               feeController.getSummary);
 router.get('/student/:studentId',                    feeController.getStudentFees);

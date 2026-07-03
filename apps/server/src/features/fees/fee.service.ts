@@ -171,18 +171,31 @@ export const feeService = {
       );
     }
 
-    const payment = await feePaymentRepository.create({
-      feeRecordId:    data.feeRecordId,
-      studentId:      feeRecord.studentId,
-      schoolId:       ctx.schoolId,
-      amount:         data.amount,
-      paymentDate:    new Date(data.paymentDate),
-      paymentMode:    data.paymentMode,
-      referenceNumber:data.referenceNumber,
-      remarks:        data.remarks,
-      recordedById:   ctx.userId,
-      recordedByName: ctx.displayName,
-    });
+    // Retry a couple of times in the rare case two payments race to the same
+    // running-total receipt number (unique index rejects the duplicate).
+    let payment: IFeePayment | undefined;
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 3 && !payment; attempt++) {
+      const receiptNumber = await feePaymentRepository.generateReceiptNumber(ctx.schoolId, feeRecord.academicYear);
+      try {
+        payment = await feePaymentRepository.create({
+          feeRecordId:    data.feeRecordId,
+          studentId:      feeRecord.studentId,
+          schoolId:       ctx.schoolId,
+          amount:         data.amount,
+          paymentDate:    new Date(data.paymentDate),
+          paymentMode:    data.paymentMode,
+          referenceNumber:data.referenceNumber,
+          remarks:        data.remarks,
+          recordedById:   ctx.userId,
+          recordedByName: ctx.displayName,
+          receiptNumber,
+        });
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (!payment) throw lastErr instanceof Error ? lastErr : new Error('Failed to record payment');
 
     const updatedRecord = await feeRepository.applyPayment(
       data.feeRecordId,
@@ -225,5 +238,19 @@ export const feeService = {
 
   async getSummary(ctx: AuthContext, academicYear?: string): Promise<FeeCollectionSummary> {
     return feeRepository.getSummary(ctx.schoolId, { academicYear });
+  },
+
+  /** Look up a payment (and its fee record/month) by the receipt/bill number printed on a receipt. */
+  async getPaymentByReceipt(
+    receiptNumber: string,
+    ctx: AuthContext,
+  ): Promise<{ record: IFeeRecord; payment: IFeePayment }> {
+    const payment = await feePaymentRepository.findByReceiptNumber(ctx.schoolId, receiptNumber.trim());
+    if (!payment) throw new NotFoundError('Receipt');
+
+    const record = await feeRepository.findById(payment.feeRecordId, ctx.schoolId);
+    if (!record) throw new NotFoundError('Fee record');
+
+    return { record, payment };
   },
 };

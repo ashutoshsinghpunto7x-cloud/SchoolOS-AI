@@ -24,12 +24,29 @@ export interface CreatePaymentData {
   remarks?: string;
   recordedById: string;
   recordedByName: string;
+  receiptNumber: string;
 }
 
 export const feePaymentRepository = {
   async create(data: CreatePaymentData): Promise<IFeePayment> {
     const payment = new FeePayment(data);
     return payment.save();
+  },
+
+  /**
+   * Human-readable, sequential receipt/bill number: RCPT-{academicYear digits}-{5-digit running total}.
+   * Sequence is a total count of payments ever recorded for the school (not reset per day/year) so it
+   * stays unique and monotonically increasing even if generated concurrently across academic years.
+   */
+  async generateReceiptNumber(schoolId: string, academicYear: string): Promise<string> {
+    const total = await FeePayment.countDocuments({ schoolId });
+    const seq = String(total + 1).padStart(5, '0');
+    const yearPart = academicYear.replace(/[^0-9]/g, '') || 'NA';
+    return `RCPT-${yearPart}-${seq}`;
+  },
+
+  async findByReceiptNumber(schoolId: string, receiptNumber: string): Promise<IFeePayment | null> {
+    return FeePayment.findOne({ schoolId, receiptNumber, isDeleted: false }).lean<IFeePayment>();
   },
 
   async findByFeeRecord(feeRecordId: string, schoolId: string): Promise<IFeePayment[]> {

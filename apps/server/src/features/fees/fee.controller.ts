@@ -59,6 +59,15 @@ export const feeController = {
     } catch (err) { next(err); }
   },
 
+  /** GET /fees/payments/receipt/:receiptNumber — look up a payment + its fee record by bill number */
+  async getPaymentByReceipt(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await feeService.getPaymentByReceipt(req.params.receiptNumber, ctx);
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+
   /** GET /fees/:id — fee record with payments */
   async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

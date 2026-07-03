@@ -63,5 +63,6 @@ const feePaymentSchema = new Schema<IFeePayment>(
 feePaymentSchema.index({ feeRecordId: 1, isDeleted: 1, createdAt: -1 });
 feePaymentSchema.index({ schoolId: 1, studentId: 1, isDeleted: 1, createdAt: -1 });
 feePaymentSchema.index({ schoolId: 1, isDeleted: 1, paymentDate: -1 });
+feePaymentSchema.index({ schoolId: 1, receiptNumber: 1 }, { unique: true, sparse: true });
 
 export const FeePayment = mongoose.model<IFeePayment>('FeePayment', feePaymentSchema);

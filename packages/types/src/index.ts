@@ -744,6 +744,16 @@ export interface FeeCollectionSummary {
   pendingCount: number;
 }
 
+export interface RecordPaymentResult {
+  record: FeeRecord;
+  payment: FeePayment;
+}
+
+export interface ReceiptLookupResult {
+  record: FeeRecord;
+  payment: FeePayment;
+}
+
 export interface CreateFeeRecordPayload {
   studentId: string;
   feeHead: FeeHead;
