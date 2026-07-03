@@ -55,13 +55,13 @@ const NAV_ITEMS_TEACHER_QUICK_ACTIONS = [
 ] as const;
 
 const NAV_ITEMS_ACCOUNTANT = [
-  { label: 'Dashboard',     icon: LayoutDashboard, path: '/accountant' },
-  { label: 'Collect Fee',   icon: IndianRupee,     path: '/accountant/collect-fee' },
-  { label: 'Fee Records',   icon: ClipboardList,    path: '/accountant/fee-records' },
-  { label: 'Pending Fees',  icon: Wallet,           path: '/accountant/pending-fees' },
-  { label: 'Salary',        icon: FileBarChart,     path: '/accountant/salary' },
-  { label: 'Expenses',      icon: Receipt,          path: '/accountant/expenses' },
-  { label: 'Reports',       icon: FileBarChart2,    path: '/accountant/reports' },
+  { label: 'Dashboard',     icon: LayoutDashboard, path: '/accountant',               end: true  },
+  { label: 'Collect Fee',   icon: IndianRupee,     path: '/accountant/collect-fee',   end: false },
+  { label: 'Fee Records',   icon: ClipboardList,   path: '/accountant/fee-records',   end: false },
+  { label: 'Pending Fees',  icon: Wallet,          path: '/accountant/pending-fees',  end: false },
+  { label: 'Salary',        icon: FileBarChart,    path: '/accountant/salary',        end: false },
+  { label: 'Expenses',      icon: Receipt,         path: '/accountant/expenses',      end: false },
+  { label: 'Reports',       icon: FileBarChart2,   path: '/accountant/reports',       end: false },
 ] as const;
 
 const NAV_ITEMS_ADMIN = [
@@ -170,6 +170,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 to={item.path}
                 icon={item.icon}
                 label={item.label}
+                end={item.end}
               />
             ))}
           </>
@@ -205,8 +206,11 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
         {/* Current user */}
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors cursor-default mt-1">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-            <span className="text-xs font-bold text-white">{initials}</span>
+          <div className="relative flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B5CEB] to-indigo-500 flex items-center justify-center shadow-sm">
+              <span className="text-xs font-bold text-white">{initials}</span>
+            </div>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-[1.5px] border-white" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold text-gray-900 truncate leading-tight">

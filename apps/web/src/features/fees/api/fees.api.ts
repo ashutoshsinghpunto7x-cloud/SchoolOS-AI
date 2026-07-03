@@ -6,6 +6,8 @@ import type {
   CreateFeeRecordPayload,
   UpdateFeeRecordPayload,
   RecordPaymentPayload,
+  RecordPaymentResult,
+  ReceiptLookupResult,
   FeeListOptions,
   OutstandingOptions,
   PaginatedResponse,
@@ -48,9 +50,16 @@ export const feesApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  recordPayment: async (payload: RecordPaymentPayload): Promise<FeeRecordWithPayments> => {
+  recordPayment: async (payload: RecordPaymentPayload): Promise<RecordPaymentResult> => {
     try {
-      const res = await apiClient.post<{ data: FeeRecordWithPayments }>(`${BASE}/payment`, payload);
+      const res = await apiClient.post<{ data: RecordPaymentResult }>(`${BASE}/payment`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getPaymentByReceipt: async (receiptNumber: string): Promise<ReceiptLookupResult> => {
+    try {
+      const res = await apiClient.get<{ data: ReceiptLookupResult }>(`${BASE}/payments/receipt/${encodeURIComponent(receiptNumber)}`);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

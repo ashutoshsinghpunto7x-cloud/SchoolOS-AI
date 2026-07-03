@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, IndianRupee, AlertCircle, Banknote, CreditCard, FileText } from 'lucide-react';
+import { X, IndianRupee, AlertCircle, Banknote, CreditCard } from 'lucide-react';
 import type { FeeRecord, PaymentMode, RecordPaymentPayload } from '@schoolos/types';
 import { useRecordPayment } from '@/features/fees/hooks/useFees';
 import { cn } from '@/lib/utils';
@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 interface Props {
   fee: FeeRecord;
   onClose: () => void;
-  onSuccess?: (payment: { amount: number; paymentMode: PaymentMode; referenceNumber?: string }) => void;
+  onSuccess?: (payment: { amount: number; paymentMode: PaymentMode; referenceNumber?: string; receiptNumber?: string }) => void;
 }
 
 const fmt = (amount: number) =>
@@ -18,12 +18,11 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#5B5CEB] bg-white';
 const labelCls = 'text-xs font-semibold text-gray-500 mb-1 block';
 
-type SimpleMode = 'cash' | 'cheque' | 'upi';
+type SimpleMode = 'cash' | 'upi';
 
 const MODES: { value: SimpleMode; label: string; icon: React.ElementType }[] = [
-  { value: 'cash',   label: 'Cash',   icon: Banknote },
-  { value: 'cheque', label: 'Cheque', icon: FileText },
-  { value: 'upi',    label: 'UPI',    icon: CreditCard },
+  { value: 'cash', label: 'Cash',   icon: Banknote },
+  { value: 'upi',  label: 'Online', icon: CreditCard },
 ];
 
 export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
@@ -51,15 +50,11 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
       return;
     }
     if (mode === 'upi' && !refNumber.trim()) {
-      setLocalError('Enter the UTR number for UPI payment.');
-      return;
-    }
-    if (mode === 'cheque' && !refNumber.trim()) {
-      setLocalError('Enter the cheque number.');
+      setLocalError('Enter the UTR number for the online payment.');
       return;
     }
 
-    const paymentMode: PaymentMode = mode === 'upi' ? 'online' : mode === 'cheque' ? 'cheque' : 'cash';
+    const paymentMode: PaymentMode = mode === 'upi' ? 'online' : 'cash';
     const payload: RecordPaymentPayload = {
       feeRecordId:     fee._id,
       amount:          Math.round(numAmount * 100) / 100,
@@ -68,8 +63,13 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
       referenceNumber: mode === 'cash' ? undefined : refNumber.trim(),
     };
 
-    await recordPayment(payload);
-    onSuccess?.({ amount: payload.amount, paymentMode, referenceNumber: payload.referenceNumber });
+    const result = await recordPayment(payload);
+    onSuccess?.({
+      amount: payload.amount,
+      paymentMode,
+      referenceNumber: payload.referenceNumber,
+      receiptNumber: result.payment.receiptNumber,
+    });
     onClose();
   }
 
@@ -115,7 +115,7 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
 
           <div>
             <label className={labelCls}>Payment Mode *</label>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5">
               {MODES.map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
@@ -138,16 +138,6 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
               <input
                 type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
                 className={inputCls} placeholder="e.g. 123456789012" maxLength={30} autoFocus
-              />
-            </div>
-          )}
-
-          {mode === 'cheque' && (
-            <div>
-              <label className={labelCls}>Cheque Number *</label>
-              <input
-                type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
-                className={inputCls} placeholder="e.g. 004521" maxLength={30} autoFocus
               />
             </div>
           )}

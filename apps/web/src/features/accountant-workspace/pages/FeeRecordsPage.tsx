@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, ChevronDown, ChevronLeft, ChevronRight, FileBarChart } from 'lucide-react';
-import { useFeeList } from '@/features/fees/hooks/useFees';
+import { ArrowLeft, Search, ChevronDown, ChevronLeft, ChevronRight, FileBarChart, Receipt, AlertCircle } from 'lucide-react';
+import { useFeeList, useReceiptLookup } from '@/features/fees/hooks/useFees';
 import { FeeStatusBadge } from '@/features/fees/components/FeeStatusBadge';
 import type { FeeListOptions, FeeStatus } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,70 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 const selectCls = 'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 appearance-none pr-8';
+
+// ── Bill number lookup ────────────────────────────────────────────────────────
+
+function ReceiptLookup() {
+  const [receiptNumber, setReceiptNumber] = useState('');
+  const { mutate, data, error, isPending, reset } = useReceiptLookup();
+
+  function handleSearch() {
+    const trimmed = receiptNumber.trim();
+    if (!trimmed) return;
+    mutate(trimmed);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-4">
+      <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+        <Receipt className="w-4 h-4 text-[#5B5CEB]" /> Look Up a Receipt
+      </h2>
+      <p className="text-xs text-gray-400 mt-0.5">Enter a bill number to find that month's fee record</p>
+
+      <div className="flex gap-2 mt-3">
+        <input
+          type="text"
+          value={receiptNumber}
+          onChange={(e) => { setReceiptNumber(e.target.value); if (data || error) reset(); }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          placeholder="e.g. RCPT-2026-00007"
+          className="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+        />
+        <button
+          onClick={handleSearch}
+          disabled={!receiptNumber.trim() || isPending}
+          className="h-10 px-4 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-50 text-white rounded-xl text-sm font-semibold"
+        >
+          {isPending ? 'Searching…' : 'Search'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2 mt-3">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {error instanceof Error ? error.message : 'Receipt not found'}
+        </div>
+      )}
+
+      {data && (
+        <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3.5 text-sm">
+          <div className="flex items-center justify-between">
+            <p className="font-bold text-gray-900">{data.record.studentName}</p>
+            <FeeStatusBadge status={data.record.status} size="sm" />
+          </div>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Class {data.record.class}-{data.record.section} · {data.record.month || new Date(data.record.dueDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+          </p>
+          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-emerald-100">
+            <div><p className="text-xs text-gray-400">Paid</p><p className="text-sm font-bold text-emerald-600">{fmt(data.payment.amount)}</p></div>
+            <div><p className="text-xs text-gray-400">Mode</p><p className="text-sm font-bold text-gray-800 capitalize">{data.payment.paymentMode}</p></div>
+            <div><p className="text-xs text-gray-400">Date</p><p className="text-sm font-bold text-gray-800">{new Date(data.payment.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function FeeRecordsPage() {
   const navigate = useNavigate();
@@ -41,6 +105,8 @@ export function FeeRecordsPage() {
       </div>
 
       <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+        <ReceiptLookup />
+
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative flex-1 min-w-[180px]">

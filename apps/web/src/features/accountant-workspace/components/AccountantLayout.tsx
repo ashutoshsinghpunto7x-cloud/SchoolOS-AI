@@ -1,5 +1,5 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Wallet, IndianRupee, Receipt, MoreHorizontal, Plus } from 'lucide-react';
+import { Outlet, NavLink } from 'react-router-dom';
+import { LayoutDashboard, Wallet, IndianRupee, Receipt, MoreHorizontal } from 'lucide-react';
 
 const NAV = [
   { to: '/accountant',               icon: LayoutDashboard, label: 'Home',     end: true  },
@@ -10,23 +10,11 @@ const NAV = [
 ];
 
 export function AccountantLayout() {
-  const navigate = useNavigate();
-
   return (
     <>
-      <div className="pb-24 lg:pb-0">
+      <div className="pb-20 lg:pb-0">
         <Outlet />
       </div>
-
-      {/* Floating action button — Collect Fee */}
-      <button
-        type="button"
-        onClick={() => navigate('/accountant/collect-fee')}
-        className="fixed z-40 bottom-24 right-4 lg:bottom-8 lg:right-8 w-14 h-14 rounded-full bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white shadow-lg shadow-[#5B5CEB]/30 flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
-        aria-label="Collect Fee"
-      >
-        <Plus className="w-6 h-6" strokeWidth={2.5} />
-      </button>
 
       {/* Mobile-only bottom navigation */}
       <nav

@@ -94,3 +94,9 @@ export const useRecordPayment = () => {
     onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
   });
 };
+
+/** On-demand receipt/bill-number lookup — triggered imperatively (search action), not a live query. */
+export const useReceiptLookup = () =>
+  useMutation({
+    mutationFn: (receiptNumber: string) => feesApi.getPaymentByReceipt(receiptNumber),
+  });

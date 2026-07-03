@@ -1,28 +1,21 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Search, User2, Phone, CheckCircle2, Printer, IndianRupee, ChevronDown, Mail, Loader2, Plus,
+  ArrowLeft, Search, CheckCircle2, Printer, IndianRupee, Mail, Loader2, Plus,
 } from 'lucide-react';
 import { useStudentsPaginated, useUpdateStudent } from '@/features/students/hooks/useStudents';
-import { useStudentFees, useFeeList } from '@/features/fees/hooks/useFees';
+import { useStudentFees } from '@/features/fees/hooks/useFees';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
 import { AddFeeModal } from '../components/AddFeeModal';
 import { useSendReceiptEmail } from '../hooks/useAccountantWorkspace';
 import { FeeStatusBadge } from '@/features/fees/components/FeeStatusBadge';
-import type { FeeRecord, FeeHead, Student } from '@schoolos/types';
-import { cn } from '@/lib/utils';
+import type { FeeRecord, Student } from '@schoolos/types';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const FEE_HEADS: { value: FeeHead; label: string }[] = [
-  { value: 'tuition',       label: 'Tuition Fee' },
-  { value: 'admission',     label: 'Admission Fee' },
-  { value: 'examination',   label: 'Examination Fee' },
-  { value: 'transport',     label: 'Transport Fee' },
-  { value: 'hostel',        label: 'Hostel Fee' },
-  { value: 'miscellaneous', label: 'Miscellaneous' },
-];
+const SCHOOL_NAME = 'Florence Nightingale Inter College';
+const SCHOOL_ADDRESS = 'Triveni Nagar'; // Edit with the full postal address as needed.
 
 interface CollectContext {
   studentId?: string;
@@ -34,203 +27,81 @@ interface CollectContext {
   email?: string;
 }
 
-type SearchTab = 'name' | 'class' | 'feeType';
+// ── Single search bar + default student list ──────────────────────────────────
 
-// ── Tabbed search step ────────────────────────────────────────────────────────
-
-function SearchStep({
-  onSelectStudent, onSelectFee,
-}: {
-  onSelectStudent: (s: Student) => void;
-  onSelectFee: (fee: FeeRecord) => void;
-}) {
-  const [tab, setTab] = useState<SearchTab>('name');
-
-  // Name search
-  const [nameQuery, setNameQuery] = useState('');
-  const [debouncedName, setDebouncedName] = useState('');
+function StudentSearchPanel({ onSelectStudent }: { onSelectStudent: (s: Student) => void }) {
+  const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedName(nameQuery.trim()), 300);
+    const t = setTimeout(() => setDebounced(query.trim()), 300);
     return () => clearTimeout(t);
-  }, [nameQuery]);
-  const { data: nameResults, isLoading: nameLoading } = useStudentsPaginated({
-    search: debouncedName || undefined, status: 'active', limit: 15,
+  }, [query]);
+
+  // No query yet → show the existing student list so the accountant isn't staring at a blank screen.
+  const { data: results, isLoading } = useStudentsPaginated({
+    search: debounced || undefined, status: 'active', limit: 15,
   });
 
-  // Narrow-down filters — only shown once the name search returns more than one match
+  // Narrow-down filters — only shown once the name search returns more than one match.
   const [narrowClass, setNarrowClass] = useState('');
   const [narrowFather, setNarrowFather] = useState('');
-  const [narrowAdmission, setNarrowAdmission] = useState('');
-  useEffect(() => { setNarrowClass(''); setNarrowFather(''); setNarrowAdmission(''); }, [debouncedName]);
+  useEffect(() => { setNarrowClass(''); setNarrowFather(''); }, [debounced]);
 
-  const nameMatches = nameResults?.data ?? [];
-  const hasNameCollision = nameMatches.length > 1;
-  const narrowedNameMatches = useMemo(() => {
-    if (!hasNameCollision) return nameMatches;
-    return nameMatches.filter((s) => {
+  const matches = results?.data ?? [];
+  const hasCollision = debounced.length > 0 && matches.length > 1;
+  const narrowedMatches = useMemo(() => {
+    if (!hasCollision) return matches;
+    return matches.filter((s) => {
       const cls = `${s.class}${s.section}`.toLowerCase();
       if (narrowClass && !cls.includes(narrowClass.toLowerCase())) return false;
       if (narrowFather && !(s.fatherName ?? '').toLowerCase().includes(narrowFather.toLowerCase())) return false;
-      if (narrowAdmission && !(s.admissionNumber ?? '').toLowerCase().includes(narrowAdmission.toLowerCase())) return false;
       return true;
     });
-  }, [nameMatches, hasNameCollision, narrowClass, narrowFather, narrowAdmission]);
-
-  // Class + Section search
-  const [cls, setCls] = useState('');
-  const [section, setSection] = useState('');
-  const { data: classResults, isLoading: classLoading } = useStudentsPaginated({
-    class: cls || undefined, section: section || undefined, status: 'active', limit: 30,
-  });
-
-  // Fee type search
-  const [feeHead, setFeeHead] = useState<FeeHead>('tuition');
-  const { data: feeTypeResults, isLoading: feeTypeLoading } = useFeeList({
-    feeHead, limit: 50, sortBy: 'dueDate', sortOrder: 'asc',
-  });
-  const pendingByFeeType = useMemo(
-    () => (feeTypeResults?.data ?? []).filter((f) => f.status !== 'paid' && f.status !== 'waived'),
-    [feeTypeResults],
-  );
+  }, [matches, hasCollision, narrowClass, narrowFather]);
 
   return (
     <div className="px-4 py-5 max-w-lg mx-auto">
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        {([
-          { id: 'name', label: 'Student Name' },
-          { id: 'class', label: 'Class & Section' },
-          { id: 'feeType', label: 'Fee Type' },
-        ] as const).map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              'flex-1 h-10 rounded-xl text-xs font-semibold transition-colors',
-              tab === t.id ? 'bg-[#5B5CEB] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="relative mb-4">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text" autoFocus value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by name, admission number, or roll no."
+          className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+        />
       </div>
 
-      {/* Tab: Name */}
-      {tab === 'name' && (
-        <>
-          <div className="relative mb-4">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      {hasCollision && (
+        <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+          <p className="text-xs font-semibold text-amber-700 mb-2">
+            {matches.length} students match "{debounced}" — narrow down by:
+          </p>
+          <div className="grid grid-cols-2 gap-2">
             <input
-              type="text" autoFocus value={nameQuery} onChange={(e) => setNameQuery(e.target.value)}
-              placeholder="Search by name, admission number, or roll no."
-              className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+              type="text" value={narrowClass} onChange={(e) => setNarrowClass(e.target.value)}
+              placeholder="Class"
+              className="h-9 px-2.5 rounded-lg border border-amber-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
+            <input
+              type="text" value={narrowFather} onChange={(e) => setNarrowFather(e.target.value)}
+              placeholder="Father's Name"
+              className="h-9 px-2.5 rounded-lg border border-amber-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
             />
           </div>
-          {nameLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse" />)}</div>
-          ) : !nameMatches.length ? (
-            <div className="text-center py-16 text-sm text-gray-400">{debouncedName ? 'No students found' : 'Start typing to search for a student'}</div>
-          ) : (
-            <>
-              {hasNameCollision && (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
-                  <p className="text-xs font-semibold text-amber-700 mb-2">
-                    {nameMatches.length} students match "{debouncedName}" — narrow down by:
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    <input
-                      type="text" value={narrowClass} onChange={(e) => setNarrowClass(e.target.value)}
-                      placeholder="Class"
-                      className="h-9 px-2.5 rounded-lg border border-amber-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
-                    />
-                    <input
-                      type="text" value={narrowFather} onChange={(e) => setNarrowFather(e.target.value)}
-                      placeholder="Father's Name"
-                      className="h-9 px-2.5 rounded-lg border border-amber-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
-                    />
-                    <input
-                      type="text" value={narrowAdmission} onChange={(e) => setNarrowAdmission(e.target.value)}
-                      placeholder="Roll / Adm. No."
-                      className="h-9 px-2.5 rounded-lg border border-amber-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-300"
-                    />
-                  </div>
-                </div>
-              )}
-              {!narrowedNameMatches.length ? (
-                <div className="text-center py-8 text-sm text-gray-400">No match for those details</div>
-              ) : (
-                <div className="space-y-2">
-                  {narrowedNameMatches.map((s) => (
-                    <StudentRow key={s._id} student={s} onClick={() => onSelectStudent(s)} showFatherName={hasNameCollision} />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </>
+        </div>
       )}
 
-      {/* Tab: Class & Section */}
-      {tab === 'class' && (
-        <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <input type="text" autoFocus value={cls} onChange={(e) => setCls(e.target.value)} placeholder="Class (e.g. 6)"
-              className="h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]" />
-            <input type="text" value={section} onChange={(e) => setSection(e.target.value.toUpperCase())} maxLength={2} placeholder="Section (e.g. A)"
-              className="h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]" />
-          </div>
-          {!cls ? (
-            <div className="text-center py-16 text-sm text-gray-400">Enter a class to see students</div>
-          ) : classLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse" />)}</div>
-          ) : !classResults?.data.length ? (
-            <div className="text-center py-16 text-sm text-gray-400">No students found in this class</div>
-          ) : (
-            <div className="space-y-2">
-              {classResults.data.map((s) => <StudentRow key={s._id} student={s} onClick={() => onSelectStudent(s)} />)}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Tab: Fee Type */}
-      {tab === 'feeType' && (
-        <>
-          <div className="relative mb-4">
-            <select
-              value={feeHead} onChange={(e) => setFeeHead(e.target.value as FeeHead)}
-              className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 appearance-none pr-10"
-            >
-              {FEE_HEADS.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
-            </select>
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-          <p className="text-xs text-gray-400 mb-3 px-1">Students with pending {FEE_HEADS.find((h) => h.value === feeHead)?.label}</p>
-          {feeTypeLoading ? (
-            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse" />)}</div>
-          ) : !pendingByFeeType.length ? (
-            <div className="text-center py-16 text-sm text-gray-400">No pending fees of this type</div>
-          ) : (
-            <div className="space-y-2">
-              {pendingByFeeType.map((f) => (
-                <button
-                  key={f._id}
-                  onClick={() => onSelectFee(f)}
-                  className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:border-[#5B5CEB]/30 hover:shadow-md transition-all text-left"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-sm shrink-0">
-                    {f.studentName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{f.studentName}</p>
-                    <p className="text-xs text-gray-400">Class {f.class}-{f.section} · Due {new Date(f.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
-                  </div>
-                  <p className="text-sm font-bold text-amber-600 shrink-0">{fmt(f.balance)}</p>
-                </button>
-              ))}
-            </div>
-          )}
-        </>
+      {isLoading ? (
+        <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse" />)}</div>
+      ) : !narrowedMatches.length ? (
+        <div className="text-center py-16 text-sm text-gray-400">
+          {debounced ? 'No students found' : 'No students to show'}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {narrowedMatches.map((s) => (
+            <StudentRow key={s._id} student={s} onClick={() => onSelectStudent(s)} showFatherName={hasCollision} />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -240,7 +111,7 @@ function StudentRow({ student, onClick, showFatherName }: { student: Student; on
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 hover:border-[#5B5CEB]/30 hover:shadow-md transition-all text-left"
+      className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:border-[#5B5CEB]/40 hover:shadow-md transition-all text-left"
     >
       <div className="w-10 h-10 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-sm shrink-0">
         {student.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
@@ -256,9 +127,9 @@ function StudentRow({ student, onClick, showFatherName }: { student: Student; on
   );
 }
 
-// ── Student fee summary + collection step ─────────────────────────────────────
+// ── Green detail card + Monthly Fees Record ────────────────────────────────────
 
-function StudentFeeStep({
+function StudentDetailCard({
   student, onBack, onSelectFee,
 }: {
   student: Student; onBack: () => void; onSelectFee: (fee: FeeRecord) => void;
@@ -266,16 +137,14 @@ function StudentFeeStep({
   const { data: fees, isLoading } = useStudentFees(student._id);
   const [addFeeOpen, setAddFeeOpen] = useState(false);
 
-  const { totalCharged, totalPaid, totalBalance, unpaid } = useMemo(() => {
+  const unpaid = useMemo(() => {
     const list = fees ?? [];
-    const unpaidList = list.filter((f) => f.status !== 'paid' && f.status !== 'waived');
-    return {
-      totalCharged: list.reduce((s, f) => s + f.totalAmount, 0),
-      totalPaid:    list.reduce((s, f) => s + f.paidAmount, 0),
-      totalBalance: list.reduce((s, f) => s + f.balance, 0),
-      unpaid: unpaidList,
-    };
+    return [...list]
+      .filter((f) => f.status !== 'paid' && f.status !== 'waived')
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [fees]);
+
+  const current = unpaid[0];
 
   return (
     <div className="px-4 py-5 max-w-lg mx-auto space-y-4">
@@ -283,31 +152,39 @@ function StudentFeeStep({
         <ArrowLeft className="w-3.5 h-3.5" /> Search another student
       </button>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      {/* Green detail tab */}
+      <div className="bg-emerald-50 rounded-2xl border border-emerald-200 shadow-sm p-5">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-lg shrink-0">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-700 font-bold text-lg shrink-0">
             {student.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-gray-900 truncate">{student.fullName}</p>
-            <p className="text-sm text-gray-500">Class {student.class}-{student.section} · {student.admissionNumber}</p>
+            <p className="text-sm text-gray-600">{student.admissionNumber}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50 text-xs text-gray-500">
-          <span className="flex items-center gap-1.5"><User2 className="w-3.5 h-3.5" /> {student.fatherName || '—'}</span>
-          <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {student.parentPhone || '—'}</span>
-        </div>
 
-        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-50">
-          <div className="text-center"><p className="text-xs text-gray-400">Total Fee</p><p className="text-sm font-bold text-gray-800">{fmt(totalCharged)}</p></div>
-          <div className="text-center"><p className="text-xs text-gray-400">Paid</p><p className="text-sm font-bold text-emerald-600">{fmt(totalPaid)}</p></div>
-          <div className="text-center"><p className="text-xs text-gray-400">Pending</p><p className="text-sm font-bold text-amber-600">{fmt(totalBalance)}</p></div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4 pt-4 border-t border-emerald-100 text-sm">
+          <div><p className="text-xs text-gray-500">Father's Name</p><p className="font-semibold text-gray-800">{student.fatherName || '—'}</p></div>
+          <div><p className="text-xs text-gray-500">Class</p><p className="font-semibold text-gray-800">{student.class}</p></div>
+          <div><p className="text-xs text-gray-500">Section</p><p className="font-semibold text-gray-800">{student.section}</p></div>
+          <div>
+            <p className="text-xs text-gray-500">Month of Fee Submission</p>
+            <p className="font-semibold text-gray-800">
+              {current ? (current.month || new Date(current.dueDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })) : '—'}
+            </p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-xs text-gray-500">Fees Amount</p>
+            <p className="font-bold text-gray-900 text-base">{current ? fmt(current.totalAmount) : '—'}</p>
+          </div>
         </div>
       </div>
 
+      {/* Monthly Fees Record — includes current + any pending (past) fees */}
       <div>
         <div className="flex items-center justify-between mb-2 px-1">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Pending Fee Records</h3>
+          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">Monthly Fees Record</h3>
           <button
             onClick={() => setAddFeeOpen(true)}
             className="text-xs font-semibold text-[#5B5CEB] hover:underline flex items-center gap-1"
@@ -318,7 +195,7 @@ function StudentFeeStep({
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 2 }).map((_, i) => <div key={i} className="h-20 bg-white rounded-xl border border-gray-100 animate-pulse" />)}</div>
         ) : !unpaid.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
             <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
             <p className="text-sm font-semibold text-gray-700">No pending fees</p>
             <p className="text-xs text-gray-400 mt-1 mb-4">Assign this month's fee to start collecting.</p>
@@ -332,10 +209,12 @@ function StudentFeeStep({
         ) : (
           <div className="space-y-2">
             {unpaid.map((fee) => (
-              <div key={fee._id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-3">
+              <div key={fee._id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{fee.description || fee.feeHead}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {fee.month || new Date(fee.dueDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                    </p>
                     <FeeStatusBadge status={fee.status} size="sm" />
                   </div>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -365,12 +244,22 @@ function StudentFeeStep({
   );
 }
 
-// ── Success screen ────────────────────────────────────────────────────────────
+// ── Receipt ────────────────────────────────────────────────────────────────────
+
+function ReceiptRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex justify-between text-sm py-1">
+      <span className="text-gray-500">{label}</span>
+      <span className="font-semibold text-gray-900 text-right">{value}</span>
+    </div>
+  );
+}
 
 function SuccessStep({
-  context, fee, amount, onDone,
+  context, fee, amount, paymentMode, receiptNumber, onDone,
 }: {
-  context: CollectContext; fee: FeeRecord; amount: number; onDone: () => void;
+  context: CollectContext; fee: FeeRecord; amount: number;
+  paymentMode: string; receiptNumber?: string; onDone: () => void;
 }) {
   const { mutateAsync: sendEmail, isPending: sending, error, isSuccess } = useSendReceiptEmail();
   const { mutateAsync: updateStudent } = useUpdateStudent(context.studentId ?? '');
@@ -400,17 +289,46 @@ function SuccessStep({
       <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-5 print:hidden">
         <CheckCircle2 className="w-10 h-10 text-emerald-600" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900">Payment Collected!</h2>
+      <h2 className="text-2xl font-bold text-gray-900 print:hidden">Payment Collected!</h2>
 
-      <div id="receipt-print-area" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5 w-full max-w-sm text-left">
-        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mb-3">Receipt</p>
-        <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-500">Student</span><span className="font-semibold text-gray-800">{context.studentName}</span></div>
-        <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-500">Class</span><span className="font-semibold text-gray-800">{context.class}-{context.section}</span></div>
-        <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-500">Fee</span><span className="font-semibold text-gray-800">{fee.description || fee.feeHead}</span></div>
-        <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-500">Date</span><span className="font-semibold text-gray-800">{new Date().toLocaleDateString('en-IN')}</span></div>
-        <div className="flex justify-between text-base mt-3 pt-3 border-t border-gray-100">
-          <span className="font-bold text-gray-900">Amount Paid</span>
-          <span className="font-bold text-emerald-600">{fmt(amount)}</span>
+      {/* Printable receipt — no input boxes, plain fields only */}
+      <div id="receipt-print-area" className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mt-5 w-full max-w-sm text-left">
+        <div className="text-center pb-3 border-b border-gray-200">
+          <p className="text-base font-bold text-gray-900">{SCHOOL_NAME}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{SCHOOL_ADDRESS}</p>
+          <p className="text-xs font-semibold text-gray-700 mt-2">Fee Receipt</p>
+        </div>
+
+        <div className="flex justify-between text-xs text-gray-500 mt-3">
+          <span>Bill No: <span className="font-semibold text-gray-800">{receiptNumber || '—'}</span></span>
+          <span>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <ReceiptRow label="Student Name" value={context.studentName} />
+          <ReceiptRow label="Father's Name" value={context.fatherName || '—'} />
+          <ReceiptRow label="Class" value={context.class} />
+          <ReceiptRow label="Section" value={context.section} />
+          <ReceiptRow label="Fee" value={fee.description || fee.feeHead} />
+          <ReceiptRow label="Payment Mode" value={<span className="capitalize">{paymentMode}</span>} />
+        </div>
+
+        <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+          <span className="font-bold text-gray-900 text-base">Amount Paid</span>
+          <span className="font-bold text-emerald-600 text-base">{fmt(amount)}</span>
+        </div>
+
+        <div className="flex justify-between items-end mt-10 pt-3">
+          <div className="text-center">
+            <div className="w-32 border-t border-gray-400 pt-1">
+              <p className="text-[11px] text-gray-500">Student/Guardian Signature</p>
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="w-32 border-t border-gray-400 pt-1">
+              <p className="text-[11px] text-gray-500">Accountant Stamp/Signature</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -466,9 +384,10 @@ export function FeeCollectionPage() {
   const preselectStudentId = searchParams.get('studentId');
 
   const [student, setStudent] = useState<Student | null>(null);
-  const [directFeeContext, setDirectFeeContext] = useState<CollectContext | null>(null);
   const [payingFee, setPayingFee] = useState<FeeRecord | null>(null);
-  const [success, setSuccess] = useState<{ context: CollectContext; fee: FeeRecord; amount: number } | null>(null);
+  const [success, setSuccess] = useState<{
+    context: CollectContext; fee: FeeRecord; amount: number; paymentMode: string; receiptNumber?: string;
+  } | null>(null);
 
   const { data: preselected } = useStudentsPaginated(
     preselectStudentId ? { search: preselectStudentId, limit: 1 } : {},
@@ -494,12 +413,14 @@ export function FeeCollectionPage() {
         context={success.context}
         fee={success.fee}
         amount={success.amount}
-        onDone={() => { setSuccess(null); setStudent(null); setDirectFeeContext(null); }}
+        paymentMode={success.paymentMode}
+        receiptNumber={success.receiptNumber}
+        onDone={() => { setSuccess(null); setStudent(null); }}
       />
     );
   }
 
-  const activeContext = student ? studentToContext(student) : directFeeContext;
+  const activeContext = student ? studentToContext(student) : null;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -515,23 +436,23 @@ export function FeeCollectionPage() {
       </div>
 
       {student ? (
-        <StudentFeeStep student={student} onBack={() => setStudent(null)} onSelectFee={setPayingFee} />
-      ) : !directFeeContext ? (
-        <SearchStep
-          onSelectStudent={setStudent}
-          onSelectFee={(fee) => {
-            setDirectFeeContext({ studentName: fee.studentName, class: fee.class, section: fee.section, studentId: fee.studentId });
-            setPayingFee(fee);
-          }}
-        />
-      ) : null}
+        <StudentDetailCard student={student} onBack={() => setStudent(null)} onSelectFee={setPayingFee} />
+      ) : (
+        <StudentSearchPanel onSelectStudent={setStudent} />
+      )}
 
       {payingFee && activeContext && (
         <CollectPaymentModal
           fee={payingFee}
-          onClose={() => { setPayingFee(null); if (!student) setDirectFeeContext(null); }}
+          onClose={() => setPayingFee(null)}
           onSuccess={(payment) => {
-            setSuccess({ context: activeContext, fee: payingFee, amount: payment.amount });
+            setSuccess({
+              context: activeContext,
+              fee: payingFee,
+              amount: payment.amount,
+              paymentMode: payment.paymentMode,
+              receiptNumber: payment.receiptNumber,
+            });
             setPayingFee(null);
           }}
         />
