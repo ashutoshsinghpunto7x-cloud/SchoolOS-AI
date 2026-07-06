@@ -4,6 +4,7 @@ import {
   ArrowLeft, Search, CheckCircle2, Printer, Download, IndianRupee, Mail, Loader2,
   ChevronDown, X, CalendarRange, History, Pencil, Check, Banknote, AlertCircle,
   ShieldCheck, User, GraduationCap, FolderKanban, CreditCard, MapPin, FileText, Calendar,
+  type LucideIcon,
 } from 'lucide-react';
 import { useStudentsPaginated, useUpdateStudent, useUpdateFeeProfile } from '@/features/students/hooks/useStudents';
 import { useStudentFees, useRecordBulkPayment, useCreateFeeRecord, useRecordPayment } from '@/features/fees/hooks/useFees';
@@ -1102,7 +1103,7 @@ function StampSeal({ className = '' }: { className?: string }) {
 
 function ClassicRow({
   icon: Icon, label, value,
-}: { icon: React.ComponentType<{ className?: string }>; label: string; value: React.ReactNode }) {
+}: { icon: LucideIcon; label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-b-0">
       <span className="flex items-center gap-3 text-gray-500">
