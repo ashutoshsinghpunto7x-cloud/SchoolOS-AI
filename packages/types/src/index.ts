@@ -205,6 +205,7 @@ export interface StudentEmergencyContact {
 export interface Student extends BaseEntity {
   fullName: string;
   admissionNumber: string;
+  rollNumber?: string;
   class: string;
   section: string;
   gender: Gender;
@@ -220,6 +221,8 @@ export interface Student extends BaseEntity {
   tags: string[];
   emergencyContact?: StudentEmergencyContact;
   remarks?: string;
+  /** Recurring monthly tuition fee amount set by admin — drives auto-generated tuition FeeRecords. */
+  monthlyTuitionFee?: number;
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
@@ -239,6 +242,7 @@ export interface StudentNote extends BaseEntity {
 
 export interface CreateStudentPayload {
   fullName: string;
+  rollNumber?: string;
   class: string;
   section: string;
   gender?: Gender;
@@ -253,9 +257,21 @@ export interface CreateStudentPayload {
   tags?: string[];
   emergencyContact?: StudentEmergencyContact;
   remarks?: string;
+  monthlyTuitionFee?: number;
 }
 
 export type UpdateStudentPayload = Partial<CreateStudentPayload>;
+
+export interface UpdateRollNumberPayload {
+  rollNumber?: string;
+}
+
+export interface UpdateFeeProfilePayload {
+  rollNumber?: string;
+  class?: string;
+  section?: string;
+  monthlyTuitionFee?: number;
+}
 
 export interface StudentListOptions {
   page?: number;
@@ -733,6 +749,8 @@ export interface FeePayment extends BaseEntity {
   recordedById: string;
   recordedByName: string;
   receiptNumber?: string;
+  /** Shared bill number across all months paid together in one multi-month collection. */
+  batchId?: string;
   isDeleted: boolean;
 }
 
@@ -789,6 +807,29 @@ export interface RecordPaymentPayload {
   remarks?: string;
 }
 
+/** One month's worth of tuition fee to pay as part of a multi-month collection (arrears, current, or advance). */
+export interface BulkPaymentMonthInput {
+  month: string;
+  academicYear: string;
+  /** Only needed when the FeeRecord for this month doesn't exist yet — used to auto-create it. */
+  dueDate?: string;
+  amount: number;
+}
+
+export interface RecordBulkPaymentPayload {
+  studentId: string;
+  months: BulkPaymentMonthInput[];
+  paymentDate: string;
+  paymentMode: PaymentMode;
+  referenceNumber?: string;
+  remarks?: string;
+}
+
+export interface RecordBulkPaymentResult {
+  batchId: string;
+  results: RecordPaymentResult[];
+}
+
 export interface FeeListOptions {
   page?: number;
   limit?: number;
@@ -821,7 +862,7 @@ export interface FeeRecordWithPayments {
 
 // ── Accountant Workspace: Salary ─────────────────────────────────────────────
 
-export type SalaryStatus = 'pending' | 'paid';
+export type SalaryStatus = 'scheduled' | 'pending' | 'paid';
 
 export interface SalaryRecord extends BaseEntity {
   employeeName: string;
@@ -830,6 +871,8 @@ export interface SalaryRecord extends BaseEntity {
   month: string;
   year: number;
   amount: number;
+  /** Salary becomes 'pending' automatically once this date passes. */
+  dueDate: string;
   status: SalaryStatus;
   paidDate?: string;
   paymentMode?: PaymentMode;
@@ -846,6 +889,7 @@ export interface CreateSalaryRecordPayload {
   month: string;
   year: number;
   amount: number;
+  dueDate: string;
   notes?: string;
 }
 
@@ -855,6 +899,7 @@ export interface UpdateSalaryRecordPayload {
   month?: string;
   year?: number;
   amount?: number;
+  dueDate?: string;
   notes?: string;
 }
 
@@ -874,8 +919,10 @@ export interface SalaryListOptions {
 }
 
 export interface SalarySummary {
+  totalScheduled: number;
   totalPending: number;
   totalPaid: number;
+  scheduledCount: number;
   pendingCount: number;
   paidCount: number;
 }
@@ -987,9 +1034,35 @@ export interface ClassDefaulterGroup {
   section: string;
   totalBalance: number;
   students: FeeDefaulter[];
+  classTeacherId?: string;
+  classTeacherName?: string;
 }
 
 export interface SendDefaultersToTeacherPayload {
+  class: string;
+  section: string;
+  teacherId: string;
+}
+
+// ── Class Teacher Assignment ─────────────────────────────────────────────────
+
+export interface ClassTeacherAssignment extends BaseEntity {
+  class: string;
+  section: string;
+  teacherId: string;
+  teacherName: string;
+  updatedBy?: string;
+}
+
+export interface ClassSectionSummary {
+  class: string;
+  section: string;
+  studentCount: number;
+  teacherId?: string;
+  teacherName?: string;
+}
+
+export interface UpsertClassTeacherPayload {
   class: string;
   section: string;
   teacherId: string;
@@ -1003,6 +1076,69 @@ export interface SendReceiptEmailPayload {
   feeDescription: string;
   amount: number;
   paymentDate: string;
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request';
+
+export interface AppNotification {
+  _id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  payload?: {
+    class?: string;
+    section?: string;
+    students?: FeeDefaulter[];
+    studentChangeRequestId?: string;
+    [key: string]: unknown;
+  };
+  senderName: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResult {
+  notifications: AppNotification[];
+  unreadCount: number;
+}
+
+export interface SendMessageToTeachersPayload {
+  teacherIds: string[];
+  title: string;
+  message: string;
+}
+
+export interface SendMessageToTeachersResult {
+  sent: number;
+  skipped: string[];
+}
+
+// ── Student Change Requests ───────────────────────────────────────────────────
+
+export type StudentChangeRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface StudentChangeRequest extends BaseEntity {
+  studentId: string;
+  studentName: string;
+  requestedByUserId: string;
+  requestedByName: string;
+  changes: Record<string, unknown>;
+  previousValues: Record<string, unknown>;
+  status: StudentChangeRequestStatus;
+  reviewedByName?: string;
+  reviewNote?: string;
+  reviewedAt?: string;
+}
+
+export interface CreateChangeRequestPayload {
+  studentId: string;
+  changes: Record<string, unknown>;
+}
+
+export interface RejectChangeRequestPayload {
+  reviewNote?: string;
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────

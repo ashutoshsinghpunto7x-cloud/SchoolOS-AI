@@ -1,13 +1,17 @@
-import { Briefcase, Phone, Eye, Pencil } from 'lucide-react';
+import { Briefcase, Phone, Eye, Pencil, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { EmploymentStatusBadge } from './EmploymentStatusBadge';
+import { cn } from '@/lib/utils';
 import type { Teacher } from '@schoolos/types';
 
 interface TeacherCardProps {
   teacher: Teacher;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (teacher: Teacher) => void;
 }
 
-export const TeacherCard = ({ teacher }: TeacherCardProps) => {
+export const TeacherCard = ({ teacher, selectable, selected, onToggleSelect }: TeacherCardProps) => {
   const navigate = useNavigate();
 
   const initials = teacher.fullName
@@ -21,7 +25,24 @@ export const TeacherCard = ({ teacher }: TeacherCardProps) => {
   const extraSubjects  = teacher.subjects.length > 2 ? `+${teacher.subjects.length - 2}` : '';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out p-6 flex flex-col gap-5">
+    <div
+      onClick={selectable ? () => onToggleSelect?.(teacher) : undefined}
+      className={cn(
+        'bg-white rounded-2xl border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out p-6 flex flex-col gap-5 relative',
+        selectable && 'cursor-pointer',
+        selected ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-gray-100',
+      )}
+    >
+      {selectable && (
+        <div
+          className={cn(
+            'absolute top-4 right-4 w-5 h-5 rounded-md border flex items-center justify-center',
+            selected ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-gray-300',
+          )}
+        >
+          {selected && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+        </div>
+      )}
       {/* Top row: avatar + name + status */}
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -78,27 +99,29 @@ export const TeacherCard = ({ teacher }: TeacherCardProps) => {
       )}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => navigate(`/teachers/${teacher._id}`)}
-          className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
-                     flex items-center justify-center gap-2
-                     text-sm font-semibold text-white transition-colors duration-150"
-          type="button"
-        >
-          <Eye className="w-4 h-4" />
-          View Profile
-        </button>
-        <button
-          onClick={() => navigate(`/teachers/${teacher._id}/edit`)}
-          className="h-11 px-4 rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200
-                     flex items-center justify-center
-                     text-sm font-semibold text-gray-600 transition-colors duration-150"
-          type="button"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-      </div>
+      {!selectable && (
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate(`/teachers/${teacher._id}`)}
+            className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
+                       flex items-center justify-center gap-2
+                       text-sm font-semibold text-white transition-colors duration-150"
+            type="button"
+          >
+            <Eye className="w-4 h-4" />
+            View Profile
+          </button>
+          <button
+            onClick={() => navigate(`/teachers/${teacher._id}/edit`)}
+            className="h-11 px-4 rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border border-gray-200
+                       flex items-center justify-center
+                       text-sm font-semibold text-gray-600 transition-colors duration-150"
+            type="button"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

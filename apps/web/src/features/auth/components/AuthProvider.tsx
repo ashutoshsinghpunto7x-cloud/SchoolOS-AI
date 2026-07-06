@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
+import { resetAuthRefreshState } from '@/services/api';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthUser } from '@schoolos/types';
 
@@ -31,17 +32,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string): Promise<AuthUser> => {
     const data = await authApi.login({ email, password });
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     setUser(data.user);
+    return data.user;
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
     await authApi.logout();
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    resetAuthRefreshState();
     setUser(null);
     navigate('/login', { replace: true });
   }, [navigate]);

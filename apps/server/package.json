@@ -3,17 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "cross-env UV_THREADPOOL_SIZE=16 tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "type-check": "tsc --noEmit"
+    "start": "cross-env UV_THREADPOOL_SIZE=16 node dist/server.js",
+    "type-check": "tsc --noEmit",
+    "seed:teachers": "tsx src/scripts/seed-teachers.ts"
   },
   "dependencies": {
     "@schoolos/types": "*",
     "@schoolos/utils": "*",
     "@types/multer": "^2.1.0",
     "axios": "^1.18.1",
-    "bcryptjs": "^3.0.3",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -28,11 +29,12 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.10.4",
+    "cross-env": "^10.1.0",
     "tsx": "^4.6.2",
     "typescript": "^5.3.2"
   }

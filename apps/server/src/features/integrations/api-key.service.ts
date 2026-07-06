@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import crypto from 'crypto';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import type { AuthContext } from '../../lib/auth-context';
 import { apiKeyRepository } from './api-key.repository';
 import { auditService } from '../audit/audit.service';

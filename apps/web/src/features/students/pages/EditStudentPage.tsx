@@ -14,7 +14,11 @@ export const EditStudentPage = () => {
 
   const handleSubmit = async (values: StudentFormValues) => {
     try {
-      await updateStudent(values);
+      const { monthlyTuitionFee, ...rest } = values;
+      await updateStudent({
+        ...rest,
+        monthlyTuitionFee: monthlyTuitionFee ? Number(monthlyTuitionFee) : undefined,
+      });
       toast.success('Student updated successfully!');
       navigate(`/students/${id}`);
     } catch (err) {

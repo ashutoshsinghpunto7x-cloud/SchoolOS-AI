@@ -21,6 +21,9 @@ import teacherWorkspaceRouter from '../features/teacher-workspace/teacher-worksp
 import salaryRouter from '../features/salary/salary.routes';
 import expenseRouter from '../features/expenses/expense.routes';
 import accountantWorkspaceRouter from '../features/accountant-workspace/accountant-workspace.routes';
+import notificationRouter from '../features/notifications/notification.routes';
+import classTeacherRouter from '../features/classes/class-teacher.routes';
+import studentChangeRequestRouter from '../features/student-change-requests/student-change-request.routes';
 
 const router = Router();
 
@@ -46,5 +49,8 @@ router.use('/teacher-workspace', teacherWorkspaceRouter);
 router.use('/salary', salaryRouter);
 router.use('/expenses', expenseRouter);
 router.use('/accountant-workspace', accountantWorkspaceRouter);
+router.use('/notifications', notificationRouter);
+router.use('/classes', classTeacherRouter);
+router.use('/student-change-requests', studentChangeRequestRouter);
 
 export default router;

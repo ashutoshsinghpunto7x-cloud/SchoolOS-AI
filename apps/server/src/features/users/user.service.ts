@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { userRepository, FindUsersOptions, PaginatedUsers } from './user.repository';
 import { createUserSchema, updateUserSchema, statusChangeSchema } from './user.validation';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';

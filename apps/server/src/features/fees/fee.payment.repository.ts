@@ -25,6 +25,7 @@ export interface CreatePaymentData {
   recordedById: string;
   recordedByName: string;
   receiptNumber: string;
+  batchId?: string;
 }
 
 export const feePaymentRepository = {
@@ -47,6 +48,11 @@ export const feePaymentRepository = {
 
   async findByReceiptNumber(schoolId: string, receiptNumber: string): Promise<IFeePayment | null> {
     return FeePayment.findOne({ schoolId, receiptNumber, isDeleted: false }).lean<IFeePayment>();
+  },
+
+  /** All payments sharing a multi-month collection's bill number, for printing a consolidated receipt. */
+  async findByBatchId(schoolId: string, batchId: string): Promise<IFeePayment[]> {
+    return FeePayment.find({ schoolId, batchId, isDeleted: false }).sort({ createdAt: 1 }).lean<IFeePayment[]>();
   },
 
   async findByFeeRecord(feeRecordId: string, schoolId: string): Promise<IFeePayment[]> {

@@ -51,7 +51,7 @@ Guidelines:
 Language: Match the language the parent uses. Default to Hindi or English.
 `.trim(),
     buildFirstMessage: (ctx) =>
-      `Hello, may I speak with ${ctx.parentName}? This is SchoolOS AI calling on behalf of ${ctx.schoolName} regarding ${ctx.studentName}.`,
+      `Hello, may I speak with ${ctx.parentName}? This is FNIC calling on behalf of ${ctx.schoolName} regarding ${ctx.studentName}.`,
     extractionHint: 'Extract: concerns raised, action items, follow-up needed, overall parent sentiment.',
   },
 

@@ -6,6 +6,7 @@ import {
   createFeeRecordSchema,
   updateFeeRecordSchema,
   recordPaymentSchema,
+  recordBulkPaymentSchema,
   listFeesSchema,
   studentFeesSchema,
   outstandingSchema,
@@ -15,9 +16,56 @@ import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { studentRepository } from '../students/student.repository';
 
+// ── Academic-year month helpers (Indian school year: April → March) ────────────
+
+const ACADEMIC_MONTH_ORDER = [
+  'April', 'May', 'June', 'July', 'August', 'September',
+  'October', 'November', 'December', 'January', 'February', 'March',
+];
+
+/** Given "April".."March" + "2025-26", work out the next month + its academic year + calendar year. */
+function nextAcademicMonth(month: string, academicYear: string): { month: string; academicYear: string; calendarYear: number } | null {
+  const idx = ACADEMIC_MONTH_ORDER.indexOf(month);
+  const startYear = parseInt(academicYear.slice(0, 4), 10);
+  if (idx === -1 || Number.isNaN(startYear)) return null;
+
+  const nextIdx = (idx + 1) % 12;
+  const nextMonth = ACADEMIC_MONTH_ORDER[nextIdx];
+  const rollsOver = idx === 11; // March → April of the next academic year
+  const nextAcademicYear = rollsOver
+    ? `${startYear + 1}-${String(startYear + 2).slice(-2)}`
+    : academicYear;
+  // April..December fall in startYear; January..March fall in startYear + 1.
+  const calendarYear = nextIdx <= 8 ? (rollsOver ? startYear + 1 : startYear) : startYear + 1;
+
+  return { month: nextMonth, academicYear: nextAcademicYear, calendarYear };
+}
+
+function calendarMonthIndex(month: string): number {
+  // JS Date months are 0-indexed, calendar order (not academic order).
+  return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(month);
+}
+
+// ── Overdue sweep ────────────────────────────────────────────────────────────
+// The server may run serverless (Vercel), so a persistent setInterval cron isn't
+// reliable — instead, opportunistically flip pending/partial fees past their due
+// date to 'overdue' whenever outstanding/summary/defaulter data is read, throttled
+// to once/hour per instance so it doesn't run on every request.
+
+let lastOverdueSweep = 0;
+async function ensureOverdueMarked(): Promise<void> {
+  const now = Date.now();
+  if (now - lastOverdueSweep < 60 * 60 * 1000) return;
+  lastOverdueSweep = now;
+  await feeRepository.markOverdue(new Date()).catch(() => {});
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const feeService = {
+  /** Exposed so other features (e.g. the accountant dashboard's defaulters view) can trigger the same sweep before reading. */
+  ensureOverdueMarked,
+
   async createFeeRecord(rawInput: unknown, ctx: AuthContext): Promise<IFeeRecord> {
     const data = createFeeRecordSchema.parse(rawInput);
 
@@ -222,10 +270,152 @@ export const feeService = {
       schoolId:        ctx.schoolId,
     });
 
+    // Once a month's tuition fee is fully paid, line up next month's fee automatically
+    // so the accountant doesn't have to re-create it by hand every month.
+    if (updatedRecord.status === 'paid' && updatedRecord.feeHead === 'tuition') {
+      await feeService.rollForwardTuitionFee(updatedRecord, ctx).catch(() => {});
+    }
+
     return { record: updatedRecord, payment };
   },
 
+  /** Create next month's tuition FeeRecord for a student once the current month is fully paid. No-op if already exists or no recurring amount is set. */
+  async rollForwardTuitionFee(record: IFeeRecord, ctx: AuthContext): Promise<IFeeRecord | null> {
+    if (!record.month) return null;
+    const next = nextAcademicMonth(record.month, record.academicYear);
+    if (!next) return null;
+
+    const student = await studentRepository.findById(record.studentId, ctx.schoolId);
+    if (!student?.monthlyTuitionFee) return null;
+
+    const existing = await feeRepository.findByStudentAndMonth(
+      ctx.schoolId, record.studentId, 'tuition', next.month, next.academicYear,
+    );
+    if (existing) return null;
+
+    const dueDate = new Date(next.calendarYear, calendarMonthIndex(next.month), 10);
+
+    return feeRepository.create({
+      studentId:       student._id.toString(),
+      studentName:     student.fullName,
+      admissionNumber: student.admissionNumber,
+      class:           student.class,
+      section:         student.section,
+      schoolId:        ctx.schoolId,
+      feeHead:         'tuition',
+      description:     `${next.month} Tuition Fee`,
+      academicYear:    next.academicYear,
+      month:           next.month,
+      dueDate,
+      totalAmount:     student.monthlyTuitionFee,
+      discountAmount:  0,
+      waivedAmount:    0,
+      paidAmount:      0,
+      balance:         student.monthlyTuitionFee,
+      status:          'pending',
+      createdBy:       'System (auto-recurring)',
+    });
+  },
+
+  /**
+   * Pay for several months in one go — covers arrears (unpaid past months), the
+   * current month, and advance payments (future months), e.g. a full year at once.
+   * Missing FeeRecords for future months are auto-created from the student's
+   * monthlyTuitionFee. All payments share one printable batch bill number.
+   */
+  async recordBulkPayment(
+    rawInput: unknown,
+    ctx: AuthContext,
+  ): Promise<{ batchId: string; results: { record: IFeeRecord; payment: IFeePayment }[] }> {
+    const data = recordBulkPaymentSchema.parse(rawInput);
+
+    const student = await studentRepository.findById(data.studentId, ctx.schoolId);
+    if (!student) throw new NotFoundError('Student');
+
+    const batchId = await feePaymentRepository.generateReceiptNumber(ctx.schoolId, data.months[0].academicYear);
+    const results: { record: IFeeRecord; payment: IFeePayment }[] = [];
+
+    for (const entry of data.months) {
+      let feeRecord = await feeRepository.findByStudentAndMonth(
+        ctx.schoolId, data.studentId, 'tuition', entry.month, entry.academicYear,
+      );
+
+      if (!feeRecord) {
+        const amount = entry.amount ?? student.monthlyTuitionFee;
+        if (!amount) throw new ValidationError(`No amount set for ${entry.month} — set a monthly tuition fee for this student first`);
+        const dueDate = entry.dueDate
+          ? new Date(entry.dueDate)
+          : new Date(new Date().getFullYear(), calendarMonthIndex(entry.month), 10);
+        feeRecord = await feeRepository.create({
+          studentId:       student._id.toString(),
+          studentName:     student.fullName,
+          admissionNumber: student.admissionNumber,
+          class:           student.class,
+          section:         student.section,
+          schoolId:        ctx.schoolId,
+          feeHead:         'tuition',
+          description:     `${entry.month} Tuition Fee`,
+          academicYear:    entry.academicYear,
+          month:           entry.month,
+          dueDate,
+          totalAmount:     amount,
+          discountAmount:  0,
+          waivedAmount:    0,
+          paidAmount:      0,
+          balance:         amount,
+          status:          'pending',
+          createdBy:       ctx.displayName,
+        });
+      }
+
+      if (feeRecord.status === 'paid') continue; // skip months already settled
+      const payAmount = Math.min(entry.amount, feeRecord.balance);
+      if (payAmount <= 0) continue;
+
+      const receiptNumber = await feePaymentRepository.generateReceiptNumber(ctx.schoolId, feeRecord.academicYear);
+      const payment = await feePaymentRepository.create({
+        feeRecordId:     feeRecord._id.toString(),
+        studentId:       data.studentId,
+        schoolId:        ctx.schoolId,
+        amount:          payAmount,
+        paymentDate:     new Date(data.paymentDate),
+        paymentMode:     data.paymentMode,
+        referenceNumber: data.referenceNumber,
+        remarks:         data.remarks,
+        recordedById:    ctx.userId,
+        recordedByName:  ctx.displayName,
+        receiptNumber,
+        batchId,
+      });
+
+      const updatedRecord = await feeRepository.applyPayment(
+        feeRecord._id.toString(), ctx.schoolId, payAmount, ctx.displayName,
+      );
+      if (!updatedRecord) continue;
+
+      if (updatedRecord.status === 'paid' && updatedRecord.feeHead === 'tuition') {
+        await feeService.rollForwardTuitionFee(updatedRecord, ctx).catch(() => {});
+      }
+
+      results.push({ record: updatedRecord, payment });
+    }
+
+    auditService.log({
+      userId:          ctx.userId,
+      userDisplayName: ctx.displayName,
+      action:          'fee.bulk_payment_recorded',
+      resource:        'fees',
+      resourceId:      data.studentId,
+      details:         { batchId, months: data.months.map((m) => m.month), count: results.length },
+      ip:              ctx.ip,
+      schoolId:        ctx.schoolId,
+    });
+
+    return { batchId, results };
+  },
+
   async getOutstanding(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedFees> {
+    await ensureOverdueMarked();
     const opts = outstandingSchema.parse(rawQuery);
     return feeRepository.findOutstanding(ctx.schoolId, {
       class:   opts.class,
@@ -237,6 +427,7 @@ export const feeService = {
   },
 
   async getSummary(ctx: AuthContext, academicYear?: string): Promise<FeeCollectionSummary> {
+    await ensureOverdueMarked();
     return feeRepository.getSummary(ctx.schoolId, { academicYear });
   },
 

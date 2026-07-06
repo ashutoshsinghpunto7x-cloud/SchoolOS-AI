@@ -31,6 +31,15 @@ export const feeController = {
     } catch (err) { next(err); }
   },
 
+  /** POST /fees/payment/bulk — pay several months (arrears/current/advance) at once */
+  async recordBulkPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await feeService.recordBulkPayment(req.body, ctx);
+      sendCreated(res, result, 'Payment recorded successfully');
+    } catch (err) { next(err); }
+  },
+
   /** GET /fees/outstanding — pending/overdue records */
   async getOutstanding(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

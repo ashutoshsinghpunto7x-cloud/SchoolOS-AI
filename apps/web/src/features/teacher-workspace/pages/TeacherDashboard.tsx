@@ -280,6 +280,16 @@ export function TeacherDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Mark Attendance CTA */}
+        <button
+          type="button"
+          onClick={() => (currentPeriod ? goToAttendance(currentPeriod.cls) : navigate('/teacher/classes'))}
+          className="mt-4 w-full h-12 bg-white text-[#5B5CEB] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
+        >
+          <CalendarCheck className="w-[18px] h-[18px]" />
+          Mark Attendance
+        </button>
       </div>
 
       <div className="px-4 py-5 space-y-6">

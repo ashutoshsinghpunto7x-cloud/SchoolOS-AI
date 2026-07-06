@@ -11,6 +11,7 @@ import type {
   CreateFeeRecordPayload,
   UpdateFeeRecordPayload,
   RecordPaymentPayload,
+  RecordBulkPaymentPayload,
 } from '@schoolos/types';
 
 // ── Query keys ────────────────────────────────────────────────────────────────
@@ -91,6 +92,14 @@ export const useRecordPayment = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: RecordPaymentPayload) => feesApi.recordPayment(payload),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+  });
+};
+
+export const useRecordBulkPayment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RecordBulkPaymentPayload) => feesApi.recordBulkPayment(payload),
     onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
   });
 };

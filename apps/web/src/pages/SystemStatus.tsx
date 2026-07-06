@@ -27,7 +27,7 @@ export const SystemStatus = () => {
 
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            SchoolOS AI
+            FNIC
           </h1>
           <p className="text-sm text-muted-foreground">Project Foundation</p>
         </div>

@@ -45,6 +45,9 @@ Thumbs.db
 # Testing
 coverage/
 
+# Generated load-test credentials — plaintext passwords, never commit
+performance-testing/*.csv
+
 # Vite
 .vite/
 

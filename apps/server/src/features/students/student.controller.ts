@@ -50,6 +50,22 @@ export const studentController = {
     } catch (err) { next(err); }
   },
 
+  async updateRollNumber(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const student = await studentService.updateRollNumber(req.params.id, req.body, ctx);
+      sendSuccess(res, student, 'Roll number updated');
+    } catch (err) { next(err); }
+  },
+
+  async updateFeeProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const student = await studentService.updateFeeProfile(req.params.id, req.body, ctx);
+      sendSuccess(res, student, 'Student details updated');
+    } catch (err) { next(err); }
+  },
+
   async changeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);

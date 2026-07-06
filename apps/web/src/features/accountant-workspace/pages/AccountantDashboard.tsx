@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, ChevronRight, MoreHorizontal, MessageSquare,
+  AlertCircle, ChevronRight, Loader2, Search
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
-import type { ClassDefaulterGroup, FeeDefaulter } from '@schoolos/types';
-import { cn } from '@/lib/utils';
+import type { ClassDefaulterGroup } from '@schoolos/types';
+import { motion } from 'framer-motion';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -16,20 +16,47 @@ const fmt = (n: number) =>
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 
 function KpiCard({
-  label, value, trendLabel, onClick,
+  label, value, trendLabel, onClick, isLoading, delay,
 }: {
-  label: string; value: string; trendLabel: string; onClick: () => void;
+  label: string;
+  value: string;
+  trendLabel: string;
+  onClick: () => void;
+  isLoading?: boolean;
+  delay: number;
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
-      className="bg-white rounded-2xl border border-gray-300 shadow-sm p-4 text-left hover:border-[#5B5CEB]/40 hover:shadow-md transition-all duration-200"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 text-left hover:border-[#10B981]/25 hover:shadow-[0_8px_30px_rgba(16,185,129,0.03)] transition-all duration-300 flex flex-col justify-between h-[180px] w-full"
     >
-      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-gray-900 mt-1.5 tracking-tight truncate">{value}</p>
-      <p className="text-xs text-gray-400 mt-1.5">{trendLabel}</p>
-    </button>
+      <div className="space-y-4">
+        {/* Label - 12px */}
+        <p className="text-[12px] font-semibold text-gray-400 tracking-wide uppercase">{label}</p>
+        
+        {/* Value - Large numbers 48px */}
+        {isLoading ? (
+          <div className="h-10 bg-gray-100 rounded-md animate-pulse mt-2 w-32" />
+        ) : (
+          <p
+            title={value}
+            className="text-[34px] font-semibold text-gray-900 tracking-tight leading-none truncate"
+          >
+            {value}
+          </p>
+        )}
+      </div>
+      
+      {/* TrendLabel - 12px */}
+      <p className="text-[12px] font-semibold text-gray-400">
+        {trendLabel}
+      </p>
+    </motion.button>
   );
 }
 
@@ -37,54 +64,15 @@ function KpiCard({
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 animate-pulse">
-      <div className="w-9 h-9 bg-gray-100 rounded-full shrink-0" />
-      <div className="flex-1 space-y-1.5">
-        <div className="h-3 bg-gray-100 rounded w-2/3" />
-        <div className="h-2.5 bg-gray-100 rounded w-1/3" />
+    <div className="flex items-center justify-between py-3.5 border-b border-[#E8E8E8] animate-pulse">
+      <div className="space-y-1.5 flex-1">
+        <div className="h-3.5 bg-gray-100 rounded w-1/3" />
+        <div className="h-3 bg-gray-100 rounded w-1/4" />
       </div>
-      <div className="w-16 h-3 bg-gray-100 rounded" />
+      <div className="w-16 h-3.5 bg-gray-100 rounded" />
     </div>
   );
 }
-
-// ── Status Badge ──────────────────────────────────────────────────────────────
-
-function StatusBadge({ d }: { d: FeeDefaulter }) {
-  if (d.daysOverdue > 0) {
-    return (
-      <span className="inline-flex h-[22px] items-center px-2.5 rounded-full bg-red-50 text-red-600 text-[11px] font-semibold whitespace-nowrap border border-red-100">
-        Overdue
-      </span>
-    );
-  }
-  const days = Math.ceil((new Date(d.dueDate).getTime() - Date.now()) / 86_400_000);
-  if (days <= 7) {
-    return (
-      <span className="inline-flex h-[22px] items-center px-2.5 rounded-full bg-amber-50 text-amber-600 text-[11px] font-semibold whitespace-nowrap border border-amber-100">
-        Due Soon
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex h-[22px] items-center px-2.5 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-semibold whitespace-nowrap border border-emerald-100">
-      Normal
-    </span>
-  );
-}
-
-function avatarInitials(name: string) {
-  const p = name.trim().split(/\s+/);
-  return `${p[0]?.[0] ?? ''}${p[1]?.[0] ?? ''}`.toUpperCase();
-}
-
-const AVATAR_GRADIENTS = [
-  'from-blue-400 to-indigo-500',
-  'from-violet-400 to-purple-500',
-  'from-emerald-400 to-teal-500',
-  'from-pink-400 to-rose-500',
-  'from-amber-400 to-orange-500',
-];
 
 // ── KPI CONFIG ────────────────────────────────────────────────────────────────
 
@@ -126,7 +114,10 @@ function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], 
 export function AccountantDashboard() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useAccountantDashboard();
-  const { data: groupedDefaulters, isLoading: defaultersLoading } = useGroupedDefaulters();
+
+  const [wantsGroups, setWantsGroups] = useState(false);
+  const [pendingSend, setPendingSend] = useState<{ class: string; section: string } | null>(null);
+  const { data: groupedDefaulters, isFetching: groupsFetching } = useGroupedDefaulters(wantsGroups);
   const [sendingGroup, setSendingGroup] = useState<ClassDefaulterGroup | null>(null);
 
   const topDefaulters = useMemo(
@@ -137,125 +128,153 @@ export function AccountantDashboard() {
   const groupFor = (classLabel: string, section: string) =>
     groupedDefaulters?.find((g) => g.class === classLabel && g.section === section) ?? null;
 
+  function requestSend(classLabel: string, section: string) {
+    if (!wantsGroups) {
+      setWantsGroups(true);
+      setPendingSend({ class: classLabel, section });
+      return;
+    }
+    const g = groupFor(classLabel, section);
+    if (g) setSendingGroup(g);
+  }
+
+  useEffect(() => {
+    if (!pendingSend || !groupedDefaulters) return;
+    const g = groupFor(pendingSend.class, pendingSend.section);
+    if (g) setSendingGroup(g);
+    setPendingSend(null);
+  }, [groupedDefaulters, pendingSend]);
+
   const kpiCards = buildKpiCards(data, isLoading);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="px-4 py-5 space-y-5 max-w-7xl mx-auto lg:px-8">
+    <div className="min-h-screen bg-white">
+      <div className="p-8 space-y-6 max-w-7xl mx-auto">
 
         {/* ── KPI Cards ───────────────────────────────────────────────────── */}
         {isError ? (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 rounded-[18px] p-6 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <p className="text-sm font-semibold text-red-700">Failed to load dashboard. Please refresh.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {kpiCards.map((card) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {kpiCards.map((card, idx) => (
               <KpiCard
                 key={card.key}
                 label={card.label}
                 value={card.value}
                 trendLabel={card.trendLabel}
                 onClick={() => navigate(card.path)}
+                isLoading={isLoading}
+                delay={idx * 0.05}
               />
             ))}
           </div>
         )}
 
-        {/* ── Main grid ──────────────────────────────────────────────────── */}
-        <div className="grid lg:grid-cols-2 gap-4">
+        {/* ── Main content grid (Exactly 1.6x the KPI height: 288px) ───────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Collect Fees */}
-          <button
-            type="button"
-            onClick={() => navigate('/accountant/collect-fee')}
-            className="bg-white rounded-2xl border border-gray-300 shadow-sm p-5 text-left hover:border-[#5B5CEB]/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+          {/* Collect Fees Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 h-[288px] flex flex-col justify-between"
           >
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">Collect Fees</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Search a student and collect fees instantly</p>
-            </div>
-            <div className="mt-6 flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#5B5CEB]">Go to Collect Fees</span>
-              <ChevronRight className="w-4 h-4 text-[#5B5CEB]" />
-            </div>
-          </button>
-
-          {/* Fee Defaulters by Class */}
-          <section className="bg-white rounded-2xl border border-gray-300 shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="space-y-4">
               <div>
-                <h2 className="text-sm font-bold text-gray-900">Fee Defaulters by Class</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Students with pending fees</p>
+                <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Collect Fees</h2>
+                <p className="text-[12px] text-gray-400 font-medium mt-1">Search a student and collect fees instantly</p>
+              </div>
+
+              {/* Dummy Apple-like search bar */}
+              <div className="relative w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
+                <input
+                  type="text"
+                  readOnly
+                  onClick={() => navigate('/accountant/collect-fee')}
+                  placeholder="Search by student name, roll no. or class..."
+                  className="w-full h-10 pl-9.5 pr-4 rounded-xl bg-white border border-[#E8E8E8] text-sm text-gray-800 placeholder:text-gray-400 cursor-pointer focus:outline-none transition-colors hover:border-[#10B981]/20"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => navigate('/accountant/collect-fee')}
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200 self-start"
+            >
+              Go to Collect Fees
+              <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </button>
+          </motion.div>
+
+          {/* Fee Defaulters by Class Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+            className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 h-[288px] flex flex-col overflow-hidden"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-[#E8E8E8]">
+              <div>
+                <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Fee Defaulters by Class</h2>
+                <p className="text-[12px] text-gray-400 font-medium mt-0.5">Students with pending fees</p>
               </div>
               <button
                 onClick={() => navigate('/accountant/pending-fees')}
-                className="text-xs font-semibold text-[#5B5CEB] flex items-center gap-0.5 hover:underline shrink-0"
+                className="inline-flex items-center gap-1 h-7.5 px-3 rounded-xl bg-white border border-[#E8E8E8] text-[11px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200"
               >
-                View all <ChevronRight className="w-3.5 h-3.5" />
+                View all
+                <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
               </button>
             </div>
 
-            {defaultersLoading || isLoading ? (
-              <div className="divide-y divide-gray-50">
-                {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
-              </div>
-            ) : !topDefaulters.length ? (
-              <div className="p-10 text-center">
-                <p className="text-sm font-semibold text-gray-600">All clear!</p>
-                <p className="text-xs text-gray-400 mt-1">No pending fees at this time</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-50/80">
-                {topDefaulters.map((d, idx) => (
-                  <div key={d.feeRecordId} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50/60 transition-colors group">
-                    {/* Avatar */}
-                    <div className={cn(
-                      'w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br',
-                      AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length]
-                    )}>
-                      <span className="text-[11px] font-bold text-white">{avatarInitials(d.studentName)}</span>
+            <div className="flex-1 overflow-y-auto pr-1">
+              {isLoading ? (
+                <div className="space-y-0.5">
+                  {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
+                </div>
+              ) : !topDefaulters.length ? (
+                <div className="h-full flex flex-col items-center justify-center py-6">
+                  <p className="text-[15px] font-semibold text-gray-800">All clear!</p>
+                  <p className="text-[12px] text-gray-400 mt-0.5">No pending fees at this time</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-[#E8E8E8]/60">
+                  {topDefaulters.map((d) => (
+                    <div key={d.feeRecordId} className="flex items-center justify-between py-3.5 transition-colors group">
+                      {/* Name + class (Pure typography, no avatars or icons) */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-gray-800 truncate">{d.studentName}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Class {d.class}{d.section}</p>
+                      </div>
+                      
+                      {/* Balance amount & Overdue Button */}
+                      <div className="flex items-center gap-4 ml-4 shrink-0">
+                        <p className="text-[13px] font-semibold text-red-600">{fmt(d.balance)}</p>
+                        <button
+                          onClick={() => requestSend(d.class, d.section)}
+                          className="h-7 px-2.5 rounded-lg bg-white border border-[#E8E8E8] text-[11px] font-semibold text-gray-500 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200"
+                        >
+                          {groupsFetching && pendingSend?.class === d.class && pendingSend?.section === d.section ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            'Remind'
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    {/* Name + class */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{d.studentName}</p>
-                      <p className="text-[11px] text-gray-400">Class {d.class}{d.section}</p>
-                    </div>
-                    {/* Amount */}
-                    <p className="text-sm font-bold text-red-500 shrink-0">{fmt(d.balance)}</p>
-                    {/* Status badge */}
-                    <div className="shrink-0 hidden sm:block"><StatusBadge d={d} /></div>
-                    {/* Date */}
-                    <p className="hidden lg:block text-xs text-gray-400 shrink-0 w-20 text-right">
-                      {new Date(d.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          const g = groupFor(d.class, d.section);
-                          if (g) setSendingGroup(g);
-                        }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-[#5B5CEB] hover:bg-[#5B5CEB]/10 transition-colors"
-                        aria-label="Send reminder"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => navigate('/accountant/pending-fees')}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        aria-label="More options"
-                      >
-                        <MoreHorizontal className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
         </div>
+
       </div>
 
       {sendingGroup && (

@@ -60,7 +60,7 @@ export const AutomationJobsPage = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Automation Jobs</h1>
         <p className="text-base text-gray-500 mt-1">
-          Monitor every automated workflow dispatched by SchoolOS AI.
+          Monitor every automated workflow dispatched by FNIC.
         </p>
       </div>
 

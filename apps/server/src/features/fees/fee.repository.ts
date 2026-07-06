@@ -126,6 +126,26 @@ export const feeRepository = {
     return FeeRecord.find(query).sort({ dueDate: 1 }).lean<IFeeRecord[]>();
   },
 
+  /** Find a specific month's fee record for a student (used to avoid duplicate months on recurring/bulk generation). */
+  async findByStudentAndMonth(
+    schoolId: string,
+    studentId: string,
+    feeHead: FeeHead,
+    month: string,
+    academicYear: string,
+  ): Promise<IFeeRecord | null> {
+    return FeeRecord.findOne({ schoolId, studentId, feeHead, month, academicYear, isDeleted: false }).lean<IFeeRecord>();
+  },
+
+  /** Flip pending/partially_paid records past their due date to 'overdue'. Runs across all schools. */
+  async markOverdue(asOf: Date): Promise<number> {
+    const result = await FeeRecord.updateMany(
+      { isDeleted: false, status: { $in: ['pending', 'partially_paid'] }, dueDate: { $lt: asOf } },
+      { $set: { status: 'overdue' } },
+    );
+    return result.modifiedCount;
+  },
+
   /** Outstanding = pending / partially_paid / overdue. */
   async findOutstanding(
     schoolId: string,

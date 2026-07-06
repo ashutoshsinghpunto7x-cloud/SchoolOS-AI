@@ -33,6 +33,7 @@ export interface IEmergencyContact {
 export interface IStudent extends Document {
   fullName: string;
   admissionNumber: string;
+  rollNumber?: string;
   class: string;
   section: string;
   gender?: Gender;
@@ -48,6 +49,8 @@ export interface IStudent extends Document {
   admissionYear: number;
   tags: string[];
   remarks?: string;
+  /** Recurring monthly tuition fee amount set by admin — drives auto-generated tuition FeeRecords. */
+  monthlyTuitionFee?: number;
   // Soft delete
   isDeleted: boolean;
   deletedAt?: Date;
@@ -71,6 +74,7 @@ const studentSchema = new Schema<IStudent>(
   {
     fullName: { type: String, required: true, trim: true },
     admissionNumber: { type: String, required: true, unique: true, trim: true },
+    rollNumber: { type: String, trim: true },
     class: { type: String, required: true, trim: true },
     section: { type: String, required: true, trim: true },
     gender: { type: String, enum: ['male', 'female', 'other'] },
@@ -90,6 +94,7 @@ const studentSchema = new Schema<IStudent>(
     admissionYear: { type: Number, required: true },
     tags: { type: [String], default: [] },
     remarks: { type: String, trim: true },
+    monthlyTuitionFee: { type: Number, min: 0 },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
     deletedBy: { type: String },
@@ -108,10 +113,12 @@ studentSchema.index({ schoolId: 1, isDeleted: 1, class: 1, section: 1 });
 studentSchema.index({ schoolId: 1, isDeleted: 1, admissionYear: 1 });
 studentSchema.index({ schoolId: 1, isDeleted: 1, gender: 1 });
 studentSchema.index({ parentPhone: 1 });
+studentSchema.index({ schoolId: 1, isDeleted: 1, class: 1, section: 1, rollNumber: 1 });
 // Text index for full-text search
 studentSchema.index({
   fullName: 'text',
   admissionNumber: 'text',
+  rollNumber: 'text',
   fatherName: 'text',
   motherName: 'text',
   parentPhone: 'text',

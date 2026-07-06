@@ -55,6 +55,13 @@ export const salaryApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
+  async forcePending(id: string): Promise<SalaryRecord> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SalaryRecord>>(`${BASE}/${id}/force-pending`, {});
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
   async delete(id: string): Promise<void> {
     try {
       await apiClient.delete(`${BASE}/${id}`);

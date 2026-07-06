@@ -11,9 +11,9 @@ interface Props {
 }
 
 export function SendDefaultersModal({ group, onClose }: Props) {
-  const [search, setSearch] = useState(`${group.class}${group.section}`);
+  const [search, setSearch] = useState(group.classTeacherName || `${group.class}${group.section}`);
   const { data, isLoading } = useTeachersPaginated({ search, limit: 20 });
-  const [teacherId, setTeacherId] = useState('');
+  const [teacherId, setTeacherId] = useState(group.classTeacherId ?? '');
   const { mutateAsync, isPending, error } = useSendDefaultersToTeacher();
   const [sent, setSent] = useState(false);
 
@@ -39,14 +39,17 @@ export function SendDefaultersModal({ group, onClose }: Props) {
           <div className="py-8 text-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-800">List sent!</p>
-            <p className="text-xs text-gray-400 mt-1">The teacher will receive the defaulters list by email.</p>
+            <p className="text-xs text-gray-400 mt-1">The teacher will receive the defaulters list by email and in their in-app notifications.</p>
             <button onClick={onClose} className="mt-5 h-10 px-5 bg-[#5B5CEB] text-white rounded-xl text-sm font-semibold">Done</button>
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 mb-1">
               Class {group.class}-{group.section} · {group.students.length} student{group.students.length !== 1 ? 's' : ''} pending
             </p>
+            {group.classTeacherName && (
+              <p className="text-xs text-gray-400 mb-3">Class teacher on file: <span className="font-semibold text-gray-600">{group.classTeacherName}</span> (pre-selected below)</p>
+            )}
 
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

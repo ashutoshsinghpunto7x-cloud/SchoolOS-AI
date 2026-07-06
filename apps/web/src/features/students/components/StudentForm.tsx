@@ -17,6 +17,7 @@ const studentFormSchema = z.object({
   fullName: z
     .string({ required_error: 'Full name is required' })
     .min(2, 'At least 2 characters'),
+  rollNumber: z.string().optional().or(z.literal('')),
   class: z.string({ required_error: 'Class is required' }).min(1, 'Class is required'),
   section: z
     .string({ required_error: 'Section is required' })
@@ -41,6 +42,7 @@ const studentFormSchema = z.object({
   ]),
   tags: z.array(z.string()),
   remarks: z.string().optional(),
+  monthlyTuitionFee: z.string().optional(),
 });
 
 export type StudentFormValues = z.infer<typeof studentFormSchema>;
@@ -115,6 +117,7 @@ export const StudentForm = ({
     defaultValues: initialData
       ? {
           fullName: initialData.fullName,
+          rollNumber: initialData.rollNumber ?? '',
           class: initialData.class,
           section: initialData.section,
           gender: initialData.gender,
@@ -132,6 +135,7 @@ export const StudentForm = ({
             : initialData.admissionStatus as 'enquiry' | 'application' | 'admission_pending' | 'active' | 'transferred' | 'graduated' | 'inactive',
           tags: initialData.tags ?? [],
           remarks: initialData.remarks ?? '',
+          monthlyTuitionFee: initialData.monthlyTuitionFee != null ? String(initialData.monthlyTuitionFee) : '',
         }
       : {
           admissionStatus: 'active' as const,
@@ -160,6 +164,15 @@ export const StudentForm = ({
               />
             </Field>
           </div>
+
+          <Field label="Roll No." error={errors.rollNumber?.message}>
+            <input
+              {...register('rollNumber')}
+              type="text"
+              placeholder="Optional — class roll number"
+              className={inputClass(!!errors.rollNumber)}
+            />
+          </Field>
 
           <Field label="Class" required error={errors.class?.message}>
             <select {...register('class')} className={selectClass(!!errors.class)}>
@@ -214,6 +227,17 @@ export const StudentForm = ({
               <option value="graduated">Graduated</option>
               <option value="inactive">Inactive</option>
             </select>
+          </Field>
+
+          <Field label="Monthly Tuition Fee (₹)" error={errors.monthlyTuitionFee?.message}>
+            <input
+              {...register('monthlyTuitionFee')}
+              type="number"
+              min={0}
+              step="0.01"
+              placeholder="e.g. 2000 — used to auto-generate monthly fee records"
+              className={inputClass(!!errors.monthlyTuitionFee)}
+            />
           </Field>
 
           <div className="sm:col-span-2">

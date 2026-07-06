@@ -50,7 +50,7 @@ export const vapiProvider: IVoiceProvider = {
       }
     } else if (input.assistant) {
       body.assistant = {
-        name: input.assistant.name ?? 'SchoolOS AI',
+        name: input.assistant.name ?? 'FNIC',
         firstMessage: input.assistant.firstMessage,
         model: {
           provider: input.assistant.model.provider,

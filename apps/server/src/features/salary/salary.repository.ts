@@ -20,8 +20,10 @@ export interface PaginatedSalary {
 }
 
 export interface SalarySummary {
+  totalScheduled: number;
   totalPending: number;
   totalPaid: number;
+  scheduledCount: number;
   pendingCount: number;
   paidCount: number;
 }
@@ -34,6 +36,8 @@ export interface CreateSalaryData {
   month: string;
   year: number;
   amount: number;
+  dueDate: Date;
+  status: SalaryStatus;
   notes?: string;
   createdBy: string;
 }
@@ -108,6 +112,24 @@ export const salaryRepository = {
     return result.modifiedCount > 0;
   },
 
+  /** Flips 'scheduled' salaries past their due date to 'pending'. Called opportunistically like the fee overdue sweep. */
+  async markDue(asOf: Date): Promise<number> {
+    const result = await SalaryRecord.updateMany(
+      { isDeleted: false, status: 'scheduled', dueDate: { $lte: asOf } },
+      { $set: { status: 'pending' } },
+    );
+    return result.modifiedCount;
+  },
+
+  /** Accountant override — force a still-scheduled salary into 'pending' ahead of its due date. */
+  async forcePending(id: string, schoolId: string, updatedBy: string): Promise<ISalaryRecord | null> {
+    return SalaryRecord.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false, status: 'scheduled' },
+      { $set: { status: 'pending', updatedBy } },
+      { new: true },
+    ).lean<ISalaryRecord>();
+  },
+
   async getSummary(schoolId: string, opts: { month?: string; year?: number } = {}): Promise<SalarySummary> {
     const match: Record<string, unknown> = { schoolId, isDeleted: false };
     if (opts.month) match.month = opts.month;
@@ -118,11 +140,12 @@ export const salaryRepository = {
       { $group: { _id: '$status', total: { $sum: '$amount' }, count: { $sum: 1 } } },
     ]);
 
-    let totalPending = 0, totalPaid = 0, pendingCount = 0, paidCount = 0;
+    let totalScheduled = 0, totalPending = 0, totalPaid = 0, scheduledCount = 0, pendingCount = 0, paidCount = 0;
     for (const row of agg) {
-      if (row._id === 'pending') { totalPending = row.total; pendingCount = row.count; }
-      if (row._id === 'paid')    { totalPaid    = row.total; paidCount    = row.count; }
+      if (row._id === 'scheduled') { totalScheduled = row.total; scheduledCount = row.count; }
+      if (row._id === 'pending')   { totalPending   = row.total; pendingCount   = row.count; }
+      if (row._id === 'paid')      { totalPaid      = row.total; paidCount      = row.count; }
     }
-    return { totalPending, totalPaid, pendingCount, paidCount };
+    return { totalScheduled, totalPending, totalPaid, scheduledCount, pendingCount, paidCount };
   },
 };

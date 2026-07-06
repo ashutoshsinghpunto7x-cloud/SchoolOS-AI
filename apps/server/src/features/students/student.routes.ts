@@ -14,7 +14,11 @@ router.post('/quick-import', quickImportUpload, studentQuickImportController.run
 router.get('/', studentController.list);
 router.get('/search', studentController.search);         // lightweight autocomplete
 router.get('/:id', studentController.getById);
-router.patch('/:id', studentController.update);
+// Low-risk field any role (incl. teacher) can quick-edit directly, exempt from the
+// change-request approval flow that gates the broader update below.
+router.patch('/:id/roll-number', studentController.updateRollNumber);
+router.patch('/:id/fee-profile', authorize('admin', 'reception', 'accountant'), studentController.updateFeeProfile);
+router.patch('/:id', authorize('admin', 'reception'), studentController.update);
 router.patch('/:id/status', studentController.changeStatus);
 router.delete('/:id', authorize('admin'), studentController.deleteStudent);
 

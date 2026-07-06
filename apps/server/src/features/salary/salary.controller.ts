@@ -54,6 +54,14 @@ export const salaryController = {
     } catch (err) { next(err); }
   },
 
+  async forcePending(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const record = await salaryService.forcePending(req.params.id, ctx);
+      sendSuccess(res, record, 'Salary moved to pending');
+    } catch (err) { next(err); }
+  },
+
   async deleteSalaryRecord(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);

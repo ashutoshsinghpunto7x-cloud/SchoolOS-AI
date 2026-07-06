@@ -11,7 +11,11 @@ export const NewAdmissionPage = () => {
 
   const handleSubmit = async (values: StudentFormValues) => {
     try {
-      const student = await createStudent(values);
+      const { monthlyTuitionFee, ...rest } = values;
+      const student = await createStudent({
+        ...rest,
+        monthlyTuitionFee: monthlyTuitionFee ? Number(monthlyTuitionFee) : undefined,
+      });
       toast.success('Student admitted successfully!', {
         description: `${student.fullName} has been enrolled. Admission No: ${student.admissionNumber}`,
       });

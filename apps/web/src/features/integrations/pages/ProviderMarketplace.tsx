@@ -39,7 +39,7 @@ export function ProviderMarketplace() {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900">Provider Marketplace</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Connect SchoolOS to external platforms and services</p>
+          <p className="text-sm text-gray-500 mt-0.5">Connect FNIC to external platforms and services</p>
         </div>
       </div>
 

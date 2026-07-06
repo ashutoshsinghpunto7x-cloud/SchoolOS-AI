@@ -32,6 +32,13 @@ type PendingRequest = {
 let isRefreshing = false;
 let pendingRequests: PendingRequest[] = [];
 
+// Called on logout so a refresh started under the previous session can't
+// resolve into a newly-logged-in user's queued requests on a shared device.
+export const resetAuthRefreshState = () => {
+  isRefreshing = false;
+  pendingRequests = [];
+};
+
 const clearAuthAndRedirect = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
@@ -45,6 +52,12 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    // A 401 from the login endpoint means wrong credentials, not an expired
+    // session — let LoginPage show its own inline error instead of redirecting.
+    if (originalRequest.url?.includes('/auth/login')) {
       return Promise.reject(error);
     }
 

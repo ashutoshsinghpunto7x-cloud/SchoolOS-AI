@@ -24,7 +24,7 @@ export function ImportDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Data Import</h1>
-          <p className="text-sm text-gray-500 mt-1">Onboard data from existing systems into SchoolOS</p>
+          <p className="text-sm text-gray-500 mt-1">Onboard data from existing systems into FNIC</p>
         </div>
         <div className="flex gap-3">
           <Link

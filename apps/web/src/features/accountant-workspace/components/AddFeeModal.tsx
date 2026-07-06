@@ -5,8 +5,10 @@ import type { FeeHead, FeeRecord, CreateFeeRecordPayload } from '@schoolos/types
 
 interface Props {
   studentId: string;
-  onClose: () => void;
+  onClose?: () => void;
   onCreated: (fee: FeeRecord) => void;
+  /** Prefills the amount from the student's recurring monthly tuition fee, when set. */
+  defaultAmount?: number;
 }
 
 const FEE_HEADS: { value: FeeHead; label: string }[] = [
@@ -31,13 +33,13 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
-export function AddFeeModal({ studentId, onClose, onCreated }: Props) {
+export function AddFeeModal({ studentId, onClose, onCreated, defaultAmount }: Props) {
   const { mutateAsync, isPending, error } = useCreateFeeRecord();
 
   const [feeHead, setFeeHead] = useState<FeeHead>('tuition');
   const [month, setMonth] = useState(MONTHS[new Date().getMonth()]);
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(defaultAmount ? String(defaultAmount) : '');
   const [dueDate, setDueDate] = useState(todayStr());
   const [localErr, setLocalErr] = useState('');
 
@@ -59,20 +61,23 @@ export function AddFeeModal({ studentId, onClose, onCreated }: Props) {
     };
 
     const record = await mutateAsync(payload);
+    setAmount(defaultAmount ? String(defaultAmount) : '');
+    setDescription('');
     onCreated(record);
   }
 
   const displayErr = localErr || (error instanceof Error ? error.message : null);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-gray-900">Assign New Fee</h3>
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-bold text-gray-900">Assign New Fee</h3>
+        {onClose && (
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100">
             <X className="w-4 h-4 text-gray-500" />
           </button>
-        </div>
+        )}
+      </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
@@ -100,7 +105,7 @@ export function AddFeeModal({ studentId, onClose, onCreated }: Props) {
 
           <div>
             <label className={labelCls}>Amount (₹)</label>
-            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} step={0.01} className={inputCls} placeholder="0.00" autoFocus />
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} step={0.01} className={inputCls} placeholder="0.00" />
           </div>
 
           <div>
@@ -114,11 +119,10 @@ export function AddFeeModal({ studentId, onClose, onCreated }: Props) {
             </div>
           )}
 
-          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Assign Fee & Collect
-          </button>
-        </form>
-      </div>
+        <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Assign Fee & Collect
+        </button>
+      </form>
     </div>
   );
 }

@@ -1,10 +1,12 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2 } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
+import { getHomePathForRole } from '../utils/roleHome';
+import { SchoolOSMark } from '../../../components/splash/SchoolOSMark';
 
 export const LoginPage = () => {
-  const { login, isAuthenticated } = useAuthContext();
+  const { login, isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -13,12 +15,13 @@ export const LoginPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already logged in
-  if (isAuthenticated) {
-    const from = (location.state as { from?: string })?.from ?? '/';
-    navigate(from, { replace: true });
-    return null;
-  }
+  // Redirect if already logged in (e.g. navigating back to /login manually)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const from = (location.state as { from?: string })?.from ?? getHomePathForRole(user.role);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, location.state, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,8 +31,8 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      await login(email.trim(), password);
-      const from = (location.state as { from?: string })?.from ?? '/';
+      const loggedInUser = await login(email.trim(), password);
+      const from = (location.state as { from?: string })?.from ?? getHomePathForRole(loggedInUser.role);
       navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
@@ -39,20 +42,59 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
-      <div className="w-full max-w-[400px]">
+    <div className="relative min-h-screen overflow-hidden bg-[#F8FAFC] flex items-center justify-center px-4">
+      {/* Background texture, matching splash screen */}
+      <div className="absolute inset-0">
+        <div
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage: `
+              linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(241,245,249,0.6) 55%, rgba(226,232,240,0.8) 100%),
+              repeating-linear-gradient(90deg, rgba(100,116,139,0.05) 0px, rgba(100,116,139,0.05) 2px, transparent 2px, transparent 72px),
+              repeating-linear-gradient(0deg, rgba(100,116,139,0.04) 0px, rgba(100,116,139,0.04) 2px, transparent 2px, transparent 54px)
+            `,
+          }}
+        />
+        <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_30%,rgba(226,232,240,0.5)_100%)]" />
+      </div>
+
+      {/* Glow behind logo */}
+      <div className="pointer-events-none absolute left-1/2 top-[28%] h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-400/20 blur-[110px] animate-splash-glow" />
+
+      {/* Bottom-left concentric circles, matching splash screen */}
+      <div className="pointer-events-none absolute -bottom-32 -left-32 h-[420px] w-[420px]">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="absolute rounded-full border border-blue-900/[0.06]"
+            style={{ inset: `${i * 40}px` }}
+          />
+        ))}
+      </div>
+
+      {/* Top-right dot grid, matching splash screen */}
+      <div className="pointer-events-none absolute right-6 top-8 grid grid-cols-5 gap-2.5 sm:right-12 sm:top-10">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <span key={i} className="h-[3px] w-[3px] rounded-full bg-blue-500/40" />
+        ))}
+      </div>
+
+      <div className="relative w-full max-w-[400px] animate-fade-up">
 
         {/* Brand */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
-            <GraduationCap className="w-7 h-7 text-white" strokeWidth={2} />
+          <div className="scale-[0.65] -mb-3">
+            <SchoolOSMark />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SchoolOS AI</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            <span className="text-gray-900">FN</span>
+            <span className="bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">IC</span>
+          </h1>
           <p className="text-sm text-gray-500 mt-1">Sign in to your school account</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-200/60 p-8">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
 
             {/* Email */}
@@ -136,7 +178,7 @@ export const LoginPage = () => {
           </form>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-slate-500 mt-6">
           Contact your administrator if you need access.
         </p>
       </div>

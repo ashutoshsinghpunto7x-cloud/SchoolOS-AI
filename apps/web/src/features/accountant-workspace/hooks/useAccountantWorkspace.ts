@@ -14,11 +14,13 @@ export const useAccountantDashboard = () =>
     staleTime: 30_000,
   });
 
-export const useGroupedDefaulters = () =>
+/** `enabled: false` by default from callers that only need this on-demand (e.g. opening a "send reminder" modal) — avoids fetching up to 1000 records on every dashboard view. */
+export const useGroupedDefaulters = (enabled = true) =>
   useQuery({
     queryKey: accountantWorkspaceKeys.defaulters,
     queryFn:  accountantWorkspaceApi.getGroupedDefaulters,
     staleTime: 30_000,
+    enabled,
   });
 
 export const useInvalidateAccountantDashboard = () => {

@@ -193,7 +193,7 @@ export function TeacherProfilePage() {
           {/* Employee badge */}
           <div className="flex items-center justify-center gap-2 py-2">
             <BadgeCheck className="w-4 h-4 text-gray-300" />
-            <p className="text-xs text-gray-400">SchoolOS AI · Teacher Portal</p>
+            <p className="text-xs text-gray-400">FNIC · Teacher Portal</p>
           </div>
         </div>
       )}

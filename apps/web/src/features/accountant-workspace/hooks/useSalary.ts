@@ -62,6 +62,17 @@ export const useMarkSalaryPaid = () => {
   });
 };
 
+export const useForcePendingSalary = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => salaryApi.forcePending(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salaryKeys.all });
+      qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.dashboard });
+    },
+  });
+};
+
 export const useDeleteSalaryRecord = () => {
   const qc = useQueryClient();
   return useMutation({

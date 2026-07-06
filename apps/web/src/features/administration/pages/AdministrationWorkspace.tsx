@@ -1,10 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Users, ShieldCheck, Zap } from 'lucide-react';
+import { Users, ShieldCheck, Zap, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { label: 'Users', path: '/administration/users', icon: Users },
   { label: 'Roles & Permissions', path: '/administration/roles', icon: ShieldCheck },
+  { label: 'Classes', path: '/administration/classes', icon: GraduationCap },
   { label: 'Automation', path: '/administration/automation', icon: Zap },
 ] as const;
 

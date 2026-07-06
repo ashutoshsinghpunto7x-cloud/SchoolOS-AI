@@ -16,6 +16,7 @@ const LIFECYCLE_STATUSES = [
 
 export const createStudentSchema = z.object({
   fullName: z.string({ required_error: 'Full name is required' }).min(2).max(100).trim(),
+  rollNumber: z.string().max(20).trim().optional().or(z.literal('')),
   class: z.string({ required_error: 'Class is required' }).min(1).trim(),
   section: z.string({ required_error: 'Section is required' }).min(1).trim(),
   gender: z.enum(['male', 'female', 'other']).optional(),
@@ -29,6 +30,7 @@ export const createStudentSchema = z.object({
   admissionStatus: z.enum(LIFECYCLE_STATUSES).default('active'),
   tags: z.array(z.string().max(30).trim()).max(20).default([]),
   remarks: z.string().max(500).optional(),
+  monthlyTuitionFee: z.coerce.number().min(0).optional(),
   emergencyContact: z.object({
     name: z.string().min(2).trim(),
     phone: phoneSchema,
@@ -37,6 +39,19 @@ export const createStudentSchema = z.object({
 });
 
 export const updateStudentSchema = createStudentSchema.partial();
+
+export const updateRollNumberSchema = z.object({
+  rollNumber: z.string().max(20).trim().optional().or(z.literal('')),
+});
+
+// Fields the accountant workspace's Collect Fee card manages directly — roll number,
+// class/section placement, and the monthly tuition amount that drives fee generation.
+export const updateFeeProfileSchema = z.object({
+  rollNumber: z.string().max(20).trim().optional().or(z.literal('')),
+  class: z.string().min(1).trim().optional(),
+  section: z.string().min(1).trim().optional(),
+  monthlyTuitionFee: z.coerce.number().min(0).optional(),
+});
 
 export const changeStatusSchema = z.object({
   status: z.enum(LIFECYCLE_STATUSES, { required_error: 'Status is required' }),
@@ -74,6 +89,7 @@ export const updateNoteSchema = z.object({
 export type CreateStudentInput = z.infer<typeof createStudentSchema>;
 export type UpdateStudentInput = z.infer<typeof updateStudentSchema>;
 export type ChangeStatusInput = z.infer<typeof changeStatusSchema>;
+export type UpdateFeeProfileInput = z.infer<typeof updateFeeProfileSchema>;
 export type ListStudentsInput = z.infer<typeof listStudentsSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;

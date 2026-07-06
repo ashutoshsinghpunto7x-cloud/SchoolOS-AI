@@ -1,21 +1,42 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Users, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { UserPlus, Users, ChevronLeft, ChevronRight, Loader2, MessageSquare, X } from 'lucide-react';
 import { useTeachersPaginated } from '../hooks/useTeachers';
 import { TeacherCard } from '../components/TeacherCard';
 import { TeacherFilters } from '../components/TeacherFilters';
+import { SendMessageModal } from '../components/SendMessageModal';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { EmptyState } from '@/components/ui/EmptyState';
-import type { TeacherListOptions } from '@schoolos/types';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import type { Teacher, TeacherListOptions } from '@schoolos/types';
 
 const PAGE_SIZE = 18;
 
 export const TeacherListPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [filters, setFilters] = useState<TeacherListOptions>({ page: 1, limit: PAGE_SIZE });
   const [searchInput, setSearchInput] = useState('');
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selected, setSelected] = useState<Map<string, Teacher>>(new Map());
+  const [showMessageModal, setShowMessageModal] = useState(false);
+
+  const toggleSelect = (teacher: Teacher) => {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(teacher._id)) next.delete(teacher._id);
+      else next.set(teacher._id, teacher);
+      return next;
+    });
+  };
+
+  const exitSelectMode = () => {
+    setIsSelecting(false);
+    setSelected(new Map());
+  };
 
   const applySearch = (value: string) =>
     setFilters((f) => ({ ...f, search: value.trim() || undefined, page: 1 }));
@@ -37,15 +58,40 @@ export const TeacherListPage = () => {
         title="Teachers"
         subtitle={meta ? `${meta.total} teacher${meta.total !== 1 ? 's' : ''} on record` : 'Loading…'}
         action={
-          <button
-            onClick={() => navigate('/teachers/new')}
-            className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
-                       flex items-center gap-2 text-sm font-bold text-white transition-colors duration-150"
-            type="button"
-          >
-            <UserPlus className="w-5 h-5" />
-            Add Teacher
-          </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              isSelecting ? (
+                <button
+                  onClick={exitSelectMode}
+                  className="h-12 px-5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200
+                             flex items-center gap-2 text-sm font-bold text-gray-600 transition-colors duration-150"
+                  type="button"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsSelecting(true)}
+                  className="h-12 px-5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200
+                             flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors duration-150"
+                  type="button"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Message Teachers
+                </button>
+              )
+            )}
+            <button
+              onClick={() => navigate('/teachers/new')}
+              className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
+                         flex items-center gap-2 text-sm font-bold text-white transition-colors duration-150"
+              type="button"
+            >
+              <UserPlus className="w-5 h-5" />
+              Add Teacher
+            </button>
+          </div>
         }
       />
 
@@ -100,7 +146,13 @@ export const TeacherListPage = () => {
           )}
           <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
             {teachers.map((teacher) => (
-              <TeacherCard key={teacher._id} teacher={teacher} />
+              <TeacherCard
+                key={teacher._id}
+                teacher={teacher}
+                selectable={isSelecting}
+                selected={selected.has(teacher._id)}
+                onToggleSelect={toggleSelect}
+              />
             ))}
           </div>
 
@@ -144,6 +196,27 @@ export const TeacherListPage = () => {
             </div>
           )}
         </>
+      )}
+
+      {isSelecting && selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 bg-gray-900 text-white rounded-2xl shadow-xl px-5 py-3">
+          <span className="text-sm font-semibold">{selected.size} teacher{selected.size !== 1 ? 's' : ''} selected</span>
+          <button
+            onClick={() => setShowMessageModal(true)}
+            className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center gap-2 text-sm font-bold transition-colors"
+            type="button"
+          >
+            <MessageSquare className="w-4 h-4" />
+            Send Message
+          </button>
+        </div>
+      )}
+
+      {showMessageModal && (
+        <SendMessageModal
+          teachers={Array.from(selected.values()).map((t) => ({ _id: t._id, fullName: t.fullName }))}
+          onClose={() => { setShowMessageModal(false); exitSelectMode(); }}
+        />
       )}
     </PageContainer>
   );

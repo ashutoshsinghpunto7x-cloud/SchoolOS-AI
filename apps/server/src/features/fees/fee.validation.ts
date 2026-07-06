@@ -62,6 +62,26 @@ export const recordPaymentSchema = z.object({
   remarks:         z.string().max(500).trim().optional(),
 });
 
+// ── Bulk / Multi-month Payment ────────────────────────────────────────────────
+
+export const bulkPaymentMonthSchema = z.object({
+  month:        z.string({ required_error: 'month is required' }).max(20).trim(),
+  academicYear: z.string({ required_error: 'academicYear is required' })
+                  .regex(/^\d{4}-\d{2,4}$/, 'academicYear must be like 2024-25'),
+  dueDate:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dueDate must be YYYY-MM-DD').optional(),
+  amount:       currency('amount'),
+});
+
+export const recordBulkPaymentSchema = z.object({
+  studentId:       z.string({ required_error: 'studentId is required' }).min(1),
+  months:          z.array(bulkPaymentMonthSchema).min(1, 'Select at least one month'),
+  paymentDate:     z.string({ required_error: 'paymentDate is required' })
+                     .regex(/^\d{4}-\d{2}-\d{2}$/, 'paymentDate must be YYYY-MM-DD'),
+  paymentMode:     z.enum(PAYMENT_MODES, { required_error: 'paymentMode is required' }),
+  referenceNumber: z.string().max(100).trim().optional(),
+  remarks:         z.string().max(500).trim().optional(),
+});
+
 // ── List / Query ──────────────────────────────────────────────────────────────
 
 export const listFeesSchema = z.object({
@@ -96,7 +116,8 @@ export const outstandingSchema = z.object({
 
 // ── Inferred types ────────────────────────────────────────────────────────────
 
-export type CreateFeeRecordInput = z.infer<typeof createFeeRecordSchema>;
-export type UpdateFeeRecordInput = z.infer<typeof updateFeeRecordSchema>;
-export type RecordPaymentInput   = z.infer<typeof recordPaymentSchema>;
-export type ListFeesInput        = z.infer<typeof listFeesSchema>;
+export type CreateFeeRecordInput      = z.infer<typeof createFeeRecordSchema>;
+export type UpdateFeeRecordInput      = z.infer<typeof updateFeeRecordSchema>;
+export type RecordPaymentInput        = z.infer<typeof recordPaymentSchema>;
+export type RecordBulkPaymentInput    = z.infer<typeof recordBulkPaymentSchema>;
+export type ListFeesInput             = z.infer<typeof listFeesSchema>;

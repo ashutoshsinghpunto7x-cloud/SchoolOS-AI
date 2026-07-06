@@ -19,6 +19,8 @@ export interface IFeePayment extends Document {
 
   // Future: auto-generated receipt / gateway integration
   receiptNumber?: string;
+  /** Shared bill number across all months paid together in one multi-month collection. */
+  batchId?: string;
   metadata?: Record<string, unknown>;
 
   isDeleted: boolean;
@@ -51,6 +53,7 @@ const feePaymentSchema = new Schema<IFeePayment>(
     recordedByName: { type: String, required: true },
 
     receiptNumber:  { type: String, trim: true },
+    batchId:        { type: String, trim: true },
     metadata:       { type: Schema.Types.Mixed },
 
     isDeleted:      { type: Boolean, default: false },
@@ -64,5 +67,6 @@ feePaymentSchema.index({ feeRecordId: 1, isDeleted: 1, createdAt: -1 });
 feePaymentSchema.index({ schoolId: 1, studentId: 1, isDeleted: 1, createdAt: -1 });
 feePaymentSchema.index({ schoolId: 1, isDeleted: 1, paymentDate: -1 });
 feePaymentSchema.index({ schoolId: 1, receiptNumber: 1 }, { unique: true, sparse: true });
+feePaymentSchema.index({ schoolId: 1, batchId: 1 });
 
 export const FeePayment = mongoose.model<IFeePayment>('FeePayment', feePaymentSchema);

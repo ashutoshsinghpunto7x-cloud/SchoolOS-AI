@@ -2,8 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
-  X,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -11,11 +9,14 @@ import {
   Users,
   Pencil,
   CalendarDays,
+  Phone,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
+import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';
 import { useState, useEffect } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -84,15 +85,19 @@ function ActiveCard({
   onMark:  (id: string, status: RowStatus) => void;
 }) {
   const x = useMotionValue(0);
+  // Transparent at rest — lets the wrapper's two-tone gradient border show through —
+  // ramping to a fully solid red/green right at the ±90px commit threshold.
   const borderColor = useTransform(
     x,
-    [-120, -30, 0, 30, 120],
-    ['#EF4444', '#EF4444', '#E5E7EB', '#22C55E', '#22C55E'],
+    [-90, -20, 0, 20, 90],
+    ['#EF4444', '#EF4444', 'rgba(0,0,0,0)', '#22C55E', '#22C55E'],
+    { clamp: true },
   );
   const background = useTransform(
     x,
-    [-120, 0, 120],
-    ['rgba(239,68,68,0.06)', 'rgba(255,255,255,1)', 'rgba(34,197,94,0.06)'],
+    [-90, 0, 90],
+    ['rgba(239,68,68,0.08)', 'rgba(255,255,255,1)', 'rgba(34,197,94,0.08)'],
+    { clamp: true },
   );
   const { bg, text } = getAvatarStyle(row.fullName);
 
@@ -102,43 +107,30 @@ function ActiveCard({
   }
 
   return (
-    <motion.div
-      className="flex items-center gap-3 bg-white rounded-2xl border-2 shadow-sm px-4 py-5 cursor-grab active:cursor-grabbing touch-pan-y"
-      style={{ x, borderColor, backgroundColor: background }}
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.7}
-      onDragEnd={handleDragEnd}
+    <div
+      className="rounded-2xl p-[2.5px] shadow-sm"
+      style={{ background: 'linear-gradient(to right, #FCA5A5 50%, #86EFAC 50%)' }}
     >
-      <button
-        type="button"
-        onClick={() => onMark(row.studentId, 'absent')}
-        className="w-11 h-11 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-red-500/30 hover:bg-red-600 transition-colors"
-        aria-label="Mark absent"
+      <motion.div
+        className="flex items-center justify-center gap-3 bg-white rounded-[13px] border-2 px-4 py-5 cursor-grab active:cursor-grabbing touch-pan-y"
+        style={{ x, borderColor, backgroundColor: background }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.7}
+        onDragEnd={handleDragEnd}
       >
-        <X className="w-5 h-5" strokeWidth={3} />
-      </button>
-
-      <div className="flex-1 min-w-0 flex flex-col items-center text-center gap-1.5">
-        <div className="flex items-center gap-2.5">
-          <span className="text-sm text-gray-400 font-mono">{index + 1}</span>
-          <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
-            {getInitials(row.fullName)}
+        <div className="flex-1 min-w-0 flex flex-col items-center text-center gap-1.5">
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm text-gray-400 font-mono">{index + 1}</span>
+            <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
+              {getInitials(row.fullName)}
+            </div>
+            <span className="text-lg font-bold text-gray-900 truncate max-w-[200px]">{row.fullName}</span>
           </div>
-          <span className="text-lg font-bold text-gray-900 truncate max-w-[160px]">{row.fullName}</span>
+          <p className="text-xs text-gray-400">Swipe right for present · left for absent</p>
         </div>
-        <p className="text-xs text-gray-400">Swipe to mark attendance</p>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onMark(row.studentId, 'present')}
-        className="w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-500/30 hover:bg-emerald-600 transition-colors"
-        aria-label="Mark present"
-      >
-        <Check className="w-5 h-5" strokeWidth={3} />
-      </button>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -164,8 +156,11 @@ function CompactRow({
       disabled={!marked || !editable}
       onClick={() => onUndo(row.studentId)}
       className={cn(
-        'w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-3 text-left transition-colors',
-        marked && editable && 'hover:bg-gray-50',
+        'w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-3 text-left transition-colors border-l-4',
+        marked && row.status === 'present' && 'border-l-emerald-400 bg-emerald-50/40',
+        marked && row.status === 'absent' && 'border-l-red-400 bg-red-50/40',
+        !marked && 'border-l-transparent',
+        marked && editable && 'hover:brightness-[0.97]',
         !marked && 'cursor-default',
       )}
     >
@@ -176,14 +171,9 @@ function CompactRow({
       <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
 
       {marked && (
-        <div
-          className={cn(
-            'w-7 h-7 rounded-full flex items-center justify-center shrink-0',
-            row.status === 'present' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600',
-          )}
-        >
-          {row.status === 'present' ? <Check className="w-4 h-4" strokeWidth={3} /> : <X className="w-4 h-4" strokeWidth={3} />}
-        </div>
+        <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600' : 'text-red-500')}>
+          {row.status === 'present' ? 'Present' : 'Absent'}
+        </span>
       )}
     </button>
   );
@@ -203,6 +193,109 @@ function SkeletonRow() {
   );
 }
 
+// ── Absentee outreach (call + WhatsApp reminder) ──────────────────────────────
+
+interface Absentee {
+  studentId: string;
+  fullName: string;
+  parentPhone?: string;
+}
+
+const defaultReminderTemplate = (date: string) =>
+  `Hi, this is to inform you that {name} was marked absent today, ${formatDisplayDate(date)}. Please contact the school if this is unexpected.`;
+
+const telHref = (phone?: string) => {
+  if (!phone) return undefined;
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === 10 ? `tel:+91${digits}` : `tel:${digits}`;
+};
+
+function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: string }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(absentees.map((a) => a.studentId)));
+  const [template, setTemplate] = useState(defaultReminderTemplate(date));
+  const { sendReminders, isSending, sentCount, failedCount } = useAbsenteeReminder();
+  const [done, setDone] = useState(false);
+
+  function toggle(studentId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId);
+      else next.add(studentId);
+      return next;
+    });
+  }
+
+  async function handleSend() {
+    const targets = absentees.filter((a) => selected.has(a.studentId));
+    if (!targets.length) return;
+    setDone(false);
+    await sendReminders(
+      targets.map((t) => ({ studentId: t.studentId, studentName: t.fullName })),
+      (name) => template.replace('{name}', name),
+    );
+    setDone(true);
+  }
+
+  return (
+    <div className="w-full max-w-sm mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left">
+      <p className="font-bold text-gray-900 mb-3">Absent Today ({absentees.length})</p>
+
+      <div className="space-y-2 mb-4">
+        {absentees.map((a) => {
+          const href = telHref(a.parentPhone);
+          return (
+            <div key={a.studentId} className="flex items-center gap-3 py-1.5">
+              <input
+                type="checkbox"
+                checked={selected.has(a.studentId)}
+                onChange={() => toggle(a.studentId)}
+                className="w-4 h-4 rounded border-gray-300 text-[#5B5CEB] focus:ring-[#5B5CEB]/40 shrink-0"
+              />
+              <p className="flex-1 min-w-0 text-sm font-semibold text-gray-800 truncate">{a.fullName}</p>
+              {href ? (
+                <a
+                  href={href}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors shrink-0"
+                  title="Call parent"
+                >
+                  <Phone className="w-4 h-4" />
+                </a>
+              ) : (
+                <span className="text-xs text-gray-300 shrink-0">No phone</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <label className="block text-xs font-semibold text-gray-600 mb-1.5">WhatsApp reminder message</label>
+      <textarea
+        value={template}
+        onChange={(e) => setTemplate(e.target.value)}
+        rows={3}
+        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+      />
+      <p className="text-[11px] text-gray-400 mb-3">Use <span className="font-mono">{'{name}'}</span> to insert each student's name.</p>
+
+      {done && (
+        <div className="text-xs font-medium mb-3 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700">
+          Sent to {sentCount} parent{sentCount !== 1 ? 's' : ''}{failedCount > 0 ? ` · ${failedCount} failed` : ''}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleSend}
+        disabled={isSending || selected.size === 0}
+        className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+      >
+        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+        {isSending ? `Sending… (${sentCount}/${selected.size})` : `Send WhatsApp Reminder (${selected.size})`}
+      </button>
+    </div>
+  );
+}
+
 // ── Success (Submitted) screen ────────────────────────────────────────────────
 
 function SubmittedScreen({
@@ -211,6 +304,7 @@ function SubmittedScreen({
   date,
   presentCount,
   absentCount,
+  absentees,
   onEdit,
   onViewStudents,
   onDashboard,
@@ -220,6 +314,7 @@ function SubmittedScreen({
   date:         string;
   presentCount: number;
   absentCount:  number;
+  absentees:    Absentee[];
   onEdit:       () => void;
   onViewStudents: () => void;
   onDashboard:  () => void;
@@ -258,6 +353,8 @@ function SubmittedScreen({
           </div>
         </div>
       </div>
+
+      {absentees.length > 0 && <AbsenteeOutreach absentees={absentees} date={date} />}
 
       {/* Actions */}
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
@@ -363,6 +460,15 @@ export function TeacherAttendancePage() {
 
   const isLoading = studentsLoading || attendanceLoading;
 
+  const studentsById = new Map(students.map((s) => [s._id, s]));
+  const absentees: Absentee[] = rows
+    .filter((r) => r.status === 'absent')
+    .map((r) => ({
+      studentId: r.studentId,
+      fullName: r.fullName,
+      parentPhone: studentsById.get(r.studentId)?.parentPhone,
+    }));
+
   // ── Submitted screen ─────────────────────────────────────────────────────
 
   if (submitted && !editMode) {
@@ -373,6 +479,7 @@ export function TeacherAttendancePage() {
         date={date}
         presentCount={presentCount}
         absentCount={absentCount}
+        absentees={absentees}
         onEdit={() => { setSubmitted(false); setEditMode(true); }}
         onViewStudents={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
         onDashboard={() => navigate('/teacher')}

@@ -25,7 +25,12 @@ connectDatabase().catch((error) => {
 app.use(helmet());
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    // In development, Vite may fall back to another port (5174, 5175, ...) if 5173
+    // is already taken by another running dev server — allow any localhost port
+    // rather than hardcoding one. Production stays locked to a single origin.
+    origin: env.NODE_ENV === 'development'
+      ? /^http:\/\/localhost:\d+$/
+      : env.FRONTEND_URL,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

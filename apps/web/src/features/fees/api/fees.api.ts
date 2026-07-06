@@ -7,6 +7,8 @@ import type {
   UpdateFeeRecordPayload,
   RecordPaymentPayload,
   RecordPaymentResult,
+  RecordBulkPaymentPayload,
+  RecordBulkPaymentResult,
   ReceiptLookupResult,
   FeeListOptions,
   OutstandingOptions,
@@ -53,6 +55,13 @@ export const feesApi = {
   recordPayment: async (payload: RecordPaymentPayload): Promise<RecordPaymentResult> => {
     try {
       const res = await apiClient.post<{ data: RecordPaymentResult }>(`${BASE}/payment`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  recordBulkPayment: async (payload: RecordBulkPaymentPayload): Promise<RecordBulkPaymentResult> => {
+    try {
+      const res = await apiClient.post<{ data: RecordBulkPaymentResult }>(`${BASE}/payment/bulk`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

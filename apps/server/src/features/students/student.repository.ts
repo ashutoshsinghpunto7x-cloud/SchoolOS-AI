@@ -50,6 +50,7 @@ export const studentRepository = {
       query.$or = [
         { fullName: regex },
         { admissionNumber: regex },
+        { rollNumber: regex },
         { fatherName: regex },
         { motherName: regex },
         { parentPhone: regex },
@@ -75,7 +76,7 @@ export const studentRepository = {
     const query: Record<string, unknown> = { schoolId, isDeleted: false };
     if (search?.trim()) {
       const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      query.$or = [{ fullName: regex }, { admissionNumber: regex }, { parentPhone: regex }];
+      query.$or = [{ fullName: regex }, { admissionNumber: regex }, { rollNumber: regex }, { parentPhone: regex }];
     }
     return Student.find(query).sort({ fullName: 1 }).limit(50).lean<IStudent[]>();
   },

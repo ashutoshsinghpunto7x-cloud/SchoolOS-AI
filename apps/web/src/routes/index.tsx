@@ -5,13 +5,13 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { AuthProvider } from '@/features/auth/components/AuthProvider';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 
 // Sends each role to the right home screen after login
 function RoleBasedRedirect() {
   const { user } = useAuth();
-  if (user?.role === 'teacher') return <Navigate to="/teacher" replace />;
-  if (user?.role === 'accountant') return <Navigate to="/accountant" replace />;
-  return <Navigate to="/reception" replace />;
+  if (!user) return null;
+  return <Navigate to={getHomePathForRole(user.role)} replace />;
 }
 
 // ── Lazy page imports (code-split by route) ───────────────────────────────────
@@ -80,6 +80,10 @@ const UserDetailPage = lazyPage(
 const RoleManagementPage = lazyPage(
   () => import('@/features/users/pages/RoleManagementPage'),
   'RoleManagementPage',
+);
+const ClassTeachersPage = lazyPage(
+  () => import('@/features/administration/pages/ClassTeachersPage'),
+  'ClassTeachersPage',
 );
 const AutomationJobsPage = lazyPage(
   () => import('@/features/automation/pages/AutomationJobsPage'),
@@ -192,6 +196,10 @@ const EditEventPage = lazyPage(
 const PrincipalWorkspace = lazyPage(
   () => import('@/features/principal/pages/PrincipalWorkspace'),
   'PrincipalWorkspace',
+);
+const PendingApprovalsPage = lazyPage(
+  () => import('@/features/principal/pages/PendingApprovalsPage'),
+  'PendingApprovalsPage',
 );
 const ReportsWorkspace = lazyPage(
   () => import('@/features/reports/pages/ReportsWorkspace'),
@@ -451,6 +459,12 @@ export const router = createBrowserRouter([
 
               // Principal (admin-only executive dashboard)
               { path: 'principal', element: <PrincipalWorkspace /> },
+              {
+                element: <ProtectedRoute allowedRoles={['admin']} />,
+                children: [
+                  { path: 'principal/approvals', element: <PendingApprovalsPage /> },
+                ],
+              },
 
               // Reports & Analytics (admin-only)
               { path: 'reports',         element: <ReportsWorkspace /> },
@@ -528,6 +542,7 @@ export const router = createBrowserRouter([
                       { path: 'users/:id', element: <UserDetailPage /> },
                       { path: 'users/:id/edit', element: <EditUserPage /> },
                       { path: 'roles', element: <RoleManagementPage /> },
+                      { path: 'classes', element: <ClassTeachersPage /> },
                       { path: 'automation', element: <AutomationJobsPage /> },
                       { path: 'automation/:id', element: <AutomationJobDetailPage /> },
                     ],

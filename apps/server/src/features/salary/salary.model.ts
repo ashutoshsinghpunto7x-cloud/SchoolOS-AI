@@ -3,7 +3,7 @@ import type { PaymentMode } from '../fees/fee.model';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
-export type SalaryStatus = 'pending' | 'paid';
+export type SalaryStatus = 'scheduled' | 'pending' | 'paid';
 
 // ── Document Interface ────────────────────────────────────────────────────────
 
@@ -19,6 +19,8 @@ export interface ISalaryRecord extends Document {
   month: string;   // e.g. "April"
   year: number;    // e.g. 2026
   amount: number;
+  /** Salary flips from 'scheduled' to 'pending' automatically once this date passes. */
+  dueDate: Date;
 
   status: SalaryStatus;
   paidDate?: Date;
@@ -39,7 +41,7 @@ export interface ISalaryRecord extends Document {
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
-const SALARY_STATUSES: SalaryStatus[] = ['pending', 'paid'];
+const SALARY_STATUSES: SalaryStatus[] = ['scheduled', 'pending', 'paid'];
 
 const salaryRecordSchema = new Schema<ISalaryRecord>(
   {
@@ -52,8 +54,9 @@ const salaryRecordSchema = new Schema<ISalaryRecord>(
     month:        { type: String, required: true, trim: true },
     year:         { type: Number, required: true },
     amount:       { type: Number, required: true, min: 0 },
+    dueDate:      { type: Date, required: true },
 
-    status:       { type: String, enum: SALARY_STATUSES, default: 'pending' },
+    status:       { type: String, enum: SALARY_STATUSES, default: 'scheduled' },
     paidDate:     { type: Date },
     paymentMode:  { type: String, enum: ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'] },
 

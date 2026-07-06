@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { User } from '../users/user.model';
 import { userRepository } from '../users/user.repository';
 import { tokenService, AccessTokenPayload } from './token.service';
@@ -33,7 +33,11 @@ export const authService = {
       throw new UnauthorizedError('Invalid credentials');
     }
 
-    await userRepository.updateLastLogin(user._id.toString());
+    // Fire-and-forget: not needed for the response, and shouldn't block login latency
+    // on an extra write round-trip. Matches the auditService.log pattern below.
+    userRepository.updateLastLogin(user._id.toString()).catch((err: unknown) => {
+      logger.error('updateLastLogin failed', { userId: user._id.toString(), err });
+    });
 
     const payload: AccessTokenPayload = {
       userId: user._id.toString(),

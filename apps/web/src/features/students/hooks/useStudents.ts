@@ -3,6 +3,7 @@ import { studentsApi } from '../api/students.api';
 import type {
   CreateStudentPayload,
   UpdateStudentPayload,
+  UpdateFeeProfilePayload,
   StudentListOptions,
   CreateStudentNotePayload,
   UpdateStudentNotePayload,
@@ -69,6 +70,28 @@ export const useUpdateStudent = (id: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateStudentPayload) => studentsApi.update(id, payload),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      queryClient.setQueryData(studentKeys.detail(id), updated);
+    },
+  });
+};
+
+export const useUpdateRollNumber = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (rollNumber?: string) => studentsApi.updateRollNumber(id, rollNumber),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      queryClient.setQueryData(studentKeys.detail(id), updated);
+    },
+  });
+};
+
+export const useUpdateFeeProfile = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UpdateFeeProfilePayload) => studentsApi.updateFeeProfile(id, payload),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: studentKeys.all });
       queryClient.setQueryData(studentKeys.detail(id), updated);

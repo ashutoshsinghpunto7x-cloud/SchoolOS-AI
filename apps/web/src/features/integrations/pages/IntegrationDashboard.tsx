@@ -24,7 +24,7 @@ export function IntegrationDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Integrations</h1>
-          <p className="text-sm text-gray-500 mt-1">Connect SchoolOS to external systems and services</p>
+          <p className="text-sm text-gray-500 mt-1">Connect FNIC to external systems and services</p>
         </div>
         <div className="flex gap-3">
           <Link to="/integrations/marketplace" className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">

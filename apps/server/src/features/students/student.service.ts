@@ -2,7 +2,8 @@ import { studentRepository, PaginatedStudents, FindStudentsOptions } from './stu
 import { studentNoteRepository } from './student.note.repository';
 import {
   createStudentSchema, updateStudentSchema, changeStatusSchema,
-  listStudentsSchema, createNoteSchema, updateNoteSchema,
+  listStudentsSchema, createNoteSchema, updateNoteSchema, updateRollNumberSchema,
+  updateFeeProfileSchema,
 } from './student.validation';
 import { IStudent } from './student.model';
 import { IStudentNote } from './student.note.model';
@@ -103,6 +104,60 @@ export const studentService = {
 
     const student = await studentRepository.update(id, ctx.schoolId, {
       ...data,
+      updatedBy: ctx.displayName,
+    });
+    if (!student) throw new NotFoundError('Student');
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'student.updated',
+      resource: 'students',
+      resourceId: id,
+      details: { fields: Object.keys(data) },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return student;
+  },
+
+  /** Low-risk quick-edit field, exempt from the change-request approval flow. */
+  async updateRollNumber(id: string, rawInput: unknown, ctx: AuthContext): Promise<IStudent> {
+    const { rollNumber } = updateRollNumberSchema.parse(rawInput);
+
+    const student = await studentRepository.update(id, ctx.schoolId, {
+      rollNumber: rollNumber || undefined,
+      updatedBy: ctx.displayName,
+    });
+    if (!student) throw new NotFoundError('Student');
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'student.updated',
+      resource: 'students',
+      resourceId: id,
+      details: { fields: ['rollNumber'] },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return student;
+  },
+
+  /**
+   * Roll No./Class/Section/Monthly Tuition Fee — managed directly from the accountant
+   * workspace's Collect Fee card, exempt from the teacher change-request approval flow
+   * (route-gated to admin/reception/accountant, not teacher).
+   */
+  async updateFeeProfile(id: string, rawInput: unknown, ctx: AuthContext): Promise<IStudent> {
+    const data = updateFeeProfileSchema.parse(rawInput);
+    if (!Object.keys(data).length) throw new ValidationError('No fields to update');
+
+    const student = await studentRepository.update(id, ctx.schoolId, {
+      ...data,
+      rollNumber: data.rollNumber || undefined,
       updatedBy: ctx.displayName,
     });
     if (!student) throw new NotFoundError('Student');

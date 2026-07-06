@@ -6,6 +6,7 @@ import type {
   StudentNote,
   CreateStudentPayload,
   UpdateStudentPayload,
+  UpdateFeeProfilePayload,
   StudentListOptions,
   CreateStudentNotePayload,
   UpdateStudentNotePayload,
@@ -57,6 +58,26 @@ export const studentsApi = {
   async update(id: string, payload: UpdateStudentPayload): Promise<Student> {
     try {
       const res = await apiClient.patch<ApiResponse<Student>>(`/students/${id}`, payload);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  /** Low-risk quick-edit — any role, not gated behind the change-request approval flow. */
+  async updateRollNumber(id: string, rollNumber?: string): Promise<Student> {
+    try {
+      const res = await apiClient.patch<ApiResponse<Student>>(`/students/${id}/roll-number`, { rollNumber });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  /** Roll No./Class/Section/Monthly Tuition Fee — used by the accountant workspace's Collect Fee card. */
+  async updateFeeProfile(id: string, payload: UpdateFeeProfilePayload): Promise<Student> {
+    try {
+      const res = await apiClient.patch<ApiResponse<Student>>(`/students/${id}/fee-profile`, payload);
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

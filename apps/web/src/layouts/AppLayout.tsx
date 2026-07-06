@@ -4,10 +4,13 @@ import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { Topbar } from '@/components/topbar/Topbar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export const AppLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { user } = useAuth();
+  const isAccountant = user?.role === 'accountant';
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -24,7 +27,7 @@ export const AppLayout = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#F5F5F7] overflow-hidden">
+    <div className={cn("flex h-screen overflow-hidden", isAccountant ? "bg-white" : "bg-[#F5F5F7]")}>
 
       {/* Mobile backdrop */}
       {sidebarOpen && (

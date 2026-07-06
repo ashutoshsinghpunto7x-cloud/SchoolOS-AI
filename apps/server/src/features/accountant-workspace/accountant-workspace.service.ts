@@ -1,9 +1,12 @@
 import { feeRepository } from '../fees/fee.repository';
 import { feePaymentRepository } from '../fees/fee.payment.repository';
+import { feeService } from '../fees/fee.service';
 import { salaryRepository } from '../salary/salary.repository';
 import { expenseRepository } from '../expenses/expense.repository';
 import { teacherRepository } from '../teachers/teacher.repository';
+import { classTeacherRepository } from '../classes/class-teacher.repository';
 import { automationService } from '../automation/automation.service';
+import { notificationService } from '../notifications/notification.service';
 import { auditService } from '../audit/audit.service';
 import { AuditLog } from '../audit/audit.model';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
@@ -64,6 +67,7 @@ function toFeeDefaulter(rec: IFeeRecord, today: Date): FeeDefaulter {
 
 export const accountantWorkspaceService = {
   async getDashboard(ctx: AuthContext): Promise<AccountantDashboardData> {
+    await feeService.ensureOverdueMarked();
     const now = new Date();
     const today = startOfDay(now);
     const tomorrow = new Date(today.getTime() + 86_400_000);
@@ -129,6 +133,7 @@ export const accountantWorkspaceService = {
 
   /** Fee defaulters grouped by class-section — up to 1000 outstanding records, grouped in memory. */
   async getGroupedDefaulters(ctx: AuthContext): Promise<ClassDefaulterGroup[]> {
+    await feeService.ensureOverdueMarked();
     const today = startOfDay(new Date());
     const outstanding = await feeRepository.findOutstanding(ctx.schoolId, { page: 1, limit: 1000 });
 
@@ -150,7 +155,18 @@ export const accountantWorkspaceService = {
       }
     }
 
-    return Array.from(groups.values()).sort((a, b) =>
+    const groupList = Array.from(groups.values());
+    const assignments = await classTeacherRepository.findAll(ctx.schoolId);
+    const assignmentMap = new Map(assignments.map((a) => [`${a.class}||${a.section}`, a]));
+    for (const group of groupList) {
+      const assignment = assignmentMap.get(`${group.class}||${group.section}`);
+      if (assignment) {
+        group.classTeacherId = assignment.teacherId;
+        group.classTeacherName = assignment.teacherName;
+      }
+    }
+
+    return groupList.sort((a, b) =>
       `${a.class}${a.section}`.localeCompare(`${b.class}${b.section}`, undefined, { numeric: true }),
     );
   },
@@ -190,6 +206,18 @@ export const accountantWorkspaceService = {
       triggeredBy: ctx.userId,
       schoolId: ctx.schoolId,
     });
+
+    // Also deliver as an in-app notification if the teacher has a linked login account.
+    await notificationService.sendToTeachers(
+      {
+        teacherIds: [input.teacherId],
+        type: 'defaulters_list',
+        title: `Fee Defaulters — Class ${input.class}-${input.section}`,
+        body: `${students.length} student${students.length === 1 ? '' : 's'} with a combined outstanding balance of ₹${totalBalance.toLocaleString('en-IN')}.`,
+        payload: { class: input.class, section: input.section, students },
+      },
+      ctx,
+    );
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,

@@ -8,10 +8,59 @@ import {
   GraduationCap,
   AlertCircle,
   Users,
+  Pencil,
+  Check,
+  X,
+  Loader2,
 } from 'lucide-react';
-import { useStudentsPaginated, useDeleteStudent } from '@/features/students/hooks/useStudents';
+import { useStudentsPaginated, useDeleteStudent, useUpdateRollNumber } from '@/features/students/hooks/useStudents';
+import { TeacherEditStudentModal } from '../components/TeacherEditStudentModal';
 import type { Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
+
+// ── Roll number inline edit ─────────────────────────────────────────────────
+
+function RollNumberEditor({ student }: { student: Student }) {
+  const { mutateAsync, isPending } = useUpdateRollNumber(student._id);
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(student.rollNumber ?? '');
+
+  async function save() {
+    await mutateAsync(value.trim() || undefined);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        <input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
+          placeholder="Roll no."
+          className="w-16 h-7 px-2 rounded-lg border border-[#5B5CEB] text-xs focus:outline-none"
+        />
+        <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-[#5B5CEB] text-white shrink-0">
+          {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+        </button>
+        <button onClick={() => setEditing(false)} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-500 shrink-0">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { setValue(student.rollNumber ?? ''); setEditing(true); }}
+      className="flex items-center gap-1 shrink-0 text-xs font-semibold text-gray-500 hover:text-[#5B5CEB] px-2 py-1 rounded-lg hover:bg-[#5B5CEB]/5"
+      title="Edit roll number"
+    >
+      Roll {student.rollNumber || '—'} <Pencil className="w-3 h-3" />
+    </button>
+  );
+}
 
 // ── Student card ─────────────────────────────────────────────────────────────
 
@@ -19,10 +68,12 @@ function StudentCard({
   student,
   index,
   onDelete,
+  onEdit,
 }: {
   student: Student;
   index: number;
   onDelete: (id: string) => void;
+  onEdit: (student: Student) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -52,6 +103,8 @@ function StudentCard({
         )}
       </div>
 
+      <RollNumberEditor student={student} />
+
       {/* Status badge */}
       <span
         className={cn(
@@ -64,7 +117,7 @@ function StudentCard({
         {student.admissionStatus}
       </span>
 
-      {/* Delete */}
+      {/* Edit + Delete */}
       {confirmDelete ? (
         <div className="flex gap-1.5 shrink-0">
           <button
@@ -83,14 +136,24 @@ function StudentCard({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setConfirmDelete(true)}
-          className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors shrink-0"
-          title="Remove student"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => onEdit(student)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#5B5CEB]/10 hover:text-[#5B5CEB] transition-colors"
+            title="Request an edit"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+            title="Remove student"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       )}
     </div>
   );
@@ -117,6 +180,7 @@ export function TeacherStudentListPage() {
   const { cls, section } = useParams<{ cls: string; section: string }>();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
   const { data, isLoading, isError } = useStudentsPaginated({
     class: cls,
@@ -218,10 +282,15 @@ export function TeacherStudentListPage() {
               student={s}
               index={i}
               onDelete={(id) => deleteStudent(id)}
+              onEdit={setEditingStudent}
             />
           ))
         )}
       </div>
+
+      {editingStudent && (
+        <TeacherEditStudentModal student={editingStudent} onClose={() => setEditingStudent(null)} />
+      )}
 
       {/* Mark attendance FAB */}
       {students.length > 0 && (

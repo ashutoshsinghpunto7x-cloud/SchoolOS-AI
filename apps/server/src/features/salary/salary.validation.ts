@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const SALARY_STATUSES = ['pending', 'paid'] as const;
+export const SALARY_STATUSES = ['scheduled', 'pending', 'paid'] as const;
 export const PAYMENT_MODES = ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'] as const;
 
 const currency = (label: string) =>
@@ -16,6 +16,7 @@ export const createSalaryRecordSchema = z.object({
   month:        z.string({ required_error: 'month is required' }).min(1).max(20).trim(),
   year:         z.coerce.number().int().min(2000).max(2100),
   amount:       currency('amount'),
+  dueDate:      z.string({ required_error: 'dueDate is required' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'dueDate must be YYYY-MM-DD'),
   notes:        z.string().max(1000).trim().optional(),
 });
 
@@ -27,6 +28,7 @@ export const updateSalaryRecordSchema = z.object({
   month:        z.string().min(1).max(20).trim().optional(),
   year:         z.coerce.number().int().min(2000).max(2100).optional(),
   amount:       z.number().positive().multipleOf(0.01).optional(),
+  dueDate:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dueDate must be YYYY-MM-DD').optional(),
   notes:        z.string().max(1000).trim().optional(),
 });
 
