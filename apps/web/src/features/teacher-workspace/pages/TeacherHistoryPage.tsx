@@ -89,8 +89,8 @@ function SessionCard({ session }: { session: SessionGroup }) {
       >
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Date icon */}
-          <div className="w-10 h-10 bg-[#5B5CEB]/10 rounded-xl flex items-center justify-center shrink-0">
-            <CalendarDays className="w-5 h-5 text-[#5B5CEB]" />
+          <div className="w-10 h-10 bg-[#10B981]/10 rounded-xl flex items-center justify-center shrink-0">
+            <CalendarDays className="w-5 h-5 text-[#0B3D2E]" />
           </div>
 
           {/* Info */}
@@ -227,9 +227,9 @@ export function TeacherHistoryPage() {
 
         {/* Stats */}
         <div className="flex gap-3 mt-4">
-          <div className="flex-1 bg-[#5B5CEB]/5 border border-[#5B5CEB]/20 rounded-xl px-3 py-2 text-center">
-            <p className="text-xl font-bold text-[#5B5CEB]">{totalMarked}</p>
-            <p className="text-xs text-[#5B5CEB]/80 font-medium">Sessions</p>
+          <div className="flex-1 bg-[#10B981]/5 border border-[#10B981]/20 rounded-xl px-3 py-2 text-center">
+            <p className="text-xl font-bold text-[#0B3D2E]">{totalMarked}</p>
+            <p className="text-xs text-[#0B3D2E]/80 font-medium">Sessions</p>
           </div>
           <div className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-center">
             <p className="text-xl font-bold text-gray-700">{totalStudents}</p>
@@ -248,7 +248,7 @@ export function TeacherHistoryPage() {
             placeholder="Search by class or date…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/40 focus:border-[#5B5CEB] transition-colors"
+            className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
           />
         </div>
 
@@ -259,7 +259,7 @@ export function TeacherHistoryPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full h-11 pl-9 pr-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/40 focus:border-[#5B5CEB] appearance-none transition-colors"
+              className="w-full h-11 pl-9 pr-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] appearance-none transition-colors"
             >
               <option value="">All Classes</option>
               {classPairs.map((p) => (
@@ -278,7 +278,7 @@ export function TeacherHistoryPage() {
             value={dateFrom}
             max={dateTo}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/40 focus:border-[#5B5CEB] transition-colors"
+            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
           />
           <span className="text-gray-400 text-sm shrink-0">to</span>
           <input
@@ -287,7 +287,7 @@ export function TeacherHistoryPage() {
             min={dateFrom}
             max={todayStr()}
             onChange={(e) => setDateTo(e.target.value)}
-            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/40 focus:border-[#5B5CEB] transition-colors"
+            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
           />
         </div>
       </div>

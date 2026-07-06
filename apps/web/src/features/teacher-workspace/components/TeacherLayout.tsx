@@ -27,12 +27,12 @@ export function TeacherLayout() {
               {({ isActive }) => (
                 <div
                   className={`flex flex-col items-center gap-0.5 py-1.5 transition-all duration-200 ${
-                    isActive ? 'text-[#5B5CEB]' : 'text-gray-400 hover:text-gray-600'
+                    isActive ? 'text-[#0B3D2E]' : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
                   <div
                     className={`w-11 h-7 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                      isActive ? 'bg-[#5B5CEB]/10' : ''
+                      isActive ? 'bg-[#10B981]/10' : ''
                     }`}
                   >
                     <Icon

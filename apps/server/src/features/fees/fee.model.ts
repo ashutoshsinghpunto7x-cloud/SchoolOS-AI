@@ -96,7 +96,7 @@ const feeRecordSchema = new Schema<IFeeRecord>(
     admissionNumber: { type: String, required: true, trim: true },
     class:           { type: String, required: true, trim: true },
     section:         { type: String, required: true, trim: true },
-    schoolId:        { type: String, required: true, default: 'DEMO_SCHOOL' },
+    schoolId:        { type: String, required: true, default: 'school_001' },
 
     feeHead:         { type: String, enum: FEE_HEADS, required: true },
     customHead:      { type: String, trim: true },

@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, MapPin, Clock, Users, Tag,
-  StickyNote, Loader2, AlertCircle, ChevronDown,
+  StickyNote, Loader2, AlertCircle, ChevronDown, CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
-import { useEvent, useUpdateEventStatus, useDeleteEvent } from '../hooks/useEvents';
+import {
+  useEvent, useUpdateEventStatus, useDeleteEvent,
+  useMarkEventRead, useEventReadReceipts,
+} from '../hooks/useEvents';
 import { EventStatusBadge } from '../components/EventStatusBadge';
 import { EventTypeBadge, EVENT_TYPE_COLOR } from '../components/EventTypeBadge';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -41,8 +44,19 @@ export const EventDetailPage = () => {
   const { data: event, isLoading, isError } = useEvent(id!);
   const { mutateAsync: updateStatus, isPending: changingStatus } = useUpdateEventStatus(id!);
   const { mutateAsync: deleteEvent, isPending: deleting }        = useDeleteEvent();
+  const { mutate: markRead } = useMarkEventRead();
+  const { data: receipts, isLoading: receiptsLoading } = useEventReadReceipts(id!, isAdmin);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showNotReadList, setShowNotReadList] = useState(false);
+  const hasMarkedRead = useRef(false);
+
+  useEffect(() => {
+    if (event && !hasMarkedRead.current) {
+      hasMarkedRead.current = true;
+      markRead(event._id);
+    }
+  }, [event, markRead]);
 
   if (isLoading) {
     return (
@@ -165,15 +179,17 @@ export const EventDetailPage = () => {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <button
-          onClick={() => navigate(`/calendar/${id}/edit`)}
-          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-white border border-gray-200
-                     hover:bg-gray-50 text-sm font-semibold text-gray-700 transition-colors"
-          type="button"
-        >
-          <Pencil className="w-4 h-4" />
-          Edit Event
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => navigate(`/calendar/${id}/edit`)}
+            className="flex items-center gap-2 h-11 px-5 rounded-xl bg-white border border-gray-200
+                       hover:bg-gray-50 text-sm font-semibold text-gray-700 transition-colors"
+            type="button"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit Event
+          </button>
+        )}
 
         {transitions.length > 0 && (
           <div className="relative">
@@ -219,6 +235,58 @@ export const EventDetailPage = () => {
           </button>
         )}
       </div>
+
+      {/* Read receipts (admin only) */}
+      {isAdmin && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
+            <CheckCircle2 className="w-4 h-4 text-gray-400" />
+            Teacher Read Receipts
+          </h3>
+
+          {receiptsLoading && (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading read status…
+            </div>
+          )}
+
+          {!receiptsLoading && receipts && (
+            <div>
+              <p className="text-sm text-gray-600">
+                <span className="font-semibold text-gray-900">
+                  {receipts.readCount} of {receipts.totalTeachers}
+                </span>{' '}
+                teachers have read this{receipts.totalTeachers === 0 ? ' (no teachers on record)' : ''}.
+              </p>
+
+              {receipts.notReadBy.length > 0 && (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowNotReadList((v) => !v)}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    {showNotReadList ? 'Hide' : 'Show'} teachers who haven't read it
+                  </button>
+                  {showNotReadList && (
+                    <ul className="mt-2 flex flex-wrap gap-1.5">
+                      {receipts.notReadBy.map((t) => (
+                        <li
+                          key={t.userId}
+                          className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
+                        >
+                          {t.userDisplayName}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Notes */}
       {event.notes && (

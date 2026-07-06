@@ -39,9 +39,9 @@ function RollNumberEditor({ student }: { student: Student }) {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
           placeholder="Roll no."
-          className="w-16 h-7 px-2 rounded-lg border border-[#5B5CEB] text-xs focus:outline-none"
+          className="w-16 h-7 px-2 rounded-lg border border-[#0B3D2E] text-xs focus:outline-none"
         />
-        <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-[#5B5CEB] text-white shrink-0">
+        <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-[#0B3D2E] text-white shrink-0">
           {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
         </button>
         <button onClick={() => setEditing(false)} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-500 shrink-0">
@@ -54,7 +54,7 @@ function RollNumberEditor({ student }: { student: Student }) {
   return (
     <button
       onClick={() => { setValue(student.rollNumber ?? ''); setEditing(true); }}
-      className="flex items-center gap-1 shrink-0 text-xs font-semibold text-gray-500 hover:text-[#5B5CEB] px-2 py-1 rounded-lg hover:bg-[#5B5CEB]/5"
+      className="flex items-center gap-1 shrink-0 text-xs font-semibold text-gray-500 hover:text-[#0B3D2E] px-2 py-1 rounded-lg hover:bg-[#10B981]/5"
       title="Edit roll number"
     >
       Roll {student.rollNumber || '—'} <Pencil className="w-3 h-3" />
@@ -90,8 +90,8 @@ function StudentCard({
       <span className="text-xs text-gray-400 w-6 text-right shrink-0">{index + 1}</span>
 
       {/* Avatar */}
-      <div className="w-10 h-10 rounded-xl bg-[#5B5CEB]/10 flex items-center justify-center shrink-0">
-        <span className="text-xs font-bold text-[#5B5CEB]">{initials}</span>
+      <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center shrink-0">
+        <span className="text-xs font-bold text-[#0B3D2E]">{initials}</span>
       </div>
 
       {/* Info */}
@@ -140,7 +140,7 @@ function StudentCard({
           <button
             type="button"
             onClick={() => onEdit(student)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#5B5CEB]/10 hover:text-[#5B5CEB] transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#10B981]/10 hover:text-[#0B3D2E] transition-colors"
             title="Request an edit"
           >
             <Pencil className="w-4 h-4" />
@@ -224,7 +224,7 @@ export function TeacherStudentListPage() {
           </div>
           <button
             onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
-            className="h-10 px-4 bg-[#5B5CEB] text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-[#4a4bd9] transition-colors shrink-0"
+            className="h-10 px-4 bg-[#0B3D2E] text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-[#08251B] transition-colors shrink-0"
             type="button"
           >
             <UserPlus className="w-4 h-4" />
@@ -240,7 +240,7 @@ export function TeacherStudentListPage() {
             placeholder="Search students…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/40 focus:border-[#5B5CEB] transition-colors"
+            className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
           />
         </div>
       </div>
@@ -269,7 +269,7 @@ export function TeacherStudentListPage() {
             {!search && (
               <button
                 onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
-                className="mt-4 h-10 px-6 bg-[#5B5CEB] text-white rounded-xl text-sm font-semibold hover:bg-[#4a4bd9] transition-colors"
+                className="mt-4 h-10 px-6 bg-[#0B3D2E] text-white rounded-xl text-sm font-semibold hover:bg-[#08251B] transition-colors"
               >
                 Add First Student
               </button>
@@ -297,7 +297,7 @@ export function TeacherStudentListPage() {
         <div className="fixed bottom-24 right-4 lg:bottom-6">
           <button
             onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
-            className="h-14 px-5 bg-[#5B5CEB] text-white rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2 hover:bg-[#4a4bd9] transition-all hover:scale-105 active:scale-95"
+            className="h-14 px-5 bg-[#0B3D2E] text-white rounded-2xl shadow-xl text-sm font-bold flex items-center gap-2 hover:bg-[#08251B] transition-all hover:scale-105 active:scale-95"
           >
             <GraduationCap className="w-5 h-5" />
             Mark Attendance

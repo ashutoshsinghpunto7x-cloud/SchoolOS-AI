@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 
 const inputCls =
   'w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 ' +
-  'focus:border-[#5B5CEB] transition-colors';
+  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 ' +
+  'focus:border-[#0B3D2E] transition-colors';
 
 const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
 
@@ -149,7 +149,7 @@ export function TeacherAddStudentPage() {
         <div className="flex flex-col gap-3 mt-8 w-full max-w-xs">
           <button
             onClick={resetForm}
-            className="h-12 bg-[#5B5CEB] text-white font-semibold rounded-xl text-sm hover:bg-[#4a4bd9] transition-colors"
+            className="h-12 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
           >
             Add Another Student
           </button>
@@ -313,7 +313,7 @@ export function TeacherAddStudentPage() {
                     onClick={() => setGender(g)}
                     className={cn(
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors',
-                      gender === g ? 'border-[#5B5CEB] bg-[#5B5CEB]' : 'border-gray-300',
+                      gender === g ? 'border-[#0B3D2E] bg-[#0B3D2E]' : 'border-gray-300',
                     )}
                   >
                     {gender === g && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -350,7 +350,7 @@ export function TeacherAddStudentPage() {
           type="button"
           onClick={(e) => handleSubmit(e as unknown as FormEvent)}
           disabled={isPending}
-          className="w-full h-14 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#5B5CEB]/20"
+          className="w-full h-14 bg-[#0B3D2E] hover:bg-[#08251B] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#0B3D2E]/20"
         >
           {isPending ? (
             <><Loader2 className="w-5 h-5 animate-spin" />Adding…</>
@@ -363,7 +363,7 @@ export function TeacherAddStudentPage() {
         <button
           type="button"
           onClick={() => { setImportResult(null); setImportErr(''); setImportOpen(true); }}
-          className="w-full flex items-center justify-center gap-2 text-[#5B5CEB] text-sm font-semibold py-2 hover:underline"
+          className="w-full flex items-center justify-center gap-2 text-[#0B3D2E] text-sm font-semibold py-2 hover:underline"
         >
           <Upload className="w-4 h-4" />
           Import from Excel
@@ -405,13 +405,13 @@ export function TeacherAddStudentPage() {
               disabled={isImporting}
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                'w-full border-2 border-dashed border-gray-200 rounded-2xl py-8 flex flex-col items-center gap-2 hover:border-[#5B5CEB]/40 hover:bg-[#5B5CEB]/5 transition-colors disabled:opacity-60',
+                'w-full border-2 border-dashed border-gray-200 rounded-2xl py-8 flex flex-col items-center gap-2 hover:border-[#10B981]/40 hover:bg-[#10B981]/5 transition-colors disabled:opacity-60',
               )}
             >
               {isImporting ? (
-                <Loader2 className="w-8 h-8 text-[#5B5CEB] animate-spin" />
+                <Loader2 className="w-8 h-8 text-[#0B3D2E] animate-spin" />
               ) : (
-                <FileSpreadsheet className="w-8 h-8 text-[#5B5CEB]" />
+                <FileSpreadsheet className="w-8 h-8 text-[#0B3D2E]" />
               )}
               <p className="text-sm font-semibold text-gray-700">
                 {isImporting ? 'Importing…' : 'Tap to select .xlsx, .xls, or .csv'}
@@ -469,7 +469,7 @@ export function TeacherAddStudentPage() {
                 <button
                   type="button"
                   onClick={() => { setImportOpen(false); navigate(`/teacher/classes/${activeCls}/${activeSec}/students`); }}
-                  className="w-full h-11 bg-[#5B5CEB] text-white font-semibold rounded-xl text-sm hover:bg-[#4a4bd9] transition-colors"
+                  className="w-full h-11 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
                 >
                   View Student List
                 </button>

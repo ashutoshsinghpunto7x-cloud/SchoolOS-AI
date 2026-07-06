@@ -5,6 +5,7 @@ import { PeriodSlot, IPeriodSlot } from '../timetable/timetable.period.model';
 import { ITimetable } from '../timetable/timetable.model';
 import { Attendance } from '../attendance/attendance.model';
 import { Student } from '../students/student.model';
+import { ClassTeacherAssignment } from '../classes/class-teacher.model';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { upsertOwnEntrySchema, removeOwnEntrySchema } from './teacher-workspace.validation';
@@ -139,6 +140,14 @@ export const teacherWorkspaceService = {
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
 
+    // Which classes this teacher is the CLASS TEACHER of — assigned by
+    // admin/principal only (see class-teacher.routes.ts), never self-service.
+    const classTeacherAssignments = await ClassTeacherAssignment.find({
+      schoolId: ctx.schoolId,
+      teacherId,
+    }).lean<{ class: string; section: string }[]>();
+    const classTeacherOf = classTeacherAssignments.map((a) => ({ class: a.class, section: a.section }));
+
     return {
       teacher: {
         _id:              teacherId,
@@ -161,6 +170,7 @@ export const teacherWorkspaceService = {
         classesMarkedToday: todayClasses.filter((c) => c.attendanceMarked).length,
         totalClassesToday:  todayClasses.length,
       },
+      classTeacherOf,
       generatedAt: new Date().toISOString(),
     };
   },

@@ -6,6 +6,7 @@ import type {
   UpdateEventStatusPayload,
   EventListOptions,
   UpcomingEventsOptions,
+  EventReadReceipts,
   PaginatedResponse,
 } from '@schoolos/types';
 
@@ -57,6 +58,19 @@ export const eventsApi = {
   delete: async (id: string): Promise<void> => {
     try {
       await apiClient.delete(`${BASE}/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  markRead: async (id: string): Promise<void> => {
+    try {
+      await apiClient.post(`${BASE}/${id}/read`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getReadReceipts: async (id: string): Promise<EventReadReceipts> => {
+    try {
+      const res = await apiClient.get<{ data: EventReadReceipts }>(`${BASE}/${id}/read-receipts`);
+      return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 };

@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { Topbar } from '@/components/topbar/Topbar';
+import { NotificationNudge } from '@/features/notifications/components/NotificationNudge';
+import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
@@ -28,6 +30,8 @@ export const AppLayout = () => {
 
   return (
     <div className={cn("flex h-screen overflow-hidden", isAccountant ? "bg-white" : "bg-[#F5F5F7]")}>
+      <NotificationNudge />
+      <ReminderWatcher />
 
       {/* Mobile backdrop */}
       {sidebarOpen && (

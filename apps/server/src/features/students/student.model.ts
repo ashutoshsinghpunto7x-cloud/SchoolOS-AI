@@ -100,7 +100,7 @@ const studentSchema = new Schema<IStudent>(
     deletedBy: { type: String },
     createdBy: { type: String },
     updatedBy: { type: String },
-    schoolId: { type: String, required: true, default: 'DEMO_SCHOOL' },
+    schoolId: { type: String, required: true, default: 'school_001' },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

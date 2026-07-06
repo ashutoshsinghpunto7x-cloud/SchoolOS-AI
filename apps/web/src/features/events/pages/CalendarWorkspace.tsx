@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, List, LayoutGrid, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useEvents } from '../hooks/useEvents';
 import { EventFilters, EventFiltersState } from '../components/EventFilters';
 import { CalendarGrid } from '../components/CalendarGrid';
@@ -27,6 +28,9 @@ function getWeekStart(date: Date): Date {
 
 export const CalendarWorkspace = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Creating events is admin-only for now — add 'principal' here once that role/dashboard exists.
+  const canCreate = user?.role === 'admin';
   const today    = new Date();
 
   const [view, setView]               = useState<CalendarView>('month');
@@ -89,15 +93,17 @@ export const CalendarWorkspace = () => {
           <h1 className="text-2xl font-bold text-gray-900">School Calendar</h1>
           <p className="text-sm text-gray-500 mt-1">Manage events, holidays, and school activities</p>
         </div>
-        <button
-          onClick={() => navigate('/calendar/new')}
-          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700
-                     text-sm font-bold text-white transition-colors flex-shrink-0"
-          type="button"
-        >
-          <Plus className="w-4 h-4" />
-          Add Event
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => navigate('/calendar/new')}
+            className="flex items-center gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700
+                       text-sm font-bold text-white transition-colors flex-shrink-0"
+            type="button"
+          >
+            <Plus className="w-4 h-4" />
+            Add Event
+          </button>
+        )}
       </div>
 
       {/* View switcher + filters */}

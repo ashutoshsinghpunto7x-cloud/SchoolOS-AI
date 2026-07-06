@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import {
-  CheckCircle2,
   Clock,
   ChevronRight,
   AlertCircle,
@@ -17,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import type { TodayClass } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -111,7 +111,7 @@ function TodayClassCard({
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#5B5CEB]/20 transition-all duration-200 group"
+      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#10B981]/20 transition-all duration-200 group"
     >
       {/* Subject icon */}
       <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', bg)}>
@@ -133,7 +133,7 @@ function TodayClassCard({
         <p className="text-sm font-bold text-gray-900 truncate leading-tight mt-0.5">
           {cls.subjectName}
         </p>
-        <span className="inline-block text-xs font-semibold text-[#5B5CEB] bg-[#5B5CEB]/10 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-block text-xs font-semibold text-[#0B3D2E] bg-[#10B981]/10 px-2 py-0.5 rounded-full mt-1">
           {cls.class} - {cls.section}
         </span>
       </div>
@@ -175,7 +175,7 @@ function TodayClassCard({
             Pending
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-xs font-bold text-[#5B5CEB] bg-[#5B5CEB]/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[#0B3D2E] bg-[#10B981]/10 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Starts {cls.startTime}
           </span>
@@ -183,7 +183,7 @@ function TodayClassCard({
         <ChevronRight
           className={cn(
             'w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5',
-            isMarked ? 'text-emerald-400' : 'text-[#5B5CEB]',
+            isMarked ? 'text-emerald-400' : 'text-[#0B3D2E]',
           )}
         />
       </div>
@@ -222,15 +222,27 @@ export function TeacherDashboard() {
 
   const firstName = user?.firstName ?? data?.teacher.fullName.split(' ')[0] ?? 'Teacher';
 
-  const markedCount  = data?.attendanceSummary.classesMarkedToday ?? 0;
-  const totalCount   = data?.attendanceSummary.totalClassesToday  ?? 0;
-  const pendingCount = totalCount - markedCount;
-
   function goToAttendance(cls: TodayClass) {
     navigate(`/teacher/attendance/${cls.class}/${cls.section}`);
   }
 
   const currentPeriod = data ? getCurrentPeriod(data.todayClasses) : null;
+
+  // "Mark Attendance" must always open a sheet directly, never an intermediate
+  // list. If no period is currently active/upcoming (e.g. all of today's
+  // classes already ended), fall back to the most recent one today instead of
+  // bouncing to the class picker — only truly no-classes-today falls back to it.
+  function handleMarkAttendance() {
+    if (currentPeriod) { goToAttendance(currentPeriod.cls); return; }
+    if (data?.todayClasses.length) {
+      const mostRecent = [...data.todayClasses].sort(
+        (a, b) => toMinutes(b.startTime) - toMinutes(a.startTime),
+      )[0];
+      goToAttendance(mostRecent);
+      return;
+    }
+    navigate('/teacher/classes');
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -238,7 +250,7 @@ export function TeacherDashboard() {
       {/* ── Hero header ────────────────────────────────────────────────────── */}
       <div
         className="px-5 pt-8 pb-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #5B5CEB 0%, #6C63FF 60%, #7B74FF 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #163C2A 0%, #0F5132 45%, #08251B 100%)' }}
       >
         {/* Decorative blobs */}
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
@@ -248,44 +260,11 @@ export function TeacherDashboard() {
         <h1 className="text-3xl font-bold text-white mt-0.5 tracking-tight">{firstName}</h1>
         <p className="text-white/60 text-sm mt-0.5">{todayDateStr()}</p>
 
-        {/* Stat cards */}
-        <div className="flex gap-3 mt-5">
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-2xl font-bold text-white">{markedCount}</p>
-              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Marked Today</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-[18px] h-[18px] text-white" />
-            </div>
-          </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
-            <div>
-              <p className={cn('text-2xl font-bold', pendingCount > 0 ? 'text-amber-200' : 'text-white')}>
-                {pendingCount}
-              </p>
-              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Pending</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-              <Clock className="w-[18px] h-[18px] text-white" />
-            </div>
-          </div>
-          <div className="flex-1 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-2xl font-bold text-white">{totalCount}</p>
-              <p className="text-[11px] text-white/70 font-semibold mt-0.5">Classes Today</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
-              <Users className="w-[18px] h-[18px] text-white" />
-            </div>
-          </div>
-        </div>
-
         {/* Mark Attendance CTA */}
         <button
           type="button"
-          onClick={() => (currentPeriod ? goToAttendance(currentPeriod.cls) : navigate('/teacher/classes'))}
-          className="mt-4 w-full h-12 bg-white text-[#5B5CEB] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
+          onClick={handleMarkAttendance}
+          className="mt-5 w-full h-12 bg-white text-[#0B3D2E] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
         >
           <CalendarCheck className="w-[18px] h-[18px]" />
           Mark Attendance
@@ -302,7 +281,7 @@ export function TeacherDashboard() {
             </h2>
             <button
               onClick={() => navigate('/teacher/classes')}
-              className="text-xs font-semibold text-[#5B5CEB] flex items-center gap-0.5 hover:underline"
+              className="text-xs font-semibold text-[#0B3D2E] flex items-center gap-0.5 hover:underline"
             >
               View all
               <ChevronRight className="w-3 h-3" />
@@ -324,8 +303,8 @@ export function TeacherDashboard() {
             </div>
           ) : !currentPeriod ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-              <div className="w-14 h-14 bg-[#5B5CEB]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <CalendarCheck className="w-7 h-7 text-[#5B5CEB]" />
+              <div className="w-14 h-14 bg-[#10B981]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <CalendarCheck className="w-7 h-7 text-[#0B3D2E]" />
               </div>
               <p className="text-base font-semibold text-gray-700">
                 {data?.todayClasses.length ? 'No more classes today' : 'No classes today'}
@@ -341,6 +320,8 @@ export function TeacherDashboard() {
             />
           )}
         </section>
+
+        <UpcomingEventsWidget />
       </div>
     </div>
   );

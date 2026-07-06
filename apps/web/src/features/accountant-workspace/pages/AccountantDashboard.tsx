@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
+import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import type { ClassDefaulterGroup } from '@schoolos/types';
 import { motion } from 'framer-motion';
 
@@ -274,6 +275,8 @@ export function AccountantDashboard() {
           </motion.div>
 
         </div>
+
+        <UpcomingEventsWidget />
 
       </div>
 

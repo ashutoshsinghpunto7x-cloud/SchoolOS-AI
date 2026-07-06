@@ -59,4 +59,20 @@ export const eventController = {
       sendSuccess(res, null, 'Event deleted');
     } catch (err) { next(err); }
   },
+
+  async markRead(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await eventService.markRead(req.params.id, ctx);
+      res.status(204).end();
+    } catch (err) { next(err); }
+  },
+
+  async getReadReceipts(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx     = buildAuthContext(req.user!);
+      const receipts = await eventService.getReadReceipts(req.params.id, ctx);
+      sendSuccess(res, receipts);
+    } catch (err) { next(err); }
+  },
 };

@@ -17,7 +17,7 @@ export interface IClassTeacherAssignment extends Document {
 
 const classTeacherAssignmentSchema = new Schema<IClassTeacherAssignment>(
   {
-    schoolId:    { type: String, required: true, default: 'DEMO_SCHOOL' },
+    schoolId:    { type: String, required: true, default: 'school_001' },
     class:       { type: String, required: true, trim: true },
     section:     { type: String, required: true, trim: true },
     teacherId:   { type: String, required: true },

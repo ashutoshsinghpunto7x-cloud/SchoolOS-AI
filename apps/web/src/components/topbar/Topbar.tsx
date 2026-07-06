@@ -5,6 +5,7 @@ import { Menu, ChevronRight, Search, ChevronDown, Clock, GraduationCap, Loader2 
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
 import { studentsApi } from '@/features/students/api/students.api';
 
 const WORKSPACE_LABELS: Record<string, string> = {
@@ -273,6 +274,10 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const location = useLocation();
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
+  const isTeacher = user?.role === 'teacher';
+  // Teacher dashboard uses the exact same emerald palette/effects as the
+  // Accountant workspace — no other colors anywhere on that dashboard.
+  const useEmeraldStyle = isAccountant || isTeacher;
   const isAccountantDashboard = isAccountant && location.pathname === '/accountant';
   const section = isAccountantDashboard
     ? `${greeting()}, ${user?.firstName ?? 'Accountant'}`
@@ -284,6 +289,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const time = formatTime(now);
 
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -293,18 +299,18 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
     <header
       className={cn(
         'sticky top-0 z-10 flex h-[60px] items-center',
-        isAccountant
+        useEmeraldStyle
           ? 'bg-white border-b border-[#E8E8E8] px-8'
           : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] px-6',
       )}
     >
-      <div className={cn("flex items-center w-full gap-4", isAccountant && "max-w-7xl mx-auto")}>
+      <div className={cn("flex items-center w-full gap-4", useEmeraldStyle && "max-w-7xl mx-auto")}>
         {/* Mobile menu toggle */}
         <button
           onClick={onMenuToggle}
           className={cn(
             "lg:hidden p-2 -ml-1 rounded-xl transition-colors",
-            isAccountant
+            useEmeraldStyle
               ? "text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E]"
               : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
           )}
@@ -315,7 +321,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
         {/* Breadcrumb */}
         <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
-          <span className={cn("text-sm font-semibold", isAccountant ? "text-gray-900" : "text-gray-900")}>{section}</span>
+          <span className="text-sm font-semibold text-gray-900">{section}</span>
           {subLabel && (
             <>
               <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" strokeWidth={2.5} />
@@ -329,17 +335,24 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
         {/* Right-side controls */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Live clock */}
-          {isAccountant && (
-            <span className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums">
-              <Clock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
-              {time} IST
-            </span>
+          {/* Live clock — tap to open reminders */}
+          {useEmeraldStyle && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setReminderOpen((v) => !v)}
+                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors hover:bg-[#10B981]/5 hover:border-[#10B981]/25"
+              >
+                <Clock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                {time} IST
+              </button>
+              {reminderOpen && <ReminderPanel onClose={() => setReminderOpen(false)} />}
+            </div>
           )}
 
           {/* Date chip / calendar trigger */}
           <div className="relative">
-            {isAccountant ? (
+            {useEmeraldStyle ? (
               <button
                 type="button"
                 onClick={() => setCalendarOpen((v) => !v)}
@@ -375,13 +388,13 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
           <button
             className={cn(
               "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
-              isAccountant
+              useEmeraldStyle
                 ? "bg-white border border-[#E8E8E8] hover:bg-[#10B981]/5 hover:border-[#10B981]/20 shadow-sm"
                 : "hover:bg-gray-100"
             )}
             aria-label="Profile"
           >
-            {isAccountant ? (
+            {useEmeraldStyle ? (
               <span className="w-7 h-7 rounded-full bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center text-[11px] font-bold text-[#0B3D2E]">
                 {initials}
               </span>

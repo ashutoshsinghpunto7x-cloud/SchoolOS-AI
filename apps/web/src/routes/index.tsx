@@ -513,11 +513,18 @@ export const router = createBrowserRouter([
               { path: 'enquiries/:id',      element: <EnquiryProfilePage /> },
               { path: 'enquiries/:id/edit', element: <EditEnquiryPage /> },
 
-              // Calendar & Events (static /new before /:id)
+              // Calendar & Events (static /new before /:id) — anyone can view,
+              // but creating/editing events is admin-only for now. Add
+              // 'principal' to allowedRoles here once that role/dashboard exists.
               { path: 'calendar',            element: <CalendarWorkspace /> },
-              { path: 'calendar/new',        element: <NewEventPage /> },
               { path: 'calendar/:id',        element: <EventDetailPage /> },
-              { path: 'calendar/:id/edit',   element: <EditEventPage /> },
+              {
+                element: <ProtectedRoute allowedRoles={['admin']} />,
+                children: [
+                  { path: 'calendar/new',      element: <NewEventPage /> },
+                  { path: 'calendar/:id/edit', element: <EditEventPage /> },
+                ],
+              },
 
               // Teachers
               { path: 'teachers', element: <TeacherListPage /> },

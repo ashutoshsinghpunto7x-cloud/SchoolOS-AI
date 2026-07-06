@@ -96,12 +96,15 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const roleLabel = user ? (ROLE_LABEL[user.role] ?? user.role) : '';
 
   const isAccountant = user?.role === 'accountant';
+  const isTeacher = user?.role === 'teacher';
+  // Teacher sidebar uses the exact same liquid-glass green look as Accountant.
+  const useEmeraldSidebar = isAccountant || isTeacher;
 
   return (
     <aside
       className={cn(
         'fixed left-0 top-0 z-30 flex h-full w-[260px] flex-col',
-        isAccountant
+        useEmeraldSidebar
           ? 'liquid-glass-sidebar border-r border-white/5 shadow-[1px_0_0_0_rgba(255,255,255,0.05),inset_-1px_0_0_0_rgba(255,255,255,0.06),inset_1px_0_0_0_rgba(255,255,255,0.04)]'
           : 'bg-white/98 backdrop-blur-xl border-r border-gray-100/80 shadow-[1px_0_0_0_rgba(0,0,0,0.04),4px_0_16px_0_rgba(0,0,0,0.03)]',
         'transition-transform duration-200 ease-in-out',
@@ -112,12 +115,12 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* ── School brand ──────────────────────────────────────────────── */}
       <div className={cn(
         "flex items-center justify-between px-5 py-5",
-        isAccountant ? "border-b border-white/5" : "border-b border-gray-100/80"
+        useEmeraldSidebar ? "border-b border-white/5" : "border-b border-gray-100/80"
       )}>
         <div className="flex items-center gap-3">
           <div className={cn(
             "flex-shrink-0 w-9 h-9 flex items-center justify-center shadow-sm rounded-xl",
-            isAccountant
+            useEmeraldSidebar
               ? "bg-white/10 text-white border border-white/10 backdrop-blur-sm"
               : "bg-blue-600 text-white"
           )}>
@@ -126,13 +129,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div>
             <div className={cn(
               "text-sm font-bold leading-tight tracking-tight",
-              isAccountant ? "text-white" : "text-gray-900"
+              useEmeraldSidebar ? "text-white" : "text-gray-900"
             )}>
               Sunrise Academy
             </div>
             <div className={cn(
               "text-[11px] font-medium tracking-wide mt-px",
-              isAccountant ? "text-white/60" : "text-gray-400"
+              useEmeraldSidebar ? "text-white/60" : "text-gray-400"
             )}>
               FNIC
             </div>
@@ -143,7 +146,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           onClick={onClose}
           className={cn(
             "lg:hidden p-1.5 rounded-lg transition-colors",
-            isAccountant
+            useEmeraldSidebar
               ? "text-white/60 hover:text-white hover:bg-white/10"
               : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
           )}
@@ -157,7 +160,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
         {user?.role === 'teacher' ? (
           <>
-            <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <p className="px-3 pb-3 text-[10px] font-bold text-white/50 uppercase tracking-widest">
               Teacher Portal
             </p>
             {NAV_ITEMS_TEACHER.map((item) => (
@@ -168,7 +171,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 label={item.label}
               />
             ))}
-            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">
               Quick Actions
             </p>
             {NAV_ITEMS_TEACHER_QUICK_ACTIONS.map((item) => (
@@ -224,19 +227,19 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       {/* Extra bottom padding on mobile so Log Out isn't hidden behind the fixed mobile bottom nav bar */}
       <div className={cn(
         "px-3 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-3 space-y-0.5",
-        isAccountant ? "border-t border-white/5" : "border-t border-gray-100/80"
+        useEmeraldSidebar ? "border-t border-white/5" : "border-t border-gray-100/80"
       )}>
         <SidebarNavItem to="/settings" icon={Settings} label="Settings" />
 
         {/* Current user */}
         <div className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-default mt-1 transition-colors",
-          isAccountant ? "hover:bg-white/5" : "hover:bg-gray-50"
+          useEmeraldSidebar ? "hover:bg-white/5" : "hover:bg-gray-50"
         )}>
           <div className="relative flex-shrink-0">
             <div className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
-              isAccountant
+              useEmeraldSidebar
                 ? "bg-white/10 text-white border border-white/10"
                 : "bg-gradient-to-br from-[#5B5CEB] to-indigo-500 text-white"
             )}>
@@ -247,13 +250,13 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div className="flex-1 min-w-0">
             <div className={cn(
               "text-sm font-semibold truncate leading-tight",
-              isAccountant ? "text-white" : "text-gray-900"
+              useEmeraldSidebar ? "text-white" : "text-gray-900"
             )}>
               {displayName}
             </div>
             <div className={cn(
               "text-xs truncate mt-px",
-              isAccountant ? "text-white/60" : "text-gray-400"
+              useEmeraldSidebar ? "text-white/60" : "text-gray-400"
             )}>
               {roleLabel}
             </div>
@@ -264,7 +267,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           onClick={() => void logout()}
           className={cn(
             "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-            isAccountant
+            useEmeraldSidebar
               ? "text-white/70 hover:bg-white/10 hover:text-white"
               : "text-gray-500 hover:bg-red-50 hover:text-red-600"
           )}

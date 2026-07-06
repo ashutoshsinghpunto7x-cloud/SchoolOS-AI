@@ -1,7 +1,7 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import {
   ArrowLeft,
-  ArrowRight,
+  AlertCircle,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -10,13 +10,15 @@ import {
   Pencil,
   CalendarDays,
   Phone,
-  MessageCircle,
+  GripVertical,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { toast } from 'sonner';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
-import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';
+// WhatsApp absent-notification sending is temporarily disabled — see AbsenteeOutreach
+// below. Re-import when re-enabling: `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
 import { useState, useEffect } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -45,12 +47,9 @@ function addDays(dateStr: string, n: number) {
 // ── Avatar styling ────────────────────────────────────────────────────────────
 
 const AVATAR_STYLES = [
-  { bg: 'bg-blue-100',   text: 'text-blue-600'   },
-  { bg: 'bg-purple-100', text: 'text-purple-600' },
-  { bg: 'bg-emerald-100',text: 'text-emerald-600'},
-  { bg: 'bg-amber-100',  text: 'text-amber-600'  },
-  { bg: 'bg-rose-100',   text: 'text-rose-600'   },
-  { bg: 'bg-indigo-100', text: 'text-indigo-600' },
+  { bg: 'bg-[#10B981]/10',  text: 'text-[#0B3D2E]' },
+  { bg: 'bg-gray-100',      text: 'text-gray-600'  },
+  { bg: 'bg-[#10B981]/15',  text: 'text-emerald-700' },
 ];
 
 function getInitials(name: string) {
@@ -68,20 +67,19 @@ function getAvatarStyle(name: string) {
 type RowStatus = 'present' | 'absent' | 'unmarked';
 
 interface Row {
-  studentId: string;
-  fullName:  string;
-  status:    RowStatus;
+  studentId:  string;
+  fullName:   string;
+  rollNumber?: string;
+  status:     RowStatus;
 }
 
 // ── Active (swipeable) card ───────────────────────────────────────────────────
 
 function ActiveCard({
   row,
-  index,
   onMark,
 }: {
   row:     Row;
-  index:   number;
   onMark:  (id: string, status: RowStatus) => void;
 }) {
   const x = useMotionValue(0);
@@ -112,22 +110,25 @@ function ActiveCard({
       style={{ background: 'linear-gradient(to right, #FCA5A5 50%, #86EFAC 50%)' }}
     >
       <motion.div
-        className="flex items-center justify-center gap-3 bg-white rounded-[13px] border-2 px-4 py-5 cursor-grab active:cursor-grabbing touch-pan-y"
+        className="flex items-center gap-3 bg-white rounded-[13px] border-2 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
         style={{ x, borderColor, backgroundColor: background }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.7}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 min-w-0 flex flex-col items-center text-center gap-1.5">
-          <div className="flex items-center gap-2.5">
-            <span className="text-sm text-gray-400 font-mono">{index + 1}</span>
-            <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
-              {getInitials(row.fullName)}
-            </div>
-            <span className="text-lg font-bold text-gray-900 truncate max-w-[200px]">{row.fullName}</span>
-          </div>
-          <p className="text-xs text-gray-400">Swipe right for present · left for absent</p>
+        <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
+          {getInitials(row.fullName)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-bold text-gray-900 truncate">{row.fullName}</p>
+          {row.rollNumber && (
+            <p className="text-xs text-gray-400 mt-0.5">Roll No: {row.rollNumber}</p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <GripVertical className="w-4 h-4 text-gray-300" />
+          <span className="text-[9px] font-bold text-gray-400 tracking-wide">SWIPE TO MARK</span>
         </div>
       </motion.div>
     </div>
@@ -156,10 +157,9 @@ function CompactRow({
       disabled={!marked || !editable}
       onClick={() => onUndo(row.studentId)}
       className={cn(
-        'w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-3 text-left transition-colors border-l-4',
-        marked && row.status === 'present' && 'border-l-emerald-400 bg-emerald-50/40',
-        marked && row.status === 'absent' && 'border-l-red-400 bg-red-50/40',
-        !marked && 'border-l-transparent',
+        'w-full flex items-center px-4 py-3 gap-3 text-left transition-colors',
+        marked && row.status === 'present' && 'bg-emerald-50/40',
+        marked && row.status === 'absent' && 'bg-red-50/40',
         marked && editable && 'hover:brightness-[0.97]',
         !marked && 'cursor-default',
       )}
@@ -168,12 +168,17 @@ function CompactRow({
       <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
         {getInitials(row.fullName)}
       </div>
-      <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
+        {row.rollNumber && <p className="text-[11px] text-gray-400">Roll No: {row.rollNumber}</p>}
+      </div>
 
-      {marked && (
+      {marked ? (
         <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600' : 'text-red-500')}>
           {row.status === 'present' ? 'Present' : 'Absent'}
         </span>
+      ) : (
+        <span className="w-2 h-2 rounded-full bg-gray-200 shrink-0" aria-hidden="true" />
       )}
     </button>
   );
@@ -193,7 +198,13 @@ function SkeletonRow() {
   );
 }
 
-// ── Absentee outreach (call + WhatsApp reminder) ──────────────────────────────
+// ── Absentee outreach (call now; WhatsApp reminder disabled for now) ──────────
+//
+// The WhatsApp "send reminder" feature is intentionally disabled below — just
+// the absent students' names + a call-parent shortcut are shown. To re-enable
+// WhatsApp sending later: restore the commented-out state/handler/JSX further
+// down, and re-add `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
+// at the top of this file.
 
 interface Absentee {
   studentId: string;
@@ -201,8 +212,8 @@ interface Absentee {
   parentPhone?: string;
 }
 
-const defaultReminderTemplate = (date: string) =>
-  `Hi, this is to inform you that {name} was marked absent today, ${formatDisplayDate(date)}. Please contact the school if this is unexpected.`;
+// const defaultReminderTemplate = (date: string) =>
+//   `Hi, this is to inform you that {name} was marked absent today, ${formatDisplayDate(date)}. Please contact the school if this is unexpected.`;
 
 const telHref = (phone?: string) => {
   if (!phone) return undefined;
@@ -211,46 +222,41 @@ const telHref = (phone?: string) => {
 };
 
 function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: string }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(absentees.map((a) => a.studentId)));
-  const [template, setTemplate] = useState(defaultReminderTemplate(date));
-  const { sendReminders, isSending, sentCount, failedCount } = useAbsenteeReminder();
-  const [done, setDone] = useState(false);
-
-  function toggle(studentId: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(studentId)) next.delete(studentId);
-      else next.add(studentId);
-      return next;
-    });
-  }
-
-  async function handleSend() {
-    const targets = absentees.filter((a) => selected.has(a.studentId));
-    if (!targets.length) return;
-    setDone(false);
-    await sendReminders(
-      targets.map((t) => ({ studentId: t.studentId, studentName: t.fullName })),
-      (name) => template.replace('{name}', name),
-    );
-    setDone(true);
-  }
+  // const [selected, setSelected] = useState<Set<string>>(new Set(absentees.map((a) => a.studentId)));
+  // const [template, setTemplate] = useState(defaultReminderTemplate(date));
+  // const { sendReminders, isSending, sentCount, failedCount } = useAbsenteeReminder();
+  // const [done, setDone] = useState(false);
+  //
+  // function toggle(studentId: string) {
+  //   setSelected((prev) => {
+  //     const next = new Set(prev);
+  //     if (next.has(studentId)) next.delete(studentId);
+  //     else next.add(studentId);
+  //     return next;
+  //   });
+  // }
+  //
+  // async function handleSend() {
+  //   const targets = absentees.filter((a) => selected.has(a.studentId));
+  //   if (!targets.length) return;
+  //   setDone(false);
+  //   await sendReminders(
+  //     targets.map((t) => ({ studentId: t.studentId, studentName: t.fullName })),
+  //     (name) => template.replace('{name}', name),
+  //   );
+  //   setDone(true);
+  // }
 
   return (
     <div className="w-full max-w-sm mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left">
-      <p className="font-bold text-gray-900 mb-3">Absent Today ({absentees.length})</p>
+      <p className="font-bold text-gray-900">Absent Today ({absentees.length})</p>
+      <p className="text-xs text-gray-400 mb-3">{formatDisplayDate(date)}</p>
 
-      <div className="space-y-2 mb-4">
+      <div className="space-y-2">
         {absentees.map((a) => {
           const href = telHref(a.parentPhone);
           return (
             <div key={a.studentId} className="flex items-center gap-3 py-1.5">
-              <input
-                type="checkbox"
-                checked={selected.has(a.studentId)}
-                onChange={() => toggle(a.studentId)}
-                className="w-4 h-4 rounded border-gray-300 text-[#5B5CEB] focus:ring-[#5B5CEB]/40 shrink-0"
-              />
               <p className="flex-1 min-w-0 text-sm font-semibold text-gray-800 truncate">{a.fullName}</p>
               {href ? (
                 <a
@@ -268,12 +274,13 @@ function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: st
         })}
       </div>
 
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5">WhatsApp reminder message</label>
+      {/* ── WhatsApp reminder — disabled for now, restore when ready ──────────
+      <label className="block text-xs font-semibold text-gray-600 mb-1.5 mt-4">WhatsApp reminder message</label>
       <textarea
         value={template}
         onChange={(e) => setTemplate(e.target.value)}
         rows={3}
-        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
       />
       <p className="text-[11px] text-gray-400 mb-3">Use <span className="font-mono">{'{name}'}</span> to insert each student's name.</p>
 
@@ -292,6 +299,7 @@ function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: st
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
         {isSending ? `Sending… (${sentCount}/${selected.size})` : `Send WhatsApp Reminder (${selected.size})`}
       </button>
+      ── */}
     </div>
   );
 }
@@ -344,7 +352,7 @@ function SubmittedScreen({
 
         <div className="flex gap-6 mt-5">
           <div>
-            <p className="text-2xl font-bold text-[#5B5CEB]">{presentCount}</p>
+            <p className="text-2xl font-bold text-emerald-600">{presentCount}</p>
             <p className="text-xs text-gray-400 font-medium mt-0.5">Present</p>
           </div>
           <div>
@@ -360,7 +368,7 @@ function SubmittedScreen({
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
         <button
           onClick={onViewStudents}
-          className="h-12 bg-[#5B5CEB] text-white font-semibold rounded-xl text-sm hover:bg-[#4a4bd9] transition-colors"
+          className="h-12 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
         >
           View Students
         </button>
@@ -373,7 +381,7 @@ function SubmittedScreen({
         </button>
         <button
           onClick={onDashboard}
-          className="text-sm text-[#5B5CEB] font-semibold py-1 hover:underline transition-colors"
+          className="text-sm text-[#0B3D2E] font-semibold py-1 hover:underline transition-colors"
         >
           Back to Dashboard
         </button>
@@ -394,12 +402,43 @@ export function TeacherAttendancePage() {
   const [rows,      setRows]      = useState<Row[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [editMode,  setEditMode]  = useState(false);
+  // Tracks swipes made since the page loaded / since the last successful save —
+  // a teacher swiping through a class on their phone is exactly who's likely to
+  // hit an accidental back-gesture and lose everything with no warning.
+  const [dirty,     setDirty]     = useState(false);
 
-  const { data: studentsData, isLoading: studentsLoading } = useStudentsPaginated({
+  // Warn before closing/refreshing the tab with unsaved swipes.
+  useEffect(() => {
+    if (!dirty) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
+
+  // Warn before in-app navigation away (sidebar links, bottom nav, browser
+  // back) with unsaved swipes — the leading cause of silently lost attendance.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      dirty && currentLocation.pathname !== nextLocation.pathname,
+  );
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    const leave = window.confirm(
+      'You have unsaved attendance changes. Leave without saving?',
+    );
+    if (leave) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+
+  const { data: studentsData, isLoading: studentsLoading, isError: studentsError } = useStudentsPaginated({
     class: cls, section, limit: 300, status: 'active',
   });
 
-  const { data: existingAttendance, isLoading: attendanceLoading } =
+  const { data: existingAttendance, isLoading: attendanceLoading, isError: attendanceError } =
     useClassAttendance(cls ?? '', section ?? '', date);
 
   const { mutateAsync: bulkMark, isPending } = useBulkMarkAttendance();
@@ -416,9 +455,10 @@ export function TeacherAttendancePage() {
       students.map((s) => {
         const existing = existMap.get(s._id);
         const status: RowStatus = existing === 'present' ? 'present' : existing === 'absent' ? 'absent' : 'unmarked';
-        return { studentId: s._id, fullName: s.fullName, status };
+        return { studentId: s._id, fullName: s.fullName, rollNumber: s.rollNumber, status };
       }),
     );
+    setDirty(false); // fresh sync from the server, not an unsaved user edit
   }, [students.length, existingAttendance, date]);
 
   const alreadySubmitted =
@@ -433,32 +473,50 @@ export function TeacherAttendancePage() {
 
   function markStatus(studentId: string, status: RowStatus) {
     setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status } : r));
+    setDirty(true);
   }
 
   function undoStatus(studentId: string) {
     setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status: 'unmarked' } : r));
+    setDirty(true);
   }
 
   function markAllPresent() {
     setRows((prev) => prev.map((r) => ({ ...r, status: 'present' })));
+    setDirty(true);
   }
 
   async function handleSave() {
     if (!cls || !section) return;
-    await bulkMark({
-      class:   cls,
-      section: section,
-      date,
-      records: rows
-        .filter((r): r is Row & { status: AttendanceStatus } => r.status !== 'unmarked')
-        .map((r) => ({ studentId: r.studentId, status: r.status })),
-    });
-    await invalidateWorkspace();
-    setSubmitted(true);
-    setEditMode(false);
+    try {
+      await bulkMark({
+        class:   cls,
+        section: section,
+        date,
+        records: rows
+          .filter((r): r is Row & { status: AttendanceStatus } => r.status !== 'unmarked')
+          .map((r) => ({ studentId: r.studentId, status: r.status })),
+      });
+      await invalidateWorkspace();
+      setSubmitted(true);
+      setEditMode(false);
+      setDirty(false);
+    } catch (err) {
+      // Without this, a dropped connection or a 403/500 would fail silently —
+      // the teacher would see the button reset and could walk away believing
+      // attendance was saved when it wasn't. Nothing here is marked as saved,
+      // so it's always safe to just tap Save again.
+      toast.error('Could not save attendance', {
+        description: err instanceof Error ? err.message : 'Check your connection and try again.',
+      });
+    }
   }
 
   const isLoading = studentsLoading || attendanceLoading;
+  // Surfaced separately from "no students in this class" — without this, a
+  // failed fetch (dropped connection, 500) would silently render as an empty
+  // class instead of a clear, retryable error.
+  const isDataError = studentsError || attendanceError;
 
   const studentsById = new Map(students.map((s) => [s._id, s]));
   const absentees: Absentee[] = rows
@@ -527,7 +585,7 @@ export function TeacherAttendancePage() {
             <ChevronLeft className="w-5 h-5 text-gray-500" />
           </button>
           <div className="flex items-center gap-1.5">
-            <CalendarDays className="w-4 h-4 text-[#5B5CEB]" />
+            <CalendarDays className="w-4 h-4 text-[#0B3D2E]" />
             <span className="text-sm font-semibold text-gray-800">
               {formatDisplayDate(date)}
             </span>
@@ -551,6 +609,21 @@ export function TeacherAttendancePage() {
             {Array.from({ length: 7 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         </div>
+      ) : isDataError ? (
+        <div className="mx-4 mt-4 bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-700">Couldn't load this class</p>
+            <p className="text-xs text-red-500 mt-0.5">Check your connection and try again.</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 h-9 px-4 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           {/* Already submitted banner */}
@@ -563,20 +636,21 @@ export function TeacherAttendancePage() {
             </div>
           )}
 
-          {/* Swipe hint legend */}
-          {editable && rows.length > 0 && (
-            <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2">
-                <ArrowRight className="w-5 h-5 text-emerald-500" />
-                <div className="text-xs font-semibold text-emerald-600">Swipe Right<br /><span className="text-emerald-500">Present</span></div>
-              </div>
-              <div className="w-px h-8 bg-gray-100" />
-              <div className="flex items-center gap-2">
-                <ArrowLeft className="w-5 h-5 text-red-400" />
-                <div className="text-xs font-semibold text-red-500">Swipe Left<br /><span className="text-red-400">Absent</span></div>
-              </div>
+          {/* Stat counters — Present / Absent / Remaining, right under the header */}
+          <div className="flex gap-3 px-4 mt-4">
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+              <p className="text-xl font-bold text-emerald-600">{presentCount}</p>
+              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Present</p>
             </div>
-          )}
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+              <p className="text-xl font-bold text-red-500">{absentCount}</p>
+              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Absent</p>
+            </div>
+            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
+              <p className="text-xl font-bold text-gray-900">{unmarkedCount}</p>
+              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Remaining</p>
+            </div>
+          </div>
 
           {/* Mark All Present */}
           {editable && rows.length > 0 && (
@@ -584,7 +658,7 @@ export function TeacherAttendancePage() {
               <button
                 type="button"
                 onClick={markAllPresent}
-                className="w-full h-11 bg-[#5B5CEB]/10 hover:bg-[#5B5CEB]/20 text-[#5B5CEB] font-semibold rounded-xl text-sm transition-colors"
+                className="w-full h-11 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#0B3D2E] font-semibold rounded-xl text-sm transition-colors"
               >
                 Mark All Present
               </button>
@@ -597,21 +671,20 @@ export function TeacherAttendancePage() {
               <ActiveCard
                 key={rows[activeIndex].studentId}
                 row={rows[activeIndex]}
-                index={activeIndex}
                 onMark={markStatus}
               />
             </div>
           )}
 
           {/* Student list */}
-          <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-2">
+          <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
             {rows.length === 0 ? (
               <div className="py-12 text-center">
                 <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-500">No students in this class</p>
                 <button
                   onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
-                  className="mt-4 h-10 px-5 bg-[#5B5CEB] text-white rounded-xl text-sm font-semibold hover:bg-[#4a4bd9] transition-colors"
+                  className="mt-4 h-10 px-5 bg-[#0B3D2E] text-white rounded-xl text-sm font-semibold hover:bg-[#08251B] transition-colors"
                 >
                   Add Students
                 </button>
@@ -631,30 +704,57 @@ export function TeacherAttendancePage() {
             )}
           </div>
 
-          {/* Stat counters */}
-          <div className="flex gap-3 px-4 pb-4 justify-center">
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
-              <p className="text-2xl font-bold text-gray-900">{rows.length}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Total Students</p>
+          {/* Absent Students Summary — live preview while marking, mirrors the reference design */}
+          {rows.length > 0 && (
+            <div className="mx-4 mt-4 mb-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                Absent Students Summary
+              </p>
+              {absentCount === 0 ? (
+                <p className="text-sm text-gray-400">No students marked absent yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {rows.filter((r) => r.status === 'absent').map((r) => (
+                    <span
+                      key={r.studentId}
+                      className="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-full px-2.5 py-1"
+                    >
+                      {r.fullName}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
-              <p className="text-2xl font-bold text-emerald-500">{presentCount}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Present</p>
-            </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center max-w-[110px]">
-              <p className="text-2xl font-bold text-red-500">{absentCount}</p>
-              <p className="text-xs text-gray-500 font-semibold mt-1">Absent</p>
-            </div>
-          </div>
+          )}
 
-          {/* Save Attendance button */}
+          {/* Save Attendance button — allows partial saves. A teacher marking a
+              big class may get interrupted; blocking Save until every single
+              student is swiped would force them to redo everything later
+              instead of saving progress and finishing when they get back. */}
           {editable && rows.length > 0 && (
-            <div className="sticky bottom-20 lg:bottom-0 px-4 py-4 bg-[#F8FAFC] border-t border-gray-200/60">
+            <div className="sticky bottom-20 lg:bottom-0 px-4 py-4 bg-[#F8FAFC] border-t border-gray-200/60 space-y-2">
+              {/* Completion progress bar */}
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
+                <span>Completion</span>
+                <span>{Math.round(((presentCount + absentCount) / rows.length) * 100)}%</span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0B3D2E] rounded-full transition-all duration-300"
+                  style={{ width: `${Math.round(((presentCount + absentCount) / rows.length) * 100)}%` }}
+                />
+              </div>
+
+              {unmarkedCount > 0 && (
+                <p className="text-xs text-center text-amber-600 font-medium">
+                  {unmarkedCount} student{unmarkedCount !== 1 ? 's' : ''} not yet marked — you can save now and finish later.
+                </p>
+              )}
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={isPending || unmarkedCount > 0}
-                className="w-full h-14 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#5B5CEB]/25"
+                disabled={isPending}
+                className="w-full h-14 bg-[#0B3D2E] hover:bg-[#08251B] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#0B3D2E]/25"
               >
                 {isPending ? (
                   <>
@@ -662,7 +762,7 @@ export function TeacherAttendancePage() {
                     Saving…
                   </>
                 ) : unmarkedCount > 0 ? (
-                  `Mark ${unmarkedCount} more student${unmarkedCount !== 1 ? 's' : ''}`
+                  `Save (${unmarkedCount} unmarked)`
                 ) : (
                   'Save Attendance'
                 )}

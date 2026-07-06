@@ -1,5 +1,7 @@
 import { eventRepository, CreateEventData, PaginatedEvents } from './event.repository';
+import { eventReadRepository } from './event-read.repository';
 import { ISchoolEvent, EventStatus } from './event.model';
+import { Teacher } from '../teachers/teacher.model';
 import {
   createEventSchema,
   updateEventSchema,
@@ -10,6 +12,19 @@ import {
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+
+export interface ReadReceiptEntry {
+  userId: string;
+  userDisplayName: string;
+  readAt?: string;
+}
+
+export interface ReadReceiptsResult {
+  totalTeachers: number;
+  readCount: number;
+  readBy: ReadReceiptEntry[];
+  notReadBy: ReadReceiptEntry[];
+}
 
 const STATUS_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
   draft:     ['scheduled', 'cancelled'],
@@ -152,5 +167,55 @@ export const eventService = {
       ip:              ctx.ip,
       schoolId:        ctx.schoolId,
     });
+  },
+
+  // ── Read Receipts ─────────────────────────────────────────────────────────
+
+  async markRead(id: string, ctx: AuthContext): Promise<void> {
+    const existing = await eventRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Event');
+
+    await eventReadRepository.markRead({
+      schoolId:        ctx.schoolId,
+      eventId:         id,
+      userId:          ctx.userId,
+      userDisplayName: ctx.displayName,
+      userRole:        ctx.role,
+    });
+  },
+
+  async getReadReceipts(id: string, ctx: AuthContext): Promise<ReadReceiptsResult> {
+    const existing = await eventRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Event');
+
+    const [reads, teachers] = await Promise.all([
+      eventReadRepository.findByEvent(ctx.schoolId, id),
+      Teacher.find({ schoolId: ctx.schoolId, isDeleted: false })
+        .select('fullName')
+        .lean<{ _id: unknown; fullName: string }[]>(),
+    ]);
+
+    const teacherReads = reads.filter((r) => r.userRole === 'teacher');
+    const readUserIds  = new Set(teacherReads.map((r) => r.userId));
+
+    const readBy: ReadReceiptEntry[] = teacherReads.map((r) => ({
+      userId:          r.userId,
+      userDisplayName: r.userDisplayName,
+      readAt:          r.readAt.toISOString(),
+    }));
+
+    const notReadBy: ReadReceiptEntry[] = teachers
+      .filter((t) => !readUserIds.has(String(t._id)))
+      .map((t) => ({
+        userId:          String(t._id),
+        userDisplayName: t.fullName,
+      }));
+
+    return {
+      totalTeachers: teachers.length,
+      readCount:     readBy.length,
+      readBy,
+      notReadBy,
+    };
   },
 };

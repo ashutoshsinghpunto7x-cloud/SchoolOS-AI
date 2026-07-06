@@ -1224,6 +1224,19 @@ export interface UpcomingEventsOptions {
   days?: number;
 }
 
+export interface EventReadReceiptEntry {
+  userId: string;
+  userDisplayName: string;
+  readAt?: string;
+}
+
+export interface EventReadReceipts {
+  totalTeachers: number;
+  readCount: number;
+  readBy: EventReadReceiptEntry[];
+  notReadBy: EventReadReceiptEntry[];
+}
+
 // ── Admissions CRM ────────────────────────────────────────────────────────────
 
 export type EnquiryStage =
@@ -2035,5 +2048,10 @@ export interface TeacherWorkspaceData {
     classesMarkedToday: number;
     totalClassesToday: number;
   };
+  /** Classes this teacher is the CLASS TEACHER of — assigned by admin/principal
+   *  only, never self-service. Classes not in this list are "record only": the
+   *  teacher may teach a subject there, but shouldn't get attendance-taking or
+   *  add-student actions for them. */
+  classTeacherOf: Array<{ class: string; section: string }>;
   generatedAt: string;
 }

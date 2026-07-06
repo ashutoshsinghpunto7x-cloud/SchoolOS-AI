@@ -11,11 +11,12 @@ import type {
 // ── Query Keys ────────────────────────────────────────────────────────────────
 
 export const eventKeys = {
-  all:      ['events'] as const,
-  lists:    () => [...eventKeys.all, 'list'] as const,
-  list:     (opts: EventListOptions) => [...eventKeys.lists(), opts] as const,
-  detail:   (id: string) => [...eventKeys.all, 'detail', id] as const,
-  upcoming: (opts: UpcomingEventsOptions) => [...eventKeys.all, 'upcoming', opts] as const,
+  all:           ['events'] as const,
+  lists:         () => [...eventKeys.all, 'list'] as const,
+  list:          (opts: EventListOptions) => [...eventKeys.lists(), opts] as const,
+  detail:        (id: string) => [...eventKeys.all, 'detail', id] as const,
+  upcoming:      (opts: UpcomingEventsOptions) => [...eventKeys.all, 'upcoming', opts] as const,
+  readReceipts:  (id: string) => [...eventKeys.all, 'read-receipts', id] as const,
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -81,3 +82,18 @@ export const useDeleteEvent = () => {
     onSuccess:  () => qc.invalidateQueries({ queryKey: eventKeys.all }),
   });
 };
+
+export const useMarkEventRead = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.markRead(id),
+    onSuccess:  (_data, id) => qc.invalidateQueries({ queryKey: eventKeys.readReceipts(id) }),
+  });
+};
+
+export const useEventReadReceipts = (id: string, enabled = true) =>
+  useQuery({
+    queryKey: eventKeys.readReceipts(id),
+    queryFn:  () => eventsApi.getReadReceipts(id),
+    enabled:  Boolean(id) && enabled,
+  });

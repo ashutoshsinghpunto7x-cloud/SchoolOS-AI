@@ -9,7 +9,9 @@ router.use(authenticate);
 
 // ── Period slots (static prefix, admin-managed) ────────────────────────────
 router.get('/periods',               timetableController.listPeriodSlots);
-router.post('/periods', authorize('admin'), timetableController.createPeriodSlot);
+// Teachers may create new period slots (e.g. when the seeded set doesn't cover their day),
+// but reorder/update/delete stay admin-only since those mutate shared periods every class relies on.
+router.post('/periods', authorize('admin', 'teacher'), timetableController.createPeriodSlot);
 router.patch('/periods/reorder', authorize('admin'), timetableController.reorderPeriodSlots);
 router.patch('/periods/:slotId', authorize('admin'), timetableController.updatePeriodSlot);
 router.delete('/periods/:slotId', authorize('admin'), timetableController.deletePeriodSlot);

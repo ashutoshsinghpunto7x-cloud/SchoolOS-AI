@@ -13,7 +13,7 @@ const DAY_FULL   = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 const inputCls =
   'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB] transition-colors';
+  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#0B3D2E] transition-colors';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 function currentDayOfWeek(): number {
@@ -39,7 +39,7 @@ function EntryCard({
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
       <div className="w-12 shrink-0 text-center">
-        <p className="text-xs font-bold text-blue-600">{entry.startTime}</p>
+        <p className="text-xs font-bold text-[#0B3D2E]">{entry.startTime}</p>
         <p className="text-xs text-gray-400">{entry.endTime}</p>
       </div>
       <div className="w-px h-10 bg-gray-100 shrink-0" />
@@ -78,7 +78,7 @@ function EntryCard({
           <button
             type="button"
             onClick={onEdit}
-            className="h-8 w-8 flex items-center justify-center bg-[#5B5CEB]/10 hover:bg-[#5B5CEB]/20 text-[#5B5CEB] rounded-lg"
+            className="h-8 w-8 flex items-center justify-center bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#0B3D2E] rounded-lg"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>
@@ -204,7 +204,7 @@ export function TeacherTimetablePage() {
           onClick={() => setEditMode((v) => !v)}
           className={cn(
             'h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors',
-            editMode ? 'bg-[#5B5CEB] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+            editMode ? 'bg-[#0B3D2E] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
           )}
         >
           {editMode ? <Check className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
@@ -225,18 +225,18 @@ export function TeacherTimetablePage() {
                 onClick={() => setActiveDay(day)}
                 className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors relative ${
                   isActive
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-[#0B3D2E] text-white'
                     : isToday
-                    ? 'bg-blue-50 text-blue-600'
+                    ? 'bg-[#10B981]/10 text-[#0B3D2E]'
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 }`}
               >
                 {DAY_LABELS[day]}
                 {hasClass && !isActive && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#10B981] rounded-full" />
                 )}
                 {isToday && !isActive && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#0B3D2E] rounded-full" />
                 )}
               </button>
             );
@@ -249,7 +249,7 @@ export function TeacherTimetablePage() {
           <button
             type="button"
             onClick={openAddForm}
-            className="w-full h-11 mb-3 border-2 border-dashed border-[#5B5CEB]/30 text-[#5B5CEB] rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-[#5B5CEB]/5 transition-colors"
+            className="w-full h-11 mb-3 border-2 border-dashed border-[#10B981]/30 text-[#0B3D2E] rounded-2xl text-sm font-semibold flex items-center justify-center gap-1.5 hover:bg-[#10B981]/5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Period on {DAY_FULL[activeDay]}
@@ -273,9 +273,9 @@ export function TeacherTimetablePage() {
         ) : (
           <div className="space-y-3">
             {activeDay === todayDow && (
-              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-2.5">
-                <CalendarCheck className="w-4 h-4 text-blue-600 shrink-0" />
-                <p className="text-sm text-blue-700 font-medium">Today's schedule</p>
+              <div className="flex items-center gap-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded-2xl px-4 py-2.5">
+                <CalendarCheck className="w-4 h-4 text-[#0B3D2E] shrink-0" />
+                <p className="text-sm text-[#0B3D2E] font-medium">Today's schedule</p>
               </div>
             )}
             {activeDayEntries.map((entry) => (
@@ -387,7 +387,7 @@ export function TeacherTimetablePage() {
               type="button"
               disabled={isSaving}
               onClick={handleSaveEntry}
-              className="w-full h-12 mt-4 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+              className="w-full h-12 mt-4 bg-[#0B3D2E] hover:bg-[#08251B] disabled:opacity-60 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
             >
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {editingEntry ? 'Save Changes' : 'Add Period'}

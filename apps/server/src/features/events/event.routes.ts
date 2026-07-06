@@ -17,4 +17,8 @@ router.patch('/:id/status',   eventController.updateStatus);
 router.patch('/:id',          eventController.update);
 router.delete('/:id', authorize('admin'), eventController.deleteEvent);
 
+// Read receipts
+router.post('/:id/read',              eventController.markRead);
+router.get('/:id/read-receipts', authorize('admin'), eventController.getReadReceipts);
+
 export default router;
