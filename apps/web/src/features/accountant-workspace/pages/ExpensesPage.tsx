@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const CATEGORIES: { value: ExpenseCategory; label: string; icon: React.ElementType }[] = [
@@ -33,9 +33,9 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
   const Icon = meta.icon;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:border-[#5B5CEB]/30 transition-colors">
+    <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:border-[#10B981]/30 transition-colors">
       <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <div className="w-10 h-10 rounded-xl bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center text-[#10B981] shrink-0">
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -118,7 +118,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
                   onClick={() => setCategory(value)}
                   className={cn(
                     'flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors',
-                    category === value ? 'border-[#5B5CEB] bg-[#5B5CEB]/5 text-[#5B5CEB]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                    category === value ? 'border-[#10B981] bg-[#10B981]/5 text-[#10B981]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
                   <Icon className="w-4 h-4" /> {label}
@@ -145,7 +145,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
             </div>
           )}
-          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} {existing ? 'Save Changes' : 'Add Expense'}
           </button>
         </form>
@@ -175,7 +175,7 @@ export function ExpensesPage() {
         </div>
         <button
           onClick={() => setFormTarget('new')}
-          className="h-9 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
@@ -198,7 +198,7 @@ export function ExpensesPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setCategory('all')}
-            className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === 'all' ? 'bg-[#5B5CEB] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
+            className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === 'all' ? 'bg-[#10B981] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
           >
             All
           </button>
@@ -206,7 +206,7 @@ export function ExpensesPage() {
             <button
               key={value}
               onClick={() => setCategory(value)}
-              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#5B5CEB] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
+              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#10B981] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
             >
               {label}
             </button>

@@ -50,7 +50,7 @@ function studentToContext(s: Student): CollectContext {
 
 const textInputCls =
   'w-full h-12 px-3.5 rounded-xl border border-gray-300 bg-white text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]';
+  'focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]';
 
 function StudentSearchPanel({ onSelectStudent }: { onSelectStudent: (s: Student) => void }) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -84,7 +84,7 @@ function StudentSearchPanel({ onSelectStudent }: { onSelectStudent: (s: Student)
             if (e.key === 'Enter' && name.trim()) { e.preventDefault(); setStep((s) => (s < 2 ? 2 : s)); }
           }}
           placeholder="Student name"
-          className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+          className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]"
         />
       </div>
 
@@ -178,7 +178,7 @@ function StudentLookupResult({
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
         <p className="text-sm font-semibold text-gray-700">No student matches these details</p>
-        <button onClick={onRetry} className="text-xs font-semibold text-[#5B5CEB] hover:underline mt-2">Try again</button>
+        <button onClick={onRetry} className="text-xs font-semibold text-[#10B981] hover:underline mt-2">Try again</button>
       </div>
     );
   }
@@ -197,9 +197,9 @@ function StudentRow({ student, onClick, showFatherName }: { student: Student; on
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:border-[#5B5CEB]/40 hover:shadow-md transition-all text-left"
+      className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:border-[#10B981]/40 hover:shadow-md transition-all text-left"
     >
-      <div className="w-10 h-10 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-sm shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981] font-bold text-sm shrink-0">
         {student.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">
@@ -248,7 +248,7 @@ function StudentSummaryCard({ student, current }: { student: Student; current?: 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
       <div className="flex items-center gap-3">
-        <div className="w-14 h-14 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-lg shrink-0">
+        <div className="w-14 h-14 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981] font-bold text-lg shrink-0">
           {student.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
@@ -259,7 +259,7 @@ function StudentSummaryCard({ student, current }: { student: Student; current?: 
           <button
             type="button"
             onClick={startEdit}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-[#5B5CEB] transition-colors shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-[#10B981] transition-colors shrink-0"
             title="Edit roll no. / class / section / fee"
           >
             <Pencil className="w-4 h-4" />
@@ -269,7 +269,7 @@ function StudentSummaryCard({ student, current }: { student: Student; current?: 
             type="button"
             onClick={save}
             disabled={isPending}
-            className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-[#5B5CEB] text-white text-xs font-semibold hover:bg-[#4a4bd9] disabled:opacity-50 transition-colors shrink-0"
+            className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-[#10B981] text-white text-xs font-semibold hover:bg-[#059669] disabled:opacity-50 transition-colors shrink-0"
           >
             {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
             Save
@@ -282,24 +282,24 @@ function StudentSummaryCard({ student, current }: { student: Student; current?: 
           <div>
             <label className="text-xs text-gray-500 block mb-1">Roll No.</label>
             <input value={rollNumber} onChange={(e) => setRollNumber(e.target.value)}
-              className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30" />
+              className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30" />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 block mb-1">Class</label>
               <input value={cls} onChange={(e) => setCls(e.target.value)}
-                className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30" />
+                className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30" />
             </div>
             <div className="flex-1">
               <label className="text-xs text-gray-500 block mb-1">Section</label>
               <input value={section} onChange={(e) => setSection(e.target.value.toUpperCase())}
-                className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30" />
+                className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30" />
             </div>
           </div>
           <div className="col-span-2">
             <label className="text-xs text-gray-500 block mb-1">Monthly Tuition Fee (₹)</label>
             <input type="number" min={0} value={fee} onChange={(e) => setFee(e.target.value)}
-              className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30" />
+              className="w-full h-9 px-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30" />
           </div>
           {error && <p className="col-span-2 text-xs text-red-500">{error instanceof Error ? error.message : 'Failed to save'}</p>}
           <button type="button" onClick={() => setEditing(false)} className="col-span-2 text-xs font-semibold text-gray-500 hover:text-gray-700 text-left">
@@ -422,7 +422,7 @@ function PayMultipleMonthsPanel({
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2"><CalendarRange className="w-4 h-4 text-[#5B5CEB]" /> Pay Multiple Months</h3>
+        <h3 className="text-base font-bold text-gray-900 flex items-center gap-2"><CalendarRange className="w-4 h-4 text-[#10B981]" /> Pay Multiple Months</h3>
         <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
       </div>
       <p className="text-xs text-gray-400 mb-3">Select any combination of past-due, current, or advance months — useful when a parent clears arrears or pays several months ahead.</p>
@@ -439,8 +439,8 @@ function PayMultipleMonthsPanel({
               onClick={() => toggle(c)}
               className={`text-left rounded-xl border px-3 py-2 text-xs transition-colors ${
                 isPaid ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed'
-                : isSelected ? 'bg-[#5B5CEB]/10 border-[#5B5CEB] text-[#5B5CEB]'
-                : 'bg-white border-gray-200 hover:border-[#5B5CEB]/40'
+                : isSelected ? 'bg-[#10B981]/10 border-[#10B981] text-[#10B981]'
+                : 'bg-white border-gray-200 hover:border-[#10B981]/40'
               }`}
             >
               <p className="font-semibold">{c.label}</p>
@@ -458,7 +458,7 @@ function PayMultipleMonthsPanel({
               <input
                 type="number" min={0} step={0.01} value={selected[c.key]}
                 onChange={(e) => setSelected((prev) => ({ ...prev, [c.key]: parseFloat(e.target.value) || 0 }))}
-                className="w-28 h-8 px-2 rounded-lg border border-gray-200 text-xs text-right focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+                className="w-28 h-8 px-2 rounded-lg border border-gray-200 text-xs text-right focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
               />
             </div>
           ))}
@@ -466,13 +466,13 @@ function PayMultipleMonthsPanel({
       )}
 
       <div className="grid grid-cols-2 gap-2 mt-4">
-        <button onClick={() => setMode('cash')} className={`h-10 rounded-xl text-sm font-semibold border ${mode === 'cash' ? 'bg-[#5B5CEB] text-white border-[#5B5CEB]' : 'bg-white text-gray-600 border-gray-200'}`}>Cash</button>
-        <button onClick={() => setMode('upi')} className={`h-10 rounded-xl text-sm font-semibold border ${mode === 'upi' ? 'bg-[#5B5CEB] text-white border-[#5B5CEB]' : 'bg-white text-gray-600 border-gray-200'}`}>Online</button>
+        <button onClick={() => setMode('cash')} className={`h-10 rounded-xl text-sm font-semibold border ${mode === 'cash' ? 'bg-[#10B981] text-white border-[#10B981]' : 'bg-white text-gray-600 border-gray-200'}`}>Cash</button>
+        <button onClick={() => setMode('upi')} className={`h-10 rounded-xl text-sm font-semibold border ${mode === 'upi' ? 'bg-[#10B981] text-white border-[#10B981]' : 'bg-white text-gray-600 border-gray-200'}`}>Online</button>
       </div>
       {mode === 'upi' && (
         <input
           value={refNumber} onChange={(e) => setRefNumber(e.target.value)} placeholder="UTR / Reference number"
-          className="w-full h-10 px-3 mt-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+          className="w-full h-10 px-3 mt-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
         />
       )}
 
@@ -485,7 +485,7 @@ function PayMultipleMonthsPanel({
         </div>
         <button
           onClick={submit} disabled={isPending || !selectedCount}
-          className="h-11 px-5 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-50 text-white rounded-xl text-sm font-semibold flex items-center gap-2"
+          className="h-11 px-5 bg-[#10B981] hover:bg-[#059669] disabled:opacity-50 text-white rounded-xl text-sm font-semibold flex items-center gap-2"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Collect Payment
         </button>
@@ -619,7 +619,7 @@ function QuickCollectForm({
             <select
               value={feeHead}
               onChange={(e) => setFeeHead(e.target.value as FeeHead)}
-              className="w-full h-11 px-3.5 pr-9 rounded-xl border border-gray-200 bg-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+              className="w-full h-11 px-3.5 pr-9 rounded-xl border border-gray-200 bg-white text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]"
             >
               {QUICK_FEE_HEADS.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
             </select>
@@ -634,7 +634,7 @@ function QuickCollectForm({
             <input
               type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
               min={0.01} step={0.01} required
-              className="w-full h-11 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+              className="w-full h-11 pl-9 pr-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]"
               placeholder="0.00"
             />
           </div>
@@ -644,7 +644,7 @@ function QuickCollectForm({
           <label className="block text-xs font-semibold text-gray-600 mb-1">Description (Optional)</label>
           <input
             type="text" value={description} onChange={(e) => setDescription(e.target.value)}
-            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]"
             placeholder={`${MONTHS[new Date().getMonth()]} ${QUICK_FEE_HEADS.find((h) => h.value === feeHead)?.label}`}
           />
         </div>
@@ -658,7 +658,7 @@ function QuickCollectForm({
                 type="button"
                 onClick={() => setMode(value)}
                 className={`flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-2 font-semibold text-xs transition-colors ${
-                  mode === value ? 'border-[#5B5CEB] bg-[#5B5CEB]/5 text-[#5B5CEB]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                  mode === value ? 'border-[#10B981] bg-[#10B981]/5 text-[#10B981]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'
                 }`}
               >
                 <Icon className="w-4 h-4" /> {label}
@@ -672,7 +672,7 @@ function QuickCollectForm({
             <label className="block text-xs font-semibold text-gray-600 mb-1">UTR Number</label>
             <input
               type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
-              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]"
+              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]"
               placeholder="e.g. 123456789012" maxLength={30}
             />
           </div>
@@ -686,7 +686,7 @@ function QuickCollectForm({
 
         <button
           type="submit" disabled={isPending}
-          className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+          className="w-full h-11 bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <IndianRupee className="w-4 h-4" />}
           {isPending ? 'Collecting…' : 'Collect & Print Receipt'}
@@ -720,7 +720,7 @@ function StudentDetailCard({
 
   return (
     <div className="px-4 py-5 max-w-6xl mx-auto space-y-4">
-      <button onClick={onBack} className="text-xs font-semibold text-[#5B5CEB] flex items-center gap-1 hover:underline">
+      <button onClick={onBack} className="text-xs font-semibold text-[#10B981] flex items-center gap-1 hover:underline">
         <ArrowLeft className="w-3.5 h-3.5" /> Search another student
       </button>
 
@@ -738,13 +738,13 @@ function StudentDetailCard({
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuickCollectOpen((v) => !v)}
-                  className="text-xs font-semibold text-[#5B5CEB] hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-[#10B981] hover:underline flex items-center gap-1"
                 >
                   <IndianRupee className="w-3.5 h-3.5" /> Collect Payment
                 </button>
                 <button
                   onClick={() => setMultiMonthOpen((v) => !v)}
-                  className="text-xs font-semibold text-[#5B5CEB] hover:underline flex items-center gap-1"
+                  className="text-xs font-semibold text-[#10B981] hover:underline flex items-center gap-1"
                 >
                   <CalendarRange className="w-3.5 h-3.5" /> Pay Multiple Months
                 </button>
@@ -789,7 +789,7 @@ function StudentDetailCard({
                     </div>
                     <button
                       onClick={() => onSelectFee(fee)}
-                      className="h-9 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"
+                      className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs font-semibold shrink-0 flex items-center gap-1.5"
                     >
                       <IndianRupee className="w-3.5 h-3.5" /> Collect
                     </button>
@@ -1457,7 +1457,7 @@ function SuccessStep({
             <input
               type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="parent@email.com"
-              className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+              className="flex-1 h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
             />
             <button
               onClick={handleSendEmail}

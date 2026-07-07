@@ -39,7 +39,7 @@ export const EventDetailPage = () => {
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin  = user?.role === 'admin';
+  const isAdmin  = user?.role === 'admin' || user?.role === 'principal';
 
   const { data: event, isLoading, isError } = useEvent(id!);
   const { mutateAsync: updateStatus, isPending: changingStatus } = useUpdateEventStatus(id!);

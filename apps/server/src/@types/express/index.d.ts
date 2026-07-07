@@ -6,7 +6,7 @@ declare global {
       user?: {
         userId: string;
         email: string;
-        role: 'admin' | 'reception' | 'teacher' | 'accountant';
+        role: 'admin' | 'principal' | 'reception' | 'teacher' | 'accountant';
         schoolId: string;
         firstName: string;
         lastName: string;

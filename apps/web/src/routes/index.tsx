@@ -457,11 +457,11 @@ export const router = createBrowserRouter([
                 ],
               },
 
-              // Principal (admin-only executive dashboard)
-              { path: 'principal', element: <PrincipalWorkspace /> },
+              // Principal (admin + principal executive dashboard)
               {
-                element: <ProtectedRoute allowedRoles={['admin']} />,
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
                 children: [
+                  { path: 'principal', element: <PrincipalWorkspace /> },
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
                 ],
               },
@@ -514,12 +514,11 @@ export const router = createBrowserRouter([
               { path: 'enquiries/:id/edit', element: <EditEnquiryPage /> },
 
               // Calendar & Events (static /new before /:id) — anyone can view,
-              // but creating/editing events is admin-only for now. Add
-              // 'principal' to allowedRoles here once that role/dashboard exists.
+              // creating/editing events is admin + principal only.
               { path: 'calendar',            element: <CalendarWorkspace /> },
               { path: 'calendar/:id',        element: <EventDetailPage /> },
               {
-                element: <ProtectedRoute allowedRoles={['admin']} />,
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
                 children: [
                   { path: 'calendar/new',      element: <NewEventPage /> },
                   { path: 'calendar/:id/edit', element: <EditEventPage /> },

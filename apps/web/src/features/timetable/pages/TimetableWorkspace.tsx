@@ -12,7 +12,7 @@ const STATUSES: TimetableStatus[] = ['draft', 'published', 'archived'];
 export const TimetableWorkspace = () => {
   const navigate = useNavigate();
   const { user }  = useAuth();
-  const isAdmin   = user?.role === 'admin';
+  const isAdmin   = user?.role === 'admin' || user?.role === 'principal';
 
   const [filters, setFilters] = useState<TimetableListOptions>({ status: 'published' });
   const [page, setPage] = useState(1);

@@ -75,6 +75,7 @@ const NAV_ITEMS_ADMIN = [
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
+  principal: 'Principal',
   reception: 'Receptionist',
   teacher: 'Teacher',
   accountant: 'Accountant',
@@ -211,7 +212,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 label={item.label}
               />
             ))}
-            {user?.role === 'admin' && NAV_ITEMS_ADMIN.map((item) => (
+            {(user?.role === 'admin' || user?.role === 'principal') && NAV_ITEMS_ADMIN.map((item) => (
               <SidebarNavItem
                 key={item.path}
                 to={item.path}

@@ -6,7 +6,7 @@ import { authorize } from '../../middlewares/authorize';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'principal'));
 
 router.get('/dashboard', principalController.getDashboard);
 

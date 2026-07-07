@@ -1,31 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import {
-  Clock,
-  ChevronRight,
-  AlertCircle,
-  CalendarCheck,
-  Users,
-  Calculator,
-  FlaskConical,
-  Globe2,
-  Palette,
-  Music2,
-  Dumbbell,
-  Calendar,
-  BookOpen,
-} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,CalendarCheck,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
+import { useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
+import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
+import { useMyLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
 import type { TodayClass } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
+  const h = new Date().getHours();if (h < 12) return 'Good morning';if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
 
@@ -213,12 +200,71 @@ function SkeletonCard() {
   );
 }
 
+// ── My Leave section ────────────────────────────────────────────────────────
+
+const LEAVE_STATUS_STYLE: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  rejected: 'bg-red-100 text-red-700',
+};
+
+function MyLeaveSection({ onApply }: { onApply: () => void }) {
+  const { data: requests, isLoading } = useMyLeaveRequests();
+  const recent = (requests ?? []).slice(0, 3);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+          My Leave
+        </h2>
+        <button
+          onClick={onApply}
+          className="text-xs font-semibold text-[#0B3D2E] flex items-center gap-0.5 hover:underline"
+        >
+          Apply for leave
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 animate-pulse h-16" />
+      ) : recent.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 text-sm text-gray-400">
+          No leave requests yet.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {recent.map((req) => (
+            <div
+              key={req._id}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">
+                  {req.leaveType === 'full_day' ? 'Full day' : 'Half day'}
+                  {' · '}
+                  {req.dateFrom === req.dateTo ? req.dateFrom : `${req.dateFrom} – ${req.dateTo}`}
+                </p>
+                <p className="text-xs text-gray-400 truncate mt-0.5">{req.reason}</p>
+              </div>
+              <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full shrink-0 capitalize', LEAVE_STATUS_STYLE[req.status])}>
+                {req.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function TeacherDashboard() {
   const navigate = useNavigate();
   const { user }  = useAuth();
   const { data, isLoading, isError, error } = useTeacherWorkspace();
+  const [showApplyLeave, setShowApplyLeave] = useState(false);
 
   const firstName = user?.firstName ?? data?.teacher.fullName.split(' ')[0] ?? 'Teacher';
 
@@ -321,8 +367,12 @@ export function TeacherDashboard() {
           )}
         </section>
 
+        <MyLeaveSection onApply={() => setShowApplyLeave(true)} />
+
         <UpcomingEventsWidget />
       </div>
+
+      {showApplyLeave && <ApplyLeaveModal onClose={() => setShowApplyLeave(false)} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type UserRole = 'admin' | 'reception' | 'teacher' | 'accountant';
+export type UserRole = 'admin' | 'principal' | 'reception' | 'teacher' | 'accountant';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 export interface IUser extends Document {
@@ -29,7 +29,7 @@ const userSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: { type: String },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'reception', 'teacher', 'accountant'], required: true },
+    role: { type: String, enum: ['admin', 'principal', 'reception', 'teacher', 'accountant'], required: true },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
     tokenVersion: { type: Number, default: 0 },
     avatarUrl: { type: String },

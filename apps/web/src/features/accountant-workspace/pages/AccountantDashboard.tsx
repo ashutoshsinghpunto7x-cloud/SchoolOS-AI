@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, ChevronRight, Loader2, Search
+  AlertCircle, ChevronRight, Loader2
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
@@ -188,18 +188,6 @@ export function AccountantDashboard() {
               <div>
                 <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Collect Fees</h2>
                 <p className="text-[12px] text-gray-400 font-medium mt-1">Search a student and collect fees instantly</p>
-              </div>
-
-              {/* Dummy Apple-like search bar */}
-              <div className="relative w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
-                <input
-                  type="text"
-                  readOnly
-                  onClick={() => navigate('/accountant/collect-fee')}
-                  placeholder="Search by student name, roll no. or class..."
-                  className="w-full h-10 pl-9.5 pr-4 rounded-xl bg-white border border-[#E8E8E8] text-sm text-gray-800 placeholder:text-gray-400 cursor-pointer focus:outline-none transition-colors hover:border-[#10B981]/20"
-                />
               </div>
             </div>
 

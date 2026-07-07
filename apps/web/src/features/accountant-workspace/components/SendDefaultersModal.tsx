@@ -40,7 +40,7 @@ export function SendDefaultersModal({ group, onClose }: Props) {
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-800">List sent!</p>
             <p className="text-xs text-gray-400 mt-1">The teacher will receive the defaulters list by email and in their in-app notifications.</p>
-            <button onClick={onClose} className="mt-5 h-10 px-5 bg-[#5B5CEB] text-white rounded-xl text-sm font-semibold">Done</button>
+            <button onClick={onClose} className="mt-5 h-10 px-5 bg-[#10B981] text-white rounded-xl text-sm font-semibold">Done</button>
           </div>
         ) : (
           <>
@@ -58,7 +58,7 @@ export function SendDefaultersModal({ group, onClose }: Props) {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setTeacherId(''); }}
                 placeholder="Search teacher by name"
-                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
               />
             </div>
 
@@ -75,7 +75,7 @@ export function SendDefaultersModal({ group, onClose }: Props) {
                     disabled={!t.email}
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-colors disabled:opacity-40',
-                      teacherId === t._id ? 'border-[#5B5CEB] bg-[#5B5CEB]/5' : 'border-gray-200 hover:bg-gray-50',
+                      teacherId === t._id ? 'border-[#10B981] bg-[#10B981]/5' : 'border-gray-200 hover:bg-gray-50',
                     )}
                   >
                     <div className="flex-1 min-w-0">
@@ -84,7 +84,7 @@ export function SendDefaultersModal({ group, onClose }: Props) {
                         <Mail className="w-3 h-3" /> {t.email || 'No email on file'}
                       </p>
                     </div>
-                    {teacherId === t._id && <CheckCircle2 className="w-4 h-4 text-[#5B5CEB] shrink-0" />}
+                    {teacherId === t._id && <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -100,7 +100,7 @@ export function SendDefaultersModal({ group, onClose }: Props) {
               type="button"
               disabled={!teacherId || isPending}
               onClick={handleSend}
-              className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+              className="w-full h-11 bg-[#10B981] hover:bg-[#059669] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
               {isPending ? 'Sending…' : 'Send List'}

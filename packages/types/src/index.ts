@@ -85,7 +85,7 @@ export interface Address {
 
 export type Status = 'active' | 'inactive' | 'deleted';
 
-export type UserRole = 'admin' | 'reception' | 'teacher' | 'accountant';
+export type UserRole = 'admin' | 'principal' | 'reception' | 'teacher' | 'accountant';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 // ── User ──────────────────────────────────────────────────────────────────────
@@ -1080,7 +1080,7 @@ export interface SendReceiptEmailPayload {
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'defaulters_list' | 'message' | 'change_request';
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request';
 
 export interface AppNotification {
   _id: string;
@@ -1138,6 +1138,37 @@ export interface CreateChangeRequestPayload {
 }
 
 export interface RejectChangeRequestPayload {
+  reviewNote?: string;
+}
+
+// ── Leave Requests ────────────────────────────────────────────────────────────
+
+export type LeaveRequestStatus = 'pending' | 'approved' | 'rejected';
+export type LeaveType = 'full_day' | 'half_day';
+
+export interface LeaveRequest extends BaseEntity {
+  schoolId: string;
+  teacherId: string;
+  teacherName: string;
+  requestedByUserId: string;
+  leaveType: LeaveType;
+  dateFrom: string;
+  dateTo: string;
+  reason: string;
+  status: LeaveRequestStatus;
+  reviewedByName?: string;
+  reviewNote?: string;
+  reviewedAt?: string;
+}
+
+export interface CreateLeaveRequestPayload {
+  leaveType: LeaveType;
+  dateFrom: string;
+  dateTo: string;
+  reason: string;
+}
+
+export interface RejectLeaveRequestPayload {
   reviewNote?: string;
 }
 
@@ -2021,22 +2052,6 @@ export interface TeacherWeekEntry {
   section: string;
   roomNumber?: string;
   timetableId: string;
-}
-
-export interface UpsertOwnTimetableEntryPayload {
-  class: string;
-  section: string;
-  dayOfWeek: number;
-  slotId: string;
-  subjectName: string;
-  roomNumber?: string;
-}
-
-export interface RemoveOwnTimetableEntryPayload {
-  class: string;
-  section: string;
-  dayOfWeek: number;
-  slotId: string;
 }
 
 export interface TeacherWorkspaceData {

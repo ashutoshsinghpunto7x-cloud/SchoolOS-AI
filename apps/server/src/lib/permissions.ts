@@ -16,6 +16,7 @@ export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   admin: Object.values(PERMISSIONS) as Permission[],
+  principal: Object.values(PERMISSIONS) as Permission[],
   reception: [
     'students.view',
     'students.create',
@@ -29,6 +30,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
   admin: { label: 'Administrator', description: 'Full access to all system features' },
+  principal: { label: 'Principal', description: 'School oversight — timetable, attendance, leave approvals, and staff' },
   reception: { label: 'Receptionist', description: 'Student admissions and communication' },
   teacher: { label: 'Teacher', description: 'View students and communications' },
   accountant: { label: 'Accountant', description: 'Fee collection, salary, and expense management' },

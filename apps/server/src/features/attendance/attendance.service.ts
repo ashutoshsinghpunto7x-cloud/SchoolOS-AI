@@ -16,13 +16,16 @@ import { studentRepository } from '../students/student.repository';
 import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { timetableRepository } from '../timetable/timetable.repository';
+import { substituteRepository } from '../timetable/timetable.substitute.repository';
 
-// Verify a teacher is assigned to the given class/section in their published timetable.
+// Verify a teacher is assigned to the given class/section in their published timetable,
+// or is an active substitute for that class/section on the attendance date.
 // No-op for non-teacher roles.
 async function assertTeacherCanMarkClass(
   ctx: AuthContext,
   cls: string,
   section: string,
+  date: string,
 ): Promise<void> {
   if (ctx.role !== 'teacher') return;
 
@@ -37,7 +40,10 @@ async function assertTeacherCanMarkClass(
   const teacherId = String(teacher._id);
   const timetables = await timetableRepository.getTeacherSchedule(ctx.schoolId, teacherId);
   const teachesClass = timetables.some((t) => t.class === cls && t.section === section);
-  if (!teachesClass) throw new ForbiddenError('You are not assigned to teach this class');
+  if (teachesClass) return;
+
+  const isSubstitute = await substituteRepository.isActiveSubstitute(ctx.schoolId, teacherId, cls, section, date);
+  if (!isSubstitute) throw new ForbiddenError('You are not assigned to teach this class');
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -49,7 +55,7 @@ export const attendanceService = {
     if (ctx.role === 'teacher' && data.date > attendanceRepository.todayString()) {
       throw new ValidationError('Attendance cannot be marked for future dates');
     }
-    await assertTeacherCanMarkClass(ctx, data.class, data.section);
+    await assertTeacherCanMarkClass(ctx, data.class, data.section, data.date);
 
     const student = await studentRepository.findById(data.studentId, ctx.schoolId);
     if (!student) throw new NotFoundError('Student');
@@ -87,7 +93,7 @@ export const attendanceService = {
     if (ctx.role === 'teacher' && data.date > attendanceRepository.todayString()) {
       throw new ValidationError('Attendance cannot be marked for future dates');
     }
-    await assertTeacherCanMarkClass(ctx, data.class, data.section);
+    await assertTeacherCanMarkClass(ctx, data.class, data.section, data.date);
 
     const records = await attendanceRepository.bulkUpsert(
       data.records.map((r) => ({

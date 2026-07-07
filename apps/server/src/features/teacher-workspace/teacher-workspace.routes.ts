@@ -9,7 +9,5 @@ router.use(authenticate);
 router.use(authorize('teacher'));
 
 router.get('/me', teacherWorkspaceController.getMe);
-router.post('/timetable/entry', teacherWorkspaceController.upsertTimetableEntry);
-router.delete('/timetable/entry', teacherWorkspaceController.removeTimetableEntry);
 
 export default router;

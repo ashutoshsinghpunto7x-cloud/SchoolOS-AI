@@ -12,6 +12,7 @@ interface UserFormProps {
 
 const ROLES: { value: UserRole; label: string }[] = [
   { value: 'admin', label: 'Administrator' },
+  { value: 'principal', label: 'Principal' },
   { value: 'reception', label: 'Receptionist' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'accountant', label: 'Accountant' },

@@ -133,6 +133,29 @@ export const notificationService = {
     );
   },
 
+  /** Notifies every admin and principal User in the school (e.g. a new leave request awaiting review). */
+  async sendToApprovers(input: Omit<SendToUserInput, 'recipientUserId'>, ctx: AuthContext): Promise<void> {
+    const [admins, principals] = await Promise.all([
+      userRepository.findAll(ctx.schoolId, { role: 'admin', limit: 100 }),
+      userRepository.findAll(ctx.schoolId, { role: 'principal', limit: 100 }),
+    ]);
+    const approvers = [...admins.data, ...principals.data];
+    await Promise.all(
+      approvers.map((approver) =>
+        notificationRepository.create({
+          recipientUserId: String(approver._id),
+          schoolId: ctx.schoolId,
+          type: input.type,
+          title: input.title,
+          body: input.body,
+          payload: input.payload,
+          senderUserId: ctx.userId,
+          senderName: ctx.displayName,
+        }),
+      ),
+    );
+  },
+
   async broadcastToTeachers(rawInput: unknown, ctx: AuthContext): Promise<SendMessageToTeachersResult> {
     const input = sendMessageToTeachersSchema.parse(rawInput);
     return notificationService.sendToTeachers(

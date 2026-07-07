@@ -11,7 +11,7 @@ const PAGE_SIZE = 20;
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const selectCls = 'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 appearance-none pr-8';
+const selectCls = 'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 appearance-none pr-8';
 
 // ── Bill number lookup ────────────────────────────────────────────────────────
 
@@ -28,7 +28,7 @@ function ReceiptLookup() {
   return (
     <div className="bg-white rounded-2xl border border-gray-300 shadow-sm p-4">
       <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
-        <Receipt className="w-4 h-4 text-[#5B5CEB]" /> Look Up a Receipt
+        <Receipt className="w-4 h-4 text-[#10B981]" /> Look Up a Receipt
       </h2>
       <p className="text-xs text-gray-400 mt-0.5">Enter a bill number to find that month's fee record</p>
 
@@ -39,12 +39,12 @@ function ReceiptLookup() {
           onChange={(e) => { setReceiptNumber(e.target.value); if (data || error) reset(); }}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
           placeholder="e.g. RCPT-2026-00007"
-          className="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+          className="flex-1 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
         />
         <button
           onClick={handleSearch}
           disabled={!receiptNumber.trim() || isPending}
-          className="h-10 px-4 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-50 text-white rounded-xl text-sm font-semibold"
+          className="h-10 px-4 bg-[#10B981] hover:bg-[#059669] disabled:opacity-50 text-white rounded-xl text-sm font-semibold"
         >
           {isPending ? 'Searching…' : 'Search'}
         </button>
@@ -117,7 +117,7 @@ export function FeeRecordsPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && applySearch()}
               placeholder="Search student or admission no."
-              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
             />
           </div>
           <input
@@ -125,7 +125,7 @@ export function FeeRecordsPage() {
             value={filters.class ?? ''}
             onChange={(e) => setFilters((f) => ({ ...f, class: e.target.value || undefined, page: 1 }))}
             placeholder="Class"
-            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
           />
           <div className="relative">
             <select
@@ -142,7 +142,7 @@ export function FeeRecordsPage() {
             </select>
             <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
-          <button onClick={applySearch} className="h-10 px-4 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-xl text-sm font-semibold">
+          <button onClick={applySearch} className="h-10 px-4 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-sm font-semibold">
             Search
           </button>
         </div>
@@ -159,7 +159,7 @@ export function FeeRecordsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
             {rows.map((f) => (
               <div key={f._id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-9 h-9 rounded-full bg-[#5B5CEB]/10 flex items-center justify-center text-[#5B5CEB] font-bold text-xs shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981] font-bold text-xs shrink-0">
                   {f.studentName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">

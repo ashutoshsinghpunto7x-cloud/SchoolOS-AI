@@ -14,7 +14,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 const selectCls =
-  'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30';
+  'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30';
 
 type StatusFilter = 'all' | FeeStatus;
 
@@ -40,7 +40,7 @@ function DueDateEditor({ fee }: { fee: FeeRecord }) {
     return (
       <button
         onClick={() => { setValue(fee.dueDate.slice(0, 10)); setEditing(true); }}
-        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-[#5B5CEB]"
+        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-[#10B981]"
         title="Change due date"
       >
         Due {new Date(fee.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} <Pencil className="w-3 h-3" />
@@ -52,9 +52,9 @@ function DueDateEditor({ fee }: { fee: FeeRecord }) {
     <div className="inline-flex items-center gap-1">
       <input
         type="date" value={value} onChange={(e) => setValue(e.target.value)}
-        className="h-7 px-1.5 rounded-lg border border-[#5B5CEB] text-xs"
+        className="h-7 px-1.5 rounded-lg border border-[#10B981] text-xs"
       />
-      <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-[#5B5CEB] text-white shrink-0">
+      <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-[#10B981] text-white shrink-0">
         {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
       </button>
       <button onClick={() => setEditing(false)} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-500 shrink-0">
@@ -96,7 +96,7 @@ function NotifyClassTeachersPanel({ onClose }: { onClose: () => void }) {
                 </div>
                 <button
                   onClick={() => setSendingGroup(g)}
-                  className="h-9 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
+                  className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" /> Send
                 </button>
@@ -158,7 +158,7 @@ export function PendingFeesPage() {
         </button>
         <button
           onClick={() => setAssignOpen(true)}
-          className="h-9 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" /> Assign Fee
         </button>
@@ -174,7 +174,7 @@ export function PendingFeesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search student…"
-              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
             />
           </div>
           <input
@@ -182,7 +182,7 @@ export function PendingFeesPage() {
             value={cls}
             onChange={(e) => setCls(e.target.value)}
             placeholder="Class"
-            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
           />
           <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className={cn(selectCls, 'appearance-none pr-8')}>
             <option value="all">All Status</option>
@@ -195,7 +195,7 @@ export function PendingFeesPage() {
             <input
               type="date" value={dueBefore} onChange={(e) => setDueBefore(e.target.value)}
               title="Show fees due on or before this date — use this to spot defaulters early, ahead of the due date"
-              className="h-10 pl-8 pr-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30"
+              className="h-10 pl-8 pr-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
             />
           </div>
           {dueBefore && (
@@ -241,7 +241,7 @@ export function PendingFeesPage() {
                     <p className={cn('text-sm font-bold', isOverdue ? 'text-red-600' : 'text-amber-600')}>{fmt(fee.balance)}</p>
                     <button
                       onClick={() => setPayingFee(fee)}
-                      className="mt-1.5 h-8 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-lg text-xs font-semibold"
+                      className="mt-1.5 h-8 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-lg text-xs font-semibold"
                     >
                       Collect
                     </button>

@@ -2,13 +2,11 @@ import { User } from '../users/user.model';
 import { Teacher, ITeacher } from '../teachers/teacher.model';
 import { timetableRepository } from '../timetable/timetable.repository';
 import { PeriodSlot, IPeriodSlot } from '../timetable/timetable.period.model';
-import { ITimetable } from '../timetable/timetable.model';
 import { Attendance } from '../attendance/attendance.model';
 import { Student } from '../students/student.model';
 import { ClassTeacherAssignment } from '../classes/class-teacher.model';
-import { ForbiddenError, NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { ForbiddenError, NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
-import { upsertOwnEntrySchema, removeOwnEntrySchema } from './teacher-workspace.validation';
 import type { TeacherWorkspaceData, TodayClass, TeacherWeekEntry } from '@schoolos/types';
 
 // Resolve User → Teacher via email (JWT has userId = User._id)
@@ -175,78 +173,4 @@ export const teacherWorkspaceService = {
     };
   },
 
-  // ── Self-service timetable ────────────────────────────────────────────────
-  // A teacher may add/edit/remove their own periods only — never another
-  // teacher's entries. Reuses the same Timetable documents the admin module
-  // manages; conflict-checked against the teacher's own existing slots.
-
-  async upsertOwnTimetableEntry(rawInput: unknown, ctx: AuthContext): Promise<ITimetable> {
-    const input = upsertOwnEntrySchema.parse(rawInput);
-    const teacher = await resolveTeacher(ctx);
-    const teacherId = String(teacher._id);
-    const academicYear = String(new Date().getFullYear());
-
-    let tt = await timetableRepository.findByClassSection(ctx.schoolId, input.class, input.section, academicYear);
-    if (!tt) {
-      tt = await timetableRepository.create({
-        schoolId: ctx.schoolId,
-        class: input.class,
-        section: input.section,
-        academicYear,
-        createdBy: ctx.displayName,
-      });
-    }
-    const timetableId = String((tt as unknown as { _id: { toString(): string } })._id);
-
-    // Block overwriting a slot another teacher already owns at this class/section.
-    const existingEntry = tt.entries.find((e) => e.dayOfWeek === input.dayOfWeek && e.slotId === input.slotId);
-    if (existingEntry && existingEntry.teacherId && existingEntry.teacherId !== teacherId) {
-      throw new ValidationError(
-        `${existingEntry.teacherName ?? 'Another teacher'} already has this period for Class ${input.class}-${input.section}.`,
-      );
-    }
-
-    // Block double-booking the teacher into two classes at the same slot.
-    const clash = await timetableRepository.findConflictingTeacher(
-      ctx.schoolId, timetableId, input.dayOfWeek, input.slotId, teacherId,
-    );
-    if (clash) {
-      throw new ValidationError(
-        `You already have a class scheduled at this time (Class ${clash.class}-${clash.section}).`,
-      );
-    }
-
-    const updated = await timetableRepository.upsertEntry(timetableId, ctx.schoolId, {
-      dayOfWeek:   input.dayOfWeek,
-      slotId:      input.slotId,
-      subjectName: input.subjectName,
-      teacherId,
-      teacherName: teacher.fullName,
-      roomNumber:  input.roomNumber,
-      updatedBy:   ctx.displayName,
-    });
-    if (!updated) throw new NotFoundError('Timetable');
-    return updated;
-  },
-
-  async removeOwnTimetableEntry(rawInput: unknown, ctx: AuthContext): Promise<ITimetable> {
-    const input = removeOwnEntrySchema.parse(rawInput);
-    const teacher = await resolveTeacher(ctx);
-    const teacherId = String(teacher._id);
-    const academicYear = String(new Date().getFullYear());
-
-    const tt = await timetableRepository.findByClassSection(ctx.schoolId, input.class, input.section, academicYear);
-    if (!tt) throw new NotFoundError('Timetable');
-    const timetableId = String((tt as unknown as { _id: { toString(): string } })._id);
-
-    const entry = tt.entries.find((e) => e.dayOfWeek === input.dayOfWeek && e.slotId === input.slotId);
-    if (!entry) throw new NotFoundError('Timetable entry');
-    if (entry.teacherId !== teacherId) {
-      throw new ForbiddenError('You can only remove your own periods.');
-    }
-
-    const updated = await timetableRepository.removeEntry(timetableId, ctx.schoolId, input.dayOfWeek, input.slotId, ctx.displayName);
-    if (!updated) throw new NotFoundError('Timetable');
-    return updated;
-  },
 };

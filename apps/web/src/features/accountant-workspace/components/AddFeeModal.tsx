@@ -30,7 +30,7 @@ const currentAcademicYear = () => {
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#5B5CEB]/30 focus:border-[#5B5CEB]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 export function AddFeeModal({ studentId, onClose, onCreated, defaultAmount }: Props) {
@@ -119,7 +119,7 @@ export function AddFeeModal({ studentId, onClose, onCreated, defaultAmount }: Pr
             </div>
           )}
 
-        <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B5CEB] hover:bg-[#4a4bd9] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+        <button type="submit" disabled={isPending} className="w-full h-11 bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Assign Fee & Collect
         </button>
       </form>

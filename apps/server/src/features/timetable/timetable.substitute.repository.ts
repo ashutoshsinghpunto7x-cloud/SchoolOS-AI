@@ -83,4 +83,24 @@ export const substituteRepository = {
     );
     return result.modifiedCount > 0;
   },
+
+  /** Is this teacher an active substitute for this class/section on this date? */
+  async isActiveSubstitute(
+    schoolId: string,
+    teacherId: string,
+    cls: string,
+    section: string,
+    date: string,
+  ): Promise<boolean> {
+    const count = await TimetableSubstitute.countDocuments({
+      schoolId,
+      class: cls,
+      section,
+      substituteTeacherId: teacherId,
+      status: 'active',
+      isDeleted: false,
+      date: new Date(date),
+    });
+    return count > 0;
+  },
 };

@@ -24,7 +24,7 @@ export const TimetableGridPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin  = user?.role === 'admin';
+  const isAdmin  = user?.role === 'admin' || user?.role === 'principal';
 
   const { data: tt,        isLoading: ttLoading }     = useTimetable(id!);
   const { data: slots = [], isLoading: slotsLoading } = usePeriodSlots();

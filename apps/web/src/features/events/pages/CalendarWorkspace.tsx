@@ -29,8 +29,7 @@ function getWeekStart(date: Date): Date {
 export const CalendarWorkspace = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Creating events is admin-only for now — add 'principal' here once that role/dashboard exists.
-  const canCreate = user?.role === 'admin';
+  const canCreate = user?.role === 'admin' || user?.role === 'principal';
   const today    = new Date();
 
   const [view, setView]               = useState<CalendarView>('month');

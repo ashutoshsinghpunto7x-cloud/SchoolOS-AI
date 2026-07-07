@@ -24,6 +24,7 @@ import accountantWorkspaceRouter from '../features/accountant-workspace/accounta
 import notificationRouter from '../features/notifications/notification.routes';
 import classTeacherRouter from '../features/classes/class-teacher.routes';
 import studentChangeRequestRouter from '../features/student-change-requests/student-change-request.routes';
+import leaveRequestRouter from '../features/leave-requests/leave-request.routes';
 
 const router = Router();
 
@@ -52,5 +53,6 @@ router.use('/accountant-workspace', accountantWorkspaceRouter);
 router.use('/notifications', notificationRouter);
 router.use('/classes', classTeacherRouter);
 router.use('/student-change-requests', studentChangeRequestRouter);
+router.use('/leave-requests', leaveRequestRouter);
 
 export default router;

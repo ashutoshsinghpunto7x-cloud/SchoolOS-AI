@@ -83,18 +83,18 @@ function ActiveCard({
   onMark:  (id: string, status: RowStatus) => void;
 }) {
   const x = useMotionValue(0);
-  // Transparent at rest — lets the wrapper's two-tone gradient border show through —
-  // ramping to a fully solid red/green right at the ±90px commit threshold.
+  // Neutral border/background feedback as the card is dragged — reacts to the
+  // swipe without color-coding the direction (present vs. absent).
   const borderColor = useTransform(
     x,
     [-90, -20, 0, 20, 90],
-    ['#EF4444', '#EF4444', 'rgba(0,0,0,0)', '#22C55E', '#22C55E'],
+    ['#D1D5DB', '#D1D5DB', 'rgba(0,0,0,0)', '#D1D5DB', '#D1D5DB'],
     { clamp: true },
   );
   const background = useTransform(
     x,
     [-90, 0, 90],
-    ['rgba(239,68,68,0.08)', 'rgba(255,255,255,1)', 'rgba(34,197,94,0.08)'],
+    ['rgba(0,0,0,0.02)', 'rgba(255,255,255,1)', 'rgba(0,0,0,0.02)'],
     { clamp: true },
   );
   const { bg, text } = getAvatarStyle(row.fullName);
@@ -105,10 +105,7 @@ function ActiveCard({
   }
 
   return (
-    <div
-      className="rounded-2xl p-[2.5px] shadow-sm"
-      style={{ background: 'linear-gradient(to right, #FCA5A5 50%, #86EFAC 50%)' }}
-    >
+    <div className="rounded-2xl border border-gray-200 p-[2.5px] shadow-sm">
       <motion.div
         className="flex items-center gap-3 bg-white rounded-[13px] border-2 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
         style={{ x, borderColor, backgroundColor: background }}
@@ -158,8 +155,7 @@ function CompactRow({
       onClick={() => onUndo(row.studentId)}
       className={cn(
         'w-full flex items-center px-4 py-3 gap-3 text-left transition-colors',
-        marked && row.status === 'present' && 'bg-emerald-50/40',
-        marked && row.status === 'absent' && 'bg-red-50/40',
+        marked && 'bg-gray-50/60',
         marked && editable && 'hover:brightness-[0.97]',
         !marked && 'cursor-default',
       )}

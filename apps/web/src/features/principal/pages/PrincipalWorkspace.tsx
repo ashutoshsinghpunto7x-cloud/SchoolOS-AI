@@ -1,4 +1,4 @@
-import { RefreshCw, Users, GraduationCap, CalendarCheck, IndianRupee, ClipboardList, CalendarDays } from 'lucide-react';
+import { RefreshCw, Users, GraduationCap, CalendarCheck, IndianRupee, ClipboardList, CalendarDays, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceSection } from '@/components/workspace/WorkspaceSection';
@@ -12,6 +12,9 @@ import { FeeWidget } from '../components/FeeWidget';
 import { AdmissionsWidget } from '../components/AdmissionsWidget';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { AcademicWidget } from '../components/AcademicWidget';
+import { LeaveApprovalsWidget } from '../components/LeaveApprovalsWidget';
+import { SubstitutionsTodayWidget } from '../components/SubstitutionsTodayWidget';
+import { SchoolTimetableWidget } from '../components/SchoolTimetableWidget';
 import { usePrincipalDashboard } from '../hooks/usePrincipal';
 
 // ── PrincipalWorkspace ────────────────────────────────────────────────────────
@@ -56,9 +59,9 @@ export const PrincipalWorkspace = () => {
         )}
 
         {/* ── KPI Cards ────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => <KPICardSkeleton key={i} />)
+            Array.from({ length: 7 }).map((_, i) => <KPICardSkeleton key={i} />)
           ) : data ? (
             <>
               <KPICard
@@ -66,51 +69,66 @@ export const PrincipalWorkspace = () => {
                 value={data.students.total}
                 subtitle={`${data.students.active} active`}
                 icon={GraduationCap}
-                color="blue"
                 onClick={() => navigate('/students')}
+                delay={0}
               />
               <KPICard
                 title="Teachers"
                 value={data.teachers.active}
                 subtitle={`of ${data.teachers.total} total`}
                 icon={Users}
-                color="indigo"
                 onClick={() => navigate('/teachers')}
+                delay={0.05}
               />
               <KPICard
                 title="Attendance Today"
                 value={data.attendance.today.total > 0 ? `${data.attendance.today.attendanceRate}%` : '—'}
                 subtitle={`${data.attendance.today.present} present`}
                 icon={CalendarCheck}
-                color={data.attendance.today.attendanceRate >= 85 ? 'green' : data.attendance.today.attendanceRate >= 75 ? 'amber' : 'red'}
                 onClick={() => navigate('/attendance')}
+                delay={0.1}
+              />
+              <KPICard
+                title="Present Today"
+                value={data.attendance.today.present}
+                subtitle={`of ${data.attendance.today.total} marked`}
+                icon={UserCheck}
+                onClick={() => navigate('/attendance')}
+                delay={0.15}
               />
               <KPICard
                 title="Fee Collection"
                 value={data.fees.totalCharged > 0 ? `${Math.round((data.fees.totalCollected / data.fees.totalCharged) * 100)}%` : '—'}
                 subtitle={data.fees.overdueCount > 0 ? `${data.fees.overdueCount} overdue` : 'All current'}
                 icon={IndianRupee}
-                color={data.fees.overdueCount > 0 ? 'amber' : 'green'}
                 onClick={() => navigate('/fees')}
+                delay={0.2}
               />
               <KPICard
                 title="Admissions"
                 value={data.admissions.total}
                 subtitle={`${data.admissions.newThisMonth} new this month`}
                 icon={ClipboardList}
-                color="emerald"
                 onClick={() => navigate('/enquiries')}
+                delay={0.25}
               />
               <KPICard
                 title="Upcoming Events"
                 value={data.upcomingEvents.length}
                 subtitle="Next 14 days"
                 icon={CalendarDays}
-                color="rose"
                 onClick={() => navigate('/calendar')}
+                delay={0.3}
               />
             </>
           ) : null}
+        </div>
+
+        {/* ── Leave Approvals, Substitutions, Timetable ───────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <LeaveApprovalsWidget />
+          <SubstitutionsTodayWidget />
+          <SchoolTimetableWidget timetable={data?.timetable} isLoading={isLoading} />
         </div>
 
         {/* ── Main content: 2-column layout ────────────────────────────────── */}

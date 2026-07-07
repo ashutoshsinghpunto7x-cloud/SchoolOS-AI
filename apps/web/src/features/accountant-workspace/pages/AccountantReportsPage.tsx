@@ -168,7 +168,7 @@ export function AccountantReportsPage() {
         <button onClick={() => window.print()} className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print
         </button>
-        <button onClick={handleExport} className="h-9 px-3 bg-[#5B5CEB] hover:bg-[#4a4bd9] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <button onClick={handleExport} className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
           <Download className="w-3.5 h-3.5" /> Export CSV
         </button>
       </div>
@@ -182,7 +182,7 @@ export function AccountantReportsPage() {
               onClick={() => setTab(id)}
               className={cn(
                 'px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors',
-                tab === id ? 'bg-[#5B5CEB] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
+                tab === id ? 'bg-[#10B981] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
               )}
             >
               <Icon className="w-3.5 h-3.5" /> {label}
