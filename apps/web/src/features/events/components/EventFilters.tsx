@@ -76,7 +76,7 @@ export const EventFilters = ({ filters, onChange }: EventFiltersProps) => {
         className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700
                    focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 cursor-pointer"
       >
-        <option value="">All Statuses</option>
+        <option value="">All Status</option>
         {EVENT_STATUSES.map((s) => (
           <option key={s} value={s}>{STATUS_LABEL[s]}</option>
         ))}
