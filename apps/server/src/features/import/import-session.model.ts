@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
-export type ImportType = 'students' | 'teachers' | 'fees' | 'admissions';
+export type ImportType = 'students' | 'teachers' | 'fees' | 'admissions' | 'attendance';
 
 export type ImportStatus =
   | 'uploading'
@@ -34,12 +34,25 @@ export interface IImportTimelineEvent {
 
 // ── ImportSession ─────────────────────────────────────────────────────────────
 
+/** A class+section combo found in a 'students' import file that doesn't yet exist
+ * in this school's Classes & Sections catalog — surfaced at preview time so the
+ * accountant can catch typos before they become permanent catalog entries. */
+export interface IDetectedClass {
+  class: string;
+  section: string;
+  /** True if the class name itself is new (not just a new section under an existing class). */
+  classExists: boolean;
+}
+
 export interface IImportSession extends Document {
   schoolId: string;
   createdBy: string;
   createdByName: string;
   importType: ImportType;
   status: ImportStatus;
+
+  /** 'students' imports only — new class/section combos detected during validation. */
+  detectedNewClasses: IDetectedClass[];
 
   // File metadata
   originalFileName: string;
@@ -120,6 +133,15 @@ const importTimelineEventSchema = new Schema<IImportTimelineEvent>(
   { _id: false }
 );
 
+const detectedClassSchema = new Schema<IDetectedClass>(
+  {
+    class: { type: String, required: true },
+    section: { type: String, required: true },
+    classExists: { type: Boolean, required: true },
+  },
+  { _id: false }
+);
+
 const importSessionSchema = new Schema<IImportSession>(
   {
     schoolId: { type: String, required: true },
@@ -127,7 +149,7 @@ const importSessionSchema = new Schema<IImportSession>(
     createdByName: { type: String, required: true },
     importType: {
       type: String,
-      enum: ['students', 'teachers', 'fees', 'admissions'],
+      enum: ['students', 'teachers', 'fees', 'admissions', 'attendance'],
       required: true,
     },
     status: {
@@ -150,6 +172,8 @@ const importSessionSchema = new Schema<IImportSession>(
     skippedRows: { type: Number, default: 0 },
 
     importedIds: { type: [String], default: [] },
+
+    detectedNewClasses: { type: [detectedClassSchema], default: [] },
 
     timeline: { type: [importTimelineEventSchema], default: [] },
 

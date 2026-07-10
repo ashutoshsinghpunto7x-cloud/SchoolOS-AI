@@ -44,6 +44,8 @@ export interface IStudent extends Document {
   alternatePhone?: string;
   email?: string;
   address?: string;
+  locality?: string;
+  photoUrl?: string;
   emergencyContact?: IEmergencyContact;
   admissionStatus: AdmissionStatus;
   admissionYear: number;
@@ -51,6 +53,9 @@ export interface IStudent extends Document {
   remarks?: string;
   /** Recurring monthly tuition fee amount set by admin — drives auto-generated tuition FeeRecords. */
   monthlyTuitionFee?: number;
+  /** Standing discount applied to this student's fee records — only ever set via an approved FeeDiscountRequest, never directly. */
+  approvedDiscountAmount?: number;
+  approvedDiscountReason?: string;
   // Soft delete
   isDeleted: boolean;
   deletedAt?: Date;
@@ -85,6 +90,8 @@ const studentSchema = new Schema<IStudent>(
     alternatePhone: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     address: { type: String, trim: true },
+    locality: { type: String, trim: true },
+    photoUrl: { type: String },
     emergencyContact: { type: emergencyContactSchema },
     admissionStatus: {
       type: String,
@@ -95,6 +102,8 @@ const studentSchema = new Schema<IStudent>(
     tags: { type: [String], default: [] },
     remarks: { type: String, trim: true },
     monthlyTuitionFee: { type: Number, min: 0 },
+    approvedDiscountAmount: { type: Number, min: 0 },
+    approvedDiscountReason: { type: String, trim: true },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
     deletedBy: { type: String },

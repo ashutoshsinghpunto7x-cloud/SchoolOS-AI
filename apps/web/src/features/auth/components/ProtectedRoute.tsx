@@ -27,5 +27,12 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/forbidden" replace />;
   }
 
+  // Account recovery isn't complete — block every other route until both the
+  // new password and new PIN are set. The reset page itself is exempt so the
+  // user can actually reach it.
+  if (user && (user.mustResetPassword || user.mustResetPin) && location.pathname !== '/recovery/reset') {
+    return <Navigate to="/recovery/reset" replace />;
+  }
+
   return <Outlet />;
 };

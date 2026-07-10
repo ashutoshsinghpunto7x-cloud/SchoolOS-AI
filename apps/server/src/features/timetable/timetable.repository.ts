@@ -194,6 +194,13 @@ export const timetableRepository = {
     }).lean<ITimetable>();
   },
 
+  /** Most recently updated active timetable for a class/section, regardless of academic year — used for substitute suggestions. */
+  async findByClassSectionAnyYear(schoolId: string, cls: string, section: string): Promise<ITimetable | null> {
+    return Timetable.findOne({
+      schoolId, class: cls, section, isDeleted: false, status: { $in: ['draft', 'published'] },
+    }).sort({ updatedAt: -1 }).lean<ITimetable>();
+  },
+
   async getTeacherSchedule(schoolId: string, teacherId: string): Promise<ITimetable[]> {
     return Timetable.find({
       schoolId,

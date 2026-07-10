@@ -62,7 +62,7 @@ export const importSessionRepository = {
     id: string,
     schoolId: string,
     status: ImportStatus,
-    extra: Partial<Pick<IImportSession, 'totalRows' | 'validRows' | 'warningRows' | 'failedRows' | 'importedRows' | 'skippedRows' | 'mapping' | 'errorSummary' | 'startedAt' | 'completedAt' | 'rolledBackAt'>> = {}
+    extra: Partial<Pick<IImportSession, 'totalRows' | 'validRows' | 'warningRows' | 'failedRows' | 'importedRows' | 'skippedRows' | 'mapping' | 'errorSummary' | 'startedAt' | 'completedAt' | 'rolledBackAt' | 'detectedNewClasses'>> = {}
   ): Promise<IImportSession | null> {
     return ImportSession.findOneAndUpdate(
       { _id: id, schoolId },
@@ -149,10 +149,16 @@ export const importRowRepository = {
     sessionId: string,
     rowNumber: number,
     status: ImportRowStatus,
-    importedId?: string
+    importedId?: string,
+    /** When a row fails during processing, surface why — otherwise the failure
+     *  is invisible in the UI (status flips to 'error' with an empty reason). */
+    processingError?: string
   ): Promise<void> {
     const update: Record<string, unknown> = { status };
     if (importedId) update.importedId = importedId;
+    if (processingError) {
+      update.errors = [{ field: 'processing', message: processingError, code: 'processing_failed' }];
+    }
     await ImportRow.updateOne({ sessionId, rowNumber }, { $set: update });
   },
 

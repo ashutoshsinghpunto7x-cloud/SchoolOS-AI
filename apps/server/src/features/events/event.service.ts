@@ -35,6 +35,40 @@ const STATUS_TRANSITIONS: Record<EventStatus, EventStatus[]> = {
 };
 
 export const eventService = {
+  async setAttachment(id: string, dataUri: string, fileName: string, ctx: AuthContext): Promise<ISchoolEvent> {
+    const existing = await eventRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Event');
+
+    const updated = await eventRepository.update(id, ctx.schoolId, {
+      attachmentUrl: dataUri,
+      attachmentName: fileName,
+      updatedBy: ctx.displayName,
+    });
+    if (!updated) throw new NotFoundError('Event');
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'event.updated', resource: 'events', resourceId: id,
+      details: { attachmentName: fileName },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return updated;
+  },
+
+  async removeAttachment(id: string, ctx: AuthContext): Promise<ISchoolEvent> {
+    const existing = await eventRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Event');
+
+    const updated = await eventRepository.update(id, ctx.schoolId, {
+      attachmentUrl: undefined,
+      attachmentName: undefined,
+      updatedBy: ctx.displayName,
+    });
+    if (!updated) throw new NotFoundError('Event');
+    return updated;
+  },
+
   async createEvent(rawInput: unknown, ctx: AuthContext): Promise<ISchoolEvent> {
     const data = createEventSchema.parse(rawInput);
 

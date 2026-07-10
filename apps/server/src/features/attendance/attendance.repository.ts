@@ -85,6 +85,10 @@ export const attendanceRepository = {
     return Attendance.findOne({ _id: id, schoolId, isDeleted: false }).lean<IAttendance>();
   },
 
+  async findByStudentAndDate(schoolId: string, studentId: string, date: string): Promise<IAttendance | null> {
+    return Attendance.findOne({ schoolId, studentId, date, isDeleted: false }).lean<IAttendance>();
+  },
+
   async update(
     id: string,
     schoolId: string,

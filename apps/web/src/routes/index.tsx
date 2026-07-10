@@ -16,18 +16,38 @@ function RoleBasedRedirect() {
 
 // ── Lazy page imports (code-split by route) ───────────────────────────────────
 
-const lazyPage = <T extends Record<string, React.ComponentType>>(
+// `keyof T` alone collapses every export's props to `{}` once passed through
+// React.lazy, silently dropping prop types (e.g. ClassTeachersPage's optional
+// backTo/backLabel). Binding K lets the returned LazyExoticComponent keep the
+// real prop type of whichever named export was picked.
+const lazyPage = <T extends Record<string, React.ComponentType<any>>, K extends keyof T>(
   factory: () => Promise<T>,
-  name: keyof T,
-) =>
+  name: K,
+): React.LazyExoticComponent<T[K]> =>
   lazy(async () => {
     const mod = await factory();
-    return { default: mod[name] as React.ComponentType };
-  });
+    return { default: mod[name] };
+  }) as React.LazyExoticComponent<T[K]>;
 
 const LoginPage = lazyPage(
   () => import('@/features/auth/pages/LoginPage'),
   'LoginPage',
+);
+const RecoverAccountPage = lazyPage(
+  () => import('@/features/auth/pages/RecoverAccountPage'),
+  'RecoverAccountPage',
+);
+const RecoveryResetPage = lazyPage(
+  () => import('@/features/auth/pages/RecoveryResetPage'),
+  'RecoveryResetPage',
+);
+const RecoveryRequestsPage = lazyPage(
+  () => import('@/features/auth/pages/RecoveryRequestsPage'),
+  'RecoveryRequestsPage',
+);
+const MessagesPage = lazyPage(
+  () => import('@/features/internal-messages/pages/MessagesPage'),
+  'MessagesPage',
 );
 const ReceptionWorkspace = lazyPage(
   () => import('@/features/reception/pages/ReceptionWorkspace'),
@@ -201,6 +221,30 @@ const PendingApprovalsPage = lazyPage(
   () => import('@/features/principal/pages/PendingApprovalsPage'),
   'PendingApprovalsPage',
 );
+const PrincipalInsightsPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalInsightsPage'),
+  'PrincipalInsightsPage',
+);
+const ClassSectionManagementPage = lazyPage(
+  () => import('@/features/school-classes/pages/ClassSectionManagementPage'),
+  'ClassSectionManagementPage',
+);
+const SchoolSettingsPage = lazyPage(
+  () => import('@/features/school-settings/pages/SchoolSettingsPage'),
+  'SchoolSettingsPage',
+);
+const PrincipalChangePasswordPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalChangePasswordPage'),
+  'PrincipalChangePasswordPage',
+);
+const TeachersSummaryPage = lazyPage(
+  () => import('@/features/principal/pages/TeachersSummaryPage'),
+  'TeachersSummaryPage',
+);
+const DiscountApprovalsPage = lazyPage(
+  () => import('@/features/principal/pages/DiscountApprovalsPage'),
+  'DiscountApprovalsPage',
+);
 const ReportsWorkspace = lazyPage(
   () => import('@/features/reports/pages/ReportsWorkspace'),
   'ReportsWorkspace',
@@ -289,6 +333,10 @@ const TeacherClassesPage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherClassesPage'),
   'TeacherClassesPage',
 );
+const ClassDetailPage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/ClassDetailPage'),
+  'ClassDetailPage',
+);
 const TeacherStudentListPage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherStudentListPage'),
   'TeacherStudentListPage',
@@ -344,6 +392,26 @@ const ExpensesPage = lazyPage(
 const AccountantReportsPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantReportsPage'),
   'AccountantReportsPage',
+);
+const FeeStructurePage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/FeeStructurePage'),
+  'FeeStructurePage',
+);
+const StudentLedgerSearchPage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/StudentLedgerSearchPage'),
+  'StudentLedgerSearchPage',
+);
+const StudentLedgerPage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/StudentLedgerPage'),
+  'StudentLedgerPage',
+);
+const AccountantTeacherSearchPage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/AccountantTeacherSearchPage'),
+  'AccountantTeacherSearchPage',
+);
+const AccountantTeacherProfilePage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/AccountantTeacherProfilePage'),
+  'AccountantTeacherProfilePage',
 );
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
@@ -403,11 +471,19 @@ export const router = createBrowserRouter([
         path: '/login',
         element: <LoginPage />,
       },
+      {
+        path: '/recover-account',
+        element: <RecoverAccountPage />,
+      },
 
       // ── Protected app shell ────────────────────────────────────────────────
       {
         element: <ProtectedRoute />,
         children: [
+          {
+            path: 'recovery/reset',
+            element: <RecoveryResetPage />,
+          },
           {
             path: '/',
             element: <AppLayout />,
@@ -426,6 +502,7 @@ export const router = createBrowserRouter([
                     children: [
                       { path: 'teacher',                                              element: <TeacherDashboard /> },
                       { path: 'teacher/classes',                                      element: <TeacherClassesPage /> },
+                      { path: 'teacher/classes/:cls/:section',                        element: <ClassDetailPage /> },
                       { path: 'teacher/classes/:cls/:section/students',               element: <TeacherStudentListPage /> },
                       { path: 'teacher/add-student',                                      element: <TeacherAddStudentPage /> },
                       { path: 'teacher/classes/:cls/:section/add-student',            element: <TeacherAddStudentPage /> },
@@ -449,6 +526,11 @@ export const router = createBrowserRouter([
                       { path: 'accountant/collect-fee',   element: <FeeCollectionPage /> },
                       { path: 'accountant/pending-fees',  element: <PendingFeesPage /> },
                       { path: 'accountant/fee-records',   element: <FeeRecordsPage /> },
+                      { path: 'accountant/fee-structure', element: <FeeStructurePage /> },
+                      { path: 'accountant/student-ledger', element: <StudentLedgerSearchPage /> },
+                      { path: 'accountant/student-ledger/:studentId', element: <StudentLedgerPage /> },
+                      { path: 'accountant/teachers',       element: <AccountantTeacherSearchPage /> },
+                      { path: 'accountant/teachers/:teacherId', element: <AccountantTeacherProfilePage /> },
                       { path: 'accountant/salary',        element: <SalaryPage /> },
                       { path: 'accountant/expenses',      element: <ExpensesPage /> },
                       { path: 'accountant/reports',       element: <AccountantReportsPage /> },
@@ -457,12 +539,17 @@ export const router = createBrowserRouter([
                 ],
               },
 
-              // Principal (admin + principal executive dashboard)
+              // Principal (principal-only executive dashboard — not reachable by admin)
               {
-                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                element: <ProtectedRoute allowedRoles={['principal']} />,
                 children: [
                   { path: 'principal', element: <PrincipalWorkspace /> },
+                  { path: 'principal/insights', element: <PrincipalInsightsPage /> },
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
+                  { path: 'principal/discount-approvals', element: <DiscountApprovalsPage /> },
+                  { path: 'principal/class-teachers', element: <ClassTeachersPage backTo="/principal" backLabel="Principal Dashboard" /> },
+                  { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
+                  { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
                 ],
               },
 
@@ -525,14 +612,23 @@ export const router = createBrowserRouter([
                 ],
               },
 
-              // Teachers
+              // Teachers — anyone can view; creating/editing is admin + principal
+              // + reception only, matching the server-side route restriction.
               { path: 'teachers', element: <TeacherListPage /> },
-              { path: 'teachers/new', element: <NewTeacherPage /> },
               { path: 'teachers/:id', element: <TeacherProfilePage /> },
-              { path: 'teachers/:id/edit', element: <EditTeacherPage /> },
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal', 'reception']} />,
+                children: [
+                  { path: 'teachers/new', element: <NewTeacherPage /> },
+                  { path: 'teachers/:id/edit', element: <EditTeacherPage /> },
+                ],
+              },
 
               // Communication
               { path: 'communication', element: <CommunicationWorkspace /> },
+
+              // Internal Messages (all authenticated roles)
+              { path: 'messages', element: <MessagesPage /> },
 
               // Administration (admin-only)
               {
@@ -551,6 +647,7 @@ export const router = createBrowserRouter([
                       { path: 'classes', element: <ClassTeachersPage /> },
                       { path: 'automation', element: <AutomationJobsPage /> },
                       { path: 'automation/:id', element: <AutomationJobDetailPage /> },
+                      { path: 'recovery-requests', element: <RecoveryRequestsPage /> },
                     ],
                   },
                 ],
@@ -567,6 +664,7 @@ export const router = createBrowserRouter([
               { path: 'integrations/:id',                element: <IntegrationDetailPage /> },
 
               // Data Import (admin-only)
+              { path: 'classes',                 element: <ClassSectionManagementPage /> },
               { path: 'import',                  element: <ImportDashboard /> },
               { path: 'import/upload',            element: <UploadCenter /> },
               { path: 'import/history',           element: <ImportHistory /> },
@@ -575,7 +673,7 @@ export const router = createBrowserRouter([
 
               // Placeholder routes
               { path: 'ai-assistant', element: <ComingSoon /> },
-              { path: 'settings', element: <ComingSoon /> },
+              { path: 'settings', element: <SchoolSettingsPage /> },
             ],
           },
         ],

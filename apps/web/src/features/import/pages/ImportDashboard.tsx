@@ -8,6 +8,7 @@ const IMPORT_TYPES = [
   { type: 'teachers',   label: 'Teachers',   description: 'Profiles, subjects, experience' },
   { type: 'fees',       label: 'Fee Records', description: 'Pending/paid fees, due dates' },
   { type: 'admissions', label: 'Admissions', description: 'Enquiry pipeline and lead data' },
+  { type: 'attendance', label: 'Attendance History', description: 'Backfill past attendance from registers' },
 ] as const;
 
 export function ImportDashboard() {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, CheckCheck, Receipt, MessageSquare, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Receipt, MessageSquare, CalendarClock, Repeat, Loader2 } from 'lucide-react';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../hooks/useNotifications';
+import { LeaveRequestReviewModal } from '@/features/leave-requests/components/LeaveRequestReviewModal';
 import { cn } from '@/lib/utils';
 import type { AppNotification } from '@schoolos/types';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -19,18 +20,32 @@ const relativeTime = (iso: string): string => {
 const NotificationIcon = ({ type }: { type: AppNotification['type'] }) =>
   type === 'defaulters_list' ? (
     <Receipt className="w-4 h-4 text-amber-600" strokeWidth={2} />
+  ) : type === 'leave_request' ? (
+    <CalendarClock className="w-4 h-4 text-purple-600" strokeWidth={2} />
+  ) : type === 'substitution' ? (
+    <Repeat className="w-4 h-4 text-red-600" strokeWidth={2} />
   ) : (
     <MessageSquare className="w-4 h-4 text-blue-600" strokeWidth={2} />
   );
 
 export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openLeaveRequestId, setOpenLeaveRequestId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
+
+  function handleNotificationClick(n: AppNotification) {
+    if (!n.isRead) markRead.mutate(n._id);
+    const leaveRequestId = n.type === 'leave_request' ? (n.payload?.leaveRequestId as string | undefined) : undefined;
+    if (leaveRequestId) {
+      setOpenLeaveRequestId(leaveRequestId);
+      setIsOpen(false);
+    }
+  }
 
   const notifications = data?.notifications ?? [];
   const unreadCount = data?.unreadCount ?? 0;
@@ -98,7 +113,7 @@ export const NotificationBell = () => {
               notifications.map((n) => (
                 <button
                   key={n._id}
-                  onClick={() => !n.isRead && markRead.mutate(n._id)}
+                  onClick={() => handleNotificationClick(n)}
                   className={cn(
                     'w-full text-left px-4 py-3 border-b border-gray-50 last:border-0 flex gap-3 transition-colors hover:bg-gray-50',
                     !n.isRead && 'bg-blue-50/40',
@@ -113,6 +128,11 @@ export const NotificationBell = () => {
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{n.title}</p>
                       {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />}
                     </div>
+                    {n.priority === 'high' && (
+                      <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wide">
+                        Urgent
+                      </span>
+                    )}
                     <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
                     <p className="text-[11px] text-gray-400 mt-1">
                       {n.senderName} · {relativeTime(n.createdAt)}
@@ -123,6 +143,13 @@ export const NotificationBell = () => {
             )}
           </div>
         </div>
+      )}
+
+      {openLeaveRequestId && (
+        <LeaveRequestReviewModal
+          leaveRequestId={openLeaveRequestId}
+          onClose={() => setOpenLeaveRequestId(null)}
+        />
       )}
     </div>
   );

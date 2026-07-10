@@ -30,6 +30,8 @@ export interface ISchoolEvent extends Document {
   organizer?: string;
   notes?: string;
   tags: string[];
+  attachmentUrl?: string;
+  attachmentName?: string;
   isDeleted: boolean;
   deletedAt?: Date;
   deletedBy?: string;
@@ -70,6 +72,8 @@ const schoolEventSchema = new Schema<ISchoolEvent>(
     organizer:  { type: String, trim: true, maxlength: 200 },
     notes:      { type: String, maxlength: 5000 },
     tags:       { type: [String], default: [] },
+    attachmentUrl:  { type: String },
+    attachmentName: { type: String, trim: true, maxlength: 200 },
     isDeleted:  { type: Boolean, default: false, index: true },
     deletedAt:  { type: Date },
     deletedBy:  { type: String },

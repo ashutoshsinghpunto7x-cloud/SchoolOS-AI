@@ -1,219 +1,46 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  Users,
-  ChevronRight,
-  UserPlus,
-  CalendarCheck,
-  AlertCircle,
-  GraduationCap,
-} from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight, AlertCircle, GraduationCap } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
-import { cn } from '@/lib/utils';
 
 interface ClassEntry {
   cls: string;
   section: string;
-  subjects: string[];
-  todayStatus: 'marked' | 'pending' | 'none';
-  totalStudents: number;
-  attendanceCount: number;
   /** Only the class teacher (assigned by admin/principal) can mark attendance
-   *  or add students for a class. Other classes a teacher merely teaches a
-   *  subject in are record-only — view students, but no attendance-taking. */
+   *  for a class. Other classes a teacher merely teaches a subject in are
+   *  view-only — this page no longer surfaces attendance actions at all;
+   *  that now lives on the class detail page (ClassDetailPage). */
   isClassTeacher: boolean;
 }
 
-function SkeletonCard() {
+function SkeletonRow() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 animate-pulse">
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 bg-gray-100 rounded-xl shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-100 rounded w-24" />
-          <div className="h-3 bg-gray-100 rounded w-32" />
-          <div className="h-3 bg-gray-100 rounded w-20" />
-        </div>
-      </div>
+    <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-50 animate-pulse">
+      <div className="w-9 h-9 bg-gray-100 rounded-xl shrink-0" />
+      <div className="h-4 bg-gray-100 rounded w-32" />
     </div>
   );
 }
 
 /* ────────────────────────────────────────────────────────────────────────── */
-/* Class card                                                                */
+/* Class row — simple, single line: class name only, click for details      */
 /* ────────────────────────────────────────────────────────────────────────── */
 
-function ClassCard({
-  entry,
-  onAttendance,
-  onViewStudents,
-  onAddStudent,
-}: {
-  entry: ClassEntry;
-  onAttendance: () => void;
-  onViewStudents: () => void;
-  onAddStudent: () => void;
-}) {
-  const isPending = entry.todayStatus === 'pending';
-  const isMarked = entry.todayStatus === 'marked';
-  const noClassToday = entry.todayStatus === 'none';
-
+function ClassRow({ entry, onPress }: { entry: ClassEntry; onPress: () => void }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Card header */}
-      <div
-        className={cn(
-          'px-4 py-3 border-b',
-          isPending
-            ? 'bg-amber-50 border-amber-100/60'
-            : isMarked
-            ? 'bg-emerald-50 border-emerald-100/60'
-            : 'bg-gray-50 border-gray-100',
-        )}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-                isPending ? 'bg-amber-100' : isMarked ? 'bg-emerald-100' : 'bg-gray-100',
-              )}
-            >
-              <GraduationCap
-                className={cn(
-                  'w-5 h-5',
-                  isPending ? 'text-amber-600' : isMarked ? 'text-emerald-600' : 'text-gray-500',
-                )}
-                strokeWidth={2}
-              />
-            </div>
-            <div>
-              <p className="text-base font-bold text-gray-900">
-                Class {entry.cls}
-                {entry.section && ` – ${entry.section}`}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                {entry.subjects.join(', ') || 'No subjects'}
-              </p>
-            </div>
-          </div>
-
-          {!noClassToday && (
-            <div
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0',
-                isPending ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700',
-              )}
-            >
-              {isPending ? (
-                <>
-                  <Clock className="w-3 h-3" />
-                  Pending
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3 h-3" />
-                  Done
-                </>
-              )}
-            </div>
-          )}
-        </div>
+    <button
+      type="button"
+      onClick={onPress}
+      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
+    >
+      <div className="w-9 h-9 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
+        <GraduationCap className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
       </div>
-
-      {/* Card body */}
-      <div className="px-4 py-3">
-        {isMarked && entry.totalStudents > 0 && (
-          <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
-            <Users className="w-3.5 h-3.5 text-gray-400" />
-            <span>
-              <span className="font-semibold text-gray-700">{entry.attendanceCount}</span>{' '}
-              of {entry.totalStudents} students marked today
-            </span>
-          </div>
-        )}
-        {isPending && entry.totalStudents > 0 && (
-          <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
-            <Users className="w-3.5 h-3.5 text-gray-400" />
-            <span>{entry.totalStudents} students enrolled</span>
-          </div>
-        )}
-        {noClassToday && (
-          <p className="text-xs text-gray-400 mb-3">No class scheduled today</p>
-        )}
-        {!entry.isClassTeacher && (
-          <p className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
-            <BookOpen className="w-3.5 h-3.5 text-gray-300" />
-            Record only — you teach a subject here, but aren't the class teacher
-          </p>
-        )}
-
-        {/* Action buttons — Mark Attendance / Add Student are class-teacher-only.
-            A class teacher is assigned by admin/principal, never self-service;
-            other classes a teacher merely teaches a subject in are view-only. */}
-        {entry.isClassTeacher ? (
-          <div className="flex gap-2">
-            {isMarked ? (
-              <button
-                onClick={onAttendance}
-                className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                View Attendance
-              </button>
-            ) : (
-              // Covers both "pending" (scheduled today, not yet marked) and "none"
-              // (not resolved as scheduled today — e.g. incomplete timetable data,
-              // or marking for a date other than today). Attendance can always be
-              // marked directly; the sheet's own date nav handles any date.
-              <button
-                onClick={onAttendance}
-                className="flex-1 h-10 bg-[#0B3D2E] hover:bg-[#08251B] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
-              >
-                <CalendarCheck className="w-4 h-4" />
-                Mark Attendance
-              </button>
-            )}
-
-            <button
-              onClick={onViewStudents}
-              className="h-10 px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors"
-              title="View students"
-            >
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Students</span>
-            </button>
-
-            <button
-              onClick={onAddStudent}
-              className="h-10 px-3 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#0B3D2E] rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors"
-              title="Add student"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Add</span>
-            </button>
-
-            <button
-              onClick={onViewStudents}
-              className="h-10 w-10 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-xl flex items-center justify-center transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={onViewStudents}
-            className="w-full h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
-          >
-            <Users className="w-4 h-4" />
-            View Students
-          </button>
-        )}
-      </div>
-    </div>
+      <p className="flex-1 text-base font-bold text-gray-900">
+        Class {entry.cls}{entry.section && ` – ${entry.section}`}
+      </p>
+      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+    </button>
   );
 }
 
@@ -225,7 +52,9 @@ export function TeacherClassesPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useTeacherWorkspace();
 
-  // Derive unique class-section pairs from weekSchedule
+  // Derive unique class-section pairs from weekSchedule — this page only ever
+  // shows the class name; subjects/timetable/attendance all live on
+  // ClassDetailPage now, one tap away.
   const classes = useMemo<ClassEntry[]>(() => {
     if (!data) return [];
 
@@ -233,50 +62,13 @@ export function TeacherClassesPage() {
       (data.classTeacherOf ?? []).map((c) => `${c.class}||${c.section}`),
     );
 
-    // weekSchedule is pre-grouped: { dayOfWeek, entries: TeacherWeekEntry[] }[]
     const seen = new Map<string, ClassEntry>();
     for (const dayGroup of data.weekSchedule) {
       for (const entry of dayGroup.entries) {
         const key = `${entry.class}||${entry.section}`;
         if (!seen.has(key)) {
-          seen.set(key, {
-            cls: entry.class,
-            section: entry.section,
-            subjects: [],
-            todayStatus: 'none',
-            totalStudents: 0,
-            attendanceCount: 0,
-            isClassTeacher: classTeacherKeys.has(key),
-          });
+          seen.set(key, { cls: entry.class, section: entry.section, isClassTeacher: classTeacherKeys.has(key) });
         }
-        const item = seen.get(key)!;
-        if (entry.subjectName && !item.subjects.includes(entry.subjectName)) {
-          item.subjects.push(entry.subjectName);
-        }
-      }
-    }
-
-    // Overlay today's attendance status
-    for (const tc of data.todayClasses) {
-      const key = `${tc.class}||${tc.section}`;
-      if (seen.has(key)) {
-        const item = seen.get(key)!;
-        item.todayStatus = tc.attendanceMarked ? 'marked' : 'pending';
-        item.totalStudents = tc.totalStudents;
-        item.attendanceCount = tc.attendanceCount;
-        if (tc.subjectName && !item.subjects.includes(tc.subjectName)) {
-          item.subjects.unshift(tc.subjectName);
-        }
-      } else {
-        seen.set(key, {
-          cls: tc.class,
-          section: tc.section,
-          subjects: tc.subjectName ? [tc.subjectName] : [],
-          todayStatus: tc.attendanceMarked ? 'marked' : 'pending',
-          totalStudents: tc.totalStudents,
-          attendanceCount: tc.attendanceCount,
-          isClassTeacher: classTeacherKeys.has(key),
-        });
       }
     }
 
@@ -289,6 +81,14 @@ export function TeacherClassesPage() {
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-6 pb-4">
+        <button
+          onClick={() => navigate('/teacher')}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-3 -ml-1 p-1"
+          type="button"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">My Classes</h1>
         <p className="text-sm text-gray-500 mt-0.5">
           {classes.length} class{classes.length !== 1 ? 'es' : ''} assigned
@@ -296,13 +96,13 @@ export function TeacherClassesPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-4 space-y-3">
+      <div className="px-4 py-4">
         {isLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </div>
         ) : isError ? (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
@@ -322,21 +122,15 @@ export function TeacherClassesPage() {
             </p>
           </div>
         ) : (
-          classes.map((entry) => (
-            <ClassCard
-              key={`${entry.cls}||${entry.section}`}
-              entry={entry}
-              onAttendance={() =>
-                navigate(`/teacher/attendance/${entry.cls}/${entry.section}`)
-              }
-              onViewStudents={() =>
-                navigate(`/teacher/classes/${entry.cls}/${entry.section}/students`)
-              }
-              onAddStudent={() =>
-                navigate(`/teacher/classes/${entry.cls}/${entry.section}/add-student`)
-              }
-            />
-          ))
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+            {classes.map((entry) => (
+              <ClassRow
+                key={`${entry.cls}||${entry.section}`}
+                entry={entry}
+                onPress={() => navigate(`/teacher/classes/${entry.cls}/${entry.section}`)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

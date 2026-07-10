@@ -73,4 +73,22 @@ export const eventsApi = {
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
+
+  uploadAttachment: async (id: string, file: File): Promise<SchoolEvent> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post<{ data: SchoolEvent }>(`${BASE}/${id}/attachment`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  removeAttachment: async (id: string): Promise<SchoolEvent> => {
+    try {
+      const res = await apiClient.delete<{ data: SchoolEvent }>(`${BASE}/${id}/attachment`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
 };

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, CalendarClock, AlertTriangle, Settings } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { BackLink } from '@/components/workspace/BackLink';
 import { useTimetables, useConflicts } from '../hooks/useTimetable';
 import { TimetableStatusBadge } from '../components/TimetableStatusBadge';
 import type { TimetableListOptions, TimetableStatus } from '@schoolos/types';
@@ -13,6 +14,9 @@ export const TimetableWorkspace = () => {
   const navigate = useNavigate();
   const { user }  = useAuth();
   const isAdmin   = user?.role === 'admin' || user?.role === 'principal';
+  // Principal's sidebar is an overlay (not permanently docked), so pages it
+  // links to need an explicit way back — admin's sidebar is always visible.
+  const isPrincipal = user?.role === 'principal';
 
   const [filters, setFilters] = useState<TimetableListOptions>({ status: 'published' });
   const [page, setPage] = useState(1);
@@ -25,6 +29,7 @@ export const TimetableWorkspace = () => {
 
   return (
     <div className="flex flex-col gap-6 px-6 py-6 max-w-screen-xl mx-auto">
+      {isPrincipal && <BackLink to="/principal" label="Principal Dashboard" />}
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>

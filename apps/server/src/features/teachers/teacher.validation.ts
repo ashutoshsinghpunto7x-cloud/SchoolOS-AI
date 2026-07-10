@@ -38,6 +38,9 @@ export const createTeacherSchema = z.object({
     phone:    phoneSchema,
     relation: z.string().min(1).trim(),
   }).optional(),
+  /** Extra columns from an import file that don't map to a known field (Blood
+   * Group, Previous School, Aadhar Number, etc.) — kept instead of dropped. */
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const updateTeacherSchema = createTeacherSchema.partial();

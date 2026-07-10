@@ -18,6 +18,13 @@ export interface IUser extends Document {
   deletedAt?: Date;
   createdBy?: string;
   updatedBy?: string;
+  /** Staff/employee identifier used to verify account-recovery requests — distinct from the Teacher model's employeeId, since not every role (admin/accountant/principal) has a Teacher profile. */
+  employeeId?: string;
+  pinHash?: string;
+  /** Set true when logging in with a temporary password issued by an approved recovery request — forces the password + PIN reset flow before anything else. */
+  mustResetPassword?: boolean;
+  mustResetPin?: boolean;
+  tempPasswordExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +45,11 @@ const userSchema = new Schema<IUser>(
     deletedAt: { type: Date },
     createdBy: { type: String },
     updatedBy: { type: String },
+    employeeId: { type: String, trim: true },
+    pinHash: { type: String },
+    mustResetPassword: { type: Boolean, default: false },
+    mustResetPin: { type: Boolean, default: false },
+    tempPasswordExpiresAt: { type: Date },
   },
   { timestamps: true, versionKey: false }
 );

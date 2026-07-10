@@ -46,6 +46,12 @@ function calendarMonthIndex(month: string): number {
   return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(month);
 }
 
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 // ── Overdue sweep ────────────────────────────────────────────────────────────
 // The server may run serverless (Vercel), so a persistent setInterval cron isn't
 // reliable — instead, opportunistically flip pending/partial fees past their due
@@ -73,8 +79,9 @@ export const feeService = {
     if (!student) throw new NotFoundError('Student');
 
     const discountAmount = data.discountAmount ?? 0;
-    const balance = data.totalAmount - discountAmount;
-    if (balance < 0) throw new ValidationError('Discount cannot exceed total amount');
+    const fineAmount = data.fineAmount ?? 0;
+    const balance = data.totalAmount + fineAmount - discountAmount;
+    if (balance < 0) throw new ValidationError('Discount cannot exceed total amount + fine');
 
     const createData: CreateFeeData = {
       studentId:       data.studentId,
@@ -93,6 +100,8 @@ export const feeService = {
       discountAmount,
       discountReason:  data.discountReason,
       waivedAmount:    0,
+      fineAmount,
+      fineReason:      data.fineReason,
       paidAmount:      0,
       balance,
       status:          'pending',
@@ -152,7 +161,8 @@ export const feeService = {
     const totalAmount    = data.totalAmount    ?? existing.totalAmount;
     const discountAmount = data.discountAmount ?? existing.discountAmount;
     const waivedAmount   = data.waivedAmount   ?? existing.waivedAmount;
-    const newBalance     = Math.max(0, totalAmount - discountAmount - waivedAmount - existing.paidAmount);
+    const fineAmount     = data.fineAmount     ?? existing.fineAmount;
+    const newBalance     = Math.max(0, totalAmount + fineAmount - discountAmount - waivedAmount - existing.paidAmount);
 
     const update: Partial<IFeeRecord> & { updatedBy: string } = {
       ...data,
@@ -294,6 +304,16 @@ export const feeService = {
     if (existing) return null;
 
     const dueDate = new Date(next.calendarYear, calendarMonthIndex(next.month), 10);
+    // Never roll forward into a due date that's already in the past — this
+    // happens when an accountant clears old arrears (paying several backdated
+    // months at once); each one being marked 'paid' would otherwise spawn a
+    // "next month" record that's born already overdue, showing up as a
+    // confusing phantom pending fee even though everything was actually paid.
+    if (dueDate.getTime() < startOfToday().getTime()) return null;
+    // Carries forward any principal-approved standing discount so it applies
+    // automatically to every future month, not just the record it was approved on.
+    const discountAmount = student.approvedDiscountAmount ?? 0;
+    const balance = Math.max(0, student.monthlyTuitionFee - discountAmount);
 
     return feeRepository.create({
       studentId:       student._id.toString(),
@@ -308,10 +328,12 @@ export const feeService = {
       month:           next.month,
       dueDate,
       totalAmount:     student.monthlyTuitionFee,
-      discountAmount:  0,
+      discountAmount,
+      discountReason:  student.approvedDiscountReason,
       waivedAmount:    0,
+      fineAmount:      0,
       paidAmount:      0,
-      balance:         student.monthlyTuitionFee,
+      balance,
       status:          'pending',
       createdBy:       'System (auto-recurring)',
     });
@@ -346,6 +368,7 @@ export const feeService = {
         const dueDate = entry.dueDate
           ? new Date(entry.dueDate)
           : new Date(new Date().getFullYear(), calendarMonthIndex(entry.month), 10);
+        const discountAmount = student.approvedDiscountAmount ?? 0;
         feeRecord = await feeRepository.create({
           studentId:       student._id.toString(),
           studentName:     student.fullName,
@@ -359,10 +382,12 @@ export const feeService = {
           month:           entry.month,
           dueDate,
           totalAmount:     amount,
-          discountAmount:  0,
+          discountAmount,
+          discountReason:  student.approvedDiscountReason,
           waivedAmount:    0,
+          fineAmount:      0,
           paidAmount:      0,
-          balance:         amount,
+          balance:         Math.max(0, amount - discountAmount),
           status:          'pending',
           createdBy:       ctx.displayName,
         });

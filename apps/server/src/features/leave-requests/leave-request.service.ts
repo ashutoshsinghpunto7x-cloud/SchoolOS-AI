@@ -87,6 +87,18 @@ export const leaveRequestService = {
     return toApiShape(request);
   },
 
+  async getById(id: string, ctx: AuthContext) {
+    const request = await leaveRequestRepository.findById(id, ctx.schoolId);
+    if (!request) throw new NotFoundError('Leave request');
+
+    const canReview = ctx.role === 'admin' || ctx.role === 'principal';
+    if (!canReview && request.requestedByUserId !== ctx.userId) {
+      throw new ForbiddenError('You can only view your own leave requests');
+    }
+
+    return toApiShape(request);
+  },
+
   async listMine(ctx: AuthContext) {
     const teacher = await resolveTeacher(ctx);
     const requests = await leaveRequestRepository.findMine(ctx.schoolId, String(teacher._id));

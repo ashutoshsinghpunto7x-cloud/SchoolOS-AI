@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, Phone, StickyNote,
   Briefcase, BookOpen, Tag, MapPin, FileText,
-  Loader2, AlertCircle, GraduationCap,
+  Loader2, AlertCircle, GraduationCap, Camera, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useTeacher } from '../hooks/useTeachers';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useTeacher, useUploadTeacherPhoto, useRemoveTeacherPhoto } from '../hooks/useTeachers';
 import { EmploymentStatusBadge } from '../components/EmploymentStatusBadge';
 import { TeacherNotesPanel } from '../components/TeacherNotesPanel';
 import { LinkUserAccountCard } from '../components/LinkUserAccountCard';
@@ -35,8 +36,20 @@ export const TeacherProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: teacher, isLoading, isError } = useTeacher(id!);
+  const { mutateAsync: uploadPhoto, isPending: uploading } = useUploadTeacherPhoto(id!);
+  const { mutateAsync: removePhoto, isPending: removing } = useRemoveTeacherPhoto(id!);
+  const canManagePhoto = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'accountant';
+  const canEdit = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'principal';
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) await uploadPhoto(file);
+    e.target.value = '';
+  }
 
   if (isLoading) {
     return (
@@ -83,8 +96,39 @@ export const TeacherProfilePage = () => {
       {/* Profile header card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-7 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-          <div className="w-24 h-24 rounded-2xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md">
-            <span className="text-3xl font-bold text-white tracking-tight">{initials}</span>
+          <div className="relative w-24 h-24 flex-shrink-0 group">
+            <div className="w-24 h-24 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-md overflow-hidden">
+              {teacher.photoUrl ? (
+                <img src={teacher.photoUrl} alt={teacher.fullName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-white tracking-tight">{initials}</span>
+              )}
+            </div>
+            {canManagePhoto && (
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => void handlePhotoChange(e)} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  title={teacher.photoUrl ? 'Replace photo' : 'Add photo'}
+                  className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                >
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                </button>
+                {teacher.photoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => void removePhoto()}
+                    disabled={removing}
+                    title="Remove photo"
+                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-start gap-3">
@@ -129,12 +173,14 @@ export const TeacherProfilePage = () => {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-3 mb-8">
-        <button onClick={() => navigate(`/teachers/${teacher._id}/edit`)}
-          className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 flex items-center gap-2.5 text-sm font-bold text-white transition-colors"
-          type="button">
-          <Pencil className="w-4 h-4" />
-          Edit Teacher
-        </button>
+        {canEdit && (
+          <button onClick={() => navigate(`/teachers/${teacher._id}/edit`)}
+            className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 flex items-center gap-2.5 text-sm font-bold text-white transition-colors"
+            type="button">
+            <Pencil className="w-4 h-4" />
+            Edit Teacher
+          </button>
+        )}
         <button onClick={() => setActiveTab('notes')}
           className="h-12 px-6 rounded-xl bg-indigo-50 hover:bg-indigo-100 flex items-center gap-2.5 text-sm font-bold text-indigo-700 border border-indigo-200 transition-colors"
           type="button">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Loader2, GraduationCap, X, Check } from 'lucide-react';
 import { useClassSections, useAssignClassTeacher } from '../hooks/useClasses';
 import { useTeachersPaginated } from '@/features/teachers/hooks/useTeachers';
+import { BackLink } from '@/components/workspace/BackLink';
 import type { ClassSectionSummary } from '@schoolos/types';
 
 // ── Teacher picker for one class+section row ────────────────────────────────
@@ -53,12 +54,21 @@ function TeacherPicker({ row, onDone }: { row: ClassSectionSummary; onDone: () =
   );
 }
 
-export function ClassTeachersPage() {
+interface ClassTeachersPageProps {
+  /** When set, renders a "‹ back" link above the title — used when this page
+   *  is reached standalone (e.g. the principal's sidebar) rather than nested
+   *  inside the Administration tab shell, which already provides its own nav. */
+  backTo?: string;
+  backLabel?: string;
+}
+
+export function ClassTeachersPage({ backTo, backLabel }: ClassTeachersPageProps = {}) {
   const { data, isLoading } = useClassSections();
   const [openFor, setOpenFor] = useState<string | null>(null);
 
   return (
     <div className="p-8 max-w-3xl">
+      {backTo && <BackLink to={backTo} label={backLabel ?? 'Back'} />}
       <div className="mb-6">
         <h2 className="text-lg font-bold text-gray-900">Class Teachers</h2>
         <p className="text-sm text-gray-500 mt-1">

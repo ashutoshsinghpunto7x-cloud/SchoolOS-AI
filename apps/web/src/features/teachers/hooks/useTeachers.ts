@@ -70,6 +70,28 @@ export const useUpdateTeacher = (id: string) => {
   });
 };
 
+export const useUploadTeacherPhoto = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => teachersApi.uploadPhoto(id, file),
+    onSuccess:  (updated) => {
+      qc.invalidateQueries({ queryKey: teacherKeys.all });
+      qc.setQueryData(teacherKeys.detail(id), updated);
+    },
+  });
+};
+
+export const useRemoveTeacherPhoto = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => teachersApi.removePhoto(id),
+    onSuccess:  (updated) => {
+      qc.invalidateQueries({ queryKey: teacherKeys.all });
+      qc.setQueryData(teacherKeys.detail(id), updated);
+    },
+  });
+};
+
 export const useChangeTeacherStatus = () => {
   const qc = useQueryClient();
   return useMutation({

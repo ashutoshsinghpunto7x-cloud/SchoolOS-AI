@@ -16,6 +16,8 @@ const LIFECYCLE_STATUSES = [
 
 export const createStudentSchema = z.object({
   fullName: z.string({ required_error: 'Full name is required' }).min(2).max(100).trim(),
+  /** Only ever set by the import pipeline, which carries an existing admission number from the source file — the normal admission form never sends this, so auto-generation still applies. */
+  admissionNumber: z.string().max(30).trim().optional(),
   rollNumber: z.string().max(20).trim().optional().or(z.literal('')),
   class: z.string({ required_error: 'Class is required' }).min(1).trim(),
   section: z.string({ required_error: 'Section is required' }).min(1).trim(),
@@ -27,6 +29,7 @@ export const createStudentSchema = z.object({
   alternatePhone: phoneSchema.optional().or(z.literal('')),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
   address: z.string().optional(),
+  locality: z.string().max(200).trim().optional().or(z.literal('')),
   admissionStatus: z.enum(LIFECYCLE_STATUSES).default('active'),
   tags: z.array(z.string().max(30).trim()).max(20).default([]),
   remarks: z.string().max(500).optional(),

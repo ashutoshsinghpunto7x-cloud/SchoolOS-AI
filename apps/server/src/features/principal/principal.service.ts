@@ -1,8 +1,9 @@
 import { principalRepository } from './principal.repository';
 import { feeRepository } from '../fees/fee.repository';
 import { attendanceRepository } from '../attendance/attendance.repository';
+import { leaveRequestRepository } from '../leave-requests/leave-request.repository';
 import { logger } from '../../lib/logger';
-import type { PrincipalDashboardData, PrincipalAlert } from '@schoolos/types';
+import type { PrincipalDashboardData, PrincipalAlert, TeachersSummaryData } from '@schoolos/types';
 
 // ── Thresholds ────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,32 @@ export const principalService = {
       ...partial,
       alerts: buildAlerts(partial),
       generatedAt: new Date().toISOString(),
+    };
+  },
+
+  async getTeachersSummary(schoolId: string, date?: string): Promise<TeachersSummaryData> {
+    const targetDate = date ?? attendanceRepository.todayString();
+
+    const [{ total, active }, approvedLeaves] = await Promise.all([
+      principalRepository.countTeachersRoster(schoolId),
+      leaveRequestRepository.findApprovedForDate(schoolId, targetDate),
+    ]);
+
+    const onLeave = approvedLeaves.map((l) => ({
+      leaveRequestId: String((l as unknown as { _id: { toString(): string } })._id),
+      teacherId: l.teacherId,
+      teacherName: l.teacherName,
+      leaveType: l.leaveType,
+      dateFrom: l.dateFrom,
+      dateTo: l.dateTo,
+    }));
+
+    return {
+      date: targetDate,
+      total,
+      active,
+      onLeave,
+      presentCount: Math.max(0, active - onLeave.length),
     };
   },
 };

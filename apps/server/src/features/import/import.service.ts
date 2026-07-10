@@ -8,6 +8,7 @@ import { excelParser } from './parsers/excel.parser';
 import { buildColumnMapping, validateRows, runImport, rollbackImport } from './engine/import.engine';
 import { listSessionsSchema, listRowsSchema, uploadSessionSchema, confirmMappingSchema } from './import.validation';
 import { listTemplates, generateTemplateBuffer } from './templates/template.registry';
+import { schoolClassRepository } from '../school-classes/school-class.repository';
 
 // ── Upload & Parse ────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ export const importService = {
       const mapping = await buildColumnMapping(importType, parsed.headers, parsed.rows);
 
       // Validate all rows and persist them
-      const { validRows, warningRows, failedRows } = await validateRows(
+      const { validRows, warningRows, failedRows, detectedNewClasses } = await validateRows(
         sessionId,
         ctx.schoolId,
         importType,
@@ -57,6 +58,7 @@ export const importService = {
         warningRows,
         failedRows,
         mapping,
+        detectedNewClasses,
       });
 
       await importSessionRepository.pushTimelineEvent(sessionId, ctx.schoolId, {
@@ -118,6 +120,28 @@ export const importService = {
     }
     if (session.validRows + session.warningRows === 0) {
       throw new ValidationError('No valid rows to import. Fix errors and re-upload.');
+    }
+
+    // The accountant has now seen (and implicitly approved, by confirming) the
+    // "new classes detected" banner shown during preview — create/update the
+    // Classes & Sections catalog to match before the student rows land.
+    if (session.detectedNewClasses?.length) {
+      const byClass = new Map<string, Set<string>>();
+      for (const d of session.detectedNewClasses) {
+        const sections = byClass.get(d.class) ?? new Set<string>();
+        sections.add(d.section);
+        byClass.set(d.class, sections);
+      }
+      const existingClasses = await schoolClassRepository.findAll(ctx.schoolId);
+      for (const [className, sections] of byClass) {
+        let cls = existingClasses.find((c) => c.name.toLowerCase() === className.toLowerCase());
+        if (!cls) {
+          cls = await schoolClassRepository.create(ctx.schoolId, className, ctx.displayName);
+        }
+        for (const section of sections) {
+          await schoolClassRepository.addSection(String(cls._id), ctx.schoolId, section, ctx.displayName);
+        }
+      }
     }
 
     const updated = await importSessionRepository.updateStatus(id, ctx.schoolId, 'processing', {

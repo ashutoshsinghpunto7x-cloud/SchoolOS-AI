@@ -7,8 +7,8 @@ const router = Router();
 
 router.use(authenticate);
 
-// Admin manages assignments; accountants only need to read them (to prefill defaulter notifications).
-router.get('/', authorize('admin', 'accountant'), classTeacherController.list);
-router.put('/teacher', authorize('admin'), classTeacherController.upsert);
+// Admin and principal manage assignments; accountants only need to read them (to prefill defaulter notifications).
+router.get('/', authorize('admin', 'principal', 'accountant'), classTeacherController.list);
+router.put('/teacher', authorize('admin', 'principal'), classTeacherController.upsert);
 
 export default router;

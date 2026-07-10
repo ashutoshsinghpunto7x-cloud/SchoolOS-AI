@@ -4,6 +4,12 @@ import { substituteRepository } from './timetable.substitute.repository';
 import { IPeriodSlot } from './timetable.period.model';
 import { ITimetable, ITimetableEntry, TimetableStatus } from './timetable.model';
 import { ITimetableSubstitute } from './timetable.substitute.model';
+import { leaveRequestRepository } from '../leave-requests/leave-request.repository';
+import { Teacher } from '../teachers/teacher.model';
+import { teacherRepository } from '../teachers/teacher.repository';
+import { userRepository } from '../users/user.repository';
+import { notificationRepository } from '../notifications/notification.repository';
+import { internalMessageRepository } from '../internal-messages/internal-message.repository';
 import {
   createPeriodSlotSchema, updatePeriodSlotSchema,
   createTimetableSchema, updateTimetableSchema,
@@ -15,6 +21,25 @@ import {
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+
+export interface NeedsSubstituteEntry {
+  class: string;
+  section: string;
+  slotId: string;
+  subjectName: string;
+  timetableId: string;
+  dayOfWeek: number;
+  date: string;
+  originalTeacherId: string;
+  originalTeacherName: string;
+  leaveRequestId: string;
+}
+
+export interface SubstituteSuggestion {
+  teacherId: string;
+  teacherName: string;
+  teachesThisClass: boolean;
+}
 
 export const timetableService = {
   // ── Period Slots ────────────────────────────────────────────────────────────
@@ -224,7 +249,61 @@ export const timetableService = {
       resourceId: sub._id.toString(), ip: ctx.ip, schoolId: ctx.schoolId,
       details: { class: data.class, section: data.section, date: data.date, substituteTeacherName: data.substituteTeacherName },
     });
+
+    await timetableService.notifySubstituteTeacher(data, ctx);
+
     return sub;
+  },
+
+  /**
+   * Best-effort alert to whoever just got assigned a substitution — resolved via the
+   * same Teacher.email → User match convention notificationService.sendToTeachers()
+   * relies on. Always fired at high priority: a substitution is same-day, time-sensitive
+   * work a teacher needs to notice immediately, not something that can wait in a queue.
+   * Silently skipped (no error thrown) if the substitute has no linked login account,
+   * since the assignment itself must not fail because a notification couldn't be sent.
+   */
+  async notifySubstituteTeacher(
+    data: { substituteTeacherId?: string; class: string; section: string; date: string; subjectName: string },
+    ctx: AuthContext,
+  ): Promise<void> {
+    if (!data.substituteTeacherId) return;
+
+    const teacher = await teacherRepository.findById(data.substituteTeacherId, ctx.schoolId);
+    if (!teacher?.email) return;
+
+    const user = await userRepository.findByEmail(teacher.email);
+    if (!user || user.schoolId !== ctx.schoolId || user.role !== 'teacher') return;
+
+    const dateLabel = new Date(data.date + 'T00:00:00').toLocaleDateString('en-IN', {
+      weekday: 'long', day: 'numeric', month: 'long',
+    });
+    const subject = `Substitution assigned — Class ${data.class}-${data.section} on ${dateLabel}`;
+    const body = `You've been assigned to cover ${data.subjectName} for Class ${data.class}-${data.section} on ${dateLabel}.`;
+    const recipientUserId = String(user._id);
+
+    await Promise.all([
+      notificationRepository.create({
+        recipientUserId,
+        schoolId: ctx.schoolId,
+        type: 'substitution',
+        title: subject,
+        body,
+        priority: 'high',
+        payload: { class: data.class, section: data.section, date: data.date },
+        senderUserId: ctx.userId,
+        senderName: ctx.displayName,
+      }),
+      internalMessageRepository.create({
+        schoolId: ctx.schoolId,
+        senderUserId: ctx.userId,
+        senderName: ctx.displayName,
+        recipientUserId,
+        subject,
+        body,
+        priority: 'high',
+      }),
+    ]);
   },
 
   async listSubstitutes(rawQuery: unknown, ctx: AuthContext) {
@@ -243,5 +322,76 @@ export const timetableService = {
     const existing = await substituteRepository.findById(id, ctx.schoolId);
     if (!existing) throw new NotFoundError('Substitute');
     await substituteRepository.softDelete(id, ctx.schoolId, ctx.displayName);
+  },
+
+  /**
+   * Periods that need a substitute on a given date: every period an on-leave
+   * teacher was scheduled to teach, minus any that already have an active
+   * substitute assigned. This is what auto-links Leave Approval to the
+   * Substitutions tab — no substitute record is written until the principal
+   * actually assigns someone (the schema requires a substitute name), so this
+   * is derived live from approved leave + the published timetable instead.
+   */
+  async getNeedsSubstitute(schoolId: string, date: string): Promise<NeedsSubstituteEntry[]> {
+    const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+    if (dayOfWeek === 0) return []; // no school on Sunday — entries only exist for days 1-6
+
+    const approvedLeaves = await leaveRequestRepository.findApprovedForDate(schoolId, date);
+    if (!approvedLeaves.length) return [];
+
+    const existingSubs = await substituteRepository.findAll(schoolId, { dateFrom: date, dateTo: date, limit: 200 });
+    const covered = new Set(existingSubs.substitutes.map((s) => `${s.class}||${s.section}||${s.slotId}`));
+
+    const needed: NeedsSubstituteEntry[] = [];
+    for (const leave of approvedLeaves) {
+      const timetables = await timetableRepository.getTeacherSchedule(schoolId, leave.teacherId);
+      for (const tt of timetables) {
+        for (const entry of tt.entries) {
+          if (entry.teacherId !== leave.teacherId || entry.dayOfWeek !== dayOfWeek) continue;
+          const key = `${tt.class}||${tt.section}||${entry.slotId}`;
+          if (covered.has(key)) continue;
+          needed.push({
+            class: tt.class,
+            section: tt.section,
+            slotId: entry.slotId,
+            subjectName: entry.subjectName,
+            timetableId: String((tt as unknown as { _id: { toString(): string } })._id),
+            dayOfWeek,
+            date,
+            originalTeacherId: leave.teacherId,
+            originalTeacherName: leave.teacherName,
+            leaveRequestId: String((leave as unknown as { _id: { toString(): string } })._id),
+          });
+        }
+      }
+    }
+    return needed;
+  },
+
+  /** Substitute picker priority: teachers already teaching this class/section first, then the rest of the active roster. */
+  async suggestSubstituteTeachers(schoolId: string, cls: string, section: string, excludeTeacherId?: string): Promise<SubstituteSuggestion[]> {
+    const [classTimetable, activeTeachers] = await Promise.all([
+      timetableRepository.findByClassSectionAnyYear(schoolId, cls, section),
+      Teacher.find({ schoolId, isDeleted: false, employmentStatus: 'active' }).select('_id fullName').lean(),
+    ]);
+
+    const teachesClass = new Set(
+      (classTimetable?.entries ?? []).map((e) => e.teacherId).filter((id): id is string => !!id),
+    );
+
+    const suggestions: SubstituteSuggestion[] = activeTeachers
+      .map((t) => ({
+        teacherId: String((t as unknown as { _id: { toString(): string } })._id),
+        teacherName: t.fullName,
+        teachesThisClass: teachesClass.has(String((t as unknown as { _id: { toString(): string } })._id)),
+      }))
+      .filter((t) => t.teacherId !== excludeTeacherId);
+
+    suggestions.sort((a, b) => {
+      if (a.teachesThisClass !== b.teachesThisClass) return a.teachesThisClass ? -1 : 1;
+      return a.teacherName.localeCompare(b.teacherName);
+    });
+
+    return suggestions;
   },
 };

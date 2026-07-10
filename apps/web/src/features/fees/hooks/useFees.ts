@@ -5,6 +5,7 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 import { feesApi } from '../api/fees.api';
+import { accountantWorkspaceKeys } from '@/features/accountant-workspace/hooks/useAccountantWorkspace';
 import type {
   FeeListOptions,
   OutstandingOptions,
@@ -64,11 +65,19 @@ export const useFeeSummary = (academicYear?: string) =>
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
+/** Fee mutations affect the Accountant Dashboard's summary/defaulters and any open
+ * Student Ledger too — invalidate both alongside the fee lists themselves so a
+ * just-recorded payment never appears stale on those views. */
+function invalidateFeeRelated(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: feeKeys.all });
+  qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.all });
+}
+
 export const useCreateFeeRecord = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateFeeRecordPayload) => feesApi.create(payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+    onSuccess:  () => invalidateFeeRelated(qc),
   });
 };
 
@@ -76,7 +85,18 @@ export const useUpdateFeeRecord = (id: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateFeeRecordPayload) => feesApi.update(id, payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+    onSuccess:  () => invalidateFeeRelated(qc),
+  });
+};
+
+/** Same as useUpdateFeeRecord, but the record id is passed per-call instead of fixed at
+ * hook-instantiation time — for flows that update a dynamic, variable-length set of
+ * records (e.g. paying several selected months at once). */
+export const useUpdateAnyFeeRecord = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateFeeRecordPayload }) => feesApi.update(id, payload),
+    onSuccess:  () => invalidateFeeRelated(qc),
   });
 };
 
@@ -84,7 +104,7 @@ export const useDeleteFeeRecord = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => feesApi.delete(id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+    onSuccess:  () => invalidateFeeRelated(qc),
   });
 };
 
@@ -92,7 +112,7 @@ export const useRecordPayment = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: RecordPaymentPayload) => feesApi.recordPayment(payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+    onSuccess:  () => invalidateFeeRelated(qc),
   });
 };
 
@@ -100,7 +120,7 @@ export const useRecordBulkPayment = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: RecordBulkPaymentPayload) => feesApi.recordBulkPayment(payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: feeKeys.all }),
+    onSuccess:  () => invalidateFeeRelated(qc),
   });
 };
 

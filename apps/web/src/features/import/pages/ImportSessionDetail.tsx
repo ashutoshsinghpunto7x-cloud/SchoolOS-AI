@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, CheckCircle2, RotateCcw, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2, RotateCcw, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useImportSession, useConfirmImport, useCancelImport, useRollbackImport, useUpdateMapping } from '../hooks/useImport';
 import { ImportStatusBadge } from '../components/ImportStatusBadge';
 import { ImportProgress } from '../components/ImportProgress';
@@ -112,6 +112,32 @@ export function ImportSessionDetail() {
       {/* Progress (visible during processing and after) */}
       {(isRunning || isCompleted || session.status === 'failed') && (
         <ImportProgress session={session} />
+      )}
+
+      {/* New classes detected — surfaced before confirming so typos can be caught,
+          since confirming creates these permanently in Classes & Sections. */}
+      {isPreview && session.detectedNewClasses.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-900">
+                {session.detectedNewClasses.length} new class{session.detectedNewClasses.length === 1 ? '' : 'es'} detected
+              </p>
+              <p className="text-xs text-amber-700 mt-0.5">
+                These aren't in Classes &amp; Sections yet. Confirming this import will create them — double-check for typos first.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {session.detectedNewClasses.map((d) => (
+                  <span key={`${d.class}-${d.section}`} className="inline-flex items-center gap-1 text-xs font-medium bg-white border border-amber-200 rounded-full px-2.5 py-1 text-amber-800">
+                    Class {d.class} - {d.section}
+                    {!d.classExists && <span className="text-amber-500">(new class)</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Column mapping */}

@@ -29,6 +29,18 @@ export const leaveRequestRepository = {
       .lean<ILeaveRequest[]>();
   },
 
+  /** Approved leave requests whose date range covers the given date — used for "who's on leave today." */
+  async findApprovedForDate(schoolId: string, date: string): Promise<ILeaveRequest[]> {
+    return LeaveRequest.find({
+      schoolId,
+      status: 'approved',
+      dateFrom: { $lte: date },
+      dateTo: { $gte: date },
+    })
+      .sort({ teacherName: 1 })
+      .lean<ILeaveRequest[]>();
+  },
+
   async findById(id: string, schoolId: string): Promise<ILeaveRequest | null> {
     return LeaveRequest.findOne({ _id: id, schoolId });
   },

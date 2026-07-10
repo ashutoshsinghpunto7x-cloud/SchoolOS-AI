@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
+import { recoveryApi } from '../api/recovery.api';
 import { resetAuthRefreshState } from '@/services/api';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthUser } from '@schoolos/types';
@@ -36,8 +37,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const data = await authApi.login({ email, password });
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
-    setUser(data.user);
-    return data.user;
+    const mergedUser: AuthUser = {
+      ...data.user,
+      mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
+      mustResetPin: data.mustResetPin ?? data.user.mustResetPin,
+    };
+    setUser(mergedUser);
+    return mergedUser;
+  }, []);
+
+  const refreshUser = useCallback(async (): Promise<void> => {
+    const data = await authApi.me();
+    setUser(data);
+  }, []);
+
+  const loginWithPin = useCallback(async (deviceId: string, pin: string): Promise<AuthUser> => {
+    const tokens = await recoveryApi.loginWithPin({ deviceId, pin });
+    localStorage.setItem('accessToken', tokens.accessToken);
+    localStorage.setItem('refreshToken', tokens.refreshToken);
+    const data = await authApi.me();
+    setUser(data);
+    return data;
+  }, []);
+
+  const setupPin = useCallback(async (pin: string, deviceLabel?: string): Promise<{ deviceId: string }> => {
+    return recoveryApi.setupPin({ pin, deviceLabel });
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
@@ -57,6 +81,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isAuthenticated: user !== null,
         login,
         logout,
+        refreshUser,
+        loginWithPin,
+        setupPin,
       }}
     >
       {children}

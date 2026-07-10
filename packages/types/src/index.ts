@@ -110,6 +110,8 @@ export interface AuthUser {
   schoolId: string;
   firstName: string;
   lastName: string;
+  mustResetPassword?: boolean;
+  mustResetPin?: boolean;
 }
 
 export interface LoginPayload {
@@ -117,10 +119,73 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export type RecoveryRequestStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+
+export interface RecoveryRequest extends BaseEntity {
+  schoolId: string;
+  employeeId: string;
+  email: string;
+  userId?: string;
+  status: RecoveryRequestStatus;
+  requestedAt: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  temporaryPasswordExpiresAt?: string;
+  rejectionReason?: string;
+  ipAddress?: string;
+  browser?: string;
+  device?: string;
+  completedAt?: string;
+  /** Present only when the request was matched to an existing account. */
+  staffName?: string;
+  role?: UserRole;
+}
+
+export interface SubmitRecoveryRequestPayload {
+  schoolId: string;
+  employeeId: string;
+  email: string;
+}
+
+export interface RejectRecoveryRequestPayload {
+  reason?: string;
+}
+
+export interface ApproveRecoveryResult {
+  request: RecoveryRequest;
+  temporaryPassword?: string;
+  emailed: boolean;
+}
+
+export interface SetNewPasswordPayload {
+  newPassword: string;
+}
+
+export interface SetPinPayload {
+  pin: string;
+}
+
+export interface SetupPinPayload {
+  pin: string;
+  deviceLabel?: string;
+}
+
+export interface LoginWithPinPayload {
+  deviceId: string;
+  pin: string;
+}
+
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: AuthUser;
+  mustResetPassword?: boolean;
+  mustResetPin?: boolean;
 }
 
 export interface CreateUserPayload {
@@ -216,6 +281,8 @@ export interface Student extends BaseEntity {
   alternatePhone?: string;
   email?: string;
   address?: string;
+  locality?: string;
+  photoUrl?: string;
   admissionStatus: AdmissionStatus;
   admissionYear: number;
   tags: string[];
@@ -223,6 +290,8 @@ export interface Student extends BaseEntity {
   remarks?: string;
   /** Recurring monthly tuition fee amount set by admin — drives auto-generated tuition FeeRecords. */
   monthlyTuitionFee?: number;
+  approvedDiscountAmount?: number;
+  approvedDiscountReason?: string;
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
@@ -253,6 +322,7 @@ export interface CreateStudentPayload {
   alternatePhone?: string;
   email?: string;
   address?: string;
+  locality?: string;
   admissionStatus?: AdmissionStatus;
   tags?: string[];
   emergencyContact?: StudentEmergencyContact;
@@ -520,6 +590,7 @@ export interface TeacherQualification {
 export interface Teacher extends BaseEntity {
   fullName: string;
   employeeId: string;
+  photoUrl?: string;
   gender: Gender;
   dateOfBirth?: string;
   phone: string;
@@ -536,6 +607,9 @@ export interface Teacher extends BaseEntity {
   employmentStatus: EmploymentStatus;
   tags: string[];
   remarks?: string;
+  /** Extra columns from an import file that don't map to a known field (Blood
+   * Group, Previous School, Aadhar Number, etc.) — kept instead of dropped. */
+  customFields?: Record<string, unknown>;
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
@@ -727,6 +801,8 @@ export interface FeeRecord extends BaseEntity {
   discountReason?: string;
   waivedAmount: number;
   waivedReason?: string;
+  fineAmount: number;
+  fineReason?: string;
   paidAmount: number;
   balance: number;
   status: FeeStatus;
@@ -783,6 +859,8 @@ export interface CreateFeeRecordPayload {
   totalAmount: number;
   discountAmount?: number;
   discountReason?: string;
+  fineAmount?: number;
+  fineReason?: string;
   notes?: string;
 }
 
@@ -795,6 +873,8 @@ export interface UpdateFeeRecordPayload {
   status?: FeeStatus;
   waivedAmount?: number;
   waivedReason?: string;
+  fineAmount?: number;
+  fineReason?: string;
   notes?: string;
 }
 
@@ -1013,6 +1093,10 @@ export interface FeeDefaulter {
   studentName: string;
   class: string;
   section: string;
+  /** Which fee this balance is for (tuition, transport, examination, etc.) — so a
+   * defaulters list never lumps unrelated fee heads into one ambiguous "pending". */
+  feeHead: FeeHead;
+  description?: string;
   balance: number;
   dueDate: string;
   daysOverdue: number;
@@ -1036,6 +1120,33 @@ export interface ClassDefaulterGroup {
   students: FeeDefaulter[];
   classTeacherId?: string;
   classTeacherName?: string;
+}
+
+/** One row of the school-wide class-wise fee overview shown to Principal/Admin. */
+export interface ClassFeeOverviewRow {
+  class: string;
+  section: string;
+  studentCount: number;
+  collected: number;
+  pending: number;
+}
+
+export interface ClassFeeStudentRow {
+  studentId: string;
+  fullName: string;
+  admissionNumber: string;
+  rollNumber?: string;
+  /** Overall totals across every fee head (tuition, transport, exam, etc.) — not just this month's tuition. */
+  totalCharged: number;
+  totalPaid: number;
+  balance: number;
+  status: 'paid' | 'due' | 'no_records';
+}
+
+export interface ClassFeeSummary {
+  class: string;
+  section: string;
+  students: ClassFeeStudentRow[];
 }
 
 export interface SendDefaultersToTeacherPayload {
@@ -1078,9 +1189,30 @@ export interface SendReceiptEmailPayload {
   paymentDate: string;
 }
 
+// ── Student Fee Ledger ────────────────────────────────────────────────────────
+
+export interface StudentLedgerSummary {
+  totalFees: number;
+  totalPaid: number;
+  totalDiscount: number;
+  totalFine: number;
+  totalWaived: number;
+  remainingBalance: number;
+  netAmount: number;
+  lastPaymentDate?: string;
+}
+
+export interface StudentLedgerData {
+  student: Student;
+  feeRecords: FeeRecord[];
+  payments: FeePayment[];
+  summary: StudentLedgerSummary;
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request';
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution';
+export type NotificationPriority = 'normal' | 'high';
 
 export interface AppNotification {
   _id: string;
@@ -1094,6 +1226,7 @@ export interface AppNotification {
     studentChangeRequestId?: string;
     [key: string]: unknown;
   };
+  priority: NotificationPriority;
   senderName: string;
   isRead: boolean;
   createdAt: string;
@@ -1203,6 +1336,8 @@ export interface SchoolEvent extends BaseEntity {
   organizer?: string;
   notes?: string;
   tags: string[];
+  attachmentUrl?: string;
+  attachmentName?: string;
   isDeleted: boolean;
   deletedAt?: string;
   deletedBy?: string;
@@ -1628,6 +1763,100 @@ export interface PrincipalAttendanceStats {
   weeklyAvgRate: number;
 }
 
+export interface FeeStructureEntry extends BaseEntity {
+  schoolId: string;
+  class: string;
+  feeHead: FeeHead;
+  academicYear: string;
+  amount: number;
+  updatedBy: string;
+}
+
+export interface UpsertFeeStructurePayload {
+  class: string;
+  feeHead: FeeHead;
+  academicYear: string;
+  amount: number;
+}
+
+export type FeeDiscountStatus = 'pending' | 'approved' | 'rejected';
+
+export interface FeeDiscountRequest extends BaseEntity {
+  schoolId: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  section: string;
+  requestedAmount: number;
+  reason: string;
+  status: FeeDiscountStatus;
+  requestedByName: string;
+  reviewedByName?: string;
+  reviewNote?: string;
+  reviewedAt?: string;
+}
+
+export interface CreateDiscountRequestPayload {
+  studentId: string;
+  requestedAmount: number;
+  reason: string;
+}
+
+export interface ReviewDiscountRequestPayload {
+  reviewNote?: string;
+}
+
+export interface SchoolClass extends BaseEntity {
+  schoolId: string;
+  name: string;
+  sections: string[];
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface SchoolSettings extends BaseEntity {
+  schoolId: string;
+  schoolName: string;
+  logoUrl?: string;
+  updatedBy?: string;
+}
+
+export interface NeedsSubstituteEntry {
+  class: string;
+  section: string;
+  slotId: string;
+  subjectName: string;
+  timetableId: string;
+  dayOfWeek: number;
+  date: string;
+  originalTeacherId: string;
+  originalTeacherName: string;
+  leaveRequestId: string;
+}
+
+export interface SubstituteSuggestion {
+  teacherId: string;
+  teacherName: string;
+  teachesThisClass: boolean;
+}
+
+export interface TeacherOnLeave {
+  leaveRequestId: string;
+  teacherId: string;
+  teacherName: string;
+  leaveType: LeaveType;
+  dateFrom: string;
+  dateTo: string;
+}
+
+export interface TeachersSummaryData {
+  date: string;
+  total: number;
+  active: number;
+  onLeave: TeacherOnLeave[];
+  presentCount: number;
+}
+
 export interface PrincipalDashboardData {
   students: PrincipalStudentStats;
   teachers: PrincipalTeacherStats;
@@ -1752,7 +1981,7 @@ export type ReportAnalyticsData =
 
 // ── Data Import Platform ──────────────────────────────────────────────────────
 
-export type ImportType = 'students' | 'teachers' | 'fees' | 'admissions';
+export type ImportType = 'students' | 'teachers' | 'fees' | 'admissions' | 'attendance';
 
 export type ImportStatus =
   | 'uploading'
@@ -1796,11 +2025,20 @@ export interface ImportSession extends BaseEntity {
   importedRows: number;
   skippedRows: number;
   importedIds: string[];
+  /** 'students' imports only — new class/section combos not yet in the school's
+   * Classes & Sections catalog, detected during validation for review before confirming. */
+  detectedNewClasses: DetectedClass[];
   timeline: ImportTimelineEvent[];
   errorSummary?: string;
   startedAt?: string;
   completedAt?: string;
   rolledBackAt?: string;
+}
+
+export interface DetectedClass {
+  class: string;
+  section: string;
+  classExists: boolean;
 }
 
 export interface ImportRow {
@@ -2069,4 +2307,71 @@ export interface TeacherWorkspaceData {
    *  add-student actions for them. */
   classTeacherOf: Array<{ class: string; section: string }>;
   generatedAt: string;
+}
+
+// ── Internal Messaging ──────────────────────────────────────────────────────
+
+export type InternalMessagePriority = 'normal' | 'high';
+
+export interface InternalMessage {
+  _id: string;
+  senderName: string;
+  recipientUserId: string;
+  subject: string;
+  body: string;
+  priority: InternalMessagePriority;
+  isRead: boolean;
+  acknowledgedAt?: string;
+  createdAt: string;
+}
+
+export interface InternalMessageListResult {
+  messages: InternalMessage[];
+  unreadCount: number;
+}
+
+export interface MessageTemplate {
+  _id: string;
+  title: string;
+  subject: string;
+  body: string;
+  priority: InternalMessagePriority;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface StaffDirectoryEntry {
+  _id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface SendInternalMessagePayload {
+  recipientUserIds?: string[];
+  recipientRole?: UserRole;
+  subject: string;
+  body: string;
+  priority: InternalMessagePriority;
+  templateId?: string;
+}
+
+export interface SendInternalMessageResult {
+  sent: number;
+}
+
+export interface CreateMessageTemplatePayload {
+  title: string;
+  subject: string;
+  body: string;
+  priority: InternalMessagePriority;
+}
+
+// ── Device Push Tokens ────────────────────────────────────────────────────────
+
+export type DevicePlatform = 'ios' | 'android';
+
+export interface RegisterDeviceTokenPayload {
+  token: string;
+  platform: DevicePlatform;
 }

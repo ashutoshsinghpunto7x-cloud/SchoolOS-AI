@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { timetableService } from './timetable.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { ValidationError } from '../../middlewares/errorHandler';
 
 export const timetableController = {
   // ── Period Slots ────────────────────────────────────────────────────────────
@@ -169,6 +170,25 @@ export const timetableController = {
       const ctx = buildAuthContext(req.user!);
       await timetableService.deleteSubstitute(req.params.subId, ctx);
       sendSuccess(res, null, 'Substitute removed');
+    } catch (err) { next(err); }
+  },
+
+  async getNeedsSubstitute(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const date = typeof req.query.date === 'string' ? req.query.date : new Date().toISOString().split('T')[0];
+      const needed = await timetableService.getNeedsSubstitute(ctx.schoolId, date);
+      sendSuccess(res, needed);
+    } catch (err) { next(err); }
+  },
+
+  async suggestSubstituteTeachers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const { class: cls, section, excludeTeacherId } = req.query as Record<string, string | undefined>;
+      if (!cls || !section) throw new ValidationError('class and section are required');
+      const suggestions = await timetableService.suggestSubstituteTeachers(ctx.schoolId, cls, section, excludeTeacherId);
+      sendSuccess(res, suggestions);
     } catch (err) { next(err); }
   },
 };

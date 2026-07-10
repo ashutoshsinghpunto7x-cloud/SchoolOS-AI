@@ -23,6 +23,8 @@ router.get('/conflicts', timetableController.detectConflicts);
 router.get('/teacher/:teacherId', timetableController.getTeacherSchedule);
 
 // ── Substitutes ────────────────────────────────────────────────────────────
+router.get('/substitutes/needed',           timetableController.getNeedsSubstitute);
+router.get('/substitutes/suggest-teachers', timetableController.suggestSubstituteTeachers);
 router.get('/substitutes',          timetableController.listSubstitutes);
 router.post('/substitutes',         timetableController.createSubstitute);
 router.patch('/substitutes/:subId', timetableController.updateSubstitute);

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, ChevronRight, Loader2
+  AlertCircle, ChevronRight, Loader2, UserRound
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
@@ -13,6 +13,11 @@ import { motion } from 'framer-motion';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+
+const FEE_HEAD_LABELS: Record<string, string> = {
+  tuition: 'Tuition', admission: 'Admission', examination: 'Examination',
+  transport: 'Transport', hostel: 'Hostel', miscellaneous: 'Misc.',
+};
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 
@@ -235,10 +240,12 @@ export function AccountantDashboard() {
                 <div className="divide-y divide-[#E8E8E8]/60">
                   {topDefaulters.map((d) => (
                     <div key={d.feeRecordId} className="flex items-center justify-between py-3.5 transition-colors group">
-                      {/* Name + class (Pure typography, no avatars or icons) */}
+                      {/* Name + class + which fee this balance is for (Pure typography, no avatars or icons) */}
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-semibold text-gray-800 truncate">{d.studentName}</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">Class {d.class}{d.section}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          Class {d.class}{d.section} · {d.feeHead === 'miscellaneous' && d.description ? d.description : (FEE_HEAD_LABELS[d.feeHead] ?? d.feeHead)}
+                        </p>
                       </div>
                       
                       {/* Balance amount & Overdue Button */}
@@ -263,6 +270,32 @@ export function AccountantDashboard() {
           </motion.div>
 
         </div>
+
+        {/* Teachers quick-link */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+          className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center shrink-0">
+              <UserRound className="w-5 h-5 text-[#10B981]" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Teachers</h2>
+              <p className="text-[12px] text-gray-400 font-medium mt-0.5">Search a teacher and manage their profile photo</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/accountant/teachers')}
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200 shrink-0"
+          >
+            Go to Teachers
+            <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+        </motion.div>
 
         <UpcomingEventsWidget />
 

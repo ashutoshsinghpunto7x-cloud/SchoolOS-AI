@@ -14,6 +14,16 @@ export const leaveRequestController = {
     }
   },
 
+  async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const request = await leaveRequestService.getById(req.params.id, ctx);
+      sendSuccess(res, request);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async listMine(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

@@ -2,8 +2,8 @@ import bcrypt from 'bcrypt';
 import { User } from '../users/user.model';
 import { userRepository } from '../users/user.repository';
 import { tokenService, AccessTokenPayload } from './token.service';
-import { UnauthorizedError } from '../../middlewares/errorHandler';
-import { loginSchema } from '../users/user.validation';
+import { UnauthorizedError, ValidationError } from '../../middlewares/errorHandler';
+import { loginSchema, changePasswordSchema } from '../users/user.validation';
 import { logger } from '../../lib/logger';
 import { auditService } from '../audit/audit.service';
 
@@ -13,7 +13,10 @@ export const authService = {
   async login(
     rawInput: unknown,
     ip?: string
-  ): Promise<{ accessToken: string; refreshToken: string; user: AccessTokenPayload }> {
+  ): Promise<{
+    accessToken: string; refreshToken: string; user: AccessTokenPayload;
+    mustResetPassword?: boolean; mustResetPin?: boolean;
+  }> {
     const { email, password } = loginSchema.parse(rawInput);
 
     const user = await userRepository.findByEmail(email);
@@ -25,6 +28,15 @@ export const authService = {
     if (user.status !== 'active') {
       logger.warn('Login failed: inactive user', { email, ip });
       throw new UnauthorizedError('Account is inactive. Contact your administrator.');
+    }
+
+    // A temporary password issued by an approved recovery request expires
+    // after 24 hours even if never used — expired attempts fall through to
+    // the normal "invalid credentials" path rather than a distinguishing
+    // message, so a stale temp password can't be used to probe account state.
+    if (user.mustResetPassword && user.tempPasswordExpiresAt && user.tempPasswordExpiresAt < new Date()) {
+      logger.warn('Login failed: temporary password expired', { email, ip });
+      throw new UnauthorizedError('Invalid credentials');
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -66,7 +78,11 @@ export const authService = {
       schoolId: user.schoolId,
     });
 
-    return { accessToken, refreshToken, user: payload };
+    return {
+      accessToken, refreshToken, user: payload,
+      mustResetPassword: user.mustResetPassword || undefined,
+      mustResetPin: user.mustResetPin || undefined,
+    };
   },
 
   async refresh(
@@ -123,7 +139,7 @@ export const authService = {
     });
   },
 
-  async me(userId: string): Promise<AccessTokenPayload & { lastLoginAt?: Date }> {
+  async me(userId: string): Promise<AccessTokenPayload & { lastLoginAt?: Date; mustResetPassword?: boolean; mustResetPin?: boolean }> {
     const user = await userRepository.findByIdForAuth(userId);
     if (!user) throw new UnauthorizedError('User not found');
     return {
@@ -134,7 +150,38 @@ export const authService = {
       firstName: user.firstName,
       lastName: user.lastName,
       lastLoginAt: user.lastLoginAt,
+      mustResetPassword: user.mustResetPassword || undefined,
+      mustResetPin: user.mustResetPin || undefined,
     };
+  },
+
+  /** Self-service password change — a user may only ever change their own password (ctx.userId), never anyone else's. */
+  async changePassword(
+    userId: string,
+    rawInput: unknown,
+    ctx: { schoolId: string; displayName: string; ip?: string },
+  ): Promise<void> {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(rawInput);
+
+    const user = await userRepository.findByIdForAuth(userId);
+    if (!user) throw new UnauthorizedError('User not found');
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) throw new ValidationError('Current password is incorrect');
+
+    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await userRepository.updatePassword(userId, newHash);
+
+    logger.info('Password changed', { userId });
+    auditService.log({
+      userId,
+      userDisplayName: ctx.displayName,
+      action: 'auth.password_changed',
+      resource: 'auth',
+      resourceId: userId,
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
   },
 
   async seedFirstAdmin(schoolId: string): Promise<{ email: string; password: string }> {

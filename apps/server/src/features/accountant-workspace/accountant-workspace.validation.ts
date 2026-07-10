@@ -18,3 +18,16 @@ export const sendReceiptEmailSchema = z.object({
 
 export type SendDefaultersToTeacherInput = z.infer<typeof sendDefaultersToTeacherSchema>;
 export type SendReceiptEmailInput        = z.infer<typeof sendReceiptEmailSchema>;
+
+export const studentLedgerParamsSchema = z.object({
+  studentId: z.string({ required_error: 'studentId is required' }).min(1),
+});
+
+export type StudentLedgerParamsInput = z.infer<typeof studentLedgerParamsSchema>;
+
+export const classFeeSummaryParamsSchema = z.object({
+  class:   z.string({ required_error: 'class is required' }).min(1).trim(),
+  section: z.string({ required_error: 'section is required' }).min(1).trim(),
+});
+
+export type ClassFeeSummaryParamsInput = z.infer<typeof classFeeSummaryParamsSchema>;

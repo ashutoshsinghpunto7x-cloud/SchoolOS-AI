@@ -23,6 +23,8 @@ export const timetableKeys = {
   teacher:      (teacherId: string) => [...timetableKeys.all, 'teacher', teacherId] as const,
   conflicts:    () => [...timetableKeys.all, 'conflicts'] as const,
   substitutes:  (opts: SubstituteListOptions) => [...timetableKeys.all, 'substitutes', opts] as const,
+  needsSubstitute: (date: string) => [...timetableKeys.all, 'substitutes-needed', date] as const,
+  suggestTeachers: (cls: string, section: string) => [...timetableKeys.all, 'suggest-teachers', cls, section] as const,
 };
 
 // ── Period Slots ──────────────────────────────────────────────────────────────
@@ -179,6 +181,19 @@ export const useUpdateSubstitute = (id: string) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: timetableKeys.all }),
   });
 };
+
+export const useNeedsSubstitute = (date: string) =>
+  useQuery({
+    queryKey: timetableKeys.needsSubstitute(date),
+    queryFn:  () => timetableApi.getNeedsSubstitute(date),
+  });
+
+export const useSuggestSubstituteTeachers = (cls: string, section: string, excludeTeacherId?: string, enabled = true) =>
+  useQuery({
+    queryKey: timetableKeys.suggestTeachers(cls, section),
+    queryFn:  () => timetableApi.suggestSubstituteTeachers(cls, section, excludeTeacherId),
+    enabled:  enabled && !!cls && !!section,
+  });
 
 export const useDeleteSubstitute = (id: string) => {
   const qc = useQueryClient();

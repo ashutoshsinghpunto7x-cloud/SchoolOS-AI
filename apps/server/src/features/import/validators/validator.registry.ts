@@ -4,6 +4,7 @@ import { studentValidator } from './student.validator';
 import { teacherValidator } from './teacher.validator';
 import { feeValidator } from './fee.validator';
 import { enquiryValidator } from './enquiry.validator';
+import { attendanceValidator } from './attendance.validator';
 
 /**
  * Registry maps each import type to its validator.
@@ -15,6 +16,7 @@ const VALIDATORS: Record<ImportType, IValidator> = {
   teachers: teacherValidator,
   fees: feeValidator,
   admissions: enquiryValidator,
+  attendance: attendanceValidator,
 };
 
 export const getValidator = (importType: ImportType): IValidator => {

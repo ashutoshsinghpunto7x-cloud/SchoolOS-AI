@@ -131,6 +131,8 @@ export const PendingApprovalsPage = () => {
       <WorkspaceHeader
         title="Pending Edit Requests"
         subtitle="Student detail changes submitted by teachers, awaiting your approval"
+        backTo="/principal"
+        backLabel="Principal Dashboard"
       />
 
       {isLoading ? (

@@ -50,7 +50,7 @@ export const AttendanceWidget = ({ data, isLoading }: Props) => {
       {/* Rate highlight */}
       <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
         <div className="flex-shrink-0 w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center">
-          <Users className="w-5 h-5 text-blue-600" strokeWidth={2} />
+          <Users className="w-5 h-5 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-500 font-medium">Today's Attendance Rate</p>

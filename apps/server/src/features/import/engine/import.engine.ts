@@ -1,11 +1,13 @@
 import { AuthContext } from '../../../lib/auth-context';
 import { logger } from '../../../lib/logger';
-import { ImportType, IImportSession } from '../import-session.model';
+import { ImportType, ImportRowStatus, IImportSession, IDetectedClass } from '../import-session.model';
 import { importSessionRepository, importRowRepository } from '../import-session.repository';
 import { ParsedRow } from '../parsers/parser.interface';
 import { getValidator } from '../validators/validator.registry';
 import { getProcessor } from '../processors/processor.registry';
+import { IProcessor } from '../processors/processor.interface';
 import { HeuristicMapper } from '../ai-mapper/ai-mapper.interface';
+import { schoolClassRepository } from '../../school-classes/school-class.repository';
 
 const BATCH_SIZE = 50;
 const BATCH_DELAY_MS = 50; // breathing room for small VPS
@@ -62,17 +64,50 @@ const applyMapping = (
 
 // ── Validate all rows ─────────────────────────────────────────────────────────
 
+/** For 'students' imports, finds every class/section combo among the successfully
+ * validated rows that isn't already in this school's Classes & Sections catalog —
+ * surfaced at preview time so the accountant can catch typos before they become
+ * permanent catalog entries, instead of silently creating them. */
+async function detectNewClasses(
+  schoolId: string,
+  importType: ImportType,
+  cleanRows: Record<string, unknown>[],
+): Promise<IDetectedClass[]> {
+  if (importType !== 'students') return [];
+
+  const distinct = new Map<string, { class: string; section: string }>();
+  for (const data of cleanRows) {
+    const klass = typeof data.class === 'string' ? data.class.trim() : '';
+    const section = typeof data.section === 'string' ? data.section.trim() : '';
+    if (!klass || !section) continue;
+    distinct.set(`${klass.toLowerCase()}||${section.toLowerCase()}`, { class: klass, section });
+  }
+  if (!distinct.size) return [];
+
+  const existingClasses = await schoolClassRepository.findAll(schoolId);
+  const detected: IDetectedClass[] = [];
+  for (const { class: klass, section } of distinct.values()) {
+    const existing = existingClasses.find((c) => c.name.toLowerCase() === klass.toLowerCase());
+    const sectionExists = !!existing?.sections.some((s) => s.toLowerCase() === section.toLowerCase());
+    if (!existing || !sectionExists) {
+      detected.push({ class: klass, section, classExists: !!existing });
+    }
+  }
+  return detected;
+}
+
 export const validateRows = async (
   sessionId: string,
   schoolId: string,
   importType: ImportType,
   rows: ParsedRow[],
   mapping: Record<string, string>
-): Promise<{ validRows: number; warningRows: number; failedRows: number }> => {
+): Promise<{ validRows: number; warningRows: number; failedRows: number; detectedNewClasses: IDetectedClass[] }> => {
   const validator = getValidator(importType);
   let validRows = 0;
   let warningRows = 0;
   let failedRows = 0;
+  const cleanRows: Record<string, unknown>[] = [];
 
   const rowDocs = rows.map((row) => {
     const mappedData = applyMapping(row.data, mapping);
@@ -82,10 +117,17 @@ export const validateRows = async (
     else if (result.status === 'warning') warningRows++;
     else failedRows++;
 
+    // Store the validator's cleaned/coerced data (not the raw mapped data) so the
+    // business service — which re-validates strictly — sees the normalized shape
+    // (lowercased gender, tags array, inferred section, etc). Using raw mappedData
+    // here caused valid/warning rows to fail silently during processing.
+    const persistedData = result.status === 'error' ? mappedData : result.cleanData;
+    if (result.status !== 'error') cleanRows.push(persistedData);
+
     return {
       rowNumber: row.rowNumber,
       rawData: row.data,
-      mappedData,
+      mappedData: persistedData,
       status: result.status as 'valid' | 'warning' | 'error',
       errors: result.errors,
       warnings: result.warnings,
@@ -94,7 +136,9 @@ export const validateRows = async (
 
   await importRowRepository.bulkCreate({ sessionId, schoolId, rows: rowDocs });
 
-  return { validRows, warningRows, failedRows };
+  const detectedNewClasses = await detectNewClasses(schoolId, importType, cleanRows);
+
+  return { validRows, warningRows, failedRows, detectedNewClasses };
 };
 
 // ── Background processing ─────────────────────────────────────────────────────
@@ -125,67 +169,12 @@ export const runImport = async (
   });
 
   try {
-    // Fetch only valid/warning rows (skip errored rows)
-    let page = 1;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data: rows, meta } = await importRowRepository.findBySession(sessionId, {
-        page,
-        limit: BATCH_SIZE,
-        status: 'valid',
-      });
-
-      if (rows.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      // Process batch concurrently within the batch (not across batches)
-      await Promise.all(
-        rows.map(async (row) => {
-          const result = await processor.processRow(row.mappedData, ctx);
-          if (result.success && result.recordId) {
-            await Promise.all([
-              importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'imported', result.recordId),
-              importSessionRepository.appendImportedId(sessionId, schoolId, result.recordId),
-              importSessionRepository.incrementImportedRows(sessionId, schoolId),
-            ]);
-          } else {
-            await importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'error');
-          }
-        })
-      );
-
-      // Also process warning rows (they passed validation with caveats)
-      if (page === 1) {
-        const { data: warningRows } = await importRowRepository.findBySession(sessionId, {
-          page: 1,
-          limit: BATCH_SIZE,
-          status: 'warning',
-        });
-
-        await Promise.all(
-          warningRows.map(async (row) => {
-            const result = await processor.processRow(row.mappedData, ctx);
-            if (result.success && result.recordId) {
-              await Promise.all([
-                importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'imported', result.recordId),
-                importSessionRepository.appendImportedId(sessionId, schoolId, result.recordId),
-                importSessionRepository.incrementImportedRows(sessionId, schoolId),
-              ]);
-            } else {
-              await importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'error');
-            }
-          })
-        );
-      }
-
-      hasMore = meta.page * meta.limit < meta.total;
-      page++;
-
-      if (hasMore) await sleep(BATCH_DELAY_MS);
-    }
+    // Process valid and warning rows as two independent, fully-paginated passes.
+    // (Previously these were interleaved in one loop that broke out as soon as a
+    // page of 'valid' rows came back empty — which meant warning-only imports,
+    // e.g. every row needing an inferred section, never processed a single row.)
+    await processRowsByStatus(sessionId, schoolId, processor, 'valid', ctx);
+    await processRowsByStatus(sessionId, schoolId, processor, 'warning', ctx);
 
     // Final stats
     const counts = await importRowRepository.countByStatus(sessionId);
@@ -255,6 +244,57 @@ export const rollbackImport = async (
   });
 
   logger.info('Import rollback completed', { sessionId });
+};
+
+/**
+ * Process every row of a given status for a session, fully paginated.
+ * Kept as its own loop per status so an empty/short page of one status can
+ * never short-circuit processing of the other.
+ */
+const processRowsByStatus = async (
+  sessionId: string,
+  schoolId: string,
+  processor: IProcessor,
+  status: ImportRowStatus,
+  ctx: AuthContext
+): Promise<void> => {
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: rows, meta } = await importRowRepository.findBySession(sessionId, {
+      page,
+      limit: BATCH_SIZE,
+      status,
+    });
+
+    if (rows.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    await Promise.all(
+      rows.map(async (row) => {
+        const result = await processor.processRow(row.mappedData, ctx);
+        if (result.success && result.recordId) {
+          const tasks = [
+            importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'imported', result.recordId),
+            importSessionRepository.incrementImportedRows(sessionId, schoolId),
+          ];
+          // Never track pre-existing (updated) records for rollback deletion.
+          if (!result.isUpdate) tasks.push(importSessionRepository.appendImportedId(sessionId, schoolId, result.recordId));
+          await Promise.all(tasks);
+        } else {
+          await importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'error', undefined, result.error);
+        }
+      })
+    );
+
+    hasMore = meta.page * meta.limit < meta.total;
+    page++;
+
+    if (hasMore) await sleep(BATCH_DELAY_MS);
+  }
 };
 
 const chunkArray = <T>(arr: T[], size: number): T[][] => {

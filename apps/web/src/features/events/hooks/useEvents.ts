@@ -97,3 +97,19 @@ export const useEventReadReceipts = (id: string, enabled = true) =>
     queryFn:  () => eventsApi.getReadReceipts(id),
     enabled:  Boolean(id) && enabled,
   });
+
+export const useUploadEventAttachment = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => eventsApi.uploadAttachment(id, file),
+    onSuccess:  (updated) => qc.setQueryData(eventKeys.detail(id), updated),
+  });
+};
+
+export const useRemoveEventAttachment = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => eventsApi.removeAttachment(id),
+    onSuccess:  (updated) => qc.setQueryData(eventKeys.detail(id), updated),
+  });
+};

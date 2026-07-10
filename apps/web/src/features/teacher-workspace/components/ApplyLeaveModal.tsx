@@ -13,7 +13,7 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 
 const inputCls =
   'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#0B3D2E] transition-colors';
+  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] transition-colors';
 const labelCls = 'text-xs font-semibold text-gray-500 mb-1 block';
 
 const TYPES: { value: LeaveType; label: string; icon: React.ElementType }[] = [
@@ -91,7 +91,7 @@ export function ApplyLeaveModal({ onClose, onSuccess }: Props) {
                   className={cn(
                     'flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-2 font-semibold text-xs transition-colors',
                     leaveType === value
-                      ? 'border-[#0B3D2E] bg-[#10B981]/5 text-[#0B3D2E]'
+                      ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]'
                       : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
@@ -134,7 +134,7 @@ export function ApplyLeaveModal({ onClose, onSuccess }: Props) {
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               placeholder="e.g. Family function, feeling unwell…"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#0B3D2E] transition-colors resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] transition-colors resize-none"
             />
           </div>
 
@@ -147,7 +147,7 @@ export function ApplyLeaveModal({ onClose, onSuccess }: Props) {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full h-11 bg-[#0B3D2E] hover:bg-[#08251B] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60"
+            className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60"
           >
             {isPending ? 'Submitting…' : 'Submit Request'}
           </button>

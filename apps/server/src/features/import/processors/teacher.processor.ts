@@ -1,13 +1,28 @@
 import { AuthContext } from '../../../lib/auth-context';
 import { teacherService } from '../../teachers/teacher.service';
+import { teacherRepository } from '../../teachers/teacher.repository';
 import { IProcessor, ProcessRowResult } from './processor.interface';
 import { logger } from '../../../lib/logger';
 
 export const teacherProcessor: IProcessor = {
   importType: 'teachers',
 
+  // Re-uploading the same file (e.g. a corrected re-export) should update
+  // existing teachers, not create duplicates — matched by email first, then
+  // phone, since employeeId is server-generated and never comes from the file.
   async processRow(cleanData: Record<string, unknown>, ctx: AuthContext): Promise<ProcessRowResult> {
     try {
+      const email = typeof cleanData.email === 'string' ? cleanData.email.trim() : '';
+      const phone = typeof cleanData.phone === 'string' ? cleanData.phone.trim() : '';
+      const existing = (email || phone)
+        ? await teacherRepository.findByEmailOrPhone(ctx.schoolId, email || undefined, phone || undefined)
+        : null;
+
+      if (existing) {
+        const updated = await teacherService.updateTeacher(existing._id.toString(), cleanData, ctx);
+        return { success: true, recordId: updated._id.toString(), isUpdate: true };
+      }
+
       const teacher = await teacherService.createTeacher(cleanData, ctx);
       return { success: true, recordId: teacher._id.toString() };
     } catch (err) {

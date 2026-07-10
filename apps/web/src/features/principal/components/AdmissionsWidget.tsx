@@ -36,9 +36,9 @@ export const AdmissionsWidget = ({ data, isLoading }: Props) => {
     <div className="space-y-4">
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="text-center p-2.5 bg-blue-50 rounded-xl border border-blue-100">
-          <p className="text-lg font-bold text-blue-700">{data.total}</p>
-          <p className="text-[10px] font-medium text-blue-600 mt-0.5">Total</p>
+        <div className="text-center p-2.5 bg-[#A855F7]/10 rounded-xl border border-[#A855F7]/20">
+          <p className="text-lg font-bold text-[#4C1D95]">{data.total}</p>
+          <p className="text-[10px] font-medium text-[#5B21B6] mt-0.5">Total</p>
         </div>
         <div className="text-center p-2.5 bg-amber-50 rounded-xl border border-amber-100">
           <p className="text-lg font-bold text-amber-700">{data.newThisMonth}</p>

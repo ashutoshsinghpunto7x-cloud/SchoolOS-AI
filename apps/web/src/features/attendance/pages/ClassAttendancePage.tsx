@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { BulkAttendanceForm } from '../components/BulkAttendanceForm';
@@ -10,7 +10,9 @@ function todayStr() {
 export function ClassAttendancePage() {
   const { cls, section } = useParams<{ cls: string; section: string }>();
   const navigate          = useNavigate();
+  const [searchParams]    = useSearchParams();
   const today             = todayStr();
+  const date              = searchParams.get('date') || today;
 
   const { data, isLoading, isError } = useStudentsPaginated({
     class:  cls,
@@ -36,7 +38,7 @@ export function ClassAttendancePage() {
           <h1 className="text-xl font-bold text-gray-900">
             Attendance — Class {cls} / {section}
           </h1>
-          <p className="text-sm text-gray-500">{today}</p>
+          <p className="text-sm text-gray-500">{date}</p>
         </div>
       </div>
 
@@ -57,7 +59,7 @@ export function ClassAttendancePage() {
             students={students}
             cls={cls!}
             section={section!}
-            date={today}
+            date={date}
             onSuccess={() => navigate('/attendance')}
             onCancel={() => navigate('/attendance')}
           />

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Menu, ChevronRight, Search, ChevronDown, Clock, GraduationCap, Loader2 } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
-import { studentsApi } from '@/features/students/api/students.api';
+import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSearchBar';
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -16,6 +15,7 @@ const WORKSPACE_LABELS: Record<string, string> = {
   '/administration': 'Administration',
   '/settings': 'Settings',
   '/accountant': 'Accountant Workspace',
+  '/principal': 'Principal Dashboard',
 };
 
 const getLabel = (pathname: string): string => {
@@ -55,6 +55,25 @@ const formatTime = (d: Date): string =>
     hour12: false,
     timeZone: 'Asia/Kolkata',
   });
+
+// 12-hour clock + long-form date for the principal's combined topbar pill.
+const formatTime12h = (d: Date): string =>
+  d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata',
+  });
+
+const formatDateLong = (d: Date): string =>
+  d.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    weekday: 'long',
+    timeZone: 'Asia/Kolkata',
+  }).replace(/^(\w+), (.+)$/, '$2, $1');
 
 // ── Live IST clock ────────────────────────────────────────────────────────────
 
@@ -170,123 +189,40 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
   );
 }
 
-// ── Student search (accountant workspace) ────────────────────────────────────
-
-function TopbarSearch() {
-  const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 250);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  const { data: results, isFetching } = useQuery({
-    queryKey: ['topbar-student-search', debounced],
-    queryFn: () => studentsApi.list(debounced),
-    enabled: debounced.length >= 2,
-  });
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  const showDropdown = open && debounced.length >= 2;
-
-  function goToStudent(studentId: string) {
-    navigate(`/accountant/collect-fee?studentId=${studentId}`);
-    setQuery('');
-    setDebounced('');
-    setOpen(false);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && results && results.length > 0) {
-      goToStudent(results[0]._id);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-    }
-  }
-
-  return (
-    <div ref={wrapperRef} className="hidden md:flex flex-1 max-w-md ml-8 relative">
-      <div className="relative w-full">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={1.5} />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search students, receipts, invoices..."
-          className="w-full h-8.5 pl-9.5 pr-4 rounded-full bg-white border border-[#E8E8E8] text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-[#10B981]/30 focus:shadow-[0_2px_12px_rgba(16,185,129,0.04)] transition-all"
-        />
-      </div>
-
-      {showDropdown && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 bg-white rounded-2xl border border-[#E8E8E8] shadow-[0_16px_48px_rgba(0,0,0,0.14)] overflow-hidden max-h-80 overflow-y-auto">
-          {isFetching ? (
-            <div className="flex items-center justify-center gap-2 py-6 text-gray-400 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" /> Searching…
-            </div>
-          ) : results && results.length > 0 ? (
-            results.map((s) => (
-              <button
-                key={s._id}
-                type="button"
-                onClick={() => goToStudent(s._id)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-[#10B981]/5 transition-colors border-b border-[#E8E8E8] last:border-b-0"
-              >
-                <span className="w-8 h-8 rounded-full bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-4 h-4 text-[#0B3D2E]" strokeWidth={1.5} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-semibold text-gray-800 truncate">{s.fullName}</span>
-                  <span className="block text-[11px] text-gray-400">
-                    Class {s.class}{s.section} · Adm. No. {s.admissionNumber}
-                  </span>
-                </span>
-              </button>
-            ))
-          ) : (
-            <p className="py-6 text-center text-sm text-gray-400">No students found for "{debounced}"</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 interface TopbarProps {
   onMenuToggle: () => void;
+  /** Accountant-only: shows a desktop-visible sidebar collapse/expand button. */
+  showDesktopCollapseToggle?: boolean;
+  desktopCollapsed?: boolean;
+  onToggleDesktopCollapse?: () => void;
 }
 
-export const Topbar = ({ onMenuToggle }: TopbarProps) => {
+export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollapsed, onToggleDesktopCollapse }: TopbarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
-  // Teacher dashboard uses the exact same emerald palette/effects as the
-  // Accountant workspace — no other colors anywhere on that dashboard.
-  const useEmeraldStyle = isAccountant || isTeacher;
+  const isPrincipal = user?.role === 'principal';
+  // Teacher and Principal both use the same pill/chip topbar treatment as the
+  // Accountant workspace — teacher/principal render it in purple, accountant in green.
+  const useEmeraldStyle = isAccountant || isTeacher || isPrincipal;
+  const usePurpleAccent = isTeacher || isPrincipal;
   const isAccountantDashboard = isAccountant && location.pathname === '/accountant';
+  // Principal dashboard folds its date/greeting into the Daily Command Centre
+  // card instead — the topbar breadcrumb would just repeat it.
+  const isPrincipalDashboard = isPrincipal && location.pathname === '/principal';
   const section = isAccountantDashboard
     ? `${greeting()}, ${user?.firstName ?? 'Accountant'}`
     : getLabel(location.pathname);
   const subLabel = isAccountantDashboard ? null : getSubLabel(location.pathname);
 
   const now = useNow();
-  const date = formatDate(now);
-  const time = formatTime(now);
+  const date = isPrincipal ? formatDateLong(now) : formatDate(now);
+  const time = isPrincipal ? formatTime12h(now) : formatTime(now);
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
@@ -305,43 +241,80 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
       )}
     >
       <div className={cn("flex items-center w-full gap-4", useEmeraldStyle && "max-w-7xl mx-auto")}>
-        {/* Mobile menu toggle */}
-        <button
-          onClick={onMenuToggle}
-          className={cn(
-            "lg:hidden p-2 -ml-1 rounded-xl transition-colors",
-            useEmeraldStyle
-              ? "text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E]"
-              : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          )}
-          aria-label="Toggle navigation"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+        {/* Menu toggle — teacher portal has no sidebar; principal's sidebar is an
+            overlay at every breakpoint, so it stays visible past lg too */}
+        {!isTeacher && (
+          <button
+            onClick={onMenuToggle}
+            className={cn(
+              "p-2 -ml-1 rounded-xl transition-colors",
+              !isPrincipal && "lg:hidden",
+              useEmeraldStyle
+                ? "text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E]"
+                : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+            )}
+            aria-label="Toggle navigation"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
 
-        {/* Breadcrumb */}
-        <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
-          <span className="text-sm font-semibold text-gray-900">{section}</span>
-          {subLabel && (
-            <>
-              <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" strokeWidth={2.5} />
-              <span className="text-sm font-medium text-gray-500">{subLabel}</span>
-            </>
-          )}
-        </nav>
+        {/* Desktop sidebar collapse — accountant only, frees up page width */}
+        {showDesktopCollapseToggle && (
+          <button
+            onClick={onToggleDesktopCollapse}
+            className="hidden lg:flex p-2 -ml-1 rounded-xl text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E] transition-colors"
+            aria-label={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            title={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          >
+            {desktopCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+          </button>
+        )}
 
-        {/* Search bar (Accountant Workspace) */}
-        {isAccountant && <TopbarSearch />}
+        {/* Breadcrumb — folded away on the principal's own dashboard, where the
+            Daily Command Centre card already carries the page's identity */}
+        {!isPrincipalDashboard && !isPrincipal && (
+          <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
+            <span className="text-sm font-semibold text-gray-900">{section}</span>
+            {subLabel && (
+              <>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" strokeWidth={2.5} />
+                <span className="text-sm font-medium text-gray-500">{subLabel}</span>
+              </>
+            )}
+          </nav>
+        )}
+
+        {/* Global search — principal only */}
+        {isPrincipal && <PrincipalSearchBar />}
 
         {/* Right-side controls */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Live clock — tap to open reminders */}
-          {useEmeraldStyle && (
+          {/* Principal: one combined time+date pill, doubling as the reminders trigger */}
+          {isPrincipal && (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setReminderOpen((v) => !v)}
-                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors hover:bg-[#10B981]/5 hover:border-[#10B981]/25"
+                className="hidden sm:flex flex-col items-start justify-center h-11 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#A855F7]/30 hover:bg-[#A855F7]/5 transition-colors select-none tabular-nums"
+              >
+                <span className="text-[13px] font-bold text-gray-900 leading-none">{time}</span>
+                <span className="text-[10px] text-gray-400 mt-1 leading-none">{date}</span>
+              </button>
+              {reminderOpen && <ReminderPanel onClose={() => setReminderOpen(false)} />}
+            </div>
+          )}
+
+          {/* Live clock — tap to open reminders (teacher/accountant only) */}
+          {useEmeraldStyle && !isPrincipal && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setReminderOpen((v) => !v)}
+                className={cn(
+                  "hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors",
+                  usePurpleAccent ? "hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25" : "hover:bg-[#10B981]/5 hover:border-[#10B981]/25",
+                )}
               >
                 <Clock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                 {time} IST
@@ -350,13 +323,17 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
             </div>
           )}
 
-          {/* Date chip / calendar trigger */}
+          {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date */}
+          {!isPrincipalDashboard && !isPrincipal && (
           <div className="relative">
             {useEmeraldStyle ? (
               <button
                 type="button"
                 onClick={() => setCalendarOpen((v) => !v)}
-                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-medium text-gray-500 select-none transition-colors hover:bg-[#10B981]/5 hover:border-[#10B981]/25"
+                className={cn(
+                  "hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-medium text-gray-500 select-none transition-colors",
+                  usePurpleAccent ? "hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25" : "hover:bg-[#10B981]/5 hover:border-[#10B981]/25",
+                )}
               >
                 <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -380,21 +357,29 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
             {calendarOpen && <MiniCalendar today={now} onClose={() => setCalendarOpen(false)} />}
           </div>
+          )}
 
           {/* Notifications */}
           <NotificationBell />
 
-          {/* Avatar */}
+          {/* Avatar — teacher taps through straight to their profile */}
           <button
+            onClick={isTeacher ? () => navigate('/teacher/profile') : undefined}
             className={cn(
               "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
-              useEmeraldStyle
+              usePurpleAccent
+                ? "bg-white border border-[#E8E8E8] hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
+                : useEmeraldStyle
                 ? "bg-white border border-[#E8E8E8] hover:bg-[#10B981]/5 hover:border-[#10B981]/20 shadow-sm"
                 : "hover:bg-gray-100"
             )}
             aria-label="Profile"
           >
-            {useEmeraldStyle ? (
+            {usePurpleAccent ? (
+              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/20 flex items-center justify-center text-[11px] font-bold text-[#5B21B6]">
+                {initials}
+              </span>
+            ) : useEmeraldStyle ? (
               <span className="w-7 h-7 rounded-full bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center text-[11px] font-bold text-[#0B3D2E]">
                 {initials}
               </span>
@@ -403,7 +388,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
                 <span className="text-xs font-bold text-white">{initials}</span>
               </span>
             )}
-            <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />
+            {!isTeacher && <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />}
           </button>
         </div>
       </div>

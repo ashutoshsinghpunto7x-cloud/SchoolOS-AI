@@ -16,6 +16,8 @@ import type {
   TimetableListOptions,
   SubstituteListOptions,
   PaginatedResponse,
+  NeedsSubstituteEntry,
+  SubstituteSuggestion,
 } from '@schoolos/types';
 
 const BASE = '/timetable';
@@ -162,6 +164,22 @@ export const timetableApi = {
   deleteSubstitute: async (id: string): Promise<void> => {
     try {
       await apiClient.delete(`${BASE}/substitutes/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getNeedsSubstitute: async (date: string): Promise<NeedsSubstituteEntry[]> => {
+    try {
+      const res = await apiClient.get<{ data: NeedsSubstituteEntry[] }>(`${BASE}/substitutes/needed`, { params: { date } });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  suggestSubstituteTeachers: async (cls: string, section: string, excludeTeacherId?: string): Promise<SubstituteSuggestion[]> => {
+    try {
+      const res = await apiClient.get<{ data: SubstituteSuggestion[] }>(`${BASE}/substitutes/suggest-teachers`, {
+        params: { class: cls, section, excludeTeacherId },
+      });
+      return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 };

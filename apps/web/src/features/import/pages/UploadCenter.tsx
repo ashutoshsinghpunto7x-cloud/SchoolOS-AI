@@ -10,6 +10,7 @@ const IMPORT_TYPES: { value: ImportType; label: string; description: string }[] 
   { value: 'teachers',   label: 'Teachers',    description: 'Profiles, subjects, experience' },
   { value: 'fees',       label: 'Fee Records', description: 'Pending/paid fees, amounts, due dates' },
   { value: 'admissions', label: 'Admissions',  description: 'Enquiry and lead pipeline data' },
+  { value: 'attendance', label: 'Attendance',  description: 'Daily present/absent records by class' },
 ];
 
 export function UploadCenter() {

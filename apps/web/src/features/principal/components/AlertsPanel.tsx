@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { PrincipalAlert } from '@schoolos/types';
 
 const SEVERITY_CONFIG = {
-  info:     { icon: Info,          bg: 'bg-blue-50',   border: 'border-blue-100',   text: 'text-blue-700',   icon_color: 'text-blue-500' },
+  info:     { icon: Info,          bg: 'bg-[#A855F7]/10',   border: 'border-[#A855F7]/20',   text: 'text-[#4C1D95]',   icon_color: 'text-[#7C3AED]' },
   warning:  { icon: AlertTriangle, bg: 'bg-amber-50',  border: 'border-amber-100',  text: 'text-amber-700',  icon_color: 'text-amber-500' },
   critical: { icon: XCircle,       bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-700',    icon_color: 'text-red-500' },
 } as const;

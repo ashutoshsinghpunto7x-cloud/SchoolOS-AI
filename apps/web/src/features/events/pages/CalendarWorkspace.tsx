@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useEvents } from '../hooks/useEvents';
-import { EventFilters, EventFiltersState } from '../components/EventFilters';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { WeekView } from '../components/WeekView';
 import { AgendaView } from '../components/AgendaView';
@@ -38,21 +37,14 @@ export const CalendarWorkspace = () => {
   const [weekStart, setWeekStart]     = useState(() => getWeekStart(today));
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
 
-  const [filters, setFilters] = useState<EventFiltersState>({
-    search: '', eventType: '', status: '', audience: '',
-  });
-
-  // Build query options based on active view
+  // Build query options based on active view — deliberately just Year/Month/Week
+  // navigation, no extra type/status/audience/search filters cluttering the calendar.
   const queryOpts = useMemo((): EventListOptions => {
     const base: EventListOptions = {
       limit:     200, // load enough for the calendar view
       sortBy:    'startDate',
       sortOrder: 'asc',
     };
-    if (filters.search)    base.search    = filters.search;
-    if (filters.eventType) base.eventType = filters.eventType as EventListOptions['eventType'];
-    if (filters.status)    base.status    = filters.status as EventListOptions['status'];
-    if (filters.audience)  base.audience  = filters.audience as EventListOptions['audience'];
 
     if (view === 'month') {
       base.year  = year;
@@ -64,7 +56,7 @@ export const CalendarWorkspace = () => {
       base.startTo   = weekEnd.toISOString().split('T')[0];
     }
     return base;
-  }, [view, year, month, weekStart, filters]);
+  }, [view, year, month, weekStart]);
 
   const { data, isLoading, isError } = useEvents(queryOpts);
   const events = data?.data ?? [];
@@ -105,28 +97,24 @@ export const CalendarWorkspace = () => {
         )}
       </div>
 
-      {/* View switcher + filters */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
-          {VIEW_TABS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setView(id)}
-              className={cn(
-                'flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors',
-                view === id
-                  ? 'bg-white text-blue-700 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700',
-              )}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <EventFilters filters={filters} onChange={setFilters} />
+      {/* View switcher — Month / Week / Agenda. Year is navigable within the Month view itself. */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-5">
+        {VIEW_TABS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            className={cn(
+              'flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors',
+              view === id
+                ? 'bg-white text-blue-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700',
+            )}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Loading / Error */}

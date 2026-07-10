@@ -61,12 +61,12 @@ export function AccountantReportsPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const { data: feeList } = useFeeList({ status: 'paid', limit: 200, sortBy: 'createdAt', sortOrder: 'desc' });
+  const { data: feeList } = useFeeList({ status: 'paid', limit: 100, sortBy: 'createdAt', sortOrder: 'desc' });
   const { data: feeSummary } = useFeeSummary();
-  const { data: outstanding } = useFeeList({ limit: 200, sortBy: 'dueDate' });
-  const { data: salaryList } = useSalaryList({ limit: 200 });
+  const { data: outstanding } = useFeeList({ limit: 100, sortBy: 'dueDate' });
+  const { data: salaryList } = useSalaryList({ limit: 100 });
   const { data: salarySummary } = useSalarySummary();
-  const { data: expenseList } = useExpenseList({ limit: 200 });
+  const { data: expenseList } = useExpenseList({ limit: 100 });
   const { data: expenseSummary } = useExpenseSummary();
 
   const filteredPaidFees = useMemo(

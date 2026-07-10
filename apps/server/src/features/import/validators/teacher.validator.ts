@@ -2,6 +2,15 @@ import { z } from 'zod';
 import { createTeacherSchema } from '../../teachers/teacher.validation';
 import { IValidator, RowValidationResult } from './validator.interface';
 
+// Every field createTeacherSchema recognizes — anything else in the mapped row
+// gets swept into customFields instead of being silently dropped (Zod's default
+// object behavior strips unrecognized keys with no trace).
+const KNOWN_TEACHER_FIELDS = new Set([
+  'fullName', 'gender', 'dateOfBirth', 'phone', 'alternatePhone', 'email', 'address',
+  'department', 'subjects', 'assignedClasses', 'qualification', 'experienceYears',
+  'joiningDate', 'employmentStatus', 'tags', 'remarks', 'emergencyContact', 'customFields',
+]);
+
 export const teacherValidator: IValidator = {
   importType: 'teachers',
 
@@ -46,6 +55,18 @@ export const teacherValidator: IValidator = {
     if (!processed.employmentStatus) {
       processed.employmentStatus = 'applicant';
     }
+
+    // Sweep any unrecognized columns (Blood Group, Previous School, Aadhar No.,
+    // etc.) into customFields instead of letting them get silently stripped.
+    const customFields: Record<string, unknown> = { ...(processed.customFields as Record<string, unknown> | undefined) };
+    for (const key of Object.keys(processed)) {
+      if (!KNOWN_TEACHER_FIELDS.has(key)) {
+        const value = processed[key];
+        if (value !== undefined && value !== '') customFields[key] = value;
+        delete processed[key];
+      }
+    }
+    if (Object.keys(customFields).length) processed.customFields = customFields;
 
     const result = createTeacherSchema.safeParse(processed);
 

@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { teacherService } from './teacher.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { ValidationError } from '../../middlewares/errorHandler';
+import { fileToDataUri } from '../../lib/image-upload';
 
 export const teacherController = {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -54,6 +56,23 @@ export const teacherController = {
       const ctx     = buildAuthContext(req.user!);
       const teacher = await teacherService.changeStatus(req.params.id, req.body, ctx);
       sendSuccess(res, teacher, 'Teacher status updated');
+    } catch (err) { next(err); }
+  },
+
+  async uploadPhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('No file uploaded. Send the file in a "file" form field.');
+      const ctx     = buildAuthContext(req.user!);
+      const teacher = await teacherService.updatePhoto(req.params.id, fileToDataUri(req.file), ctx);
+      sendSuccess(res, teacher, 'Photo updated');
+    } catch (err) { next(err); }
+  },
+
+  async removePhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx     = buildAuthContext(req.user!);
+      const teacher = await teacherService.removePhoto(req.params.id, ctx);
+      sendSuccess(res, teacher, 'Photo removed');
     } catch (err) { next(err); }
   },
 

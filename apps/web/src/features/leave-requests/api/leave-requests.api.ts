@@ -16,6 +16,15 @@ export const leaveRequestsApi = {
     }
   },
 
+  async getById(id: string): Promise<LeaveRequest> {
+    try {
+      const res = await apiClient.get<ApiResponse<LeaveRequest>>(`/leave-requests/${id}`);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   async listMine(): Promise<LeaveRequest[]> {
     try {
       const res = await apiClient.get<ApiResponse<LeaveRequest[]>>('/leave-requests/mine');

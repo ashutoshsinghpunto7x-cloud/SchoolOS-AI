@@ -3,6 +3,13 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type AuditAction =
   | 'auth.login'
   | 'auth.logout'
+  | 'auth.password_changed'
+  | 'auth.recovery_requested'
+  | 'auth.recovery_approved'
+  | 'auth.recovery_rejected'
+  | 'auth.temp_password_generated'
+  | 'auth.pin_reset'
+  | 'school_settings.logo_updated'
   | 'user.created'
   | 'user.updated'
   | 'user.status_changed'
@@ -58,6 +65,11 @@ export type AuditAction =
   | 'fee.bulk_payment_recorded'
   | 'fee.receipt_emailed'
   | 'fee.defaulters_emailed'
+  | 'fee.reminder_sent'
+  | 'fee.statement_emailed'
+  | 'fee.discount_requested'
+  | 'fee.discount_approved'
+  | 'fee.discount_rejected'
   | 'salary.created'
   | 'salary.updated'
   | 'salary.paid'
@@ -124,7 +136,11 @@ export type AuditAction =
   | 'webhook.updated'
   | 'webhook.deleted'
   | 'webhook.delivered'
-  | 'webhook.failed';
+  | 'webhook.failed'
+  | 'internal_message.sent'
+  | 'internal_message.acknowledged'
+  | 'internal_message.template_created'
+  | 'internal_message.template_deleted';
 
 export interface IAuditLog extends Document {
   userId: string;

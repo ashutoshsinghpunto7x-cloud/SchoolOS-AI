@@ -13,11 +13,6 @@ import { auditService } from '../audit/audit.service';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const generateAdmissionNumber = async (schoolId: string, year: number, offset = 0): Promise<string> => {
-  const count = await studentRepository.countByAdmissionYear(schoolId, year);
-  return `ADM-${year}-${String(count + 1 + offset).padStart(4, '0')}`;
-};
-
 const isDuplicateKeyError = (err: unknown): boolean =>
   typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
 
@@ -28,14 +23,39 @@ export const studentService = {
     const data = createStudentSchema.parse(rawInput);
     const admissionYear = new Date().getFullYear();
 
-    // Admission numbers are counted, not atomically reserved — under concurrent
-    // creates two requests can compute the same number. Retry with the next
-    // number on a duplicate-key collision instead of failing the request.
-    const MAX_ATTEMPTS = 5;
+    // The import pipeline supplies an existing admission number from the source
+    // file — honor it directly (single attempt, no auto-generation/retry).
+    if (data.admissionNumber) {
+      const student = await studentRepository.create({
+        ...data,
+        admissionNumber: data.admissionNumber,
+        admissionYear,
+        schoolId: ctx.schoolId,
+        createdBy: ctx.displayName,
+      });
+
+      auditService.log({
+        userId: ctx.userId, userDisplayName: ctx.displayName,
+        action: 'student.created', resource: 'students', resourceId: student._id.toString(),
+        details: { fullName: data.fullName, admissionNumber: data.admissionNumber },
+        ip: ctx.ip, schoolId: ctx.schoolId,
+      });
+
+      return student;
+    }
+
+    // Admission numbers aren't atomically reserved, so a bulk import (rows run
+    // concurrently) or two simultaneous admissions can compute the same next
+    // number. Start from the true max sequence, then walk forward on each
+    // duplicate-key collision. The retry ceiling is comfortably above the
+    // import batch size so a whole batch of new students can settle even when
+    // every row starts from the same base.
+    const MAX_ATTEMPTS = 60;
+    const baseSeq = await studentRepository.maxAdmissionSequence(ctx.schoolId, admissionYear);
     let lastErr: unknown;
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const admissionNumber = await generateAdmissionNumber(ctx.schoolId, admissionYear, attempt);
+      const admissionNumber = `ADM-${admissionYear}-${String(baseSeq + 1 + attempt).padStart(4, '0')}`;
       try {
         const student = await studentRepository.create({
           ...data,
@@ -173,6 +193,25 @@ export const studentService = {
       schoolId: ctx.schoolId,
     });
 
+    return student;
+  },
+
+  async updatePhoto(id: string, dataUri: string, ctx: AuthContext): Promise<IStudent> {
+    const student = await studentRepository.updatePhoto(id, ctx.schoolId, dataUri, ctx.displayName);
+    if (!student) throw new NotFoundError('Student');
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'student.updated', resource: 'students', resourceId: id,
+      details: { fields: ['photoUrl'] }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return student;
+  },
+
+  async removePhoto(id: string, ctx: AuthContext): Promise<IStudent> {
+    const student = await studentRepository.updatePhoto(id, ctx.schoolId, undefined, ctx.displayName);
+    if (!student) throw new NotFoundError('Student');
     return student;
   },
 

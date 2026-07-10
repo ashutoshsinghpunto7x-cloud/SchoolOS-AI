@@ -124,6 +124,11 @@ export const userRepository = {
     await User.updateOne({ _id: id }, { $inc: { tokenVersion: 1 } });
   },
 
+  /** Self-service password change — also bumps tokenVersion so other logged-in sessions/devices are signed out. */
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    await User.updateOne({ _id: id }, { $set: { passwordHash }, $inc: { tokenVersion: 1 } });
+  },
+
   async updateLastLogin(id: string): Promise<void> {
     await User.updateOne({ _id: id }, { $set: { lastLoginAt: new Date() } });
   },

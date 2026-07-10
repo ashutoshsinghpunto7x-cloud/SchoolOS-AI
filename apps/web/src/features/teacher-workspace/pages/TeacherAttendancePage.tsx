@@ -11,6 +11,9 @@ import {
   CalendarDays,
   Phone,
   GripVertical,
+  Search,
+  X,
+  Check,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { toast } from 'sonner';
@@ -19,9 +22,10 @@ import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 // WhatsApp absent-notification sending is temporarily disabled — see AbsenteeOutreach
 // below. Re-import when re-enabling: `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
+import { avatarColorFor } from '../utils/avatarColor';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -44,22 +48,32 @@ function addDays(dateStr: string, n: number) {
   return toDateStr(d);
 }
 
-// ── Avatar styling ────────────────────────────────────────────────────────────
+// ── Completion ring (replaces the old Present/Absent/Remaining stat row) ───────
 
-const AVATAR_STYLES = [
-  { bg: 'bg-[#10B981]/10',  text: 'text-[#0B3D2E]' },
-  { bg: 'bg-gray-100',      text: 'text-gray-600'  },
-  { bg: 'bg-[#10B981]/15',  text: 'text-emerald-700' },
-];
+function CompletionRing({ percent, size = 40 }: { percent: number; size?: number }) {
+  const stroke = 4;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, percent)) / 100) * circumference;
 
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
-}
-
-function getAvatarStyle(name: string) {
-  const hash = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return AVATAR_STYLES[hash % AVATAR_STYLES.length];
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#E5E7EB" strokeWidth={stroke} fill="none" />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          stroke="#A855F7" strokeWidth={stroke} fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700">
+        {Math.round(percent)}%
+      </span>
+    </div>
+  );
 }
 
 // ── Row types ─────────────────────────────────────────────────────────────────
@@ -70,10 +84,41 @@ interface Row {
   studentId:  string;
   fullName:   string;
   rollNumber?: string;
+  photoUrl?: string;
   status:     RowStatus;
+  /** Set the moment a row is marked present/absent — lets the list push marked
+   *  rows to the bottom in the order they were marked, so the swipe queue at
+   *  top always shows who's left, and a mis-tap is easy to find and fix. */
+  markedSeq?: number;
+}
+
+/** Ascending roll-number sort — numeric when possible, falling back to a plain string compare for non-numeric rolls. */
+function compareRollNumber(a?: string, b?: string): number {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  const na = Number(a);
+  const nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
 // ── Active (swipeable) card ───────────────────────────────────────────────────
+
+function StudentAvatar({ studentId, fullName, photoUrl, size = 'md' }: { studentId: string; fullName: string; photoUrl?: string; size?: 'sm' | 'md' }) {
+  const initials = fullName.split(' ').slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase();
+  const dim = size === 'sm' ? 'w-8 h-8' : 'w-11 h-11';
+  const color = avatarColorFor(studentId);
+  return (
+    <div className={cn(dim, color.bg, 'rounded-full flex items-center justify-center shrink-0 overflow-hidden')}>
+      {photoUrl ? (
+        <img src={photoUrl} alt={fullName} className="w-full h-full object-cover" />
+      ) : (
+        <span className={cn('font-bold', color.text, size === 'sm' ? 'text-[10px]' : 'text-xs')}>{initials}</span>
+      )}
+    </div>
+  );
+}
 
 function ActiveCard({
   row,
@@ -83,21 +128,11 @@ function ActiveCard({
   onMark:  (id: string, status: RowStatus) => void;
 }) {
   const x = useMotionValue(0);
-  // Neutral border/background feedback as the card is dragged — reacts to the
-  // swipe without color-coding the direction (present vs. absent).
-  const borderColor = useTransform(
-    x,
-    [-90, -20, 0, 20, 90],
-    ['#D1D5DB', '#D1D5DB', 'rgba(0,0,0,0)', '#D1D5DB', '#D1D5DB'],
-    { clamp: true },
-  );
-  const background = useTransform(
-    x,
-    [-90, 0, 90],
-    ['rgba(0,0,0,0.02)', 'rgba(255,255,255,1)', 'rgba(0,0,0,0.02)'],
-    { clamp: true },
-  );
-  const { bg, text } = getAvatarStyle(row.fullName);
+  // Colored reveal panels behind the draggable card — green/PRESENT peeks in
+  // from the left as the card is dragged right, red/ABSENT peeks in from the
+  // right as it's dragged left.
+  const presentOpacity = useTransform(x, [0, 40, 90], [0, 0.7, 1], { clamp: true });
+  const absentOpacity  = useTransform(x, [-90, -40, 0], [1, 0.7, 0], { clamp: true });
 
   function handleDragEnd(_e: unknown, info: { offset: { x: number } }) {
     if (info.offset.x > 90) onMark(row.studentId, 'present');
@@ -105,18 +140,33 @@ function ActiveCard({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 p-[2.5px] shadow-sm">
+    <div className="relative rounded-2xl overflow-hidden shadow-sm">
+      {/* Reveal panels */}
       <motion.div
-        className="flex items-center gap-3 bg-white rounded-[13px] border-2 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
-        style={{ x, borderColor, backgroundColor: background }}
+        style={{ opacity: presentOpacity }}
+        className="absolute inset-0 bg-emerald-500 flex items-center gap-2 px-5"
+      >
+        <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
+        <span className="text-sm font-bold text-white tracking-wide">PRESENT</span>
+      </motion.div>
+      <motion.div
+        style={{ opacity: absentOpacity }}
+        className="absolute inset-0 bg-red-500 flex items-center justify-end gap-2 px-5"
+      >
+        <span className="text-sm font-bold text-white tracking-wide">ABSENT</span>
+        <X className="w-5 h-5 text-white" strokeWidth={2.5} />
+      </motion.div>
+
+      {/* Draggable foreground card */}
+      <motion.div
+        className="relative flex items-center gap-3 bg-white rounded-2xl border border-gray-200 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
+        style={{ x }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.7}
         onDragEnd={handleDragEnd}
       >
-        <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
-          {getInitials(row.fullName)}
-        </div>
+        <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} />
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold text-gray-900 truncate">{row.fullName}</p>
           {row.rollNumber && (
@@ -139,44 +189,69 @@ function CompactRow({
   index,
   editable,
   onUndo,
+  onMark,
 }: {
   row:      Row;
   index:    number;
   editable: boolean;
   onUndo:   (id: string) => void;
+  /** When provided (swipe mode is off, or the list is being searched), unmarked rows get tap-to-mark buttons instead of just a placeholder dot. */
+  onMark?:  (id: string, status: RowStatus) => void;
 }) {
-  const { bg, text } = getAvatarStyle(row.fullName);
   const marked = row.status !== 'unmarked';
 
   return (
-    <button
-      type="button"
-      disabled={!marked || !editable}
-      onClick={() => onUndo(row.studentId)}
+    <div
       className={cn(
-        'w-full flex items-center px-4 py-3 gap-3 text-left transition-colors',
+        'w-full flex items-center px-4 py-3 gap-3 transition-colors',
         marked && 'bg-gray-50/60',
-        marked && editable && 'hover:brightness-[0.97]',
-        !marked && 'cursor-default',
       )}
     >
-      <span className="text-sm text-gray-400 w-6 text-right shrink-0 font-mono">{index + 1}</span>
-      <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0', bg, text)}>
-        {getInitials(row.fullName)}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
-        {row.rollNumber && <p className="text-[11px] text-gray-400">Roll No: {row.rollNumber}</p>}
-      </div>
+      <button
+        type="button"
+        disabled={!marked || !editable}
+        onClick={() => onUndo(row.studentId)}
+        className={cn(
+          'flex-1 flex items-center gap-3 text-left min-w-0',
+          marked && editable && 'hover:brightness-[0.97]',
+          !marked && 'cursor-default',
+        )}
+      >
+        <span className="text-sm text-gray-400 w-6 text-right shrink-0 font-mono">{index + 1}</span>
+        <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} size="sm" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
+          {row.rollNumber && <p className="text-[11px] text-gray-400">Roll No: {row.rollNumber}</p>}
+        </div>
+      </button>
 
       {marked ? (
         <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600' : 'text-red-500')}>
           {row.status === 'present' ? 'Present' : 'Absent'}
         </span>
+      ) : editable && onMark ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => onMark(row.studentId, 'present')}
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors"
+            title="Mark present"
+          >
+            <Check className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMark(row.studentId, 'absent')}
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+            title="Mark absent"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       ) : (
         <span className="w-2 h-2 rounded-full bg-gray-200 shrink-0" aria-hidden="true" />
       )}
-    </button>
+    </div>
   );
 }
 
@@ -276,7 +351,7 @@ function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: st
         value={template}
         onChange={(e) => setTemplate(e.target.value)}
         rows={3}
-        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
+        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
       />
       <p className="text-[11px] text-gray-400 mb-3">Use <span className="font-mono">{'{name}'}</span> to insert each student's name.</p>
 
@@ -364,7 +439,7 @@ function SubmittedScreen({
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
         <button
           onClick={onViewStudents}
-          className="h-12 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
+          className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
         >
           View Students
         </button>
@@ -377,7 +452,7 @@ function SubmittedScreen({
         </button>
         <button
           onClick={onDashboard}
-          className="text-sm text-[#0B3D2E] font-semibold py-1 hover:underline transition-colors"
+          className="text-sm text-[#5B21B6] font-semibold py-1 hover:underline transition-colors"
         >
           Back to Dashboard
         </button>
@@ -398,6 +473,10 @@ export function TeacherAttendancePage() {
   const [rows,      setRows]      = useState<Row[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [editMode,  setEditMode]  = useState(false);
+  const [swipeMode,   setSwipeMode]   = useState(true);
+  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const markCounterRef = useRef(0);
   // Tracks swipes made since the page loaded / since the last successful save —
   // a teacher swiping through a class on their phone is exactly who's likely to
   // hit an accidental back-gesture and lose everything with no warning.
@@ -441,19 +520,26 @@ export function TeacherAttendancePage() {
 
   const students: Student[] = studentsData?.data ?? [];
 
-  // Populate rows when data loads
+  // Populate rows when data loads — sorted ascending by roll number so the
+  // swipe queue and list both follow the class register order.
   useEffect(() => {
     if (!students.length) return;
     const existMap = new Map(
       (existingAttendance ?? []).map((a) => [a.studentId, a.status as AttendanceStatus]),
     );
+    const sorted = [...students].sort((a, b) => compareRollNumber(a.rollNumber, b.rollNumber));
+    let seq = 0;
     setRows(
-      students.map((s) => {
+      sorted.map((s) => {
         const existing = existMap.get(s._id);
         const status: RowStatus = existing === 'present' ? 'present' : existing === 'absent' ? 'absent' : 'unmarked';
-        return { studentId: s._id, fullName: s.fullName, rollNumber: s.rollNumber, status };
+        return {
+          studentId: s._id, fullName: s.fullName, rollNumber: s.rollNumber, photoUrl: s.photoUrl, status,
+          markedSeq: status !== 'unmarked' ? seq++ : undefined,
+        };
       }),
     );
+    markCounterRef.current = seq;
     setDirty(false); // fresh sync from the server, not an unsaved user edit
   }, [students.length, existingAttendance, date]);
 
@@ -466,19 +552,34 @@ export function TeacherAttendancePage() {
   const absentCount  = rows.filter((r) => r.status === 'absent').length;
   const unmarkedCount = rows.filter((r) => r.status === 'unmarked').length;
   const activeIndex = rows.findIndex((r) => r.status === 'unmarked');
+  const completionPercent = rows.length ? ((presentCount + absentCount) / rows.length) * 100 : 0;
+  const isAllPresent = rows.length > 0 && rows.every((r) => r.status === 'present');
+  const isSearching = searchOpen && searchQuery.trim().length > 0;
+  const filteredRows = isSearching
+    ? rows.filter((r) => r.fullName.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : rows;
+  const useSwipeFlow = swipeMode && !isSearching;
 
   function markStatus(studentId: string, status: RowStatus) {
-    setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status } : r));
+    setRows((prev) => prev.map((r) =>
+      r.studentId === studentId ? { ...r, status, markedSeq: markCounterRef.current++ } : r,
+    ));
     setDirty(true);
   }
 
   function undoStatus(studentId: string) {
-    setRows((prev) => prev.map((r) => r.studentId === studentId ? { ...r, status: 'unmarked' } : r));
+    setRows((prev) => prev.map((r) =>
+      r.studentId === studentId ? { ...r, status: 'unmarked', markedSeq: undefined } : r,
+    ));
     setDirty(true);
   }
 
-  function markAllPresent() {
-    setRows((prev) => prev.map((r) => ({ ...r, status: 'present' })));
+  function toggleMarkAllPresent() {
+    setRows((prev) => prev.map((r) => (
+      isAllPresent
+        ? { ...r, status: 'unmarked', markedSeq: undefined }
+        : { ...r, status: 'present', markedSeq: markCounterRef.current++ }
+    )));
     setDirty(true);
   }
 
@@ -551,7 +652,7 @@ export function TeacherAttendancePage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate('/teacher/classes')}
+            onClick={() => navigate(-1)}
             className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -559,6 +660,9 @@ export function TeacherAttendancePage() {
           <h1 className="flex-1 text-base font-bold text-gray-900">
             Class {cls} Attendance
           </h1>
+          {!isLoading && !isDataError && rows.length > 0 && (
+            <CompletionRing percent={completionPercent} />
+          )}
           {alreadySubmitted && (
             <button
               type="button"
@@ -571,29 +675,63 @@ export function TeacherAttendancePage() {
           )}
         </div>
 
-        {/* Date navigation */}
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <button
-            type="button"
-            onClick={() => setDate((d) => addDays(d, -1))}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-500" />
-          </button>
-          <div className="flex items-center gap-1.5">
-            <CalendarDays className="w-4 h-4 text-[#0B3D2E]" />
-            <span className="text-sm font-semibold text-gray-800">
-              {formatDisplayDate(date)}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDate((d) => addDays(d, 1))}
-            disabled={date >= today}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-500" />
-          </button>
+        {/* Date navigation / search */}
+        <div className="flex items-center gap-2 mt-4">
+          {searchOpen ? (
+            <>
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search student…"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                title="Back to date"
+              >
+                <CalendarDays className="w-5 h-5 text-[#5B21B6]" />
+              </button>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => setDate((d) => addDays(d, -1))}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-500" />
+              </button>
+              <div className="flex items-center gap-1.5">
+                <CalendarDays className="w-4 h-4 text-[#5B21B6]" />
+                <span className="text-sm font-semibold text-gray-800">
+                  {formatDisplayDate(date)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDate((d) => addDays(d, 1))}
+                disabled={date >= today}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-500" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                title="Search students"
+              >
+                <Search className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -632,37 +770,47 @@ export function TeacherAttendancePage() {
             </div>
           )}
 
-          {/* Stat counters — Present / Absent / Remaining, right under the header */}
-          <div className="flex gap-3 px-4 mt-4">
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
-              <p className="text-xl font-bold text-emerald-600">{presentCount}</p>
-              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Present</p>
-            </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
-              <p className="text-xl font-bold text-red-500">{absentCount}</p>
-              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Absent</p>
-            </div>
-            <div className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-3 text-center">
-              <p className="text-xl font-bold text-gray-900">{unmarkedCount}</p>
-              <p className="text-[11px] text-gray-500 font-semibold mt-0.5">Remaining</p>
-            </div>
-          </div>
-
-          {/* Mark All Present */}
+          {/* Mark All Present (toggle) + Swipe mode switch */}
           {editable && rows.length > 0 && (
-            <div className="px-4 mt-4">
+            <div className="px-4 mt-4 flex items-center gap-2.5">
               <button
                 type="button"
-                onClick={markAllPresent}
-                className="w-full h-11 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#0B3D2E] font-semibold rounded-xl text-sm transition-colors"
+                onClick={toggleMarkAllPresent}
+                className={cn(
+                  'flex-1 h-11 font-bold rounded-xl text-sm transition-all',
+                  isAllPresent
+                    ? 'bg-[#A855F7]/10 hover:bg-[#A855F7]/20 text-[#5B21B6]'
+                    : 'text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/20',
+                )}
               >
-                Mark All Present
+                {isAllPresent ? 'Unmark All' : 'Mark All Present'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSwipeMode((v) => !v)}
+                className="h-11 px-3 flex items-center gap-2 bg-white border border-gray-200 rounded-xl shrink-0"
+                title="Toggle swipe mode"
+              >
+                <span className="text-xs font-semibold text-gray-500">Swipe</span>
+                <span
+                  className={cn(
+                    'relative w-9 h-5 rounded-full transition-colors',
+                    swipeMode ? 'bg-[#A855F7]' : 'bg-gray-200',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                      swipeMode ? 'translate-x-[18px]' : 'translate-x-0.5',
+                    )}
+                  />
+                </span>
               </button>
             </div>
           )}
 
           {/* Active swipeable card */}
-          {editable && activeIndex !== -1 && (
+          {editable && useSwipeFlow && activeIndex !== -1 && (
             <div className="px-4 mt-4">
               <ActiveCard
                 key={rows[activeIndex].studentId}
@@ -680,14 +828,27 @@ export function TeacherAttendancePage() {
                 <p className="text-sm font-medium text-gray-500">No students in this class</p>
                 <button
                   onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
-                  className="mt-4 h-10 px-5 bg-[#0B3D2E] text-white rounded-xl text-sm font-semibold hover:bg-[#08251B] transition-colors"
+                  className="mt-4 h-10 px-5 bg-[#5B21B6] text-white rounded-xl text-sm font-semibold hover:bg-[#4C1D95] transition-colors"
                 >
                   Add Students
                 </button>
               </div>
+            ) : filteredRows.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-gray-400">No students match "{searchQuery}"</p>
+              </div>
             ) : (
-              rows
-                .filter((_, i) => i !== activeIndex || !editable)
+              filteredRows
+                .filter((row) => !useSwipeFlow || !editable || row.studentId !== rows[activeIndex]?.studentId)
+                // Marked rows sink to the bottom, in the order they were marked —
+                // the unmarked queue at top always mirrors roll-number order.
+                .slice()
+                .sort((a, b) => {
+                  if (a.status === 'unmarked' && b.status === 'unmarked') return 0;
+                  if (a.status === 'unmarked') return -1;
+                  if (b.status === 'unmarked') return 1;
+                  return (a.markedSeq ?? 0) - (b.markedSeq ?? 0);
+                })
                 .map((row) => (
                   <CompactRow
                     key={row.studentId}
@@ -695,6 +856,7 @@ export function TeacherAttendancePage() {
                     index={rows.findIndex((r) => r.studentId === row.studentId)}
                     editable={editable}
                     onUndo={undoStatus}
+                    onMark={useSwipeFlow ? undefined : markStatus}
                   />
                 ))
             )}
@@ -728,42 +890,65 @@ export function TeacherAttendancePage() {
               student is swiped would force them to redo everything later
               instead of saving progress and finishing when they get back. */}
           {editable && rows.length > 0 && (
-            <div className="sticky bottom-20 lg:bottom-0 px-4 py-4 bg-[#F8FAFC] border-t border-gray-200/60 space-y-2">
-              {/* Completion progress bar */}
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
-                <span>Completion</span>
-                <span>{Math.round(((presentCount + absentCount) / rows.length) * 100)}%</span>
-              </div>
-              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#0B3D2E] rounded-full transition-all duration-300"
-                  style={{ width: `${Math.round(((presentCount + absentCount) / rows.length) * 100)}%` }}
-                />
-              </div>
+            <>
+            {/* Spacer so the fixed bar below never covers the last card in the scroll area */}
+            <div className="h-[168px] lg:h-[140px]" aria-hidden="true" />
+            <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-4 bg-[#F8FAFC] border-t border-gray-200/60">
+              {/* Save button — fills up like a liquid progress bar as students get marked */}
+              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 shadow-lg shadow-violet-500/10">
+                {/* Liquid fill */}
+                <motion.div
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-600 to-pink-500"
+                  initial={false}
+                  animate={{ width: `${completionPercent}%` }}
+                  transition={{ type: 'spring', stiffness: 140, damping: 22 }}
+                >
+                  {/* Shimmering wave riding the leading edge of the fill */}
+                  <motion.div
+                    className="absolute inset-y-0 -right-8 w-16 bg-white/30 blur-md"
+                    animate={{ x: [0, 8, 0] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                </motion.div>
 
-              {unmarkedCount > 0 && (
-                <p className="text-xs text-center text-amber-600 font-medium">
-                  {unmarkedCount} student{unmarkedCount !== 1 ? 's' : ''} not yet marked — you can save now and finish later.
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={isPending}
-                className="w-full h-14 bg-[#0B3D2E] hover:bg-[#08251B] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#0B3D2E]/25"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Saving…
-                  </>
-                ) : unmarkedCount > 0 ? (
-                  `Save (${unmarkedCount} unmarked)`
-                ) : (
-                  'Save Attendance'
-                )}
-              </button>
+                {/* Clickable surface + base (unfilled) label */}
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={isPending}
+                  className="absolute inset-0 w-full h-full flex items-center justify-center gap-2 text-base font-bold text-gray-400 disabled:opacity-60"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : unmarkedCount > 0 ? (
+                    `Save (${unmarkedCount} unmarked)`
+                  ) : (
+                    'Save Attendance'
+                  )}
+                </button>
+
+                {/* White label clipped to the fill — only visible over the filled portion */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center gap-2 text-base font-bold text-white pointer-events-none overflow-hidden"
+                  style={{ clipPath: `inset(0 ${100 - completionPercent}% 0 0)` }}
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : unmarkedCount > 0 ? (
+                    `Save (${unmarkedCount} unmarked)`
+                  ) : (
+                    'Save Attendance'
+                  )}
+                </div>
+              </div>
             </div>
+            </>
           )}
         </>
       )}

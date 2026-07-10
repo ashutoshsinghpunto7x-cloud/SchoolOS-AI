@@ -6,7 +6,7 @@ import { importController, uploadMiddleware } from './import.controller';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize('admin', 'accountant'));
 
 // Templates (no session required)
 router.get('/templates', importController.listTemplates);

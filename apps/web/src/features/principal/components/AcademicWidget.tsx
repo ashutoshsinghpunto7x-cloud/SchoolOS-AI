@@ -23,11 +23,11 @@ export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
     <div className="space-y-3">
       {/* Timetable status */}
       <div
-        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 cursor-pointer transition-colors"
+        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#A855F7]/30 hover:bg-[#A855F7]/10 cursor-pointer transition-colors"
         onClick={() => navigate('/timetable')}
       >
-        <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-          <LayoutGrid className="w-4 h-4 text-indigo-600" strokeWidth={2} />
+        <div className="w-9 h-9 bg-[#A855F7]/20 rounded-xl flex items-center justify-center flex-shrink-0">
+          <LayoutGrid className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-800">Timetables</p>
@@ -42,16 +42,16 @@ export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
 
       {/* Teacher strength */}
       <div
-        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 cursor-pointer transition-colors"
+        className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#A855F7]/30 hover:bg-[#A855F7]/10 cursor-pointer transition-colors"
         onClick={() => navigate('/teachers')}
       >
-        <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-          <FileEdit className="w-4 h-4 text-blue-600" strokeWidth={2} />
+        <div className="w-9 h-9 bg-[#A855F7]/20 rounded-xl flex items-center justify-center flex-shrink-0">
+          <FileEdit className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-800">Teaching Staff</p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-blue-600 font-medium">{teachers.active} active</span>
+            <span className="text-xs text-[#5B21B6] font-medium">{teachers.active} active</span>
             <span className="text-xs text-gray-400">of {teachers.total} total</span>
           </div>
         </div>

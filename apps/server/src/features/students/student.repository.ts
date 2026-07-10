@@ -85,11 +85,47 @@ export const studentRepository = {
     return Student.findOne({ _id: id, schoolId, isDeleted: false }).lean<IStudent>();
   },
 
+  /** Used by the Excel import pipeline to upsert — re-uploading a file updates existing students instead of duplicating them. */
+  async findByAdmissionNumber(admissionNumber: string, schoolId: string): Promise<IStudent | null> {
+    return Student.findOne({ admissionNumber, schoolId, isDeleted: false }).lean<IStudent>();
+  },
+
+  /** Only ever set from an approved FeeDiscountRequest — never a general profile edit. */
+  async updateApprovedDiscount(id: string, schoolId: string, amount: number, reason: string): Promise<IStudent | null> {
+    return Student.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: { approvedDiscountAmount: amount, approvedDiscountReason: reason } },
+      { new: true },
+    ).lean<IStudent>();
+  },
+
   async update(id: string, schoolId: string, data: UpdateStudentInput & { updatedBy?: string }): Promise<IStudent | null> {
     return Student.findOneAndUpdate(
       { _id: id, schoolId, isDeleted: false },
       { $set: data },
       { new: true, runValidators: true }
+    ).lean<IStudent>();
+  },
+
+  /** Bulk-renames every student currently under `oldName` to `newName` — used when a
+   * class in the SchoolClass catalog is renamed, since Student.class is a free-text
+   * field with no foreign key back to the catalog. Returns how many rows changed. */
+  async renameClass(schoolId: string, oldName: string, newName: string): Promise<number> {
+    const result = await Student.updateMany(
+      { schoolId, class: oldName, isDeleted: false },
+      { $set: { class: newName } },
+    );
+    return result.modifiedCount;
+  },
+
+  async updatePhoto(id: string, schoolId: string, photoUrl: string | undefined, updatedBy: string): Promise<IStudent | null> {
+    const update = photoUrl
+      ? { $set: { photoUrl, updatedBy } }
+      : { $unset: { photoUrl: '' }, $set: { updatedBy } };
+    return Student.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      update,
+      { new: true },
     ).lean<IStudent>();
   },
 
@@ -121,5 +157,35 @@ export const studentRepository = {
   /** Includes soft-deleted rows so a freed-up admission number is never reissued. */
   async countByAdmissionYear(schoolId: string, admissionYear: number): Promise<number> {
     return Student.countDocuments({ schoolId, admissionYear });
+  },
+
+  /** Active student count per class+section — used for Principal/Admin's class-wise overview. */
+  async getClassSectionCounts(schoolId: string): Promise<{ class: string; section: string; count: number }[]> {
+    const rows = await Student.aggregate<{ _id: { class: string; section: string }; count: number }>([
+      { $match: { schoolId, isDeleted: false, admissionStatus: { $in: ['active', 'enrolled'] } } },
+      { $group: { _id: { class: '$class', section: '$section' }, count: { $sum: 1 } } },
+    ]);
+    return rows.map((r) => ({ class: r._id.class, section: r._id.section, count: r.count }));
+  },
+
+  /**
+   * Highest sequence number currently in use for the `ADM-{year}-NNNN` series.
+   * Counting students is unreliable for generating the next number — soft-deleted
+   * rows, gaps, and imports that carry their own admission numbers all leave the
+   * count out of step with the actual max, causing duplicate-key collisions.
+   * Basing the next number on the real max guarantees max+1 is always free.
+   * Scans soft-deleted rows too, since the unique index covers them.
+   */
+  async maxAdmissionSequence(schoolId: string, year: number): Promise<number> {
+    const prefix = `ADM-${year}-`;
+    const doc = await Student.findOne(
+      { schoolId, admissionNumber: { $regex: `^${prefix}\\d+$` } },
+      { admissionNumber: 1 },
+    )
+      .sort({ admissionNumber: -1 }) // zero-padded, so lexical sort == numeric sort
+      .lean<{ admissionNumber: string }>();
+    if (!doc) return 0;
+    const seq = parseInt(doc.admissionNumber.slice(prefix.length), 10);
+    return Number.isNaN(seq) ? 0 : seq;
   },
 };

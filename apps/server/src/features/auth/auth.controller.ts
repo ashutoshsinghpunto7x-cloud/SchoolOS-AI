@@ -48,6 +48,20 @@ export const authController = {
     }
   },
 
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { userId, schoolId, firstName, lastName } = req.user!;
+      await authService.changePassword(userId, req.body, {
+        schoolId,
+        displayName: `${firstName} ${lastName}`,
+        ip: req.ip ?? undefined,
+      });
+      sendSuccess(res, null, 'Password changed successfully');
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async seed(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (env.NODE_ENV !== 'development') {

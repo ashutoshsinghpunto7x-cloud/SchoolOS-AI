@@ -84,6 +84,28 @@ export const studentsApi = {
     }
   },
 
+  async uploadPhoto(id: string, file: File): Promise<Student> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post<ApiResponse<Student>>(`/students/${id}/photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async removePhoto(id: string): Promise<Student> {
+    try {
+      const res = await apiClient.delete<ApiResponse<Student>>(`/students/${id}/photo`);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   async changeStatus(id: string, status: string, reason?: string): Promise<Student> {
     try {
       const res = await apiClient.patch<ApiResponse<Student>>(`/students/${id}/status`, {

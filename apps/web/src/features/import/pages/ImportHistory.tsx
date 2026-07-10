@@ -11,6 +11,7 @@ const TYPE_OPTIONS: { label: string; value: ImportType | 'all' }[] = [
   { label: 'Teachers', value: 'teachers' },
   { label: 'Fees', value: 'fees' },
   { label: 'Admissions', value: 'admissions' },
+  { label: 'Attendance', value: 'attendance' },
 ];
 
 const STATUS_OPTIONS: { label: string; value: ImportStatus | 'all' }[] = [

@@ -1,5 +1,6 @@
 import { Student } from '../students/student.model';
 import { User } from '../users/user.model';
+import { Teacher } from '../teachers/teacher.model';
 import { Enquiry } from '../enquiries/enquiry.model';
 import { Timetable } from '../timetable/timetable.model';
 import { SchoolEvent } from '../events/event.model';
@@ -34,6 +35,15 @@ export const principalRepository = {
     const [total, active] = await Promise.all([
       User.countDocuments({ schoolId, role: 'teacher', deletedAt: { $exists: false } }),
       User.countDocuments({ schoolId, role: 'teacher', status: 'active', deletedAt: { $exists: false } }),
+    ]);
+    return { total, active };
+  },
+
+  /** Staff-directory counts (Teacher model, not User login accounts) — the same source LeaveRequest.teacherId points at. */
+  async countTeachersRoster(schoolId: string): Promise<{ total: number; active: number }> {
+    const [total, active] = await Promise.all([
+      Teacher.countDocuments({ schoolId, isDeleted: false }),
+      Teacher.countDocuments({ schoolId, isDeleted: false, employmentStatus: 'active' }),
     ]);
     return { total, active };
   },

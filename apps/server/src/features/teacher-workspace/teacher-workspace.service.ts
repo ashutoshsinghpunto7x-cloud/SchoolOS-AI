@@ -95,7 +95,7 @@ export const teacherWorkspaceService = {
           class:            timetable.class,
           section:          timetable.section,
           slotId:           entry.slotId,
-          slotName:         slot?.name ?? entry.slotId,
+          slotName:         slot?.name ?? '',
           startTime:        slot?.startTime ?? '',
           endTime:          slot?.endTime ?? '',
           subjectName:      entry.subjectName,
@@ -124,7 +124,7 @@ export const teacherWorkspaceService = {
               return {
                 dayOfWeek:   day,
                 slotId:      e.slotId,
-                slotName:    slot?.name ?? e.slotId,
+                slotName:    slot?.name ?? '',
                 startTime:   slot?.startTime ?? '',
                 endTime:     slot?.endTime ?? '',
                 subjectName: e.subjectName,

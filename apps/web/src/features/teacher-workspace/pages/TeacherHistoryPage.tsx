@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
+  ArrowLeft,
   ClipboardList,
   ChevronDown,
   ChevronUp,
@@ -8,8 +10,9 @@ import {
   AlertCircle,
   Search,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
-import { useAttendanceList } from '@/features/attendance/hooks/useAttendance';
+import { attendanceApi } from '@/features/attendance/api/attendance.api';
 import type { Attendance } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -89,8 +92,8 @@ function SessionCard({ session }: { session: SessionGroup }) {
       >
         <div className="flex items-center gap-3 px-4 py-3">
           {/* Date icon */}
-          <div className="w-10 h-10 bg-[#10B981]/10 rounded-xl flex items-center justify-center shrink-0">
-            <CalendarDays className="w-5 h-5 text-[#0B3D2E]" />
+          <div className="w-10 h-10 bg-[#A855F7]/10 rounded-xl flex items-center justify-center shrink-0">
+            <CalendarDays className="w-5 h-5 text-[#5B21B6]" />
           </div>
 
           {/* Info */}
@@ -167,44 +170,43 @@ function SessionCard({ session }: { session: SessionGroup }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export function TeacherHistoryPage() {
+  const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(thirtyDaysAgo());
   const [dateTo,   setDateTo]   = useState(todayStr());
   const [search,   setSearch]   = useState('');
 
   const { data: workspace } = useTeacherWorkspace();
 
-  // Get all unique class-section pairs to power the filter
-  // weekSchedule is pre-grouped: { dayOfWeek, entries: TeacherWeekEntry[] }[]
+  // Only classes this teacher is the assigned class teacher for — attendance
+  // can only ever be marked for those, so history is scoped the same way.
   const classPairs = useMemo(() => {
     if (!workspace) return [];
-    const seen = new Set<string>();
-    const pairs: { cls: string; section: string; label: string }[] = [];
-    for (const dayGroup of workspace.weekSchedule) {
-      for (const e of dayGroup.entries) {
-        const key = `${e.class}||${e.section}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          pairs.push({ cls: e.class, section: e.section, label: `${e.class} – ${e.section}` });
-        }
-      }
-    }
-    return pairs.sort((a, b) => a.label.localeCompare(b.label));
+    return (workspace.classTeacherOf ?? [])
+      .map((c) => ({ cls: c.class, section: c.section, label: `${c.class} – ${c.section}` }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [workspace]);
 
   const [selectedClass, setSelectedClass] = useState('');
 
   const selectedPair = classPairs.find((p) => `${p.cls}||${p.section}` === selectedClass);
 
-  const { data: attendanceData, isLoading, isError } = useAttendanceList({
-    class:    selectedPair?.cls,
-    section:  selectedPair?.section,
-    dateFrom,
-    dateTo,
-    limit:    500,
+  // When no specific class is picked, merge history across every class this
+  // teacher is the assigned class teacher for — never school-wide, since a
+  // teacher should only ever see attendance history for their own classes.
+  const { data: mergedRecords, isLoading, isError } = useQuery({
+    queryKey: ['teacher-attendance-history', classPairs.map((p) => `${p.cls}|${p.section}`), selectedClass, dateFrom, dateTo],
+    queryFn: async (): Promise<Attendance[]> => {
+      const targets = selectedPair ? [selectedPair] : classPairs;
+      const results = await Promise.all(
+        targets.map((p) => attendanceApi.list({ class: p.cls, section: p.section, dateFrom, dateTo, limit: 500 })),
+      );
+      return results.flatMap((r) => r.data);
+    },
+    enabled: classPairs.length > 0,
   });
 
   const sessions = useMemo(() => {
-    const records = attendanceData?.data ?? [];
+    const records = mergedRecords ?? [];
     const grouped = groupBySession(records);
     if (!search.trim()) return grouped;
     const q = search.toLowerCase();
@@ -213,7 +215,7 @@ export function TeacherHistoryPage() {
         `${s.cls} ${s.section}`.toLowerCase().includes(q) ||
         s.date.includes(q),
     );
-  }, [attendanceData, search]);
+  }, [mergedRecords, search]);
 
   const totalMarked = sessions.length;
   const totalStudents = sessions.reduce((s, g) => s + g.totalCount, 0);
@@ -222,14 +224,22 @@ export function TeacherHistoryPage() {
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 pt-6 pb-4">
+        <button
+          onClick={() => navigate('/teacher')}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-3 -ml-1 p-1"
+          type="button"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Attendance History</h1>
         <p className="text-sm text-gray-500 mt-0.5">Review past attendance sessions</p>
 
         {/* Stats */}
         <div className="flex gap-3 mt-4">
-          <div className="flex-1 bg-[#10B981]/5 border border-[#10B981]/20 rounded-xl px-3 py-2 text-center">
-            <p className="text-xl font-bold text-[#0B3D2E]">{totalMarked}</p>
-            <p className="text-xs text-[#0B3D2E]/80 font-medium">Sessions</p>
+          <div className="flex-1 bg-[#A855F7]/5 border border-[#A855F7]/20 rounded-xl px-3 py-2 text-center">
+            <p className="text-xl font-bold text-[#5B21B6]">{totalMarked}</p>
+            <p className="text-xs text-[#5B21B6]/80 font-medium">Sessions</p>
           </div>
           <div className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-center">
             <p className="text-xl font-bold text-gray-700">{totalStudents}</p>
@@ -248,7 +258,7 @@ export function TeacherHistoryPage() {
             placeholder="Search by class or date…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
+            className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
           />
         </div>
 
@@ -259,9 +269,9 @@ export function TeacherHistoryPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full h-11 pl-9 pr-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] appearance-none transition-colors"
+              className="w-full h-11 pl-9 pr-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] appearance-none transition-colors"
             >
-              <option value="">All Classes</option>
+              <option value="">All My Classes</option>
               {classPairs.map((p) => (
                 <option key={`${p.cls}||${p.section}`} value={`${p.cls}||${p.section}`}>
                   {p.label}
@@ -278,7 +288,7 @@ export function TeacherHistoryPage() {
             value={dateFrom}
             max={dateTo}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
+            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
           />
           <span className="text-gray-400 text-sm shrink-0">to</span>
           <input
@@ -287,7 +297,7 @@ export function TeacherHistoryPage() {
             min={dateFrom}
             max={todayStr()}
             onChange={(e) => setDateTo(e.target.value)}
-            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#10B981]/40 focus:border-[#0B3D2E] transition-colors"
+            className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
           />
         </div>
       </div>

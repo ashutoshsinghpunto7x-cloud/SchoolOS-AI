@@ -15,12 +15,16 @@ import { auditService } from '../audit/audit.service';
 import { studentRepository } from '../students/student.repository';
 import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
-import { timetableRepository } from '../timetable/timetable.repository';
 import { substituteRepository } from '../timetable/timetable.substitute.repository';
+import { classTeacherRepository } from '../classes/class-teacher.repository';
 
-// Verify a teacher is assigned to the given class/section in their published timetable,
-// or is an active substitute for that class/section on the attendance date.
-// No-op for non-teacher roles.
+// Only the class teacher assigned to a class/section (by admin/principal) may
+// mark its attendance — teaching a subject there is not enough, since a
+// subject teacher marking attendance for someone else's class would produce
+// attendance no one is accountable for. An active substitute for that class
+// on the given date is allowed too, since that's the whole point of a
+// substitution. No-op for non-teacher roles (admin/principal already have
+// school-wide authority here).
 async function assertTeacherCanMarkClass(
   ctx: AuthContext,
   cls: string,
@@ -38,12 +42,12 @@ async function assertTeacherCanMarkClass(
   if (!teacher) throw new ForbiddenError('Teacher profile not found');
 
   const teacherId = String(teacher._id);
-  const timetables = await timetableRepository.getTeacherSchedule(ctx.schoolId, teacherId);
-  const teachesClass = timetables.some((t) => t.class === cls && t.section === section);
-  if (teachesClass) return;
+
+  const assignment = await classTeacherRepository.findOne(ctx.schoolId, cls, section);
+  if (assignment && assignment.teacherId === teacherId) return;
 
   const isSubstitute = await substituteRepository.isActiveSubstitute(ctx.schoolId, teacherId, cls, section, date);
-  if (!isSubstitute) throw new ForbiddenError('You are not assigned to teach this class');
+  if (!isSubstitute) throw new ForbiddenError('You are not the class teacher for this class — only the assigned class teacher (or an active substitute) can mark attendance');
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────

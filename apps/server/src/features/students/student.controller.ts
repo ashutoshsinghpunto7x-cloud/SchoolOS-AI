@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { studentService } from './student.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { ValidationError } from '../../middlewares/errorHandler';
+import { fileToDataUri } from '../../lib/image-upload';
 
 export const studentController = {
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -63,6 +65,23 @@ export const studentController = {
       const ctx = buildAuthContext(req.user!);
       const student = await studentService.updateFeeProfile(req.params.id, req.body, ctx);
       sendSuccess(res, student, 'Student details updated');
+    } catch (err) { next(err); }
+  },
+
+  async uploadPhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('No file uploaded. Send the file in a "file" form field.');
+      const ctx = buildAuthContext(req.user!);
+      const student = await studentService.updatePhoto(req.params.id, fileToDataUri(req.file), ctx);
+      sendSuccess(res, student, 'Photo updated');
+    } catch (err) { next(err); }
+  },
+
+  async removePhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const student = await studentService.removePhoto(req.params.id, ctx);
+      sendSuccess(res, student, 'Photo removed');
     } catch (err) { next(err); }
   },
 

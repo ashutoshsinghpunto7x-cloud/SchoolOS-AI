@@ -5,6 +5,8 @@ import type {
   ClassDefaulterGroup,
   SendDefaultersToTeacherPayload,
   SendReceiptEmailPayload,
+  StudentLedgerData,
+  ClassFeeSummary,
 } from '@schoolos/types';
 
 export const accountantWorkspaceApi = {
@@ -37,6 +39,42 @@ export const accountantWorkspaceApi = {
   async sendReceiptEmail(payload: SendReceiptEmailPayload): Promise<void> {
     try {
       await apiClient.post('/accountant-workspace/receipts/send-email', payload);
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async getStudentLedger(studentId: string): Promise<StudentLedgerData> {
+    try {
+      const res = await apiClient.get<ApiResponse<StudentLedgerData>>(`/accountant-workspace/student-ledger/${studentId}`);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async getClassFeeSummary(klass: string, section: string): Promise<ClassFeeSummary> {
+    try {
+      const res = await apiClient.get<ApiResponse<ClassFeeSummary>>('/accountant-workspace/class-fee-summary', {
+        params: { class: klass, section },
+      });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async sendLedgerWhatsAppReminder(studentId: string): Promise<void> {
+    try {
+      await apiClient.post(`/accountant-workspace/student-ledger/${studentId}/whatsapp-reminder`);
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async sendLedgerStatementEmail(studentId: string): Promise<void> {
+    try {
+      await apiClient.post(`/accountant-workspace/student-ledger/${studentId}/email-statement`);
     } catch (err) {
       throw new Error(extractErrorMessage(err));
     }

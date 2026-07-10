@@ -4,7 +4,7 @@ import { userRepository } from '../users/user.repository';
 import { NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { sendMessageToTeachersSchema } from './notification.validation';
-import type { NotificationType } from './notification.model';
+import type { NotificationType, NotificationPriority } from './notification.model';
 import type { NotificationListResult, SendMessageToTeachersResult } from '@schoolos/types';
 
 interface SendToTeachersInput {
@@ -13,6 +13,7 @@ interface SendToTeachersInput {
   title: string;
   body: string;
   payload?: Record<string, unknown>;
+  priority?: NotificationPriority;
 }
 
 interface SendToUserInput {
@@ -21,6 +22,7 @@ interface SendToUserInput {
   title: string;
   body: string;
   payload?: Record<string, unknown>;
+  priority?: NotificationPriority;
 }
 
 export const notificationService = {
@@ -44,6 +46,7 @@ export const notificationService = {
         title: n.title,
         body: n.body,
         payload: n.payload,
+        priority: n.priority ?? 'normal',
         senderName: n.senderName,
         isRead: n.isRead,
         createdAt: (n.createdAt as Date).toISOString(),
@@ -109,6 +112,7 @@ export const notificationService = {
       title: input.title,
       body: input.body,
       payload: input.payload,
+      priority: input.priority,
       senderUserId: ctx.userId,
       senderName: ctx.displayName,
     });

@@ -2,8 +2,26 @@ import { Request, Response, NextFunction } from 'express';
 import { eventService } from './event.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { ValidationError } from '../../middlewares/errorHandler';
+import { fileToDataUri } from '../../lib/image-upload';
 
 export const eventController = {
+  async uploadAttachment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('No file uploaded. Send the file in a "file" form field.');
+      const ctx = buildAuthContext(req.user!);
+      const event = await eventService.setAttachment(req.params.id, fileToDataUri(req.file), req.file.originalname, ctx);
+      sendSuccess(res, event, 'Attachment uploaded');
+    } catch (err) { next(err); }
+  },
+
+  async removeAttachment(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const event = await eventService.removeAttachment(req.params.id, ctx);
+      sendSuccess(res, event, 'Attachment removed');
+    } catch (err) { next(err); }
+  },
   async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx   = buildAuthContext(req.user!);

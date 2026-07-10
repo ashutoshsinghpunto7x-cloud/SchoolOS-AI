@@ -3,12 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Pencil, MapPin, Clock, Users, Tag,
   StickyNote, Loader2, AlertCircle, ChevronDown, CheckCircle2,
+  Paperclip, Upload, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import {
   useEvent, useUpdateEventStatus, useDeleteEvent,
   useMarkEventRead, useEventReadReceipts,
+  useUploadEventAttachment, useRemoveEventAttachment,
 } from '../hooks/useEvents';
 import { EventStatusBadge } from '../components/EventStatusBadge';
 import { EventTypeBadge, EVENT_TYPE_COLOR } from '../components/EventTypeBadge';
@@ -46,6 +48,9 @@ export const EventDetailPage = () => {
   const { mutateAsync: deleteEvent, isPending: deleting }        = useDeleteEvent();
   const { mutate: markRead } = useMarkEventRead();
   const { data: receipts, isLoading: receiptsLoading } = useEventReadReceipts(id!, isAdmin);
+  const { mutateAsync: uploadAttachment, isPending: uploading } = useUploadEventAttachment(id!);
+  const { mutateAsync: removeAttachment, isPending: removingAttachment } = useRemoveEventAttachment(id!);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNotReadList, setShowNotReadList] = useState(false);
@@ -95,6 +100,12 @@ export const EventDetailPage = () => {
   async function handleDelete() {
     await deleteEvent(id!);
     navigate('/calendar');
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) await uploadAttachment(file);
+    e.target.value = '';
   }
 
   return (
@@ -191,7 +202,7 @@ export const EventDetailPage = () => {
           </button>
         )}
 
-        {transitions.length > 0 && (
+        {isAdmin && transitions.length > 0 && (
           <div className="relative">
             <button
               type="button"
@@ -287,6 +298,57 @@ export const EventDetailPage = () => {
           )}
         </div>
       )}
+
+      {/* Attachment — plan of the day / supporting file, photo, or document */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
+          <Paperclip className="w-4 h-4 text-gray-400" />
+          Attachment
+        </h3>
+
+        {event.attachmentUrl ? (
+          <div className="flex items-center gap-4">
+            {event.attachmentUrl.startsWith('data:image/') ? (
+              <img src={event.attachmentUrl} alt={event.attachmentName ?? 'Attachment'} className="w-24 h-24 rounded-xl object-cover border border-gray-100 shrink-0" />
+            ) : (
+              <div className="w-24 h-24 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                <Paperclip className="w-8 h-8 text-gray-300" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <a href={event.attachmentUrl} download={event.attachmentName} className="text-sm font-semibold text-blue-600 hover:underline truncate block">
+                {event.attachmentName || 'Download attachment'}
+              </a>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => void removeAttachment()}
+                  disabled={removingAttachment}
+                  className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" /> Remove
+                </button>
+              )}
+            </div>
+          </div>
+        ) : isAdmin ? (
+          <div>
+            <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" onChange={(e) => void handleFileChange(e)} className="hidden" />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 h-10 px-4 rounded-xl border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {uploading ? 'Uploading…' : 'Upload File / Photo'}
+            </button>
+            <p className="text-xs text-gray-400 mt-2">Images, PDF, or Word — up to 2MB.</p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No attachment for this event.</p>
+        )}
+      </div>
 
       {/* Notes */}
       {event.notes && (

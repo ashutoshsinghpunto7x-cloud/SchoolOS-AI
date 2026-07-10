@@ -53,8 +53,10 @@ export interface IFeeRecord extends Document {
   discountReason?: string;
   waivedAmount: number;       // amount formally waived (default 0)
   waivedReason?: string;
+  fineAmount: number;         // late fine added on top of totalAmount (default 0)
+  fineReason?: string;
   paidAmount: number;         // sum of all successful payments
-  balance: number;            // totalAmount - discountAmount - waivedAmount - paidAmount
+  balance: number;            // totalAmount + fineAmount - discountAmount - waivedAmount - paidAmount
 
   // Lifecycle
   dueDate: Date;
@@ -109,6 +111,8 @@ const feeRecordSchema = new Schema<IFeeRecord>(
     discountReason:  { type: String, trim: true },
     waivedAmount:    { type: Number, default: 0, min: 0 },
     waivedReason:    { type: String, trim: true },
+    fineAmount:      { type: Number, default: 0, min: 0 },
+    fineReason:      { type: String, trim: true },
     paidAmount:      { type: Number, default: 0, min: 0 },
     balance:         { type: Number, required: true, min: 0 },
 

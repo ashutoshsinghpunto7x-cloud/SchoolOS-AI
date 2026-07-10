@@ -13,22 +13,30 @@ function currentDayOfWeek(): number {
 }
 
 function EntryCard({ entry }: { entry: TeacherWeekEntry }) {
+  const hasTime = Boolean(entry.startTime && entry.endTime);
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center gap-3">
-      <div className="w-12 shrink-0 text-center">
-        <p className="text-xs font-bold text-[#0B3D2E]">{entry.startTime}</p>
-        <p className="text-xs text-gray-400">{entry.endTime}</p>
+      <div className="w-14 shrink-0 text-center">
+        {hasTime ? (
+          <>
+            <p className="text-xs font-bold text-[#5B21B6]">{entry.startTime}</p>
+            <p className="text-xs text-gray-400">{entry.endTime}</p>
+          </>
+        ) : (
+          <p className="text-xs text-gray-300">—</p>
+        )}
       </div>
       <div className="w-px h-10 bg-gray-100 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold text-gray-900 truncate">{entry.subjectName}</p>
-        <p className="text-xs text-gray-500">
-          Class {entry.class} – {entry.section}
-          {entry.roomNumber && ` · Room ${entry.roomNumber}`}
-        </p>
+        <p className="text-xs text-gray-500">Class {entry.class} – {entry.section}</p>
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-xs font-medium text-gray-400">{entry.slotName}</p>
+        {entry.roomNumber ? (
+          <p className="text-xs font-semibold text-gray-500">Room {entry.roomNumber}</p>
+        ) : (
+          <p className="text-xs text-gray-300">No room</p>
+        )}
       </div>
     </div>
   );
@@ -45,7 +53,7 @@ export function TeacherTimetablePage() {
     data?.weekSchedule.find((d) => d.dayOfWeek === activeDay)?.entries ?? [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
         <button
@@ -73,18 +81,18 @@ export function TeacherTimetablePage() {
                 onClick={() => setActiveDay(day)}
                 className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors relative ${
                   isActive
-                    ? 'bg-[#0B3D2E] text-white'
+                    ? 'bg-[#5B21B6] text-white'
                     : isToday
-                    ? 'bg-[#10B981]/10 text-[#0B3D2E]'
+                    ? 'bg-[#A855F7]/10 text-[#5B21B6]'
                     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                 }`}
               >
                 {DAY_LABELS[day]}
                 {hasClass && !isActive && (
-                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#10B981] rounded-full" />
+                  <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#A855F7] rounded-full" />
                 )}
                 {isToday && !isActive && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#0B3D2E] rounded-full" />
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#5B21B6] rounded-full" />
                 )}
               </button>
             );
@@ -107,9 +115,9 @@ export function TeacherTimetablePage() {
         ) : (
           <div className="space-y-3">
             {activeDay === todayDow && (
-              <div className="flex items-center gap-2 bg-[#10B981]/10 border border-[#10B981]/20 rounded-2xl px-4 py-2.5">
-                <CalendarCheck className="w-4 h-4 text-[#0B3D2E] shrink-0" />
-                <p className="text-sm text-[#0B3D2E] font-medium">Today's schedule</p>
+              <div className="flex items-center gap-2 bg-[#A855F7]/10 border border-[#A855F7]/20 rounded-2xl px-4 py-2.5">
+                <CalendarCheck className="w-4 h-4 text-[#5B21B6] shrink-0" />
+                <p className="text-sm text-[#5B21B6] font-medium">Today's schedule</p>
               </div>
             )}
             {activeDayEntries.map((entry) => (

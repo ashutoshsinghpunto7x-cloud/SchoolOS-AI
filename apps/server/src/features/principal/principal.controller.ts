@@ -25,4 +25,15 @@ export const principalController = {
       next(err);
     }
   },
+
+  async getTeachersSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const date = typeof req.query.date === 'string' ? req.query.date : undefined;
+      const data = await principalService.getTeachersSummary(ctx.schoolId, date);
+      sendSuccess(res, data, 'Teachers summary loaded');
+    } catch (err) {
+      next(err);
+    }
+  },
 };

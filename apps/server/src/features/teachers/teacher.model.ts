@@ -36,6 +36,7 @@ export interface ITeacher extends Document {
   dateOfBirth?: Date;
   // Identity
   employeeId: string;
+  photoUrl?: string;
   // Contact
   phone: string;
   alternatePhone?: string;
@@ -54,6 +55,9 @@ export interface ITeacher extends Document {
   // Meta
   tags: string[];
   remarks?: string;
+  /** Arbitrary extra columns from an import file that don't map to a known field
+   * (e.g. Blood Group, Previous School, Aadhar Number) — kept instead of dropped. */
+  customFields?: Record<string, unknown>;
   // Soft delete
   isDeleted: boolean;
   deletedAt?: Date;
@@ -92,6 +96,7 @@ const teacherSchema = new Schema<ITeacher>(
     gender:          { type: String, enum: ['male', 'female', 'other'], required: true },
     dateOfBirth:     { type: Date },
     employeeId:      { type: String, required: true, unique: true, trim: true },
+    photoUrl:        { type: String },
     phone:           { type: String, required: true, trim: true },
     alternatePhone:  { type: String, trim: true },
     email:           { type: String, trim: true, lowercase: true },
@@ -106,6 +111,7 @@ const teacherSchema = new Schema<ITeacher>(
     employmentStatus:{ type: String, enum: EMPLOYMENT_STATUSES, default: 'applicant' },
     tags:            { type: [String], default: [] },
     remarks:         { type: String, trim: true },
+    customFields:    { type: Schema.Types.Mixed },
     isDeleted:       { type: Boolean, default: false },
     deletedAt:       { type: Date },
     deletedBy:       { type: String },

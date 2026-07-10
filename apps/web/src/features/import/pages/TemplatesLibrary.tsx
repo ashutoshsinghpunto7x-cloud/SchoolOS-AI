@@ -8,6 +8,7 @@ const TYPE_COLORS: Record<string, string> = {
   teachers:   'bg-purple-50 border-purple-100',
   fees:       'bg-green-50 border-green-100',
   admissions: 'bg-orange-50 border-orange-100',
+  attendance: 'bg-teal-50 border-teal-100',
 };
 
 export function TemplatesLibrary() {

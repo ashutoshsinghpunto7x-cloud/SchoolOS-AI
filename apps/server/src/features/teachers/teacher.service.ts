@@ -97,6 +97,25 @@ export const teacherService = {
     return teacher;
   },
 
+  async updatePhoto(id: string, dataUri: string, ctx: AuthContext): Promise<ITeacher> {
+    const teacher = await teacherRepository.updatePhoto(id, ctx.schoolId, dataUri, ctx.displayName);
+    if (!teacher) throw new NotFoundError('Teacher');
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'teacher.updated', resource: 'teachers', resourceId: id,
+      details: { fields: ['photoUrl'] }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return teacher;
+  },
+
+  async removePhoto(id: string, ctx: AuthContext): Promise<ITeacher> {
+    const teacher = await teacherRepository.updatePhoto(id, ctx.schoolId, undefined, ctx.displayName);
+    if (!teacher) throw new NotFoundError('Teacher');
+    return teacher;
+  },
+
   async changeStatus(id: string, rawInput: unknown, ctx: AuthContext): Promise<ITeacher> {
     const { status, reason } = changeStatusSchema.parse(rawInput);
 

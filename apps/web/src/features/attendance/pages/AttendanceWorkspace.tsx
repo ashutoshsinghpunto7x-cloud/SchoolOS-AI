@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Users, ChevronRight, RefreshCw } from 'lucide-react';
+import { CalendarDays, Users, ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
 import { useAttendanceSummary, useClassAttendance } from '../hooks/useAttendance';
 import { AttendanceSummaryCard } from '../components/AttendanceSummaryCard';
 import { AttendanceStatusBadge } from '../components/AttendanceStatusBadge';
@@ -12,50 +12,103 @@ function todayStr() {
   return new Date().toISOString().split('T')[0];
 }
 
+function addDays(dateStr: string, n: number) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().split('T')[0];
+}
+
+function formatDisplayDate(dateStr: string) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
 export function AttendanceWorkspace() {
   const navigate = useNavigate();
   const today    = todayStr();
 
+  const [date, setDate] = useState(today);
   const [selectedClass,   setSelectedClass]   = useState('');
   const [selectedSection, setSelectedSection] = useState('');
 
-  const { data: summary, isLoading: summaryLoading } = useAttendanceSummary({ dateFrom: today, dateTo: today });
+  const { data: summary, isLoading: summaryLoading } = useAttendanceSummary({ dateFrom: date, dateTo: date });
 
   const canLoadClass = !!selectedClass && !!selectedSection;
   const { data: classRecords, isLoading: classLoading, refetch: refetchClass } =
-    useClassAttendance(selectedClass, selectedSection, today);
+    useClassAttendance(selectedClass, selectedSection, date);
 
   const hasRecords = classRecords && classRecords.length > 0;
+  const isToday = date === today;
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] p-6">
       {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">{formatDisplayDate(date)}</p>
+        </div>
+
+        {/* Date navigation — lets a principal/admin look back at previous days' attendance */}
+        <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-2 py-1.5">
+          <button
+            type="button"
+            onClick={() => setDate((d) => addDays(d, -1))}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Previous day"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-500" />
+          </button>
+          <input
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            className="text-sm font-medium text-gray-700 border-none focus:outline-none bg-transparent"
+          />
+          <button
+            type="button"
+            onClick={() => setDate((d) => addDays(d, 1))}
+            disabled={isToday}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            aria-label="Next day"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          </button>
+          {!isToday && (
+            <button
+              type="button"
+              onClick={() => setDate(today)}
+              className="text-xs font-semibold text-blue-600 hover:underline px-2"
+            >
+              Today
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Today's summary */}
+      {/* Summary for the selected date */}
       <section className="mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Today's Overview</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          {isToday ? "Today's Overview" : 'Overview'}
+        </h2>
         {summaryLoading ? (
           <div className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse h-32" />
         ) : summary ? (
-          <AttendanceSummaryCard summary={summary} label="School-wide Today" />
+          <AttendanceSummaryCard summary={summary} label={isToday ? 'School-wide Today' : `School-wide — ${date}`} />
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 p-5 text-sm text-gray-500">
-            No attendance recorded today yet.
+            No attendance recorded for this date yet.
           </div>
         )}
       </section>
 
-      {/* Class selector + take attendance */}
+      {/* Class selector + view/take attendance */}
       <section className="mb-6">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Take Attendance</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+          {isToday ? 'Take Attendance' : 'View Attendance Record'}
+        </h2>
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex gap-3 flex-wrap">
             <div className="flex flex-col gap-1">
@@ -86,13 +139,13 @@ export function AttendanceWorkspace() {
                 <button
                   onClick={() =>
                     navigate(
-                      `/attendance/class/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSection)}`
+                      `/attendance/class/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSection)}?date=${date}`
                     )
                   }
                   className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Users className="w-4 h-4" />
-                  Take Attendance
+                  {isToday ? 'Take Attendance' : 'View Attendance'}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

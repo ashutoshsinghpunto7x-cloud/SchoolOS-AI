@@ -51,6 +51,8 @@ export interface CreateFeeData {
   discountAmount: number;
   discountReason?: string;
   waivedAmount: number;
+  fineAmount: number;
+  fineReason?: string;
   paidAmount: number;
   balance: number;
   status: FeeStatus;
@@ -126,6 +128,23 @@ export const feeRepository = {
     return FeeRecord.find(query).sort({ dueDate: 1 }).lean<IFeeRecord[]>();
   },
 
+  /** All fee records for a class+section, across every fee head — no pagination, used
+   * to compute each student's overall balance for the class-wise Fee Records view. */
+  async findByClassSection(schoolId: string, klass: string, section: string): Promise<IFeeRecord[]> {
+    return FeeRecord.find({ schoolId, class: klass, section, isDeleted: false }).lean<IFeeRecord[]>();
+  },
+
+  /** Collected vs. pending totals for every class+section that has at least one fee
+   * record — used for Principal/Admin's class-wise fee overview. One aggregate query
+   * instead of one query per class+section. */
+  async getClassSectionTotals(schoolId: string): Promise<{ class: string; section: string; collected: number; pending: number }[]> {
+    const rows = await FeeRecord.aggregate<{ _id: { class: string; section: string }; collected: number; pending: number }>([
+      { $match: { schoolId, isDeleted: false } },
+      { $group: { _id: { class: '$class', section: '$section' }, collected: { $sum: '$paidAmount' }, pending: { $sum: '$balance' } } },
+    ]);
+    return rows.map((r) => ({ class: r._id.class, section: r._id.section, collected: r.collected, pending: r.pending }));
+  },
+
   /** Find a specific month's fee record for a student (used to avoid duplicate months on recurring/bulk generation). */
   async findByStudentAndMonth(
     schoolId: string,
@@ -195,7 +214,7 @@ export const feeRepository = {
     if (!record) return null;
 
     const newPaidAmount = record.paidAmount + paymentAmount;
-    const newBalance    = Math.max(0, record.totalAmount - record.discountAmount - record.waivedAmount - newPaidAmount);
+    const newBalance    = Math.max(0, record.totalAmount + record.fineAmount - record.discountAmount - record.waivedAmount - newPaidAmount);
 
     let newStatus: FeeStatus;
     if (newBalance === 0) {

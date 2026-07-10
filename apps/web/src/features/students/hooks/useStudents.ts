@@ -99,6 +99,28 @@ export const useUpdateFeeProfile = (id: string) => {
   });
 };
 
+export const useUploadStudentPhoto = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => studentsApi.uploadPhoto(id, file),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      queryClient.setQueryData(studentKeys.detail(id), updated);
+    },
+  });
+};
+
+export const useRemoveStudentPhoto = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => studentsApi.removePhoto(id),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      queryClient.setQueryData(studentKeys.detail(id), updated);
+    },
+  });
+};
+
 export const useChangeStudentStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({

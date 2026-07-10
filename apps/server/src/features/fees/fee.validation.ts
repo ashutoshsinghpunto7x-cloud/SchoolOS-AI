@@ -33,6 +33,8 @@ export const createFeeRecordSchema = z.object({
   totalAmount:    currency('totalAmount'),
   discountAmount: z.number().min(0).multipleOf(0.01).default(0),
   discountReason: z.string().max(200).trim().optional(),
+  fineAmount:     z.number().min(0).multipleOf(0.01).default(0),
+  fineReason:     z.string().max(200).trim().optional(),
   notes:          z.string().max(2000).trim().optional(),
 });
 
@@ -47,6 +49,8 @@ export const updateFeeRecordSchema = z.object({
   status:         z.enum(FEE_STATUSES).optional(),
   waivedAmount:   z.number().min(0).multipleOf(0.01).optional(),
   waivedReason:   z.string().max(200).trim().optional(),
+  fineAmount:     z.number().min(0).multipleOf(0.01).optional(),
+  fineReason:     z.string().max(200).trim().optional(),
   notes:          z.string().max(2000).trim().optional(),
 });
 

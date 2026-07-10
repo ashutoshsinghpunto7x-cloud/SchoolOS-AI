@@ -10,6 +10,7 @@ router.use(authenticate);
 router.post('/', leaveRequestController.create);
 router.get('/mine', leaveRequestController.listMine);
 router.get('/pending', authorize('admin', 'principal'), leaveRequestController.listPending);
+router.get('/:id', leaveRequestController.getById);
 router.patch('/:id/approve', authorize('admin', 'principal'), leaveRequestController.approve);
 router.patch('/:id/reject', authorize('admin', 'principal'), leaveRequestController.reject);
 

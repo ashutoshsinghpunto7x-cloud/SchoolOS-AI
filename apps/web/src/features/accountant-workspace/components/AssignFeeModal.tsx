@@ -34,7 +34,7 @@ export function AssignFeeModal({ onClose, onAssigned }: Props) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search student by name, roll no., or admission no."
-                className="w-full h-11 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
+                className="w-full h-11 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
               />
             </div>
             {isLoading ? (
@@ -47,9 +47,9 @@ export function AssignFeeModal({ onClose, onAssigned }: Props) {
                   <button
                     key={s._id}
                     onClick={() => setStudent(s)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-[#10B981]/40 hover:bg-gray-50 text-left transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-left transition-colors"
                   >
-                    <div className="w-9 h-9 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981] font-bold text-xs shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-900 font-bold text-xs shrink-0">
                       {s.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -63,7 +63,7 @@ export function AssignFeeModal({ onClose, onAssigned }: Props) {
           </>
         ) : (
           <>
-            <button onClick={() => setStudent(null)} className="text-xs font-semibold text-[#10B981] hover:underline mb-3">
+            <button onClick={() => setStudent(null)} className="text-xs font-semibold text-gray-900 hover:underline mb-3">
               ← Choose a different student
             </button>
             <p className="text-sm font-semibold text-gray-800 mb-3">{student.fullName} · Class {student.class}-{student.section}</p>

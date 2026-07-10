@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import {Clock,ChevronRight,AlertCircle,CalendarCheck,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
@@ -77,6 +77,67 @@ function getCurrentPeriod(classes: TodayClass[]): { cls: TodayClass; isNow: bool
   return null;
 }
 
+// ── Class info modal — tapping a Today's Classes card shows where/what the
+// class is; it no longer jumps straight into the attendance sheet. ──────────
+
+function ClassInfoModal({
+  cls, onClose, onMarkAttendance,
+}: {
+  cls: TodayClass; onClose: () => void; onMarkAttendance: () => void;
+}) {
+  const { icon: SubjectIcon, bg, text } = getSubjectStyle(cls.subjectName);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0', bg)}>
+            <SubjectIcon className={cn('w-6 h-6', text)} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-gray-900 truncate">{cls.subjectName}</p>
+            <p className="text-sm text-gray-400">Class {cls.class} – {cls.section}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-2.5 text-sm text-gray-700">
+            <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+            {cls.startTime} – {cls.endTime}
+          </div>
+          <div className="flex items-center gap-2.5 text-sm text-gray-700">
+            <Users className="w-4 h-4 text-gray-400 shrink-0" />
+            Class {cls.class} – {cls.section} · {cls.totalStudents} student{cls.totalStudents !== 1 ? 's' : ''}
+          </div>
+          <div className="flex items-center gap-2.5 text-sm text-gray-700">
+            <BookOpen className="w-4 h-4 text-gray-400 shrink-0" />
+            {cls.subjectName}
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={onMarkAttendance}
+            className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold transition-colors"
+          >
+            Mark Attendance
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Today class card ──────────────────────────────────────────────────────────
 
 function TodayClassCard({
@@ -98,7 +159,7 @@ function TodayClassCard({
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#10B981]/20 transition-all duration-200 group"
+      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 transition-all duration-200 group"
     >
       {/* Subject icon */}
       <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', bg)}>
@@ -120,7 +181,7 @@ function TodayClassCard({
         <p className="text-sm font-bold text-gray-900 truncate leading-tight mt-0.5">
           {cls.subjectName}
         </p>
-        <span className="inline-block text-xs font-semibold text-[#0B3D2E] bg-[#10B981]/10 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-block text-xs font-semibold text-[#5B21B6] bg-[#A855F7]/10 px-2 py-0.5 rounded-full mt-1">
           {cls.class} - {cls.section}
         </span>
       </div>
@@ -162,7 +223,7 @@ function TodayClassCard({
             Pending
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-xs font-bold text-[#0B3D2E] bg-[#10B981]/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[#5B21B6] bg-[#A855F7]/10 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Starts {cls.startTime}
           </span>
@@ -170,7 +231,7 @@ function TodayClassCard({
         <ChevronRight
           className={cn(
             'w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5',
-            isMarked ? 'text-emerald-400' : 'text-[#0B3D2E]',
+            isMarked ? 'text-emerald-400' : 'text-[#5B21B6]',
           )}
         />
       </div>
@@ -210,7 +271,23 @@ const LEAVE_STATUS_STYLE: Record<string, string> = {
 
 function MyLeaveSection({ onApply }: { onApply: () => void }) {
   const { data: requests, isLoading } = useMyLeaveRequests();
-  const recent = (requests ?? []).slice(0, 3);
+  const recent = (requests ?? []).slice(0, 5);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  function handleScroll() {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  function goNext() {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: Math.min(recent.length - 1, activeIndex + 1) * el.clientWidth, behavior: 'smooth' });
+  }
+
+  const hasMore = recent.length > 1 && activeIndex < recent.length - 1;
 
   return (
     <section>
@@ -220,7 +297,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
         </h2>
         <button
           onClick={onApply}
-          className="text-xs font-semibold text-[#0B3D2E] flex items-center gap-0.5 hover:underline"
+          className="text-xs font-semibold text-[#5B21B6] flex items-center gap-0.5 hover:underline"
         >
           Apply for leave
         </button>
@@ -233,28 +310,120 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
           No leave requests yet.
         </div>
       ) : (
-        <div className="space-y-2">
-          {recent.map((req) => (
-            <div
-              key={req._id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  {req.leaveType === 'full_day' ? 'Full day' : 'Half day'}
-                  {' · '}
-                  {req.dateFrom === req.dateTo ? req.dateFrom : `${req.dateFrom} – ${req.dateTo}`}
-                </p>
-                <p className="text-xs text-gray-400 truncate mt-0.5">{req.reason}</p>
+        <div className="relative">
+          <div
+            ref={scrollerRef}
+            onScroll={handleScroll}
+            className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-1 px-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {recent.map((req) => (
+              <div
+                key={req._id}
+                className="w-full shrink-0 snap-center bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {req.leaveType === 'full_day' ? 'Full day' : 'Half day'}
+                    {' · '}
+                    {req.dateFrom === req.dateTo ? req.dateFrom : `${req.dateFrom} – ${req.dateTo}`}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">{req.reason}</p>
+                </div>
+                <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full shrink-0 capitalize', LEAVE_STATUS_STYLE[req.status])}>
+                  {req.status}
+                </span>
               </div>
-              <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full shrink-0 capitalize', LEAVE_STATUS_STYLE[req.status])}>
-                {req.status}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Next leave request"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center text-gray-500 hover:text-[#5B21B6] transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )}
     </section>
+  );
+}
+
+// ── Today's Classes carousel ────────────────────────────────────────────────
+// Shows every class scheduled today, snapped to a horizontal slider so the
+// teacher can swipe through past/upcoming periods instead of a static stack.
+// Opens centered on whichever period is live/next right now.
+
+function TodaysClassesCarousel({
+  classes,
+  currentPeriod,
+  onPress,
+}: {
+  classes: TodayClass[];
+  currentPeriod: { cls: TodayClass; isNow: boolean } | null;
+  onPress: (cls: TodayClass) => void;
+}) {
+  const sorted = [...classes].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const focusIndex = currentPeriod
+      ? sorted.findIndex((c) => c.slotId === currentPeriod.cls.slotId)
+      : 0;
+    setActiveIndex(Math.max(0, focusIndex));
+    const el = scrollerRef.current;
+    if (el && focusIndex > 0) {
+      el.scrollTo({ left: focusIndex * el.clientWidth, behavior: 'auto' });
+    }
+    // Only re-center when the set of classes for the day actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sorted.length]);
+
+  function handleScroll() {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setActiveIndex(Math.round(el.scrollLeft / el.clientWidth));
+  }
+
+  function goNext() {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ left: Math.min(sorted.length - 1, activeIndex + 1) * el.clientWidth, behavior: 'smooth' });
+  }
+
+  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const hasMore = sorted.length > 1 && activeIndex < sorted.length - 1;
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory gap-3 -mx-1 px-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {sorted.map((cls) => {
+          const isNow = nowMinutes >= toMinutes(cls.startTime) && nowMinutes < toMinutes(cls.endTime);
+          return (
+            <div key={cls.slotId} className="w-full shrink-0 snap-center">
+              <TodayClassCard cls={cls} isNow={isNow} onPress={() => onPress(cls)} />
+            </div>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={goNext}
+          aria-label="Next class"
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center text-gray-500 hover:text-[#5B21B6] transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -265,6 +434,7 @@ export function TeacherDashboard() {
   const { user }  = useAuth();
   const { data, isLoading, isError, error } = useTeacherWorkspace();
   const [showApplyLeave, setShowApplyLeave] = useState(false);
+  const [infoClass, setInfoClass] = useState<TodayClass | null>(null);
 
   const firstName = user?.firstName ?? data?.teacher.fullName.split(' ')[0] ?? 'Teacher';
 
@@ -296,7 +466,7 @@ export function TeacherDashboard() {
       {/* ── Hero header ────────────────────────────────────────────────────── */}
       <div
         className="px-5 pt-8 pb-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #163C2A 0%, #0F5132 45%, #08251B 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
       >
         {/* Decorative blobs */}
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
@@ -310,7 +480,7 @@ export function TeacherDashboard() {
         <button
           type="button"
           onClick={handleMarkAttendance}
-          className="mt-5 w-full h-12 bg-white text-[#0B3D2E] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
+          className="mt-5 w-full h-12 bg-white text-[#5B21B6] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
         >
           <CalendarCheck className="w-[18px] h-[18px]" />
           Mark Attendance
@@ -326,10 +496,10 @@ export function TeacherDashboard() {
               Today's Classes
             </h2>
             <button
-              onClick={() => navigate('/teacher/classes')}
-              className="text-xs font-semibold text-[#0B3D2E] flex items-center gap-0.5 hover:underline"
+              onClick={() => navigate('/teacher/timetable')}
+              className="text-xs font-semibold text-[#5B21B6] flex items-center gap-0.5 hover:underline"
             >
-              View all
+              View timetable
               <ChevronRight className="w-3 h-3" />
             </button>
           </div>
@@ -349,8 +519,8 @@ export function TeacherDashboard() {
             </div>
           ) : !currentPeriod ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-              <div className="w-14 h-14 bg-[#10B981]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <CalendarCheck className="w-7 h-7 text-[#0B3D2E]" />
+              <div className="w-14 h-14 bg-[#A855F7]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <CalendarCheck className="w-7 h-7 text-[#5B21B6]" />
               </div>
               <p className="text-base font-semibold text-gray-700">
                 {data?.todayClasses.length ? 'No more classes today' : 'No classes today'}
@@ -358,19 +528,26 @@ export function TeacherDashboard() {
               <p className="text-sm text-gray-400 mt-1">Enjoy your free day!</p>
             </div>
           ) : (
-            <TodayClassCard
-              key={`${currentPeriod.cls.class}-${currentPeriod.cls.section}-${currentPeriod.cls.slotId}`}
-              cls={currentPeriod.cls}
-              isNow={currentPeriod.isNow}
-              onPress={() => goToAttendance(currentPeriod.cls)}
+            <TodaysClassesCarousel
+              classes={data?.todayClasses ?? []}
+              currentPeriod={currentPeriod}
+              onPress={setInfoClass}
             />
           )}
         </section>
 
-        <MyLeaveSection onApply={() => setShowApplyLeave(true)} />
-
         <UpcomingEventsWidget />
+
+        <MyLeaveSection onApply={() => setShowApplyLeave(true)} />
       </div>
+
+      {infoClass && (
+        <ClassInfoModal
+          cls={infoClass}
+          onClose={() => setInfoClass(null)}
+          onMarkAttendance={() => { const c = infoClass; setInfoClass(null); goToAttendance(c); }}
+        />
+      )}
 
       {showApplyLeave && <ApplyLeaveModal onClose={() => setShowApplyLeave(false)} />}
     </div>

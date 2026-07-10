@@ -5,6 +5,7 @@ import type { CreateLeaveRequestPayload, RejectLeaveRequestPayload } from '@scho
 export const leaveRequestKeys = {
   mine: ['leave-requests', 'mine'] as const,
   pending: ['leave-requests', 'pending'] as const,
+  detail: (id: string) => ['leave-requests', 'detail', id] as const,
 };
 
 export const useMyLeaveRequests = () =>
@@ -12,6 +13,13 @@ export const useMyLeaveRequests = () =>
     queryKey: leaveRequestKeys.mine,
     queryFn: leaveRequestsApi.listMine,
     staleTime: 30_000,
+  });
+
+export const useLeaveRequest = (id: string | undefined) =>
+  useQuery({
+    queryKey: leaveRequestKeys.detail(id ?? ''),
+    queryFn: () => leaveRequestsApi.getById(id!),
+    enabled: !!id,
   });
 
 export const usePendingLeaveRequests = () =>
@@ -33,7 +41,11 @@ export const useApproveLeaveRequest = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => leaveRequestsApi.approve(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: leaveRequestKeys.pending }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-requests'] });
+      // Approving a leave changes which periods need a substitute.
+      qc.invalidateQueries({ queryKey: ['timetable'] });
+    },
   });
 };
 
@@ -42,6 +54,9 @@ export const useRejectLeaveRequest = () => {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: RejectLeaveRequestPayload }) =>
       leaveRequestsApi.reject(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: leaveRequestKeys.pending }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leave-requests'] });
+      qc.invalidateQueries({ queryKey: ['timetable'] });
+    },
   });
 };

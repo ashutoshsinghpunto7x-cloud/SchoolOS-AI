@@ -1,4 +1,4 @@
-import { Notification, INotification, NotificationType } from './notification.model';
+import { Notification, INotification, NotificationType, NotificationPriority } from './notification.model';
 
 interface CreateInput {
   recipientUserId: string;
@@ -7,6 +7,7 @@ interface CreateInput {
   title: string;
   body: string;
   payload?: Record<string, unknown>;
+  priority?: NotificationPriority;
   senderUserId: string;
   senderName: string;
 }

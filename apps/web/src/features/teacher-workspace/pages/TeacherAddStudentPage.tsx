@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Loader2, AlertCircle, Upload, ChevronDown, X, FileSpreadsheet } from 'lucide-react';
-import { useCreateStudent, useQuickImportStudents } from '@/features/students/hooks/useStudents';
+import { ArrowLeft, Camera, CheckCircle2, Loader2, AlertCircle, Upload, ChevronDown, X, FileSpreadsheet } from 'lucide-react';
+import { useCreateStudent, useQuickImportStudents, useUploadStudentPhoto } from '@/features/students/hooks/useStudents';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
 
@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
 
 const inputCls =
   'w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 ' +
-  'focus:border-[#0B3D2E] transition-colors';
+  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 ' +
+  'focus:border-[#5B21B6] transition-colors';
 
 const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
 
@@ -80,7 +80,11 @@ export function TeacherAddStudentPage() {
   const [errors,      setErrors]      = useState<Record<string, string>>({});
   const [success,     setSuccess]     = useState(false);
   const [lastAdded,   setLastAdded]   = useState('');
+  const [lastAddedId, setLastAddedId] = useState('');
   const [serverErr,   setServerErr]   = useState('');
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const { mutateAsync: uploadPhoto, isPending: uploadingPhoto } = useUploadStudentPhoto(lastAddedId);
+  const [photoUploaded, setPhotoUploaded] = useState(false);
 
   function validate() {
     const e: Record<string, string> = {};
@@ -95,7 +99,7 @@ export function TeacherAddStudentPage() {
     if (!validate()) return;
     setServerErr('');
     try {
-      await createStudent({
+      const created = await createStudent({
         fullName:        fullName.trim(),
         class:           activeCls.trim(),
         section:         activeSec.trim(),
@@ -106,6 +110,8 @@ export function TeacherAddStudentPage() {
         remarks:         rollNumber ? `Roll: ${rollNumber}` : undefined,
       });
       setLastAdded(fullName.trim());
+      setLastAddedId(created._id);
+      setPhotoUploaded(false);
       setSuccess(true);
     } catch (err) {
       setServerErr(err instanceof Error ? err.message : 'Something went wrong');
@@ -146,10 +152,36 @@ export function TeacherAddStudentPage() {
           {activeSec ? ` – ${activeSec}` : ''}
         </p>
 
-        <div className="flex flex-col gap-3 mt-8 w-full max-w-xs">
+        {/* Optional photo — nice to have but never blocks moving on */}
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) { await uploadPhoto(file); setPhotoUploaded(true); }
+            e.target.value = '';
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => photoInputRef.current?.click()}
+          disabled={uploadingPhoto}
+          className="mt-5 flex items-center gap-2 h-11 px-5 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+        >
+          {uploadingPhoto ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Camera className="w-4 h-4" />
+          )}
+          {photoUploaded ? 'Photo added — tap to change' : 'Add a Photo (optional)'}
+        </button>
+
+        <div className="flex flex-col gap-3 mt-6 w-full max-w-xs">
           <button
             onClick={resetForm}
-            className="h-12 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
+            className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
           >
             Add Another Student
           </button>
@@ -313,7 +345,7 @@ export function TeacherAddStudentPage() {
                     onClick={() => setGender(g)}
                     className={cn(
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors',
-                      gender === g ? 'border-[#0B3D2E] bg-[#0B3D2E]' : 'border-gray-300',
+                      gender === g ? 'border-[#5B21B6] bg-[#5B21B6]' : 'border-gray-300',
                     )}
                   >
                     {gender === g && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -350,7 +382,7 @@ export function TeacherAddStudentPage() {
           type="button"
           onClick={(e) => handleSubmit(e as unknown as FormEvent)}
           disabled={isPending}
-          className="w-full h-14 bg-[#0B3D2E] hover:bg-[#08251B] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#0B3D2E]/20"
+          className="w-full h-14 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#5B21B6]/20"
         >
           {isPending ? (
             <><Loader2 className="w-5 h-5 animate-spin" />Adding…</>
@@ -363,7 +395,7 @@ export function TeacherAddStudentPage() {
         <button
           type="button"
           onClick={() => { setImportResult(null); setImportErr(''); setImportOpen(true); }}
-          className="w-full flex items-center justify-center gap-2 text-[#0B3D2E] text-sm font-semibold py-2 hover:underline"
+          className="w-full flex items-center justify-center gap-2 text-[#5B21B6] text-sm font-semibold py-2 hover:underline"
         >
           <Upload className="w-4 h-4" />
           Import from Excel
@@ -405,13 +437,13 @@ export function TeacherAddStudentPage() {
               disabled={isImporting}
               onClick={() => fileInputRef.current?.click()}
               className={cn(
-                'w-full border-2 border-dashed border-gray-200 rounded-2xl py-8 flex flex-col items-center gap-2 hover:border-[#10B981]/40 hover:bg-[#10B981]/5 transition-colors disabled:opacity-60',
+                'w-full border-2 border-dashed border-gray-200 rounded-2xl py-8 flex flex-col items-center gap-2 hover:border-[#A855F7]/40 hover:bg-[#A855F7]/5 transition-colors disabled:opacity-60',
               )}
             >
               {isImporting ? (
-                <Loader2 className="w-8 h-8 text-[#0B3D2E] animate-spin" />
+                <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
               ) : (
-                <FileSpreadsheet className="w-8 h-8 text-[#0B3D2E]" />
+                <FileSpreadsheet className="w-8 h-8 text-[#5B21B6]" />
               )}
               <p className="text-sm font-semibold text-gray-700">
                 {isImporting ? 'Importing…' : 'Tap to select .xlsx, .xls, or .csv'}
@@ -469,7 +501,7 @@ export function TeacherAddStudentPage() {
                 <button
                   type="button"
                   onClick={() => { setImportOpen(false); navigate(`/teacher/classes/${activeCls}/${activeSec}/students`); }}
-                  className="w-full h-11 bg-[#0B3D2E] text-white font-semibold rounded-xl text-sm hover:bg-[#08251B] transition-colors"
+                  className="w-full h-11 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
                 >
                   View Student List
                 </button>

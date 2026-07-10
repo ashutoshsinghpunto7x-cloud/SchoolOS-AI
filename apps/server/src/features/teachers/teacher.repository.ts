@@ -41,6 +41,7 @@ type CreatePayload = {
   employmentStatus: EmploymentStatus;
   tags: string[];
   remarks?: string;
+  customFields?: Record<string, unknown>;
   schoolId: string;
   createdBy?: string;
 };
@@ -105,6 +106,18 @@ export const teacherRepository = {
     return Teacher.findOne({ _id: id, schoolId, isDeleted: false }).lean<ITeacher>();
   },
 
+  /** Used by the Excel import pipeline to detect duplicates — email first (more
+   * reliable), falling back to phone — so re-uploading a file updates existing
+   * teachers instead of creating duplicates. employeeId can't be used here since
+   * it's server-generated, never supplied by the source file. */
+  async findByEmailOrPhone(schoolId: string, email: string | undefined, phone: string | undefined): Promise<ITeacher | null> {
+    if (!email && !phone) return null;
+    const or: Record<string, unknown>[] = [];
+    if (email) or.push({ email });
+    if (phone) or.push({ phone });
+    return Teacher.findOne({ schoolId, isDeleted: false, $or: or }).lean<ITeacher>();
+  },
+
   async update(
     id: string,
     schoolId: string,
@@ -114,6 +127,17 @@ export const teacherRepository = {
       { _id: id, schoolId, isDeleted: false },
       { $set: data },
       { new: true, runValidators: true }
+    ).lean<ITeacher>();
+  },
+
+  async updatePhoto(id: string, schoolId: string, photoUrl: string | undefined, updatedBy: string): Promise<ITeacher | null> {
+    const update = photoUrl
+      ? { $set: { photoUrl, updatedBy } }
+      : { $unset: { photoUrl: '' }, $set: { updatedBy } };
+    return Teacher.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      update,
+      { new: true },
     ).lean<ITeacher>();
   },
 

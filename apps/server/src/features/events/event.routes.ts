@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate';
 import { authorize } from '../../middlewares/authorize';
+import { imageUploadMiddleware } from '../../lib/image-upload';
 import { eventController } from './event.controller';
 
 const router = Router();
@@ -15,6 +16,8 @@ router.get('/',               eventController.list);
 router.get('/:id',            eventController.getById);
 router.patch('/:id/status',   eventController.updateStatus);
 router.patch('/:id',          eventController.update);
+router.post('/:id/attachment', imageUploadMiddleware, eventController.uploadAttachment);
+router.delete('/:id/attachment', eventController.removeAttachment);
 router.delete('/:id', authorize('admin'), eventController.deleteEvent);
 
 // Read receipts
