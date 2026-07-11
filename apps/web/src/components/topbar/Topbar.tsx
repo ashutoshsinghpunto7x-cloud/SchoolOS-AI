@@ -175,7 +175,7 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
                 <span
                   className={cn(
                     'w-7 h-7 flex items-center justify-center text-[12px] rounded-full transition-colors',
-                    isToday ? 'bg-[#10B981] text-white font-bold' : 'text-gray-700 hover:bg-gray-100',
+                    isToday ? 'bg-[#5B21B6] text-white font-bold' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
                   {d}
@@ -207,10 +207,9 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
   const isPrincipal = user?.role === 'principal';
-  // Teacher and Principal both use the same pill/chip topbar treatment as the
-  // Accountant workspace — teacher/principal render it in purple, accountant in green.
-  const useEmeraldStyle = isAccountant || isTeacher || isPrincipal;
-  const usePurpleAccent = isTeacher || isPrincipal;
+  // Accountant, Teacher, and Principal all share the same pill/chip topbar
+  // treatment, rendered in the same purple accent.
+  const usePillTopbar = isAccountant || isTeacher || isPrincipal;
   const isAccountantDashboard = isAccountant && location.pathname === '/accountant';
   // Principal dashboard folds its date/greeting into the Daily Command Centre
   // card instead — the topbar breadcrumb would just repeat it.
@@ -235,12 +234,12 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
     <header
       className={cn(
         'sticky top-0 z-10 flex h-[60px] items-center',
-        useEmeraldStyle
+        usePillTopbar
           ? 'bg-white border-b border-[#E8E8E8] px-8'
           : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] px-6',
       )}
     >
-      <div className={cn("flex items-center w-full gap-4", useEmeraldStyle && "max-w-7xl mx-auto")}>
+      <div className={cn("flex items-center w-full gap-4", usePillTopbar && "max-w-7xl mx-auto")}>
         {/* Menu toggle — teacher portal has no sidebar; principal's sidebar is an
             overlay at every breakpoint, so it stays visible past lg too */}
         {!isTeacher && (
@@ -249,8 +248,8 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             className={cn(
               "p-2 -ml-1 rounded-xl transition-colors",
               !isPrincipal && "lg:hidden",
-              useEmeraldStyle
-                ? "text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E]"
+              usePillTopbar
+                ? "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
                 : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             )}
             aria-label="Toggle navigation"
@@ -263,7 +262,7 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
         {showDesktopCollapseToggle && (
           <button
             onClick={onToggleDesktopCollapse}
-            className="hidden lg:flex p-2 -ml-1 rounded-xl text-gray-500 hover:bg-[#10B981]/5 hover:text-[#0B3D2E] transition-colors"
+            className="hidden lg:flex p-2 -ml-1 rounded-xl text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6] transition-colors"
             aria-label={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
             title={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
           >
@@ -306,15 +305,12 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
           )}
 
           {/* Live clock — tap to open reminders (teacher/accountant only) */}
-          {useEmeraldStyle && !isPrincipal && (
+          {usePillTopbar && !isPrincipal && (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setReminderOpen((v) => !v)}
-                className={cn(
-                  "hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors",
-                  usePurpleAccent ? "hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25" : "hover:bg-[#10B981]/5 hover:border-[#10B981]/25",
-                )}
+                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
               >
                 <Clock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
                 {time} IST
@@ -326,14 +322,11 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
           {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date */}
           {!isPrincipalDashboard && !isPrincipal && (
           <div className="relative">
-            {useEmeraldStyle ? (
+            {usePillTopbar ? (
               <button
                 type="button"
                 onClick={() => setCalendarOpen((v) => !v)}
-                className={cn(
-                  "hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-medium text-gray-500 select-none transition-colors",
-                  usePurpleAccent ? "hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25" : "hover:bg-[#10B981]/5 hover:border-[#10B981]/25",
-                )}
+                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-medium text-gray-500 select-none transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
               >
                 <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -367,20 +360,14 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             onClick={isTeacher ? () => navigate('/teacher/profile') : undefined}
             className={cn(
               "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
-              usePurpleAccent
+              usePillTopbar
                 ? "bg-white border border-[#E8E8E8] hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
-                : useEmeraldStyle
-                ? "bg-white border border-[#E8E8E8] hover:bg-[#10B981]/5 hover:border-[#10B981]/20 shadow-sm"
                 : "hover:bg-gray-100"
             )}
             aria-label="Profile"
           >
-            {usePurpleAccent ? (
+            {usePillTopbar ? (
               <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/20 flex items-center justify-center text-[11px] font-bold text-[#5B21B6]">
-                {initials}
-              </span>
-            ) : useEmeraldStyle ? (
-              <span className="w-7 h-7 rounded-full bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center text-[11px] font-bold text-[#0B3D2E]">
                 {initials}
               </span>
             ) : (

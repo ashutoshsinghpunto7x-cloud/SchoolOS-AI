@@ -7,7 +7,7 @@ import type { UpdateTimetablePayload } from '@schoolos/types';
 const CLASSES = ['Nursery','LKG','UKG','1','2','3','4','5','6','7','8','9','10','11','12'];
 
 const inputCls = `h-11 w-full rounded-xl border border-gray-200 px-3 text-sm
-  focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white`;
+  focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 bg-white`;
 
 const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
   <div className="flex flex-col gap-1.5">
@@ -48,7 +48,7 @@ export const EditTimetablePage = () => {
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-32">
-      <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+      <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
     </div>
   );
 
@@ -99,7 +99,7 @@ export const EditTimetablePage = () => {
           {error && <p className="text-sm text-red-600">{(error as Error).message}</p>}
 
           <button type="submit" disabled={isPending}
-            className="h-11 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-bold text-white disabled:opacity-50">
+            className="h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center justify-center gap-2 text-sm font-bold text-white disabled:opacity-50">
             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Save Changes
           </button>

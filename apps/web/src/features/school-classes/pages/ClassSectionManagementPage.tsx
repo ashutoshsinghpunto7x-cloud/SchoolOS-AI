@@ -1,16 +1,92 @@
 import { useMemo, useState } from 'react';
-import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check } from 'lucide-react';
+import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check, ChevronDown, IndianRupee } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import {
   useSchoolClasses, useCreateSchoolClass, useRenameSchoolClass, useAddSection, useRemoveSection, useDeleteSchoolClass,
   useClassFeeOverview,
 } from '../hooks/useSchoolClasses';
-import type { SchoolClass } from '@schoolos/types';
+import { useFeeStructure, useUpsertFeeStructure } from '@/features/fees/hooks/useFeeStructure';
+import type { SchoolClass, FeeHead } from '@schoolos/types';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { collected: number; pending: number } }) {
+const FEE_HEADS: { value: FeeHead; label: string }[] = [
+  { value: 'tuition',       label: 'Tuition' },
+  { value: 'admission',     label: 'Admission' },
+  { value: 'examination',   label: 'Examination' },
+  { value: 'transport',     label: 'Transport' },
+  { value: 'hostel',        label: 'Hostel' },
+  { value: 'miscellaneous', label: 'Miscellaneous' },
+];
+
+function currentAcademicYear(): string {
+  const y = new Date().getFullYear();
+  const m = new Date().getMonth();
+  return m >= 3 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`;
+}
+
+// ── Fee structure — one row of amount fields per fee head, for one class ───────
+
+function FeeAmountCell({ cls, feeHead, academicYear, existingAmount }: { cls: string; feeHead: FeeHead; academicYear: string; existingAmount?: number }) {
+  const [value, setValue] = useState(existingAmount != null ? String(existingAmount) : '');
+  const [dirty, setDirty] = useState(false);
+  const { mutateAsync, isPending } = useUpsertFeeStructure();
+
+  async function save() {
+    const amount = parseFloat(value);
+    if (isNaN(amount) || amount < 0) return;
+    await mutateAsync({ class: cls, feeHead, academicYear, amount: Math.round(amount * 100) / 100 });
+    setDirty(false);
+  }
+
+  return (
+    <div>
+      <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{FEE_HEADS.find((h) => h.value === feeHead)?.label}</label>
+      <div className="relative">
+        <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
+        <input
+          type="number"
+          min={0}
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setDirty(true); }}
+          onBlur={() => dirty && void save()}
+          placeholder="—"
+          className="w-full h-9 pl-8 pr-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+        />
+        {isPending && <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400" />}
+      </div>
+    </div>
+  );
+}
+
+function ClassFeeStructure({ cls }: { cls: string }) {
+  const academicYear = currentAcademicYear();
+  const { data: structure, isLoading } = useFeeStructure(academicYear);
+
+  function amountFor(feeHead: FeeHead): number | undefined {
+    return structure?.find((s) => s.class === cls && s.feeHead === feeHead)?.amount;
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-100">
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">Fee Structure · {academicYear}</p>
+      {isLoading ? (
+        <div className="h-16 bg-gray-50 rounded-lg animate-pulse" />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          {FEE_HEADS.map((h) => (
+            <FeeAmountCell key={h.value} cls={cls} feeHead={h.value} academicYear={academicYear} existingAmount={amountFor(h.value)} />
+          ))}
+        </div>
+      )}
+      <p className="text-[11px] text-gray-400 mt-2.5">Click a field and tap away to save. Leave blank if that fee doesn't apply.</p>
+    </div>
+  );
+}
+
+function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSummary?: { collected: number; pending: number }; canManageFees: boolean }) {
   const [newSection, setNewSection] = useState('');
   const { mutateAsync: addSection, isPending: adding } = useAddSection();
   const { mutateAsync: removeSection } = useRemoveSection();
@@ -20,6 +96,7 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(cls.name);
   const [renameError, setRenameError] = useState('');
+  const [feesOpen, setFeesOpen] = useState(false);
 
   async function handleAddSection(e: React.FormEvent) {
     e.preventDefault();
@@ -141,11 +218,27 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
           Add Section
         </button>
       </form>
+
+      {canManageFees && (
+        <>
+          <button
+            type="button"
+            onClick={() => setFeesOpen((v) => !v)}
+            className="w-full flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide hover:text-gray-700"
+          >
+            <span className="flex items-center gap-1.5"><IndianRupee className="w-3.5 h-3.5" /> Manage Fee Structure</span>
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${feesOpen ? 'rotate-180' : ''}`} />
+          </button>
+          {feesOpen && <ClassFeeStructure cls={cls.name} />}
+        </>
+      )}
     </div>
   );
 }
 
 export function ClassSectionManagementPage() {
+  const { user } = useAuth();
+  const canManageFees = user?.role === 'admin' || user?.role === 'principal' || user?.role === 'accountant';
   const { data: classes, isLoading, isError } = useSchoolClasses();
   const { data: feeOverview } = useClassFeeOverview();
   const { mutateAsync: createClass, isPending: creating } = useCreateSchoolClass();
@@ -178,8 +271,12 @@ export function ClassSectionManagementPage() {
 
   return (
     <PageContainer>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Classes & Sections</h1>
-      <p className="text-sm text-gray-500 mb-6">Manage the class and section structure used across student records.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">{canManageFees ? 'Classes & Fee Structure' : 'Classes & Sections'}</h1>
+      <p className="text-sm text-gray-500 mb-6">
+        {canManageFees
+          ? 'Manage the class/section structure and each class\'s fee structure in one place.'
+          : 'Manage the class and section structure used across student records.'}
+      </p>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
         <h2 className="text-sm font-bold text-gray-900 mb-3">Add New Class</h2>
@@ -219,7 +316,7 @@ export function ClassSectionManagementPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {classes.map((c) => <ClassCard key={c._id} cls={c} feeSummary={feeByClass.get(c.name.toLowerCase())} />)}
+          {classes.map((c) => <ClassCard key={c._id} cls={c} feeSummary={feeByClass.get(c.name.toLowerCase())} canManageFees={canManageFees} />)}
         </div>
       )}
     </PageContainer>

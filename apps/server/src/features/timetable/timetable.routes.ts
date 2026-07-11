@@ -23,11 +23,14 @@ router.get('/conflicts', timetableController.detectConflicts);
 router.get('/teacher/:teacherId', timetableController.getTeacherSchedule);
 
 // ── Substitutes ────────────────────────────────────────────────────────────
+// Only admin/principal may assign, reassign, or remove a substitution — a
+// daily substitution should only ever begin because the Principal assigned
+// it, and no other teacher should be able to alter or delete it afterward.
 router.get('/substitutes/needed',           timetableController.getNeedsSubstitute);
 router.get('/substitutes/suggest-teachers', timetableController.suggestSubstituteTeachers);
 router.get('/substitutes',          timetableController.listSubstitutes);
-router.post('/substitutes',         timetableController.createSubstitute);
-router.patch('/substitutes/:subId', timetableController.updateSubstitute);
+router.post('/substitutes',         authorize('admin', 'principal'), timetableController.createSubstitute);
+router.patch('/substitutes/:subId', authorize('admin', 'principal'), timetableController.updateSubstitute);
 router.delete('/substitutes/:subId', authorize('admin', 'principal'), timetableController.deleteSubstitute);
 
 // ── Timetables ─────────────────────────────────────────────────────────────

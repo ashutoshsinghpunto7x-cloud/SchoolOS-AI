@@ -25,7 +25,7 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
 };
 
 const isToday = (dateStr: string) => {
-  return new Date().toISOString().split('T')[0] === dateStr;
+  return new Date().toISOString().split('T')[0] === dateStr.split('T')[0];
 };
 
 interface Props {
@@ -48,7 +48,7 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-center">
         <CalendarDays className="w-8 h-8 text-gray-300 mb-2" strokeWidth={1.5} />
-        <p className="text-sm text-gray-400">No events in the next 14 days.</p>
+        <p className="text-sm text-gray-400">No events this month.</p>
       </div>
     );
   }
@@ -68,10 +68,10 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
           >
             <div className="flex-shrink-0 text-center w-9">
               <p className="text-[11px] font-bold text-gray-400 uppercase leading-none">
-                {new Date(ev.startDate + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short' })}
+                {new Date(ev.startDate.split('T')[0] + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short' })}
               </p>
               <p className="text-base font-bold text-gray-900 leading-tight">
-                {new Date(ev.startDate + 'T00:00:00').getDate()}
+                {new Date(ev.startDate.split('T')[0] + 'T00:00:00').getDate()}
               </p>
             </div>
             <div className="flex-1 min-w-0">

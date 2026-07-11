@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '../api/events.api';
+import { principalKeys } from '@/features/principal/hooks/usePrincipal';
 import type {
   CreateEventPayload,
   UpdateEventPayload,
@@ -44,11 +45,19 @@ export const useUpcomingEvents = (opts: UpcomingEventsOptions = {}, enabled = tr
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
+// Every mutation below also invalidates the principal dashboard's cache —
+// it fetches upcomingEvents through a separate aggregate endpoint (not
+// eventKeys), so without this a principal creating/editing an event on the
+// Calendar page wouldn't see it reflected on their own dashboard until the
+// 2-minute staleTime lapsed.
 export const useCreateEvent = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateEventPayload) => eventsApi.create(payload),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: eventKeys.all }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: eventKeys.all });
+      qc.invalidateQueries({ queryKey: principalKeys.dashboard() });
+    },
   });
 };
 
@@ -59,6 +68,8 @@ export const useUpdateEvent = (id: string) => {
     onSuccess:  (updated) => {
       qc.setQueryData(eventKeys.detail(id), updated);
       qc.invalidateQueries({ queryKey: eventKeys.lists() });
+      qc.invalidateQueries({ queryKey: eventKeys.upcoming({}) });
+      qc.invalidateQueries({ queryKey: principalKeys.dashboard() });
     },
   });
 };
@@ -71,6 +82,7 @@ export const useUpdateEventStatus = (id: string) => {
       qc.setQueryData(eventKeys.detail(id), updated);
       qc.invalidateQueries({ queryKey: eventKeys.lists() });
       qc.invalidateQueries({ queryKey: eventKeys.upcoming({}) });
+      qc.invalidateQueries({ queryKey: principalKeys.dashboard() });
     },
   });
 };
@@ -79,7 +91,10 @@ export const useDeleteEvent = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => eventsApi.delete(id),
-    onSuccess:  () => qc.invalidateQueries({ queryKey: eventKeys.all }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: eventKeys.all });
+      qc.invalidateQueries({ queryKey: principalKeys.dashboard() });
+    },
   });
 };
 

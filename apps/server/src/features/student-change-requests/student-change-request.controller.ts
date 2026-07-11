@@ -24,6 +24,16 @@ export const studentChangeRequestController = {
     }
   },
 
+  async listPendingForStudent(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const requests = await studentChangeRequestService.listPendingForStudent(req.params.studentId, ctx);
+      sendSuccess(res, requests);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async approve(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

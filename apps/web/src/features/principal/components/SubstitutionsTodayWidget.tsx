@@ -9,7 +9,7 @@ const todayStr = () => new Date().toISOString().split('T')[0];
 // ── Inline assign picker for one "needs substitute" period ─────────────────────
 
 function AssignPicker({ entry, onDone }: { entry: NeedsSubstituteEntry; onDone: () => void }) {
-  const { data: suggestions, isLoading } = useSuggestSubstituteTeachers(entry.class, entry.section, entry.originalTeacherId);
+  const { data: suggestions, isLoading } = useSuggestSubstituteTeachers(entry.class, entry.section, entry.originalTeacherId, entry.dayOfWeek);
   const { mutateAsync: createSubstitute, isPending } = useCreateSubstitute();
   const [error, setError] = useState('');
 
@@ -55,11 +55,21 @@ function AssignPicker({ entry, onDone }: { entry: NeedsSubstituteEntry; onDone: 
               className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white text-left transition-colors disabled:opacity-50"
             >
               <span className="text-xs font-medium text-gray-700 truncate">{s.teacherName}</span>
-              {s.teachesThisClass && (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 shrink-0">
-                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Teaches this class
+              <span className="flex items-center gap-2 shrink-0">
+                {s.teachesThisClass && (
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700">
+                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Teaches this class
+                  </span>
+                )}
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    s.freePeriodsToday > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'
+                  }`}
+                  title="Free periods today"
+                >
+                  {s.freePeriodsToday} free
                 </span>
-              )}
+              </span>
             </button>
           ))}
         </div>

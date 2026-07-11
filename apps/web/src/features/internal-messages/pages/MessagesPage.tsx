@@ -1,8 +1,8 @@
-import { useState, FormEvent } from 'react';
+import { useMemo, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Mail, Send, Loader2, BookmarkPlus, Trash2, Inbox, PenSquare, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, Send, Loader2, BookmarkPlus, Trash2, Inbox, PenSquare, CheckCircle2, Search, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import type { InternalMessagePriority, UserRole } from '@schoolos/types';
+import type { InternalMessagePriority, StaffDirectoryEntry, UserRole } from '@schoolos/types';
 import {
   useInternalMessages,
   useMarkMessageRead,
@@ -20,6 +20,22 @@ const ROLE_OPTIONS: Array<{ label: string; value: UserRole }> = [
   { label: 'All Reception', value: 'reception' },
   { label: 'All Admins', value: 'admin' },
 ];
+
+// Filter chips for the individual-recipient picker — "Management" groups
+// admin + principal since neither role has its own staff-directory bucket.
+type RecipientFilter = 'all' | 'teacher' | 'accountant' | 'reception' | 'management';
+const RECIPIENT_FILTERS: Array<{ label: string; value: RecipientFilter }> = [
+  { label: 'All', value: 'all' },
+  { label: 'Teachers', value: 'teacher' },
+  { label: 'Accountant', value: 'accountant' },
+  { label: 'Reception', value: 'reception' },
+  { label: 'Management', value: 'management' },
+];
+function matchesRecipientFilter(role: UserRole, filter: RecipientFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'management') return role === 'admin' || role === 'principal';
+  return role === filter;
+}
 
 export const MessagesPage = () => {
   const navigate = useNavigate();
@@ -136,6 +152,9 @@ function ComposePanel() {
   const [recipientMode, setRecipientMode] = useState<'individual' | 'role'>('individual');
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [selectedRole, setSelectedRole] = useState<UserRole>('teacher');
+  const [staffSearchOpen, setStaffSearchOpen] = useState(false);
+  const [staffSearch, setStaffSearch] = useState('');
+  const [recipientFilter, setRecipientFilter] = useState<RecipientFilter>('all');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [priority, setPriority] = useState<InternalMessagePriority>('normal');
@@ -155,6 +174,12 @@ function ComposePanel() {
   function toggleUser(id: string) {
     setSelectedUserIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
+
+  const filteredStaff = useMemo<StaffDirectoryEntry[]>(() => {
+    const q = staffSearch.trim().toLowerCase();
+    return (staff ?? []).filter((s) =>
+      matchesRecipientFilter(s.role, recipientFilter) && (!q || s.name.toLowerCase().includes(q)));
+  }, [staff, staffSearch, recipientFilter]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -229,18 +254,68 @@ function ComposePanel() {
             >
               By Role
             </button>
+            {recipientMode === 'individual' && (
+              <button
+                type="button"
+                onClick={() => setStaffSearchOpen((v) => !v)}
+                className={`ml-auto p-1.5 rounded-full border transition-colors ${staffSearchOpen ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                title="Search recipients"
+                aria-label="Search recipients"
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {recipientMode === 'individual' ? (
-            <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-2 space-y-1">
-              {staff?.map((s) => (
-                <label key={s._id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
-                  <input type="checkbox" checked={selectedUserIds.includes(s._id)} onChange={() => toggleUser(s._id)} className="rounded" />
-                  <span className="font-medium text-gray-800">{s.name}</span>
-                  <span className="text-xs text-gray-400 capitalize">({s.role})</span>
-                </label>
-              ))}
-              {!staff?.length && <p className="text-xs text-gray-400 px-2 py-1">No staff found.</p>}
+            <div className="space-y-2">
+              {staffSearchOpen && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    autoFocus
+                    value={staffSearch}
+                    onChange={(e) => setStaffSearch(e.target.value)}
+                    placeholder="Search by name…"
+                    className="w-full h-9 pl-9 pr-8 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                  />
+                  {staffSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setStaffSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-1.5">
+                {RECIPIENT_FILTERS.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => setRecipientFilter(f.value)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors ${
+                      recipientFilter === f.value ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-2 space-y-1">
+                {filteredStaff.map((s) => (
+                  <label key={s._id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                    <input type="checkbox" checked={selectedUserIds.includes(s._id)} onChange={() => toggleUser(s._id)} className="rounded" />
+                    <span className="font-medium text-gray-800">{s.name}</span>
+                    <span className="text-xs text-gray-400 capitalize">({s.role})</span>
+                  </label>
+                ))}
+                {!filteredStaff.length && <p className="text-xs text-gray-400 px-2 py-1">No staff found.</p>}
+              </div>
             </div>
           ) : (
             <select

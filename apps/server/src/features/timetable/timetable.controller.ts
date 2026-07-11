@@ -185,9 +185,11 @@ export const timetableController = {
   async suggestSubstituteTeachers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);
-      const { class: cls, section, excludeTeacherId } = req.query as Record<string, string | undefined>;
+      const { class: cls, section, excludeTeacherId, dayOfWeek } = req.query as Record<string, string | undefined>;
       if (!cls || !section) throw new ValidationError('class and section are required');
-      const suggestions = await timetableService.suggestSubstituteTeachers(ctx.schoolId, cls, section, excludeTeacherId);
+      const suggestions = await timetableService.suggestSubstituteTeachers(
+        ctx.schoolId, cls, section, excludeTeacherId, dayOfWeek ? Number(dayOfWeek) : undefined,
+      );
       sendSuccess(res, suggestions);
     } catch (err) { next(err); }
   },

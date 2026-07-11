@@ -106,7 +106,7 @@ export const principalService = {
         feeRepository.getSummary(schoolId),
         principalRepository.getAdmissionStats(schoolId),
         principalRepository.getTimetableStats(schoolId),
-        principalRepository.getUpcomingEvents(schoolId, 14),
+        principalRepository.getUpcomingEvents(schoolId),
       ]);
 
     logger.info('Principal dashboard aggregated', { schoolId });

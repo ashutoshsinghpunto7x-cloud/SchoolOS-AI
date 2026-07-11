@@ -49,6 +49,10 @@ const MessagesPage = lazyPage(
   () => import('@/features/internal-messages/pages/MessagesPage'),
   'MessagesPage',
 );
+const NotificationDetailPage = lazyPage(
+  () => import('@/features/notifications/pages/NotificationDetailPage'),
+  'NotificationDetailPage',
+);
 const ReceptionWorkspace = lazyPage(
   () => import('@/features/reception/pages/ReceptionWorkspace'),
   'ReceptionWorkspace',
@@ -180,6 +184,10 @@ const TeacherTimetablePage = lazyPage(
 const SubstituteWorkspace = lazyPage(
   () => import('@/features/timetable/pages/SubstituteWorkspace'),
   'SubstituteWorkspace',
+);
+const TeacherTimetableBuilderPage = lazyPage(
+  () => import('@/features/timetable/pages/TeacherTimetableBuilderPage'),
+  'TeacherTimetableBuilderPage',
 );
 const EnquiryWorkspace = lazyPage(
   () => import('@/features/enquiries/pages/EnquiryWorkspace'),
@@ -393,10 +401,6 @@ const AccountantReportsPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantReportsPage'),
   'AccountantReportsPage',
 );
-const FeeStructurePage = lazyPage(
-  () => import('@/features/accountant-workspace/pages/FeeStructurePage'),
-  'FeeStructurePage',
-);
 const StudentLedgerSearchPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/StudentLedgerSearchPage'),
   'StudentLedgerSearchPage',
@@ -404,6 +408,14 @@ const StudentLedgerSearchPage = lazyPage(
 const StudentLedgerPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/StudentLedgerPage'),
   'StudentLedgerPage',
+);
+const StudentDirectoryPage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/StudentDirectoryPage'),
+  'StudentDirectoryPage',
+);
+const TeacherDirectoryPage = lazyPage(
+  () => import('@/features/accountant-workspace/pages/TeacherDirectoryPage'),
+  'TeacherDirectoryPage',
 );
 const AccountantTeacherSearchPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantTeacherSearchPage'),
@@ -526,9 +538,11 @@ export const router = createBrowserRouter([
                       { path: 'accountant/collect-fee',   element: <FeeCollectionPage /> },
                       { path: 'accountant/pending-fees',  element: <PendingFeesPage /> },
                       { path: 'accountant/fee-records',   element: <FeeRecordsPage /> },
-                      { path: 'accountant/fee-structure', element: <FeeStructurePage /> },
+                      { path: 'accountant/fee-structure', element: <Navigate to="/classes" replace /> },
                       { path: 'accountant/student-ledger', element: <StudentLedgerSearchPage /> },
                       { path: 'accountant/student-ledger/:studentId', element: <StudentLedgerPage /> },
+                      { path: 'accountant/student-directory', element: <StudentDirectoryPage /> },
+                      { path: 'accountant/teacher-directory', element: <TeacherDirectoryPage /> },
                       { path: 'accountant/teachers',       element: <AccountantTeacherSearchPage /> },
                       { path: 'accountant/teachers/:teacherId', element: <AccountantTeacherProfilePage /> },
                       { path: 'accountant/salary',        element: <SalaryPage /> },
@@ -594,6 +608,15 @@ export const router = createBrowserRouter([
               { path: 'timetable/:id',                   element: <TimetableGridPage /> },
               { path: 'timetable/:id/edit',              element: <EditTimetablePage /> },
 
+              // Teacher Timetable builder — Principal (and Admin) assign an
+              // individual teacher's whole-week schedule directly.
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                children: [
+                  { path: 'timetable/teacher-builder', element: <TeacherTimetableBuilderPage /> },
+                ],
+              },
+
               // Enquiries / Admissions CRM (static /new before /:id)
               { path: 'enquiries',          element: <EnquiryWorkspace /> },
               { path: 'enquiries/new',      element: <NewEnquiryPage /> },
@@ -629,6 +652,9 @@ export const router = createBrowserRouter([
 
               // Internal Messages (all authenticated roles)
               { path: 'messages', element: <MessagesPage /> },
+
+              // Notification full-page detail (all authenticated roles)
+              { path: 'notifications/:id', element: <NotificationDetailPage /> },
 
               // Administration (admin-only)
               {

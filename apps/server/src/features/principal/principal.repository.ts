@@ -94,20 +94,22 @@ export const principalRepository = {
     return { published, draft };
   },
 
-  async getUpcomingEvents(schoolId: string, days = 14): Promise<PrincipalUpcomingEvent[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const future = new Date(today);
-    future.setDate(future.getDate() + days);
-
-    const todayStr = today.toISOString().split('T')[0];
-    const futureStr = future.toISOString().split('T')[0];
+  async getUpcomingEvents(schoolId: string): Promise<PrincipalUpcomingEvent[]> {
+    // Whole current calendar month (1st through last day), not a rolling
+    // N-day window — a principal wants to see everything on this month's
+    // calendar, not just what's ahead of today.
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
     const events = await SchoolEvent.find({
       schoolId,
       isDeleted: false,
       status: { $in: ['published', 'scheduled'] },
-      startDate: { $gte: todayStr, $lte: futureStr },
+      // startDate is a Mongoose Date field — must compare against Date
+      // instances, not strings, or MongoDB's cross-BSON-type ordering makes
+      // this range silently match nothing (Date always sorts after String).
+      startDate: { $gte: firstOfMonth, $lte: lastOfMonth },
     })
       .sort({ startDate: 1 })
       .limit(10)

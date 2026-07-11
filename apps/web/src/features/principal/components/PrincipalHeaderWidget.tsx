@@ -139,7 +139,7 @@ function WeatherChip() {
 
   const { label, icon: Icon } = describeWeather(data.current_weather.weathercode);
   return (
-    <div className="flex items-center gap-3 bg-white/90 border border-white/20 rounded-xl px-4 py-3">
+    <div className="inline-flex w-fit items-center gap-3 bg-white/90 border border-white/20 rounded-xl px-4 py-3">
       <Icon className="w-6 h-6 text-amber-500 shrink-0" strokeWidth={1.75} />
       <div>
         <p className="text-lg font-bold text-gray-900 leading-none">{Math.round(data.current_weather.temperature)}°C</p>

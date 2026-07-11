@@ -15,7 +15,7 @@ const fmt = (amount: number) =>
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-gray-400 bg-white';
+const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] bg-white';
 const labelCls = 'text-xs font-semibold text-gray-500 mb-1 block';
 
 type SimpleMode = 'cash' | 'upi';
@@ -123,7 +123,7 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
                   onClick={() => setMode(value)}
                   className={cn(
                     'flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-2 font-semibold text-xs transition-colors',
-                    mode === value ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                    mode === value ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
                   <Icon className="w-4 h-4" /> {label}
@@ -152,7 +152,7 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
             <button type="button" onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
               Cancel
             </button>
-            <button type="submit" disabled={isPending} className="flex-1 h-11 rounded-xl bg-gray-900 hover:bg-black disabled:opacity-50 text-white text-sm font-bold transition-colors">
+            <button type="submit" disabled={isPending} className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold transition-colors">
               {isPending ? 'Saving…' : 'Confirm Payment'}
             </button>
           </div>

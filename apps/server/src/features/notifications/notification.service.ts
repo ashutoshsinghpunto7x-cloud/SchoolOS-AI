@@ -60,6 +60,28 @@ export const notificationService = {
     if (!updated) throw new NotFoundError('Notification');
   },
 
+  async getById(userId: string, notificationId: string) {
+    const n = await notificationRepository.findByIdForUser(notificationId, userId);
+    if (!n) throw new NotFoundError('Notification');
+    return {
+      _id: String((n as unknown as { _id: { toString(): string } })._id),
+      type: n.type,
+      title: n.title,
+      body: n.body,
+      payload: n.payload,
+      priority: n.priority ?? 'normal',
+      senderName: n.senderName,
+      isRead: n.isRead,
+      createdAt: (n.createdAt as Date).toISOString(),
+    };
+  },
+
+  async updateCallStatus(userId: string, notificationId: string, studentId: string, status: string) {
+    const updated = await notificationRepository.setCallStatus(notificationId, userId, studentId, status);
+    if (!updated) throw new NotFoundError('Notification');
+    return updated.payload;
+  },
+
   async markAllRead(userId: string, schoolId: string): Promise<void> {
     await notificationRepository.markAllRead(userId, schoolId);
   },

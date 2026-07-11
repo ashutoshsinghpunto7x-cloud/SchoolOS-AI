@@ -6,6 +6,7 @@ import {
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { ClassDefaulterGroup } from '@schoolos/types';
 import { motion } from 'framer-motion';
 
@@ -18,6 +19,22 @@ const FEE_HEAD_LABELS: Record<string, string> = {
   tuition: 'Tuition', admission: 'Admission', examination: 'Examination',
   transport: 'Transport', hostel: 'Hostel', miscellaneous: 'Misc.',
 };
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function todayDateStr() {
+  return new Date().toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +56,7 @@ function KpiCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay }}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
-      className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 text-left hover:border-[#10B981]/25 hover:shadow-[0_8px_30px_rgba(16,185,129,0.03)] transition-all duration-300 flex flex-col justify-between h-[180px] w-full"
+      className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 text-left hover:border-[#A855F7]/25 hover:shadow-[0_8px_30px_rgba(168,85,247,0.06)] transition-all duration-300 flex flex-col justify-between h-[180px] w-full"
     >
       <div className="space-y-4">
         {/* Label - 12px */}
@@ -152,9 +169,27 @@ export function AccountantDashboard() {
   }, [groupedDefaulters, pendingSend]);
 
   const kpiCards = buildKpiCards(data, isLoading);
+  const { user } = useAuth();
+  const firstName = user?.firstName ?? 'Accountant';
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F8FAFC]">
+
+      {/* ── Hero header — same gradient treatment as the Teacher & Principal dashboards ── */}
+      <div
+        className="px-5 lg:px-8 pt-8 pb-8 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
+      >
+        <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
+
+        <div className="relative max-w-7xl mx-auto">
+          <p className="text-white/70 text-sm font-medium">{greeting()},</p>
+          <h1 className="text-3xl font-bold text-white mt-0.5 tracking-tight">{firstName}</h1>
+          <p className="text-white/60 text-sm mt-0.5">{todayDateStr()}</p>
+        </div>
+      </div>
+
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
 
         {/* ── KPI Cards ───────────────────────────────────────────────────── */}
@@ -198,7 +233,7 @@ export function AccountantDashboard() {
 
             <button
               onClick={() => navigate('/accountant/collect-fee')}
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200 self-start"
+              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200 self-start"
             >
               Go to Collect Fees
               <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
@@ -219,7 +254,7 @@ export function AccountantDashboard() {
               </div>
               <button
                 onClick={() => navigate('/accountant/pending-fees')}
-                className="inline-flex items-center gap-1 h-7.5 px-3 rounded-xl bg-white border border-[#E8E8E8] text-[11px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200"
+                className="inline-flex items-center gap-1 h-7.5 px-3 rounded-xl bg-white border border-[#E8E8E8] text-[11px] font-medium text-gray-600 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200"
               >
                 View all
                 <ChevronRight className="w-3 h-3" strokeWidth={1.5} />
@@ -253,7 +288,7 @@ export function AccountantDashboard() {
                         <p className="text-[13px] font-semibold text-red-600">{fmt(d.balance)}</p>
                         <button
                           onClick={() => requestSend(d.class, d.section)}
-                          className="h-7 px-2.5 rounded-lg bg-white border border-[#E8E8E8] text-[11px] font-semibold text-gray-500 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200"
+                          className="h-7 px-2.5 rounded-lg bg-white border border-[#E8E8E8] text-[11px] font-semibold text-gray-500 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200"
                         >
                           {groupsFetching && pendingSend?.class === d.class && pendingSend?.section === d.section ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -279,8 +314,8 @@ export function AccountantDashboard() {
           className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center shrink-0">
-              <UserRound className="w-5 h-5 text-[#10B981]" strokeWidth={1.75} />
+            <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
+              <UserRound className="w-5 h-5 text-[#5B21B6]" strokeWidth={1.75} />
             </div>
             <div className="min-w-0">
               <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Teachers</h2>
@@ -290,7 +325,7 @@ export function AccountantDashboard() {
 
           <button
             onClick={() => navigate('/accountant/teachers')}
-            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#10B981]/5 hover:border-[#10B981]/25 hover:text-[#0B3D2E] transition-all duration-200 shrink-0"
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200 shrink-0"
           >
             Go to Teachers
             <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />

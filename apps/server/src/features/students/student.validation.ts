@@ -39,6 +39,8 @@ export const createStudentSchema = z.object({
     phone: phoneSchema,
     relation: z.string().min(1).trim(),
   }).optional(),
+  /** Ad-hoc columns added from the accountant's Student Directory. */
+  customFields: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const updateStudentSchema = createStudentSchema.partial();

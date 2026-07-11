@@ -44,6 +44,13 @@ export const userRepository = {
     });
   },
 
+  async findByUsername(username: string): Promise<IUser | null> {
+    return User.findOne({
+      username: username.toLowerCase(),
+      deletedAt: { $exists: false },
+    });
+  },
+
   async findById(id: string, schoolId: string): Promise<IUser | null> {
     return User.findOne({ _id: id, schoolId, deletedAt: { $exists: false } })
       .select('-passwordHash')

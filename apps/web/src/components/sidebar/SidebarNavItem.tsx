@@ -15,9 +15,10 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isPrincipal = user?.role === 'principal';
-  // Accountant renders on a dark green liquid-glass sidebar — the
-  // white/transparent nav-item styling here is built for that background.
-  const useEmeraldStyle = isAccountant;
+  // Accountant renders on the purple/pink liquid-glass sidebar (same as
+  // Teacher) — the white/transparent nav-item styling here is built for
+  // that background.
+  const useDarkGlassSidebar = isAccountant;
 
   return (
     <NavLink
@@ -27,7 +28,7 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
         cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent',
           'transition-all duration-200',
-          useEmeraldStyle
+          useDarkGlassSidebar
             ? isActive
               ? 'liquid-glass-pill bg-white/10 text-white border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-1px_8px_rgba(0,0,0,0.15),0_4px_18px_rgba(0,0,0,0.20)]'
               : 'text-white/70 hover:bg-white/5 hover:text-white hover:backdrop-blur-sm hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
@@ -46,22 +47,22 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
           <Icon
             className={cn(
               'w-[18px] h-[18px] flex-shrink-0 transition-all duration-200',
-              useEmeraldStyle
+              useDarkGlassSidebar
                 ? isActive ? 'text-white' : 'text-white/70'
                 : isPrincipal
                 ? isActive ? 'text-white' : 'text-gray-400'
                 : isActive ? 'text-[#5B5CEB]' : 'text-gray-400'
             )}
-            strokeWidth={useEmeraldStyle ? 1.5 : (isActive ? 2.25 : 1.75)}
+            strokeWidth={useDarkGlassSidebar ? 1.5 : (isActive ? 2.25 : 1.75)}
           />
-          <span className={cn("flex-1 leading-none font-medium", (useEmeraldStyle || isPrincipal) && isActive && "font-semibold")}>
+          <span className={cn("flex-1 leading-none font-medium", (useDarkGlassSidebar || isPrincipal) && isActive && "font-semibold")}>
             {label}
           </span>
           {badge !== undefined && badge > 0 && (
             <span
               className={cn(
                 'text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center transition-colors',
-                useEmeraldStyle
+                useDarkGlassSidebar
                   ? isActive
                     ? 'bg-white/20 text-white'
                     : 'bg-white/10 text-white/60'
@@ -77,7 +78,7 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
               {badge > 99 ? '99+' : badge}
             </span>
           )}
-          {isActive && !badge && !useEmeraldStyle && !isPrincipal && (
+          {isActive && !badge && !useDarkGlassSidebar && !isPrincipal && (
             <span className="w-1.5 h-1.5 rounded-full bg-[#5B5CEB] shrink-0" />
           )}
         </>

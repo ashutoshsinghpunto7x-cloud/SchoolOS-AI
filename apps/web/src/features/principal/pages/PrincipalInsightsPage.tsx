@@ -63,7 +63,7 @@ export const PrincipalInsightsPage = () => {
               </WorkspaceSection>
 
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Calendar" subtitle="Upcoming events (14 days)" />
+                <SectionHeader title="Calendar" subtitle="This month's events" />
                 <CalendarWidget events={data?.upcomingEvents ?? []} isLoading={isLoading} />
               </WorkspaceSection>
             </div>

@@ -68,6 +68,24 @@ export const timetableRepository = {
     return { timetables, total, page, limit };
   },
 
+  /** Counts how many periods each teacher is scheduled to teach on a given
+   *  weekday, across every published timetable — used to work out free
+   *  periods when picking a substitute. */
+  async countScheduledPeriodsByTeacher(schoolId: string, dayOfWeek: number): Promise<Map<string, number>> {
+    const timetables = await Timetable.find({ schoolId, isDeleted: false, status: 'published' })
+      .select('entries')
+      .lean<Pick<ITimetable, 'entries'>[]>();
+
+    const counts = new Map<string, number>();
+    for (const tt of timetables) {
+      for (const entry of tt.entries) {
+        if (entry.dayOfWeek !== dayOfWeek || !entry.teacherId) continue;
+        counts.set(entry.teacherId, (counts.get(entry.teacherId) ?? 0) + 1);
+      }
+    }
+    return counts;
+  },
+
   async update(
     id: string,
     schoolId: string,

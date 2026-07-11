@@ -10,5 +10,6 @@ router.use(authenticate);
 // Admin and principal manage assignments; accountants only need to read them (to prefill defaulter notifications).
 router.get('/', authorize('admin', 'principal', 'accountant'), classTeacherController.list);
 router.put('/teacher', authorize('admin', 'principal'), classTeacherController.upsert);
+router.delete('/teacher', authorize('admin', 'principal'), classTeacherController.remove);
 
 export default router;

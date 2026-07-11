@@ -19,8 +19,6 @@ export const AppLayout = () => {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
-  // Principal's sidebar is a pure overlay/drawer at every breakpoint — hidden
-  // until the topbar menu icon is clicked, never permanently docked.
   const isPrincipal = user?.role === 'principal';
 
   // Close sidebar on route change (mobile)
@@ -43,10 +41,10 @@ export const AppLayout = () => {
       <ReminderWatcher />
       <HighPriorityMessageGate />
 
-      {/* Backdrop — every breakpoint for principal (pure overlay sidebar), mobile-only for others */}
+      {/* Backdrop — mobile-only, since the sidebar is permanently docked on desktop */}
       {sidebarOpen && (
         <div
-          className={cn('fixed inset-0 z-20 bg-black/20 backdrop-blur-sm', !isPrincipal && 'lg:hidden')}
+          className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -57,15 +55,14 @@ export const AppLayout = () => {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          overlayOnDesktop={isPrincipal}
           forceHiddenOnDesktop={isAccountant && accountantSidebarCollapsed}
         />
       )}
 
-      {/* Main content — offset by sidebar on desktop (not for teacher or principal, whose sidebars don't permanently dock; not for accountant while manually collapsed) */}
+      {/* Main content — offset by sidebar on desktop (not for teacher, whose sidebar doesn't apply; not for accountant while manually collapsed) */}
       <div className={cn(
         'flex flex-1 flex-col min-h-screen overflow-hidden',
-        !isTeacher && !isPrincipal && !(isAccountant && accountantSidebarCollapsed) && 'lg:ml-[260px]'
+        !isTeacher && !(isAccountant && accountantSidebarCollapsed) && 'lg:ml-[260px]'
       )}>
         <Topbar
           onMenuToggle={() => setSidebarOpen(prev => !prev)}

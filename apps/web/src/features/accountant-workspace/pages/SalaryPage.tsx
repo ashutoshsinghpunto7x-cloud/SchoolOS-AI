@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 focus:border-[#10B981]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -98,7 +98,7 @@ function AddSalaryModal({ onClose }: { onClose: () => void }) {
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
             </div>
           )}
-          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#10B981] hover:bg-[#059669] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Add Record
           </button>
         </form>
@@ -190,7 +190,7 @@ export function SalaryPage() {
         </div>
         <button
           onClick={() => setAddOpen(true)}
-          className="h-9 px-3 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
@@ -221,7 +221,7 @@ export function SalaryPage() {
               onClick={() => setStatus(s)}
               className={cn(
                 'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors capitalize',
-                status === s ? 'bg-[#10B981] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
+                status === s ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
               )}
             >
               {s}

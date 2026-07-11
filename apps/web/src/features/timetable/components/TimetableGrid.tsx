@@ -84,14 +84,14 @@ export const TimetableGrid = ({
                     onClick={!readonly ? () => onCellClick?.(day, slot, entry) : undefined}
                     className={cn(
                       'px-2 py-2 border-r border-gray-100 last:border-r-0 align-top',
-                      !readonly && 'cursor-pointer hover:bg-blue-50/60 transition-colors',
+                      !readonly && 'cursor-pointer hover:bg-[#A855F7]/10/60 transition-colors',
                       conflict && 'bg-red-50/70 ring-1 ring-inset ring-red-300',
                     )}
                   >
                     {empty ? (
                       <div className={cn(
                         'flex items-center justify-center h-14 rounded-lg border-2 border-dashed',
-                        readonly ? 'border-gray-100' : 'border-gray-200 hover:border-blue-300',
+                        readonly ? 'border-gray-100' : 'border-gray-200 hover:border-[#A855F7]/40',
                       )}>
                         {!readonly && (
                           <span className="text-[11px] text-gray-400 font-medium">+ Add</span>
@@ -100,18 +100,18 @@ export const TimetableGrid = ({
                     ) : (
                       <div className={cn(
                         'p-2 rounded-lg h-14 flex flex-col justify-between',
-                        conflict ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-100',
+                        conflict ? 'bg-red-50 border border-red-200' : 'bg-[#A855F7]/10 border border-[#A855F7]/20',
                       )}>
                         <p className={cn(
                           'text-xs font-bold leading-tight truncate',
-                          conflict ? 'text-red-800' : 'text-blue-900',
+                          conflict ? 'text-red-800' : 'text-[#4C1D95]',
                         )}>
                           {entry?.subjectName}
                         </p>
                         {entry?.teacherName && (
                           <p className={cn(
                             'text-[11px] leading-tight truncate',
-                            conflict ? 'text-red-600' : 'text-blue-600',
+                            conflict ? 'text-red-600' : 'text-[#5B21B6]',
                           )}>
                             {entry.teacherName}
                           </p>

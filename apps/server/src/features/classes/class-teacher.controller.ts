@@ -19,4 +19,12 @@ export const classTeacherController = {
       sendSuccess(res, result, 'Class teacher assigned');
     } catch (err) { next(err); }
   },
+
+  async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await classTeacherService.removeClassTeacher(req.body, ctx);
+      sendSuccess(res, null, 'Class teacher unassigned');
+    } catch (err) { next(err); }
+  },
 };

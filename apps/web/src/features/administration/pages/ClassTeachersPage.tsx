@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Search, Loader2, GraduationCap, X, Check } from 'lucide-react';
-import { useClassSections, useAssignClassTeacher } from '../hooks/useClasses';
+import { useMemo, useState } from 'react';
+import { Search, Loader2, GraduationCap, X, Check, AlertTriangle, UserX } from 'lucide-react';
+import { useClassSections, useAssignClassTeacher, useRemoveClassTeacher } from '../hooks/useClasses';
 import { useTeachersPaginated } from '@/features/teachers/hooks/useTeachers';
 import { BackLink } from '@/components/workspace/BackLink';
+import { cn } from '@/lib/utils';
 import type { ClassSectionSummary } from '@schoolos/types';
 
 // ── Teacher picker for one class+section row ────────────────────────────────
@@ -10,12 +11,19 @@ import type { ClassSectionSummary } from '@schoolos/types';
 function TeacherPicker({ row, onDone }: { row: ClassSectionSummary; onDone: () => void }) {
   const [search, setSearch] = useState('');
   const { data, isLoading } = useTeachersPaginated({ search, limit: 15 });
-  const { mutateAsync, isPending } = useAssignClassTeacher();
+  const { mutateAsync: assignTeacher, isPending: assigning } = useAssignClassTeacher();
+  const { mutateAsync: removeTeacher, isPending: removing } = useRemoveClassTeacher();
 
   const teachers = data?.data ?? [];
+  const isPending = assigning || removing;
 
   async function assign(teacherId: string) {
-    await mutateAsync({ class: row.class, section: row.section, teacherId });
+    await assignTeacher({ class: row.class, section: row.section, teacherId });
+    onDone();
+  }
+
+  async function unassign() {
+    await removeTeacher({ class: row.class, section: row.section });
     onDone();
   }
 
@@ -31,6 +39,19 @@ function TeacherPicker({ row, onDone }: { row: ClassSectionSummary; onDone: () =
           className="w-full h-9 pl-8 pr-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
         />
       </div>
+
+      {row.teacherId && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={unassign}
+          className="w-full flex items-center gap-2 px-2.5 py-2 mb-1 rounded-lg hover:bg-red-50 text-left text-sm text-red-600 font-medium disabled:opacity-50 border-b border-gray-100 pb-2.5"
+        >
+          {removing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+          Remove assignment — leave blank
+        </button>
+      )}
+
       {isLoading ? (
         <div className="py-4 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400" /></div>
       ) : !teachers.length ? (
@@ -66,6 +87,19 @@ export function ClassTeachersPage({ backTo, backLabel }: ClassTeachersPageProps 
   const { data, isLoading } = useClassSections();
   const [openFor, setOpenFor] = useState<string | null>(null);
 
+  // Unassigned classes surface first — no class should stay without a
+  // teacher, so they shouldn't be easy to miss further down the list.
+  const sorted = useMemo(() => {
+    if (!data) return [];
+    return [...data].sort((a, b) => {
+      const aUnassigned = !a.teacherId;
+      const bUnassigned = !b.teacherId;
+      if (aUnassigned !== bUnassigned) return aUnassigned ? -1 : 1;
+      return a.class.localeCompare(b.class, undefined, { numeric: true }) || a.section.localeCompare(b.section);
+    });
+  }, [data]);
+  const unassignedCount = sorted.filter((row) => !row.teacherId).length;
+
   return (
     <div className="p-8 max-w-3xl">
       {backTo && <BackLink to={backTo} label={backLabel ?? 'Back'} />}
@@ -76,27 +110,48 @@ export function ClassTeachersPage({ backTo, backLabel }: ClassTeachersPageProps 
         </p>
       </div>
 
+      {!isLoading && unassignedCount > 0 && (
+        <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <p className="text-sm font-semibold text-amber-800">
+            {unassignedCount} class{unassignedCount !== 1 ? 'es' : ''} still {unassignedCount !== 1 ? 'have' : 'has'} no class teacher assigned.
+          </p>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)}</div>
-      ) : !data?.length ? (
+      ) : !sorted.length ? (
         <div className="bg-gray-50 rounded-xl p-10 text-center">
           <GraduationCap className="w-8 h-8 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-500">No classes found yet — add students to a class first.</p>
         </div>
       ) : (
         <div className="rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-visible">
-          {data.map((row) => {
+          {sorted.map((row) => {
             const key = `${row.class}-${row.section}`;
+            const unassigned = !row.teacherId;
             return (
-              <div key={key} className="flex items-center justify-between gap-3 px-4 py-3 relative">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">Class {row.class}-{row.section}</p>
-                  <p className="text-xs text-gray-400">{row.studentCount} student{row.studentCount !== 1 ? 's' : ''}</p>
+              <div
+                key={key}
+                className={cn('flex items-center justify-between gap-3 px-4 py-3 relative', unassigned && 'bg-amber-50/50')}
+              >
+                <div className="min-w-0 flex items-center gap-2">
+                  {unassigned && <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Class {row.class}-{row.section}</p>
+                    <p className="text-xs text-gray-400">{row.studentCount} student{row.studentCount !== 1 ? 's' : ''}</p>
+                  </div>
                 </div>
                 <div className="shrink-0 relative">
                   <button
                     onClick={() => setOpenFor(openFor === key ? null : key)}
-                    className="h-9 px-3 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    className={cn(
+                      'h-9 px-3 rounded-lg border text-sm flex items-center gap-2',
+                      unassigned
+                        ? 'border-amber-300 bg-white text-amber-700 font-semibold hover:bg-amber-50'
+                        : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                    )}
                   >
                     {row.teacherName ?? 'Not assigned'}
                     {openFor === key ? <X className="w-3.5 h-3.5 text-gray-400" /> : null}

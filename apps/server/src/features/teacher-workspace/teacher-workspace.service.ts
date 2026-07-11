@@ -5,9 +5,12 @@ import { PeriodSlot, IPeriodSlot } from '../timetable/timetable.period.model';
 import { Attendance } from '../attendance/attendance.model';
 import { Student } from '../students/student.model';
 import { ClassTeacherAssignment } from '../classes/class-teacher.model';
+import { TimetableSubstitute } from '../timetable/timetable.substitute.model';
 import { ForbiddenError, NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import type { TeacherWorkspaceData, TodayClass, TeacherWeekEntry } from '@schoolos/types';
+
+const classSectionKey = (cls: string, section: string) => `${cls}||${section}`;
 
 // Resolve User → Teacher via email (JWT has userId = User._id)
 async function resolveTeacher(ctx: AuthContext): Promise<ITeacher & { _id: { toString(): string } }> {
@@ -53,16 +56,34 @@ export const teacherWorkspaceService = {
     const todayStr        = todayLocalStr();
     const todayDayOfWeek  = jsDayToSchoolDay(new Date().getDay());
 
-    // Step 3: Parallel — timetables + period slots
-    const [timetables, rawSlots] = await Promise.all([
+    // Step 3: Parallel — timetables + period slots + who this teacher may mark
+    // attendance for today (class-teacher assignments + active substitutions),
+    // mirroring attendance.service.ts's assertTeacherCanMarkClass exactly so
+    // the dashboard never shows a "Mark Attendance" affordance the save would
+    // then reject — teaching a subject period there is not enough on its own.
+    const [timetables, rawSlots, classTeacherAssignments, activeSubstitutionsToday] = await Promise.all([
       timetableRepository.getTeacherSchedule(ctx.schoolId, teacherId),
       PeriodSlot.find({ schoolId: ctx.schoolId, isDeleted: false })
         .sort({ orderIndex: 1 })
         .lean<IPeriodSlot[]>(),
+      ClassTeacherAssignment.find({ schoolId: ctx.schoolId, teacherId }).lean<{ class: string; section: string }[]>(),
+      TimetableSubstitute.find({
+        schoolId: ctx.schoolId,
+        substituteTeacherId: teacherId,
+        status: 'active',
+        isDeleted: false,
+        date: new Date(todayStr),
+      }).lean<{ class: string; section: string }[]>(),
     ]);
 
     const slots = rawSlots as unknown as (IPeriodSlot & { _id: { toString(): string } })[];
     const slotMap = new Map(slots.map((s) => [String(s._id), s]));
+
+    const classTeacherOf = classTeacherAssignments.map((a) => ({ class: a.class, section: a.section }));
+    const canMarkSet = new Set([
+      ...classTeacherOf.map((a) => classSectionKey(a.class, a.section)),
+      ...activeSubstitutionsToday.map((s) => classSectionKey(s.class, s.section)),
+    ]);
 
     // Step 4: Build today's classes with attendance counts
     const todayClassPromises: Promise<TodayClass>[] = [];
@@ -102,6 +123,7 @@ export const teacherWorkspaceService = {
           attendanceMarked: attendanceCount > 0,
           attendanceCount,
           totalStudents,
+          canMarkAttendance: canMarkSet.has(classSectionKey(timetable.class, timetable.section)),
         }));
 
         todayClassPromises.push(promise);
@@ -137,14 +159,6 @@ export const teacherWorkspaceService = {
         )
         .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     }));
-
-    // Which classes this teacher is the CLASS TEACHER of — assigned by
-    // admin/principal only (see class-teacher.routes.ts), never self-service.
-    const classTeacherAssignments = await ClassTeacherAssignment.find({
-      schoolId: ctx.schoolId,
-      teacherId,
-    }).lean<{ class: string; section: string }[]>();
-    const classTeacherOf = classTeacherAssignments.map((a) => ({ class: a.class, section: a.section }));
 
     return {
       teacher: {

@@ -39,6 +39,7 @@ export interface SubstituteSuggestion {
   teacherId: string;
   teacherName: string;
   teachesThisClass: boolean;
+  freePeriodsToday: number;
 }
 
 export const timetableService = {
@@ -368,27 +369,49 @@ export const timetableService = {
     return needed;
   },
 
-  /** Substitute picker priority: teachers already teaching this class/section first, then the rest of the active roster. */
-  async suggestSubstituteTeachers(schoolId: string, cls: string, section: string, excludeTeacherId?: string): Promise<SubstituteSuggestion[]> {
-    const [classTimetable, activeTeachers] = await Promise.all([
+  /**
+   * Substitute picker priority: teachers already teaching this class/section first, then the rest of
+   * the active roster. Also surfaces each candidate's free periods on the given weekday (falls back to
+   * today if not supplied) so the principal can see at a glance who actually has room to cover a period.
+   */
+  async suggestSubstituteTeachers(
+    schoolId: string, cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number,
+  ): Promise<SubstituteSuggestion[]> {
+    const effectiveDay = dayOfWeek ?? new Date().getDay();
+
+    const [classTimetable, activeTeachers, periodSlots, scheduledCounts] = await Promise.all([
       timetableRepository.findByClassSectionAnyYear(schoolId, cls, section),
       Teacher.find({ schoolId, isDeleted: false, employmentStatus: 'active' }).select('_id fullName').lean(),
+      periodSlotRepository.findAll(schoolId),
+      timetableRepository.countScheduledPeriodsByTeacher(schoolId, effectiveDay),
     ]);
+
+    const totalPeriodsToday = periodSlots.filter(
+      (slot) => !slot.isBreak && slot.daysApplicable.includes(effectiveDay),
+    ).length;
 
     const teachesClass = new Set(
       (classTimetable?.entries ?? []).map((e) => e.teacherId).filter((id): id is string => !!id),
     );
 
     const suggestions: SubstituteSuggestion[] = activeTeachers
-      .map((t) => ({
-        teacherId: String((t as unknown as { _id: { toString(): string } })._id),
-        teacherName: t.fullName,
-        teachesThisClass: teachesClass.has(String((t as unknown as { _id: { toString(): string } })._id)),
-      }))
+      .map((t) => {
+        const teacherId = String((t as unknown as { _id: { toString(): string } })._id);
+        const scheduled = scheduledCounts.get(teacherId) ?? 0;
+        return {
+          teacherId,
+          teacherName: t.fullName,
+          teachesThisClass: teachesClass.has(teacherId),
+          freePeriodsToday: Math.max(0, totalPeriodsToday - scheduled),
+        };
+      })
       .filter((t) => t.teacherId !== excludeTeacherId);
 
+    // Most free periods first (within each teaches-this-class tier) — the
+    // whole point is to make it easy to pick someone who actually has room.
     suggestions.sort((a, b) => {
       if (a.teachesThisClass !== b.teachesThisClass) return a.teachesThisClass ? -1 : 1;
+      if (a.freePeriodsToday !== b.freePeriodsToday) return b.freePeriodsToday - a.freePeriodsToday;
       return a.teacherName.localeCompare(b.teacherName);
     });
 

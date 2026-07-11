@@ -17,7 +17,7 @@ interface EntryEditDrawerProps {
 }
 
 const inputCls = `h-11 w-full rounded-xl border border-gray-200 px-3 text-sm
-  focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white`;
+  focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 bg-white`;
 
 export const EntryEditDrawer = ({
   timetableId, dayOfWeek, slot, entry, onClose,
@@ -159,7 +159,7 @@ export const EntryEditDrawer = ({
             <button
               type="submit"
               disabled={saving || !form.subjectName.trim()}
-              className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700
+              className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
                          flex items-center justify-center gap-2
                          text-sm font-bold text-white transition-colors disabled:opacity-50"
             >

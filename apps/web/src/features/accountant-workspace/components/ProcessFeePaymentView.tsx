@@ -97,7 +97,7 @@ function MonthRow({
     <div
       className={cn(
         'flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors',
-        isPaid ? 'bg-gray-50 border-gray-100' : checked ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200 hover:border-gray-300',
+        isPaid ? 'bg-gray-50 border-gray-100' : checked ? 'bg-[#A855F7]/5 border-[#A855F7]/40' : 'bg-white border-gray-200 hover:border-gray-300',
       )}
     >
       <input
@@ -105,7 +105,7 @@ function MonthRow({
         checked={checked}
         disabled={isPaid}
         onChange={onToggle}
-        className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-400 shrink-0 disabled:cursor-not-allowed"
+        className="w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-[#A855F7]/40 shrink-0 disabled:cursor-not-allowed"
       />
       <label className="flex-1 min-w-0 cursor-pointer" onClick={(e) => { if (!isPaid) { e.preventDefault(); onToggle(); } }}>
         <p className="text-sm font-semibold text-gray-900">{candidate.label}</p>
@@ -116,7 +116,7 @@ function MonthRow({
           type="number" min={0} step={0.01} value={amount}
           onClick={(e) => e.stopPropagation()}
           onChange={(e) => onAmountChange(parseFloat(e.target.value) || 0)}
-          className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 shrink-0"
+          className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] shrink-0"
         />
       ) : (
         <div className="text-right shrink-0">
@@ -275,7 +275,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
         <div className="lg:col-span-3 space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
-              <div className="w-14 h-14 rounded-2xl bg-gray-900 flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden shrink-0">
                 {student.photoUrl ? (
                   <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
                 ) : (
@@ -350,7 +350,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
                   type="number" min={0} max={subtotal} step={0.01} value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
                   placeholder="0"
-                  className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                  className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                 />
               </div>
             </div>
@@ -370,7 +370,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
                     onClick={() => setMethod(key)}
                     className={cn(
                       'flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-2 font-semibold text-xs transition-colors',
-                      method === key ? 'border-gray-900 bg-gray-50 text-gray-900' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                      method === key ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                     )}
                   >
                     <Icon className="w-4 h-4" /> {label}
@@ -386,7 +386,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
                 </label>
                 <input
                   type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                   placeholder="e.g. 123456789012" maxLength={30}
                 />
               </div>
@@ -397,7 +397,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
               <textarea
                 rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter transaction details or notes…"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
               />
             </div>
 
@@ -411,7 +411,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
               type="button"
               onClick={handleSubmit}
               disabled={isPending || !selectedCandidates.length}
-              className="w-full h-12 mt-4 bg-gray-900 hover:bg-black disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+              className="w-full h-12 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {isPending ? 'Collecting…' : 'Collect & Print Receipt'}

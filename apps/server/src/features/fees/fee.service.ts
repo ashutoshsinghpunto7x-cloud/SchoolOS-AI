@@ -418,10 +418,13 @@ export const feeService = {
       );
       if (!updatedRecord) continue;
 
-      if (updatedRecord.status === 'paid' && updatedRecord.feeHead === 'tuition') {
-        await feeService.rollForwardTuitionFee(updatedRecord, ctx).catch(() => {});
-      }
-
+      // Deliberately no rollForwardTuitionFee() here (unlike the single-month
+      // recordPayment path above) — a bulk payment already lets the accountant
+      // explicitly pick which future months to prepay. Auto-rolling forward
+      // per-month inside this loop meant paying off the academic year's last
+      // month (e.g. March) immediately spawned next year's April as a new
+      // 'pending' record, which the ledger shows only by month name (no year)
+      // — reading as "April is pending again" right after April was paid.
       results.push({ record: updatedRecord, payment });
     }
 

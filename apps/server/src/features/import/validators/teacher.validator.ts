@@ -34,10 +34,22 @@ export const teacherValidator: IValidator = {
 
   validate(mappedData: Record<string, unknown>): RowValidationResult {
     const processed: Record<string, unknown> = { ...mappedData };
+    const warnings: RowValidationResult['warnings'] = [];
 
-    // Normalise gender
-    if (typeof processed.gender === 'string') {
-      processed.gender = processed.gender.toLowerCase().trim();
+    // Gender: source spreadsheets frequently don't carry this column at all.
+    // Rather than hard-failing every row, default to 'other' and flag it as a
+    // warning so the accountant/admin can fix it up post-import instead of
+    // being blocked from importing the rest of the sheet.
+    const normalisedGender = typeof processed.gender === 'string' ? processed.gender.toLowerCase().trim() : processed.gender;
+    if (normalisedGender === 'male' || normalisedGender === 'female' || normalisedGender === 'other') {
+      processed.gender = normalisedGender;
+    } else {
+      if (processed.gender) {
+        warnings.push({ field: 'gender', message: `Unrecognized gender "${String(processed.gender)}" — defaulted to "other"`, code: 'defaulted' });
+      } else {
+        warnings.push({ field: 'gender', message: 'Gender not provided — defaulted to "other"', code: 'defaulted' });
+      }
+      processed.gender = 'other';
     }
     // subjects / assignedClasses / tags: comma-separated string → array
     for (const field of ['subjects', 'assignedClasses', 'tags']) {
@@ -47,9 +59,10 @@ export const teacherValidator: IValidator = {
         processed[field] = [];
       }
     }
-    // experienceYears: coerce string → number
+    // experienceYears: coerce string → number, tolerating suffixes like "8 Years"
     if (typeof processed.experienceYears === 'string' && processed.experienceYears !== '') {
-      processed.experienceYears = Number(processed.experienceYears);
+      const digits = processed.experienceYears.match(/\d+/);
+      processed.experienceYears = digits ? Number(digits[0]) : undefined;
     }
     // Default employmentStatus
     if (!processed.employmentStatus) {
@@ -72,9 +85,9 @@ export const teacherValidator: IValidator = {
 
     if (result.success) {
       return {
-        status: 'valid',
+        status: warnings.length ? 'warning' : 'valid',
         errors: [],
-        warnings: [],
+        warnings,
         cleanData: result.data as Record<string, unknown>,
       };
     }
@@ -85,6 +98,6 @@ export const teacherValidator: IValidator = {
       code: issue.code,
     }));
 
-    return { status: 'error', errors, warnings: [], cleanData: processed };
+    return { status: 'error', errors, warnings, cleanData: processed };
   },
 };

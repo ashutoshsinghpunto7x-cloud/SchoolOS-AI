@@ -27,6 +27,7 @@ import {
   Settings2,
   Mail,
   BadgePercent,
+  UserCog,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -67,10 +68,10 @@ const NAV_ITEMS_ACCOUNTANT = [
   { label: 'Collect Fee',   icon: IndianRupee,     path: '/accountant/collect-fee',   end: false },
   { label: 'Fee Records',   icon: ClipboardList,   path: '/accountant/fee-records',   end: false },
   { label: 'Pending Fees',  icon: Wallet,          path: '/accountant/pending-fees',  end: false },
-  { label: 'Fee Structure', icon: Settings2,       path: '/accountant/fee-structure', end: false },
-  { label: 'Students',      icon: GraduationCap,   path: '/students',                 end: false },
+  { label: 'Students',      icon: GraduationCap,   path: '/accountant/student-directory', end: false },
+  { label: 'Teachers',      icon: Users,           path: '/accountant/teacher-directory', end: false },
   { label: 'Student Data',  icon: Upload,          path: '/import',                   end: false },
-  { label: 'Classes & Sections', icon: GraduationCap, path: '/classes',                end: false },
+  { label: 'Classes & Fee Structure', icon: Settings2, path: '/classes',              end: false },
   { label: 'Salary',        icon: FileBarChart,    path: '/accountant/salary',        end: false },
   { label: 'Expenses',      icon: Receipt,         path: '/accountant/expenses',      end: false },
   { label: 'Reports',       icon: FileBarChart2,   path: '/accountant/reports',       end: false },
@@ -92,7 +93,9 @@ const NAV_ITEMS_PRINCIPAL = [
   { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/approvals',             end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
   { label: 'Timetable',           icon: LayoutGrid,      path: '/timetable',                       end: false },
+  { label: 'Teacher Timetable',   icon: UserCog,         path: '/timetable/teacher-builder',       end: false },
   { label: 'Class Teachers',      icon: GraduationCap,   path: '/principal/class-teachers',        end: false },
+  { label: 'Calendar',            icon: CalendarDays,    path: '/calendar',                         end: false },
   { label: 'Messages',            icon: Mail,             path: '/messages',                        end: false },
   { label: 'Change Password',     icon: ShieldCheck,      path: '/principal/change-password',       end: false },
   { label: 'More Insights',       icon: FileBarChart2,   path: '/principal/insights',              end: false },
@@ -131,7 +134,8 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
 
   const isAccountant = user?.role === 'accountant';
   const isPrincipal = user?.role === 'principal';
-  // Accountant keeps its own dark green liquid-glass sidebar. Principal's
+  // Accountant uses the same purple/pink liquid-glass panel as the teacher
+  // portal so all three role sidebars share one visual language. Principal's
   // sidebar is clean white — purple/pink shows up only as accents (logo
   // badge, active nav pill, avatar) rather than the whole panel.
   const useDarkSidebar = isAccountant;
@@ -141,7 +145,7 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
       className={cn(
         'fixed left-0 top-0 z-30 flex h-full w-[260px] flex-col',
         useDarkSidebar
-          ? 'liquid-glass-sidebar border-r border-white/5 shadow-[1px_0_0_0_rgba(255,255,255,0.05),inset_-1px_0_0_0_rgba(255,255,255,0.06),inset_1px_0_0_0_rgba(255,255,255,0.04)]'
+          ? 'liquid-glass-sidebar-purple border-r border-white/5 shadow-[1px_0_0_0_rgba(255,255,255,0.05),inset_-1px_0_0_0_rgba(255,255,255,0.06),inset_1px_0_0_0_rgba(255,255,255,0.04)]'
           : 'bg-white/98 backdrop-blur-xl border-r border-gray-100/80 shadow-[1px_0_0_0_rgba(0,0,0,0.04),4px_0_16px_0_rgba(0,0,0,0.03)]',
         'transition-transform duration-200 ease-in-out',
         isOpen ? 'translate-x-0' : '-translate-x-full',

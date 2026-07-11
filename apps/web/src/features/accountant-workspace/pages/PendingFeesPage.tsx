@@ -1,74 +1,159 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Wallet, Plus, Send, Pencil, Check, X, Loader2, CalendarClock } from 'lucide-react';
-import { useFeeList, useUpdateFeeRecord } from '@/features/fees/hooks/useFees';
+import { ArrowLeft, Wallet, Send, ChevronDown, CalendarClock, IndianRupee, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { useFeeList } from '@/features/fees/hooks/useFees';
 import { useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
-import { FeeStatusBadge } from '@/features/fees/components/FeeStatusBadge';
-import { RecordPaymentModal } from '@/features/fees/components/RecordPaymentModal';
-import { AssignFeeModal } from '../components/AssignFeeModal';
+import { useClassSections } from '@/features/administration/hooks/useClasses';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
-import type { FeeRecord, FeeStatus, ClassDefaulterGroup } from '@schoolos/types';
+import type { FeeRecord, ClassDefaulterGroup } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const selectCls =
-  'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200';
-
-type StatusFilter = 'all' | FeeStatus;
-
-function daysOverdue(dueDate: string): number {
-  const due = new Date(dueDate); due.setHours(0, 0, 0, 0);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return Math.floor((today.getTime() - due.getTime()) / 86_400_000);
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-// ── Inline due-date editor ───────────────────────────────────────────────────
+// Every fee record returned is already dueDate <= selectedDate (server-side
+// filter), so "earlier dues" just means the record's due month/year is
+// earlier than the selected date's — no need to fetch anything extra.
+function isSameMonth(dateStr: string, selectedDate: string): boolean {
+  const d = new Date(dateStr);
+  const s = new Date(selectedDate + 'T00:00:00');
+  return d.getFullYear() === s.getFullYear() && d.getMonth() === s.getMonth();
+}
 
-function DueDateEditor({ fee }: { fee: FeeRecord }) {
-  const { mutateAsync, isPending } = useUpdateFeeRecord(fee._id);
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(fee.dueDate.slice(0, 10));
+interface StudentGroup {
+  studentId: string;
+  studentName: string;
+  class: string;
+  section: string;
+  totalDue: number;
+  records: FeeRecord[];
+  hasEarlierDues: boolean;
+}
 
-  async function save() {
-    await mutateAsync({ dueDate: value });
-    setEditing(false);
+interface ClassGroup {
+  class: string;
+  students: StudentGroup[];
+  totalDue: number;
+}
+
+function groupByClass(records: FeeRecord[], selectedDate: string): ClassGroup[] {
+  const byStudent = new Map<string, StudentGroup>();
+  for (const r of records) {
+    const existing = byStudent.get(r.studentId);
+    const earlier = !isSameMonth(r.dueDate, selectedDate);
+    if (existing) {
+      existing.totalDue += r.balance;
+      existing.records.push(r);
+      existing.hasEarlierDues = existing.hasEarlierDues || earlier;
+    } else {
+      byStudent.set(r.studentId, {
+        studentId: r.studentId, studentName: r.studentName, class: r.class, section: r.section,
+        totalDue: r.balance, records: [r], hasEarlierDues: earlier,
+      });
+    }
   }
 
-  if (!editing) {
-    return (
-      <button
-        onClick={() => { setValue(fee.dueDate.slice(0, 10)); setEditing(true); }}
-        className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-900"
-        title="Change due date"
-      >
-        Due {new Date(fee.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} <Pencil className="w-3 h-3" />
-      </button>
-    );
+  const byClass = new Map<string, ClassGroup>();
+  for (const s of byStudent.values()) {
+    const existing = byClass.get(s.class);
+    if (existing) {
+      existing.students.push(s);
+      existing.totalDue += s.totalDue;
+    } else {
+      byClass.set(s.class, { class: s.class, students: [s], totalDue: s.totalDue });
+    }
   }
+
+  return [...byClass.values()]
+    .map((g) => ({ ...g, students: g.students.sort((a, b) => b.totalDue - a.totalDue) }))
+    .sort((a, b) => a.class.localeCompare(b.class, undefined, { numeric: true }));
+}
+
+// ── One student row, expandable to show current-month vs earlier-dues breakdown ──
+
+function StudentRow({ student, selectedDate }: { student: StudentGroup; selectedDate: string }) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+
+  const currentMonthDue = student.records.filter((r) => isSameMonth(r.dueDate, selectedDate)).reduce((s, r) => s + r.balance, 0);
+  const earlierDue = student.totalDue - currentMonthDue;
+  const earlierCount = student.records.filter((r) => !isSameMonth(r.dueDate, selectedDate)).length;
 
   return (
-    <div className="inline-flex items-center gap-1">
-      <input
-        type="date" value={value} onChange={(e) => setValue(e.target.value)}
-        className="h-7 px-1.5 rounded-lg border border-gray-900 text-xs"
-      />
-      <button onClick={save} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-900 text-white shrink-0">
-        {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+    <div className="border-b border-gray-50 last:border-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50/60 transition-colors"
+      >
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-900 font-bold text-xs shrink-0">
+          {student.studentName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">{student.studentName}</p>
+          <p className="text-xs text-gray-400">Class {student.class}-{student.section}</p>
+        </div>
+        <span
+          className={cn(
+            'text-[11px] font-bold px-2 py-1 rounded-full shrink-0',
+            student.hasEarlierDues ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700',
+          )}
+        >
+          {student.hasEarlierDues ? 'Also has earlier dues' : 'This month only'}
+        </span>
+        <p className="text-sm font-bold text-gray-800 w-24 text-right shrink-0">{fmt(student.totalDue)}</p>
+        <ChevronDown className={cn('w-4 h-4 text-gray-300 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
-      <button onClick={() => setEditing(false)} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-500 shrink-0">
-        <X className="w-3 h-3" />
-      </button>
+
+      {open && (
+        <div className="px-4 pb-4 pl-16 space-y-2.5">
+          <div className="rounded-xl bg-gray-50 p-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-amber-500" /> Current month</span>
+              <span className="font-bold text-gray-800">{currentMonthDue > 0 ? fmt(currentMonthDue) : '—'}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-500 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-red-500" /> Earlier dues ({earlierCount} record{earlierCount !== 1 ? 's' : ''})</span>
+              <span className="font-bold text-gray-800">{earlierDue > 0 ? fmt(earlierDue) : '—'}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate(`/accountant/student-ledger/${student.studentId}`)}
+            className="w-full h-9 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
+          >
+            <IndianRupee className="w-3.5 h-3.5" /> Open Student Ledger to Collect
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Notify class teachers panel — early defaulter warning before the due date ──
+// ── Notify class teachers panel ─────────────────────────────────────────────────
 
 function NotifyClassTeachersPanel({ onClose }: { onClose: () => void }) {
-  const { data: groups, isLoading } = useGroupedDefaulters();
+  const { data: sections, isLoading: sectionsLoading } = useClassSections();
+  const { data: defaulterGroups, isLoading: defaultersLoading } = useGroupedDefaulters();
   const [sendingGroup, setSendingGroup] = useState<ClassDefaulterGroup | null>(null);
+  const isLoading = sectionsLoading || defaultersLoading;
+
+  // Every class-section that's been created, cross-referenced with its
+  // current defaulter total (0 for classes with nothing outstanding).
+  const rows = useMemo<ClassDefaulterGroup[]>(() => {
+    if (!sections) return [];
+    const byKey = new Map((defaulterGroups ?? []).map((g) => [`${g.class}||${g.section}`, g]));
+    return sections
+      .map((s) => byKey.get(`${s.class}||${s.section}`) ?? {
+        class: s.class, section: s.section, totalBalance: 0, students: [],
+        classTeacherId: s.teacherId, classTeacherName: s.teacherName,
+      })
+      .sort((a, b) => a.class.localeCompare(b.class, undefined, { numeric: true }) || a.section.localeCompare(b.section));
+  }, [sections, defaulterGroups]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -77,31 +162,38 @@ function NotifyClassTeachersPanel({ onClose }: { onClose: () => void }) {
           <h3 className="text-base font-bold text-gray-900">Notify Class Teachers</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
         </div>
-        <p className="text-xs text-gray-400 mb-4">Send each class's fee defaulter list to its class teacher — useful ahead of the due date, not just after.</p>
+        <p className="text-xs text-gray-400 mb-4">Every class, with its class teacher — send a fee defaulter list where one's outstanding.</p>
 
         {isLoading ? (
-          <div className="py-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
-        ) : !groups?.length ? (
-          <p className="text-sm text-gray-400 text-center py-8">No outstanding fees right now.</p>
+          <div className="py-6 flex justify-center text-sm text-gray-400">Loading…</div>
+        ) : !rows.length ? (
+          <p className="text-sm text-gray-400 text-center py-8">No classes set up yet.</p>
         ) : (
           <div className="space-y-2">
-            {groups.map((g) => (
-              <div key={`${g.class}-${g.section}`} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">Class {g.class}-{g.section}</p>
-                  <p className="text-xs text-gray-400">
-                    {g.students.length} student{g.students.length !== 1 ? 's' : ''} · {fmt(g.totalBalance)}
-                    {g.classTeacherName && <> · Teacher: {g.classTeacherName}</>}
-                  </p>
+            {rows.map((g) => {
+              const hasDefaulters = g.students.length > 0;
+              return (
+                <div key={`${g.class}-${g.section}`} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-3.5 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-800">Class {g.class}-{g.section}</p>
+                    <p className="text-xs text-gray-400">
+                      {g.classTeacherName ? <>Teacher: {g.classTeacherName}</> : <span className="text-amber-600 font-medium">No class teacher assigned</span>}
+                      {hasDefaulters && <> · {g.students.length} student{g.students.length !== 1 ? 's' : ''} · {fmt(g.totalBalance)}</>}
+                    </p>
+                  </div>
+                  {hasDefaulters ? (
+                    <button
+                      onClick={() => setSendingGroup(g)}
+                      className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
+                    >
+                      <Send className="w-3.5 h-3.5" /> Send
+                    </button>
+                  ) : (
+                    <span className="text-xs text-gray-300 shrink-0">No pending fees</span>
+                  )}
                 </div>
-                <button
-                  onClick={() => setSendingGroup(g)}
-                  className="h-9 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5" /> Send
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -114,27 +206,23 @@ function NotifyClassTeachersPanel({ onClose }: { onClose: () => void }) {
 
 export function PendingFeesPage() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [cls, setCls] = useState('');
-  const [status, setStatus] = useState<StatusFilter>('all');
-  const [dueBefore, setDueBefore] = useState('');
-  const [payingFee, setPayingFee] = useState<FeeRecord | null>(null);
-  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(todayStr());
   const [notifyOpen, setNotifyOpen] = useState(false);
 
   const { data, isLoading } = useFeeList({
-    search: search || undefined,
-    class: cls || undefined,
-    dueBefore: dueBefore || undefined,
+    dueBefore: selectedDate,
     sortBy: 'dueDate',
     sortOrder: 'asc',
-    limit: 100,
+    limit: 500,
   });
 
-  const rows = useMemo(() => {
-    const list = (data?.data ?? []).filter((f) => f.status !== 'paid' && f.status !== 'waived');
-    return status === 'all' ? list : list.filter((f) => f.status === status);
-  }, [data, status]);
+  const unpaidRecords = useMemo(
+    () => (data?.data ?? []).filter((f) => f.status !== 'paid' && f.status !== 'waived'),
+    [data],
+  );
+  const classGroups = useMemo(() => groupByClass(unpaidRecords, selectedDate), [unpaidRecords, selectedDate]);
+  const totalStudents = classGroups.reduce((s, g) => s + g.students.length, 0);
+  const totalDue = classGroups.reduce((s, g) => s + g.totalDue, 0);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -147,8 +235,10 @@ export function PendingFeesPage() {
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <div className="flex-1">
-          <h1 className="text-base font-bold text-gray-900">Fee Management</h1>
-          <p className="text-xs text-gray-500">{rows.length} record{rows.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-base font-bold text-gray-900">Pending Fees</h1>
+          <p className="text-xs text-gray-500">
+            {totalStudents} student{totalStudents !== 1 ? 's' : ''} · {fmt(totalDue)} outstanding as of the selected date
+          </p>
         </div>
         <button
           onClick={() => setNotifyOpen(true)}
@@ -156,109 +246,50 @@ export function PendingFeesPage() {
         >
           <Send className="w-3.5 h-3.5" /> Notify Teachers
         </button>
-        <button
-          onClick={() => setAssignOpen(true)}
-          className="h-9 px-3 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
-        >
-          <Plus className="w-3.5 h-3.5" /> Assign Fee
-        </button>
       </div>
 
       <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {/* The only filter — per design, this page shows every unpaid fee up to one date */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+          <CalendarClock className="w-4 h-4 text-gray-400 shrink-0" />
+          <div>
+            <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Show dues up to</label>
             <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search student…"
-              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+              type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+              className="h-9 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
             />
           </div>
-          <input
-            type="text"
-            value={cls}
-            onChange={(e) => setCls(e.target.value)}
-            placeholder="Class"
-            className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
-          />
-          <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)} className={cn(selectCls, 'appearance-none pr-8')}>
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="partially_paid">Partial</option>
-            <option value="overdue">Overdue</option>
-          </select>
-          <div className="relative">
-            <CalendarClock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-            <input
-              type="date" value={dueBefore} onChange={(e) => setDueBefore(e.target.value)}
-              title="Show fees due on or before this date — use this to spot defaulters early, ahead of the due date"
-              className="h-10 pl-8 pr-2.5 rounded-xl border border-gray-200 bg-white text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
-            />
-          </div>
-          {dueBefore && (
-            <button onClick={() => setDueBefore('')} className="text-xs text-gray-400 hover:text-gray-600">Clear date</button>
-          )}
         </div>
 
-        {/* List */}
+        {/* Class-wise grouped list */}
         {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-20 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
-        ) : !rows.length ? (
+          <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+        ) : !classGroups.length ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
             <Wallet className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-700">No pending fees found</p>
+            <p className="text-sm font-semibold text-gray-700">No pending fees as of this date</p>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {rows.map((fee) => {
-              const overdue = daysOverdue(fee.dueDate);
-              const isOverdue = fee.status === 'overdue' || overdue > 0;
-              const isDueSoon = !isOverdue && overdue >= -3;
-              return (
-                <div
-                  key={fee._id}
-                  className={cn(
-                    'bg-white rounded-2xl border shadow-sm p-4 flex items-center gap-3',
-                    isOverdue ? 'border-red-200' : isDueSoon ? 'border-amber-200' : 'border-gray-100',
-                  )}
-                >
-                  <div className={cn('w-1.5 self-stretch rounded-full shrink-0', isOverdue ? 'bg-red-500' : isDueSoon ? 'bg-amber-500' : 'bg-emerald-400')} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-bold text-gray-900 truncate">{fee.studentName}</p>
-                      <FeeStatusBadge status={fee.status} size="sm" />
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-gray-400">Class {fee.class}-{fee.section} ·</p>
-                      <DueDateEditor fee={fee} />
-                      {isOverdue && <span className="text-red-500 font-semibold text-xs">· {overdue}d overdue</span>}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={cn('text-sm font-bold', isOverdue ? 'text-red-600' : 'text-amber-600')}>{fmt(fee.balance)}</p>
-                    <button
-                      onClick={() => setPayingFee(fee)}
-                      className="mt-1.5 h-8 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold"
-                    >
-                      Collect
-                    </button>
-                  </div>
+          <div className="space-y-4">
+            {classGroups.map((g) => (
+              <div key={g.class} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+                  <p className="text-sm font-bold text-gray-900">Class {g.class}</p>
+                  <p className="text-xs text-gray-500">
+                    {g.students.length} student{g.students.length !== 1 ? 's' : ''} · <span className="font-semibold text-gray-800">{fmt(g.totalDue)}</span>
+                  </p>
                 </div>
-              );
-            })}
+                <div>
+                  {g.students.map((s) => (
+                    <StudentRow key={s.studentId} student={s} selectedDate={selectedDate} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {payingFee && (
-        <RecordPaymentModal fee={payingFee} onClose={() => setPayingFee(null)} onSuccess={() => setPayingFee(null)} />
-      )}
-      {assignOpen && (
-        <AssignFeeModal onClose={() => setAssignOpen(false)} onAssigned={() => setAssignOpen(false)} />
-      )}
       {notifyOpen && <NotifyClassTeachersPanel onClose={() => setNotifyOpen(false)} />}
     </div>
   );

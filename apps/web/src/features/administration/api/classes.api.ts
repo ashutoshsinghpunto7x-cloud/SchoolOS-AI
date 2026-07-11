@@ -1,5 +1,5 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
-import type { ApiResponse, ClassSectionSummary, UpsertClassTeacherPayload, ClassTeacherAssignment } from '@schoolos/types';
+import type { ApiResponse, ClassSectionSummary, UpsertClassTeacherPayload, RemoveClassTeacherPayload, ClassTeacherAssignment } from '@schoolos/types';
 
 const BASE = '/classes';
 
@@ -15,6 +15,12 @@ export const classesApi = {
     try {
       const res = await apiClient.put<ApiResponse<ClassTeacherAssignment>>(`${BASE}/teacher`, payload);
       return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async removeTeacher(payload: RemoveClassTeacherPayload): Promise<void> {
+    try {
+      await apiClient.delete(`${BASE}/teacher`, { data: payload });
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 };

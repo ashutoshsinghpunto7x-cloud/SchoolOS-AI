@@ -1,6 +1,7 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
 import type {
   ApiResponse,
+  AppNotification,
   NotificationListResult,
   SendMessageToTeachersPayload,
   SendMessageToTeachersResult,
@@ -11,6 +12,23 @@ export const notificationsApi = {
     try {
       const res = await apiClient.get<ApiResponse<NotificationListResult>>('/notifications/me');
       return res.data.data ?? { notifications: [], unreadCount: 0 };
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async getById(id: string): Promise<AppNotification> {
+    try {
+      const res = await apiClient.get<ApiResponse<AppNotification>>(`/notifications/${id}`);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async updateCallStatus(id: string, studentId: string, status: string): Promise<void> {
+    try {
+      await apiClient.patch(`/notifications/${id}/call-status`, { studentId, status });
     } catch (err) {
       throw new Error(extractErrorMessage(err));
     }

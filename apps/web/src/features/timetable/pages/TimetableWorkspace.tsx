@@ -61,7 +61,7 @@ export const TimetableWorkspace = () => {
             <button
               type="button"
               onClick={() => navigate('/timetable/new')}
-              className="flex items-center gap-2 h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700
+              className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
                          text-sm font-bold text-white transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
@@ -92,7 +92,7 @@ export const TimetableWorkspace = () => {
           value={filters.status ?? ''}
           onChange={(e) => { setFilters((f) => ({ ...f, status: e.target.value as TimetableStatus || undefined })); setPage(1); }}
           className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                     focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 cursor-pointer"
         >
           <option value="">All Statuses</option>
           {STATUSES.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
@@ -102,7 +102,7 @@ export const TimetableWorkspace = () => {
           value={filters.class ?? ''}
           onChange={(e) => { setFilters((f) => ({ ...f, class: e.target.value || undefined })); setPage(1); }}
           className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                     focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 cursor-pointer"
         >
           <option value="">All Classes</option>
           {CLASSES.map((c) => <option key={c} value={c}>Class {c}</option>)}
@@ -113,14 +113,14 @@ export const TimetableWorkspace = () => {
           onChange={(e) => { setFilters((f) => ({ ...f, academicYear: e.target.value || undefined })); setPage(1); }}
           placeholder="Academic Year (e.g. 2024-25)"
           className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-52"
+                     focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 w-52"
         />
       </div>
 
       {/* List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
         </div>
       ) : timetables.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -130,7 +130,7 @@ export const TimetableWorkspace = () => {
             <button
               type="button"
               onClick={() => navigate('/timetable/new')}
-              className="text-sm text-blue-600 hover:underline font-semibold"
+              className="text-sm text-[#5B21B6] hover:underline font-semibold"
             >
               Create the first timetable →
             </button>

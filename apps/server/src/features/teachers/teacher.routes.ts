@@ -9,14 +9,14 @@ const router = Router();
 router.use(authenticate);
 
 // ── Teacher CRUD ──────────────────────────────────────────────────────────────
-// Accountant can import/view teachers (and, per spec, upload photos) but cannot
-// create/edit teacher profile data or change employment status — that's
-// Principal/Admin (and Reception, which already manages basic staff records).
+// Accountant can import/view teachers and, from the Teacher Directory, edit
+// profile fields too (needed to keep records current and export accurately) —
+// employment-status changes and account creation/deletion stay Principal/Admin/Reception.
 router.post('/',   authorize('admin', 'principal', 'reception'), teacherController.create);
 router.get('/',    teacherController.list);
 router.get('/search', teacherController.search);       // lightweight autocomplete
 router.get('/:id', teacherController.getById);
-router.patch('/:id', authorize('admin', 'principal', 'reception'), teacherController.update);
+router.patch('/:id', authorize('admin', 'principal', 'reception', 'accountant'), teacherController.update);
 router.post('/:id/photo',   authorize('admin', 'reception', 'accountant'), imageUploadMiddleware, teacherController.uploadPhoto);
 router.delete('/:id/photo', authorize('admin', 'reception', 'accountant'), teacherController.removePhoto);
 router.patch('/:id/status',    authorize('admin', 'principal', 'reception'), teacherController.changeStatus);

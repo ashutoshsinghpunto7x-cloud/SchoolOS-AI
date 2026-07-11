@@ -1,7 +1,7 @@
 import { Student } from '../students/student.model';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { classTeacherRepository } from './class-teacher.repository';
-import { upsertClassTeacherSchema } from './class-teacher.validation';
+import { upsertClassTeacherSchema, removeClassTeacherSchema } from './class-teacher.validation';
 import { NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
@@ -55,5 +55,18 @@ export const classTeacherService = {
     });
 
     return assignment;
+  },
+
+  async removeClassTeacher(rawInput: unknown, ctx: AuthContext): Promise<void> {
+    const input = removeClassTeacherSchema.parse(rawInput);
+    const removed = await classTeacherRepository.remove(ctx.schoolId, input.class, input.section);
+    if (!removed) throw new NotFoundError('Class teacher assignment');
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'class_teacher.unassigned', resource: 'classes', resourceId: `${input.class}-${input.section}`,
+      details: { class: input.class, section: input.section },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
   },
 };

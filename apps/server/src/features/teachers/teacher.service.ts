@@ -10,13 +10,22 @@ import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { User, IUser } from '../users/user.model';
+import { nextSequence } from '../../lib/counter.model';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Atomically incremented per school+year, so concurrent creates (e.g. every
+// row of a bulk import batch processed in parallel) each get a distinct
+// number in one DB round trip — no read-then-write race, no retries needed.
+// `seedFrom` continues from the existing teacher count the first time this
+// key is ever used, so schools with pre-existing teachers don't restart at 1.
 const generateEmployeeId = async (schoolId: string): Promise<string> => {
-  const year  = new Date().getFullYear();
-  const count = await teacherRepository.countAll(schoolId);
-  return `EMP-${year}-${String(count + 1).padStart(4, '0')}`;
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(
+    `teacher-employeeId:${schoolId}:${year}`,
+    () => teacherRepository.countAll(schoolId)
+  );
+  return `EMP-${year}-${String(seq).padStart(4, '0')}`;
 };
 
 // ── Service ───────────────────────────────────────────────────────────────────

@@ -159,11 +159,19 @@ export const useConflicts = () =>
 
 // ── Substitutes ───────────────────────────────────────────────────────────────
 
+// Substitutions can be approved/assigned from another session (e.g. a
+// co-principal or the class teacher), which local invalidateQueries can't
+// see — so these two poll on a short interval to stay "instant enough"
+// across sessions, on top of the immediate same-session invalidation that
+// useApproveLeaveRequest/useRejectLeaveRequest already trigger.
+const SUBSTITUTE_POLL_INTERVAL = 15_000;
+
 export const useSubstitutes = (opts: SubstituteListOptions = {}) =>
   useQuery({
     queryKey: timetableKeys.substitutes(opts),
     queryFn:  () => timetableApi.listSubstitutes(opts),
     placeholderData: (prev) => prev,
+    refetchInterval: SUBSTITUTE_POLL_INTERVAL,
   });
 
 export const useCreateSubstitute = () => {
@@ -186,12 +194,13 @@ export const useNeedsSubstitute = (date: string) =>
   useQuery({
     queryKey: timetableKeys.needsSubstitute(date),
     queryFn:  () => timetableApi.getNeedsSubstitute(date),
+    refetchInterval: SUBSTITUTE_POLL_INTERVAL,
   });
 
-export const useSuggestSubstituteTeachers = (cls: string, section: string, excludeTeacherId?: string, enabled = true) =>
+export const useSuggestSubstituteTeachers = (cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number, enabled = true) =>
   useQuery({
     queryKey: timetableKeys.suggestTeachers(cls, section),
-    queryFn:  () => timetableApi.suggestSubstituteTeachers(cls, section, excludeTeacherId),
+    queryFn:  () => timetableApi.suggestSubstituteTeachers(cls, section, excludeTeacherId, dayOfWeek),
     enabled:  enabled && !!cls && !!section,
   });
 

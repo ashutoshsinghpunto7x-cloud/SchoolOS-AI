@@ -21,6 +21,14 @@ export const studentChangeRequestRepository = {
       .lean<IStudentChangeRequest[]>();
   },
 
+  /** Narrow, any-role-safe lookup — unlike findPending (admin/principal-only,
+   *  school-wide), this only ever returns requests for one specific student. */
+  async findPendingForStudent(schoolId: string, studentId: string): Promise<IStudentChangeRequest[]> {
+    return StudentChangeRequest.find({ schoolId, studentId, status: 'pending' })
+      .sort({ createdAt: -1 })
+      .lean<IStudentChangeRequest[]>();
+  },
+
   async findById(id: string, schoolId: string): Promise<IStudentChangeRequest | null> {
     return StudentChangeRequest.findOne({ _id: id, schoolId });
   },

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Receipt, MessageSquare, CalendarClock, Repeat, Loader2 } from 'lucide-react';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../hooks/useNotifications';
 import { LeaveRequestReviewModal } from '@/features/leave-requests/components/LeaveRequestReviewModal';
@@ -36,7 +37,8 @@ export const NotificationBell = () => {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const { user } = useAuth();
-  const isAccountant = user?.role === 'accountant';
+  const navigate = useNavigate();
+  const usePillStyle = user?.role === 'accountant' || user?.role === 'teacher' || user?.role === 'principal';
 
   function handleNotificationClick(n: AppNotification) {
     if (!n.isRead) markRead.mutate(n._id);
@@ -44,7 +46,12 @@ export const NotificationBell = () => {
     if (leaveRequestId) {
       setOpenLeaveRequestId(leaveRequestId);
       setIsOpen(false);
+      return;
     }
+    // Every other type (defaulters_list, substitution, message, change_request)
+    // opens the shared full-page notification detail view.
+    navigate(`/notifications/${n._id}`);
+    setIsOpen(false);
   }
 
   const notifications = data?.notifications ?? [];
@@ -67,8 +74,8 @@ export const NotificationBell = () => {
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
           "relative p-2 rounded-xl transition-all duration-200",
-          isAccountant
-            ? "bg-white border border-[#E8E8E8] text-gray-500 hover:bg-[#10B981]/5 hover:border-[#10B981]/20 hover:text-[#0B3D2E] shadow-sm"
+          usePillStyle
+            ? "bg-white border border-[#E8E8E8] text-gray-500 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 hover:text-[#5B21B6] shadow-sm"
             : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
         )}
         aria-label="Notifications"

@@ -5,7 +5,7 @@ import { usePeriodSlots, useCreatePeriodSlot, useUpdatePeriodSlot, useDeletePeri
 import type { PeriodSlot, CreatePeriodSlotPayload } from '@schoolos/types';
 
 const inputCls = `h-10 w-full rounded-xl border border-gray-200 px-3 text-sm
-  focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white`;
+  focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 bg-white`;
 
 const DAYS = [
   { value: 1, label: 'Mon' }, { value: 2, label: 'Tue' }, { value: 3, label: 'Wed' },
@@ -41,7 +41,7 @@ const SlotForm = ({ initial = {}, onSave, onCancel, isPending }: SlotFormProps) 
   }
 
   return (
-    <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-200 flex flex-col gap-3">
+    <div className="p-4 bg-[#A855F7]/10/50 rounded-xl border border-[#A855F7]/20 flex flex-col gap-3">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="sm:col-span-2 flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-600">Name *</label>
@@ -63,7 +63,7 @@ const SlotForm = ({ initial = {}, onSave, onCancel, isPending }: SlotFormProps) 
             type="checkbox"
             checked={form.isBreak}
             onChange={(e) => setForm((p) => ({ ...p, isBreak: e.target.checked }))}
-            className="w-4 h-4 rounded border-gray-300 text-blue-600"
+            className="w-4 h-4 rounded border-gray-300 text-[#5B21B6]"
           />
           Break Period
         </label>
@@ -77,8 +77,8 @@ const SlotForm = ({ initial = {}, onSave, onCancel, isPending }: SlotFormProps) 
               onClick={() => toggleDay(d.value)}
               className={`h-7 w-9 rounded-lg text-xs font-bold border transition-colors ${
                 form.daysApplicable?.includes(d.value)
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'
+                  ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#7C3AED]'
               }`}
             >
               {d.label}
@@ -96,7 +96,7 @@ const SlotForm = ({ initial = {}, onSave, onCancel, isPending }: SlotFormProps) 
           type="button"
           onClick={() => form.name.trim() && form.startTime && form.endTime && onSave(form)}
           disabled={isPending || !form.name.trim() || !form.startTime || !form.endTime}
-          className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5 text-sm font-bold text-white disabled:opacity-50"
+          className="h-9 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-1.5 text-sm font-bold text-white disabled:opacity-50"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
           Save
@@ -134,7 +134,7 @@ const SlotRow = ({ slot, index }: { slot: PeriodSlot; index: number }) => {
             {!confirmDel ? (
               <>
                 <button type="button" onClick={() => setEditing(true)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#5B21B6] hover:bg-[#A855F7]/10 transition-colors">
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button type="button" onClick={() => setConfirmDel(true)}
@@ -182,7 +182,7 @@ export const PeriodSetupPage = () => {
           <p className="text-sm font-bold text-gray-700">Period Slots ({slots.length})</p>
           {!adding && (
             <button type="button" onClick={() => setAdding(true)}
-              className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-bold text-white">
+              className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white">
               <Plus className="w-4 h-4" />
               Add Period
             </button>
@@ -199,7 +199,7 @@ export const PeriodSetupPage = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-blue-600 animate-spin" /></div>
+          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 text-[#5B21B6] animate-spin" /></div>
         ) : slots.length === 0 && !adding ? (
           <p className="text-sm text-gray-400 text-center py-8">
             No periods configured. Click "Add Period" to start.

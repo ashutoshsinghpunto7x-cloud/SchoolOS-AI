@@ -62,7 +62,7 @@ export const studentChangeRequestService = {
       schoolId: ctx.schoolId,
     });
 
-    await notificationService.sendToAdmins(
+    await notificationService.sendToApprovers(
       {
         type: 'change_request',
         title: `Edit request — ${student.fullName}`,
@@ -77,6 +77,11 @@ export const studentChangeRequestService = {
 
   async listPending(ctx: AuthContext) {
     const requests = await studentChangeRequestRepository.findPending(ctx.schoolId);
+    return requests.map(toApiShape);
+  },
+
+  async listPendingForStudent(studentId: string, ctx: AuthContext) {
+    const requests = await studentChangeRequestRepository.findPendingForStudent(ctx.schoolId, studentId);
     return requests.map(toApiShape);
   },
 

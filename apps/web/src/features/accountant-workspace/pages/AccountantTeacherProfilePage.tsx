@@ -48,7 +48,7 @@ export function AccountantTeacherProfilePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-[#10B981] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
       </div>
     );
   }
@@ -91,7 +91,7 @@ export function AccountantTeacherProfilePage() {
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative w-16 h-16 shrink-0 group">
-                <div className="w-16 h-16 rounded-2xl bg-[#10B981] flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden">
                   {teacher.photoUrl ? (
                     <img src={teacher.photoUrl} alt={teacher.fullName} className="w-full h-full object-cover" />
                   ) : (
@@ -104,7 +104,7 @@ export function AccountantTeacherProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   title={teacher.photoUrl ? 'Replace photo' : 'Add photo'}
-                  className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#10B981] hover:border-[#10B981]/30 transition-colors"
+                  className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#5B21B6] hover:border-[#A855F7]/30 transition-colors"
                 >
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
                 </button>

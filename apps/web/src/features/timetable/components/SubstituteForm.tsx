@@ -11,7 +11,7 @@ interface SubstituteFormProps {
 }
 
 const inputCls = `h-11 w-full rounded-xl border border-gray-200 px-3 text-sm
-  focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white`;
+  focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 bg-white`;
 
 const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
   <div className="flex flex-col gap-1.5">
@@ -105,10 +105,10 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
       </div>
 
       {orig && (
-        <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-sm">
-          <span className="font-semibold text-blue-800">Original: </span>
-          <span className="text-blue-700">{orig.subjectName}</span>
-          {orig.teacherName && <span className="text-blue-600"> · {orig.teacherName}</span>}
+        <div className="p-3 bg-[#A855F7]/10 rounded-xl border border-[#A855F7]/20 text-sm">
+          <span className="font-semibold text-[#4C1D95]">Original: </span>
+          <span className="text-[#4C1D95]">{orig.subjectName}</span>
+          {orig.teacherName && <span className="text-[#5B21B6]"> · {orig.teacherName}</span>}
         </div>
       )}
 
@@ -153,7 +153,7 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
         <button
           type="submit"
           disabled={isPending || !form.substituteTeacherName.trim() || !form.slotId}
-          className="h-11 px-7 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center gap-2
+          className="h-11 px-7 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-2
                      text-sm font-bold text-white transition-colors disabled:opacity-50"
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin" />}

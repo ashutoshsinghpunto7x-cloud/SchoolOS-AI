@@ -44,7 +44,7 @@ export const TimetableGridPage = () => {
   if (ttLoading || slotsLoading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+        <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
       </div>
     );
   }
@@ -53,7 +53,7 @@ export const TimetableGridPage = () => {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <p className="text-gray-500">Timetable not found.</p>
-        <button type="button" onClick={() => navigate('/timetable')} className="text-blue-600 text-sm hover:underline">
+        <button type="button" onClick={() => navigate('/timetable')} className="text-[#5B21B6] text-sm hover:underline">
           Back to Timetable
         </button>
       </div>
@@ -107,8 +107,8 @@ export const TimetableGridPage = () => {
                   type="button"
                   onClick={() => setShowStatusMenu((v) => !v)}
                   disabled={statusPending}
-                  className="h-9 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200
-                             flex items-center gap-1.5 text-sm font-semibold text-blue-600 transition-colors
+                  className="h-9 px-4 rounded-xl bg-[#A855F7]/10 hover:bg-[#A855F7]/20 border border-[#A855F7]/20
+                             flex items-center gap-1.5 text-sm font-semibold text-[#5B21B6] transition-colors
                              disabled:opacity-50"
                 >
                   {statusPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
@@ -180,7 +180,7 @@ export const TimetableGridPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/timetable/periods')}
-                  className="text-sm text-blue-600 hover:underline font-semibold"
+                  className="text-sm text-[#5B21B6] hover:underline font-semibold"
                 >
                   Set up periods →
                 </button>

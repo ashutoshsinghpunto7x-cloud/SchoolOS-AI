@@ -5,7 +5,7 @@ import {
   ArrowLeft, Loader2, AlertCircle, Printer, MessageCircle, Mail, UserRound,
   IndianRupee, ChevronLeft, ChevronRight, ArrowUpDown, User, GraduationCap,
   FolderKanban, Hash, Phone, MailIcon, MapPin, CalendarDays, Wallet, Receipt,
-  BadgePercent, X, Camera,
+  BadgePercent, X, Camera, Pencil, Check, Clock,
 } from 'lucide-react';
 import { useStudentLedger, useSendLedgerWhatsAppReminder, useSendLedgerStatementEmail, useInvalidateStudentLedger } from '../hooks/useAccountantWorkspace';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
@@ -13,6 +13,8 @@ import { ProcessFeePaymentView } from '../components/ProcessFeePaymentView';
 import { FeeStatusBadge } from '@/features/fees/components/FeeStatusBadge';
 import { useCreateDiscountRequest, useStudentDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { useUploadStudentPhoto, useRemoveStudentPhoto } from '@/features/students/hooks/useStudents';
+import { useCreateChangeRequest, usePendingChangeRequestsForStudent } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { AdmissionStatus, FeePayment, FeeRecord } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +51,97 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
   );
 }
 
+// ── Monthly Tuition Fee — editable, but changes go through Principal approval ──
+// An accountant can propose a new amount; the old amount keeps applying to
+// every screen (including fee collection) until the Principal approves it.
+
+function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; currentFee?: number }) {
+  const { user } = useAuth();
+  const canEdit = user?.role === 'accountant';
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(currentFee != null ? String(currentFee) : '');
+  const { data: pending } = usePendingChangeRequestsForStudent(studentId, canEdit);
+  const { mutateAsync, isPending } = useCreateChangeRequest();
+
+  const pendingFeeRequest = pending?.find((r) => 'monthlyTuitionFee' in r.changes);
+
+  async function submit() {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount < 0) { toast.error('Enter a valid amount'); return; }
+    if (amount === currentFee) { setEditing(false); return; }
+    try {
+      await mutateAsync({ studentId, changes: { monthlyTuitionFee: amount } });
+      toast.success('Fee change sent to the Principal for approval');
+      setEditing(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to submit change');
+    }
+  }
+
+  if (!canEdit) {
+    return <InfoRow icon={Wallet} label="Monthly Tuition Fee" value={currentFee ? fmt(currentFee) : '—'} />;
+  }
+
+  if (pendingFeeRequest) {
+    return (
+      <div className="flex items-start gap-2.5">
+        <Wallet className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[11px] text-gray-400">Monthly Tuition Fee</p>
+          <p className="text-sm font-semibold text-gray-800">{currentFee ? fmt(currentFee) : '—'}</p>
+          <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1 mt-0.5">
+            <Clock className="w-3 h-3" /> {fmt(Number(pendingFeeRequest.changes.monthlyTuitionFee))} pending Principal approval
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-start gap-2.5">
+        <Wallet className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] text-gray-400 mb-1">Monthly Tuition Fee</p>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number" min={0} autoFocus value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void submit()}
+              className="w-28 h-7 px-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            />
+            <button onClick={() => void submit()} disabled={isPending} className="w-6 h-6 flex items-center justify-center rounded-md bg-emerald-500 text-white shrink-0 disabled:opacity-50">
+              {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            </button>
+            <button onClick={() => { setEditing(false); setValue(currentFee != null ? String(currentFee) : ''); }} className="w-6 h-6 flex items-center justify-center rounded-md bg-gray-100 text-gray-500 shrink-0">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2.5 group">
+      <Wallet className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+      <div className="min-w-0">
+        <p className="text-[11px] text-gray-400">Monthly Tuition Fee</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-semibold text-gray-800 truncate">{currentFee ? fmt(currentFee) : '—'}</p>
+          <button
+            onClick={() => { setValue(currentFee != null ? String(currentFee) : ''); setEditing(true); }}
+            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-blue-600 transition-opacity"
+            title="Propose a new fee (requires Principal approval)"
+          >
+            <Pencil className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedger>['data'] }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: uploadPhoto, isPending: uploading } = useUploadStudentPhoto(ledger?.student._id ?? '');
@@ -71,7 +164,7 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
       <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative w-14 h-14 shrink-0 group">
-            <div className="w-14 h-14 rounded-2xl bg-gray-900 flex items-center justify-center overflow-hidden">
+            <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden">
               {student.photoUrl ? (
                 <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
               ) : (
@@ -84,7 +177,7 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               title={student.photoUrl ? 'Replace photo' : 'Add photo'}
-              className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors"
+              className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#5B21B6] hover:border-[#A855F7]/30 transition-colors"
             >
               {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
             </button>
@@ -120,7 +213,7 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
         <InfoRow icon={MailIcon}     label="Email" value={student.email || '—'} />
         <InfoRow icon={MapPin}       label="Address" value={student.address || '—'} />
         <InfoRow icon={CalendarDays} label="Admission Year" value={student.admissionYear} />
-        <InfoRow icon={Wallet}       label="Monthly Tuition Fee" value={student.monthlyTuitionFee ? fmt(student.monthlyTuitionFee) : '—'} />
+        <EditableTuitionFeeRow studentId={student._id} currentFee={student.monthlyTuitionFee} />
         <InfoRow icon={Receipt}      label="Last Payment" value={fmtDate(summary.lastPaymentDate)} />
       </div>
     </div>
@@ -184,7 +277,10 @@ function FeeLedgerTable({ feeRecords, payments, onCollect }: { feeRecords: FeeRe
                     <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
                       {fee.feeHead === 'miscellaneous' && fee.customHead ? fee.customHead : FEE_HEAD_LABELS[fee.feeHead]}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fee.month || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                      {fee.month || '—'}
+                      {fee.month && <span className="text-gray-400 text-xs ml-1">({fee.academicYear})</span>}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(fee.dueDate)}</td>
                     <td className="px-4 py-3 text-right text-gray-800 whitespace-nowrap">{fmt(fee.totalAmount)}</td>
                     <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{fee.discountAmount ? fmt(fee.discountAmount) : '—'}</td>
@@ -201,7 +297,7 @@ function FeeLedgerTable({ feeRecords, payments, onCollect }: { feeRecords: FeeRe
                       {canCollect && (
                         <button
                           onClick={() => onCollect(fee)}
-                          className="h-8 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold"
+                          className="h-8 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-lg text-xs font-semibold"
                         >
                           Collect
                         </button>
@@ -473,7 +569,7 @@ function QuickActionsCard({ ledger, onCollect, onRequestDiscount }: { ledger: No
       <div className="space-y-2">
         <button
           onClick={onCollect}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl bg-gray-900 hover:bg-black text-white text-sm font-semibold transition-colors"
+          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-semibold transition-colors"
         >
           <IndianRupee className="w-4 h-4" /> Collect Fee
         </button>
@@ -530,7 +626,7 @@ export function StudentLedgerPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-gray-900 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
       </div>
     );
   }

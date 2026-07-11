@@ -1,4 +1,3 @@
-import { Users, CalendarCheck, ClipboardList, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { PrincipalHeaderWidget } from '../components/PrincipalHeaderWidget';
@@ -59,18 +58,14 @@ export const PrincipalWorkspace = () => {
                 title="Admissions"
                 value={data.admissions.total}
                 subtitle={`${data.admissions.newThisMonth} new this month`}
-                icon={ClipboardList}
-                iconClassName="bg-emerald-100 text-emerald-600"
                 onClick={() => navigate('/enquiries')}
                 delay={0.1}
               />
               <KPICard
                 compact
-                title="Upcoming Events"
+                title="This Month's Events"
                 value={data.upcomingEvents.length}
-                subtitle="Next 14 days"
-                icon={CalendarDays}
-                iconClassName="bg-violet-100 text-violet-600"
+                subtitle="On the school calendar"
                 onClick={() => navigate('/calendar')}
                 delay={0.15}
               />
@@ -79,8 +74,6 @@ export const PrincipalWorkspace = () => {
                 title="Teachers Present"
                 value={teachersSummary?.presentCount ?? data.teachers.active}
                 subtitle={`of ${teachersSummary?.total ?? data.teachers.total} teachers`}
-                icon={Users}
-                iconClassName="bg-blue-100 text-blue-600"
                 onClick={() => navigate('/principal/teachers-summary')}
                 delay={0.2}
               />
@@ -89,8 +82,6 @@ export const PrincipalWorkspace = () => {
                 title="Attendance Today"
                 value={data.attendance.today.total > 0 ? `${data.attendance.today.attendanceRate}%` : '—'}
                 subtitle={`${data.attendance.today.present} present`}
-                icon={CalendarCheck}
-                iconClassName="bg-orange-100 text-orange-600"
                 onClick={() => navigate('/attendance')}
                 delay={0.25}
               />

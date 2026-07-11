@@ -47,31 +47,42 @@ export function UploadCenter() {
         </div>
       </div>
 
-      {/* Import type */}
-      <div>
-        <p className="text-sm font-semibold text-gray-700 mb-3">1. What are you importing?</p>
-        <div className="grid grid-cols-2 gap-3">
-          {IMPORT_TYPES.map(({ value, label, description }) => (
-            <button
-              key={value}
-              onClick={() => setImportType(value)}
-              className={[
-                'text-left rounded-xl border p-4 transition-all',
-                importType === value
-                  ? 'border-indigo-400 bg-indigo-50/70 ring-1 ring-indigo-400'
-                  : 'border-gray-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/30',
-              ].join(' ')}
-            >
-              <p className={`text-sm font-semibold ${importType === value ? 'text-indigo-700' : 'text-gray-800'}`}>{label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-            </button>
-          ))}
+      {/* Import type — already chosen on the previous screen; just confirm it here
+          instead of asking again. Falls back to the full picker only if this page
+          is reached without a type (e.g. a bookmarked/typed-in URL). */}
+      {importType ? (
+        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+          <p className="text-sm text-gray-700">
+            Importing: <span className="font-semibold text-gray-900">{IMPORT_TYPES.find((t) => t.value === importType)?.label ?? importType}</span>
+          </p>
+          <button
+            onClick={() => setImportType(null)}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+          >
+            Change
+          </button>
         </div>
-      </div>
+      ) : (
+        <div>
+          <p className="text-sm font-semibold text-gray-700 mb-3">What are you importing?</p>
+          <div className="grid grid-cols-2 gap-3">
+            {IMPORT_TYPES.map(({ value, label, description }) => (
+              <button
+                key={value}
+                onClick={() => setImportType(value)}
+                className="text-left rounded-xl border border-gray-200 bg-white p-4 transition-all hover:border-indigo-200 hover:bg-indigo-50/30"
+              >
+                <p className="text-sm font-semibold text-gray-800">{label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* File dropzone */}
       <div>
-        <p className="text-sm font-semibold text-gray-700 mb-3">2. Upload your file</p>
+        <p className="text-sm font-semibold text-gray-700 mb-3">Upload your file</p>
         <FileDropzone onFile={setFile} disabled={upload.isPending} />
       </div>
 

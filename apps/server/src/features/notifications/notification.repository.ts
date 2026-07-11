@@ -34,6 +34,20 @@ export const notificationRepository = {
     return Notification.countDocuments({ recipientUserId: userId, schoolId, isRead: false });
   },
 
+  async findByIdForUser(id: string, userId: string): Promise<INotification | null> {
+    return Notification.findOne({ _id: id, recipientUserId: userId }).lean<INotification>();
+  },
+
+  /** Merges one student's call outcome into payload.callStatus without clobbering
+   *  the rest of the payload (e.g. the original students[] list). */
+  async setCallStatus(id: string, userId: string, studentId: string, status: string): Promise<INotification | null> {
+    return Notification.findOneAndUpdate(
+      { _id: id, recipientUserId: userId },
+      { $set: { [`payload.callStatus.${studentId}`]: status } },
+      { new: true },
+    ).lean<INotification>();
+  },
+
   async markRead(id: string, userId: string): Promise<boolean> {
     const result = await Notification.updateOne(
       { _id: id, recipientUserId: userId },

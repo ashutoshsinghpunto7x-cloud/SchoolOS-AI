@@ -7,6 +7,10 @@ export interface IUser extends Document {
   firstName: string;
   lastName: string;
   email: string;
+  /** Admin-issued alternate login identifier for staff (e.g. teachers) who log in
+   *  without using their email — separate from and never replaces email, which
+   *  stays the identity used to link a User back to its Teacher/etc. record. */
+  username?: string;
   phone?: string;
   passwordHash: string;
   role: UserRole;
@@ -34,6 +38,7 @@ const userSchema = new Schema<IUser>(
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phone: { type: String },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['admin', 'principal', 'reception', 'teacher', 'accountant'], required: true },
@@ -55,6 +60,7 @@ const userSchema = new Schema<IUser>(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ username: 1 }, { unique: true, sparse: true });
 userSchema.index({ schoolId: 1, status: 1 });
 userSchema.index({ schoolId: 1, role: 1 });
 

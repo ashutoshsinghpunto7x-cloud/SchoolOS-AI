@@ -5,6 +5,7 @@ import type { SendMessageToTeachersPayload } from '@schoolos/types';
 
 export const notificationKeys = {
   list: ['notifications', 'list'] as const,
+  detail: (id: string) => ['notifications', 'detail', id] as const,
 };
 
 const POLL_INTERVAL_MS = 30_000;
@@ -41,3 +42,19 @@ export const useSendMessageToTeachers = () =>
   useMutation({
     mutationFn: (payload: SendMessageToTeachersPayload) => notificationsApi.sendMessageToTeachers(payload),
   });
+
+export const useNotification = (id: string | undefined) =>
+  useQuery({
+    queryKey: notificationKeys.detail(id ?? ''),
+    queryFn: () => notificationsApi.getById(id!),
+    enabled: !!id,
+  });
+
+export const useUpdateCallStatus = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ studentId, status }: { studentId: string; status: string }) =>
+      notificationsApi.updateCallStatus(id, studentId, status),
+    onSuccess: () => qc.invalidateQueries({ queryKey: notificationKeys.detail(id) }),
+  });
+};

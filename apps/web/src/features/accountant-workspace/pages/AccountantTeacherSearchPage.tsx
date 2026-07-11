@@ -8,7 +8,7 @@ const PAGE_SIZE = 20;
 
 const selectCls =
   'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#10B981]/30 appearance-none pr-8';
+  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 appearance-none pr-8';
 
 export function AccountantTeacherSearchPage() {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ export function AccountantTeacherSearchPage() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && applySearch()}
                 placeholder="Name, employee ID, or phone"
-                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#10B981]/30"
+                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
               />
             </div>
             <div className="relative">
@@ -73,7 +73,7 @@ export function AccountantTeacherSearchPage() {
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
-            <button onClick={applySearch} className="h-10 px-4 bg-[#10B981] hover:bg-[#059669] text-white rounded-xl text-sm font-semibold">
+            <button onClick={applySearch} className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-semibold">
               Search
             </button>
           </div>
@@ -106,7 +106,7 @@ export function AccountantTeacherSearchPage() {
                 onClick={() => navigate(`/accountant/teachers/${t._id}`)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-[#10B981]/10 flex items-center justify-center text-[#10B981] font-bold text-xs shrink-0 overflow-hidden">
+                <div className="w-9 h-9 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
                   {t.photoUrl ? (
                     <img src={t.photoUrl} alt={t.fullName} className="w-full h-full object-cover" />
                   ) : (

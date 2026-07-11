@@ -117,6 +117,18 @@ function ClassInfoModal({
           </div>
         </div>
 
+        {/* Only the assigned class teacher (or an active substitute) may mark
+            attendance — teaching a subject period here isn't enough, and the
+            server rejects the save with a 403 if attempted anyway. */}
+        {!cls.canMarkAttendance && (
+          <div className="flex items-start gap-2.5 mb-4 px-3.5 py-3 rounded-xl bg-amber-50 border border-amber-100">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 leading-relaxed">
+              You teach a subject period here, but only the class teacher for {cls.class}-{cls.section} (or an active substitute) can mark its attendance.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             type="button"
@@ -125,13 +137,15 @@ function ClassInfoModal({
           >
             Close
           </button>
-          <button
-            type="button"
-            onClick={onMarkAttendance}
-            className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold transition-colors"
-          >
-            Mark Attendance
-          </button>
+          {cls.canMarkAttendance && (
+            <button
+              type="button"
+              onClick={onMarkAttendance}
+              className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold transition-colors"
+            >
+              Mark Attendance
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -204,20 +218,26 @@ function TodayClassCard({
               />
             </div>
           </>
-        ) : (
+        ) : cls.canMarkAttendance ? (
           <p className="text-sm text-gray-400">
             {cls.totalStudents} student{cls.totalStudents !== 1 ? 's' : ''} · tap to mark
+          </p>
+        ) : (
+          <p className="text-sm text-gray-400">
+            {cls.totalStudents} student{cls.totalStudents !== 1 ? 's' : ''} · subject period only
           </p>
         )}
       </div>
 
-      {/* Status pill */}
+      {/* Status pill — "Pending" only for periods this teacher can actually
+          mark; a subject-only period just shows its start time, since tapping
+          it can't lead anywhere the teacher is authorized to save. */}
       <div className="flex items-center gap-2 shrink-0">
         {isMarked ? (
           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
             {pct}%
           </span>
-        ) : isNow ? (
+        ) : isNow && cls.canMarkAttendance ? (
           <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Pending
@@ -448,13 +468,28 @@ export function TeacherDashboard() {
   // list. If no period is currently active/upcoming (e.g. all of today's
   // classes already ended), fall back to the most recent one today instead of
   // bouncing to the class picker — only truly no-classes-today falls back to it.
+  // Every candidate is restricted to canMarkAttendance: teaching a subject
+  // period there isn't enough — the server rejects the save otherwise, and
+  // this CTA must never route somewhere that's guaranteed to be rejected.
   function handleMarkAttendance() {
-    if (currentPeriod) { goToAttendance(currentPeriod.cls); return; }
-    if (data?.todayClasses.length) {
-      const mostRecent = [...data.todayClasses].sort(
+    const markable = (data?.todayClasses ?? []).filter((c) => c.canMarkAttendance);
+    const current = getCurrentPeriod(markable);
+    if (current) { goToAttendance(current.cls); return; }
+    if (markable.length) {
+      const mostRecent = [...markable].sort(
         (a, b) => toMinutes(b.startTime) - toMinutes(a.startTime),
       )[0];
       goToAttendance(mostRecent);
+      return;
+    }
+    // No timetable period today references this teacher at all (e.g. a class
+    // teacher who doesn't personally teach a subject period), but they may
+    // still be the assigned class teacher for one or more classes — that
+    // alone is enough to mark attendance, so route straight there instead of
+    // landing on an empty "no classes" list right after being assigned.
+    const classTeacherOf = data?.classTeacherOf ?? [];
+    if (classTeacherOf.length === 1) {
+      navigate(`/teacher/attendance/${classTeacherOf[0].class}/${classTeacherOf[0].section}`);
       return;
     }
     navigate('/teacher/classes');

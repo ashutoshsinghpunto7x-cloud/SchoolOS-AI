@@ -292,6 +292,8 @@ export interface Student extends BaseEntity {
   monthlyTuitionFee?: number;
   approvedDiscountAmount?: number;
   approvedDiscountReason?: string;
+  /** Ad-hoc columns added from the accountant's Student Directory. */
+  customFields?: Record<string, unknown>;
   createdBy?: string;
   updatedBy?: string;
   isDeleted: boolean;
@@ -328,6 +330,7 @@ export interface CreateStudentPayload {
   emergencyContact?: StudentEmergencyContact;
   remarks?: string;
   monthlyTuitionFee?: number;
+  customFields?: Record<string, unknown>;
 }
 
 export type UpdateStudentPayload = Partial<CreateStudentPayload>;
@@ -645,6 +648,7 @@ export interface CreateTeacherPayload {
   employmentStatus?: EmploymentStatus;
   tags?: string[];
   remarks?: string;
+  customFields?: Record<string, unknown>;
 }
 
 export type UpdateTeacherPayload = Partial<CreateTeacherPayload>;
@@ -1179,6 +1183,11 @@ export interface UpsertClassTeacherPayload {
   teacherId: string;
 }
 
+export interface RemoveClassTeacherPayload {
+  class: string;
+  section: string;
+}
+
 export interface SendReceiptEmailPayload {
   toEmail: string;
   studentName: string;
@@ -1223,6 +1232,8 @@ export interface AppNotification {
     class?: string;
     section?: string;
     students?: FeeDefaulter[];
+    /** studentId -> call outcome, set from the notification's full-page view. */
+    callStatus?: Record<string, 'will_pay' | 'no_answer' | 'not_reached'>;
     studentChangeRequestId?: string;
     [key: string]: unknown;
   };
@@ -1625,6 +1636,55 @@ export interface ConflictInfo {
   conflictValue: string;
 }
 
+// ── Teacher Timetable (Principal-built, independent of class Timetable) ───────
+
+export type TeacherTimetableStatus = 'draft' | 'published';
+
+export interface TeacherTimetableEntry {
+  _id?: string;
+  dayOfWeek: number;
+  slotId: string;
+  subjectName: string;
+  class?: string;
+  section?: string;
+  roomNumber?: string;
+}
+
+export interface TeacherTimetable extends BaseEntity {
+  teacherId: string;
+  teacherName: string;
+  academicYear: string;
+  status: TeacherTimetableStatus;
+  entries: TeacherTimetableEntry[];
+  notes?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+  createdBy: string;
+  updatedBy?: string;
+  publishedAt?: string;
+  publishedBy?: string;
+}
+
+export interface GetOrCreateTeacherTimetablePayload {
+  teacherId: string;
+  teacherName: string;
+  academicYear: string;
+}
+
+export interface BulkUpdateTeacherTimetableEntriesPayload {
+  entries: TeacherTimetableEntry[];
+}
+
+export interface UpdateTeacherTimetableStatusPayload {
+  status: TeacherTimetableStatus;
+}
+
+export interface BulkUpdateTeacherTimetableEntriesResult {
+  timetable: TeacherTimetable;
+  conflicts: string[];
+}
+
 export interface CreatePeriodSlotPayload {
   name: string;
   orderIndex: number;
@@ -1838,6 +1898,7 @@ export interface SubstituteSuggestion {
   teacherId: string;
   teacherName: string;
   teachesThisClass: boolean;
+  freePeriodsToday: number;
 }
 
 export interface TeacherOnLeave {
@@ -2277,6 +2338,10 @@ export interface TodayClass {
   attendanceMarked: boolean;
   attendanceCount: number;
   totalStudents: number;
+  /** True only if this teacher is the assigned class teacher for this section,
+   *  or an active substitute today — matches attendance.service.ts's
+   *  assertTeacherCanMarkClass exactly. False for a subject-only period. */
+  canMarkAttendance: boolean;
 }
 
 export interface TeacherWeekEntry {

@@ -17,7 +17,7 @@ export const TeacherTimetablePage = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32">
-        <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+        <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
       </div>
     );
   }
@@ -54,7 +54,7 @@ export const TeacherTimetablePage = () => {
                   onClick={() => setSelectedIdx(i)}
                   className={`flex items-center gap-2 h-9 px-4 rounded-xl text-sm font-semibold border transition-colors ${
                     i === selectedIdx
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
@@ -79,7 +79,7 @@ export const TeacherTimetablePage = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/timetable/${selected._id}`)}
-                  className="text-sm text-blue-600 hover:underline font-semibold"
+                  className="text-sm text-[#5B21B6] hover:underline font-semibold"
                 >
                   View full timetable →
                 </button>

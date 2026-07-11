@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { notificationService } from './notification.service';
+import { updateCallStatusSchema } from './notification.validation';
 import { sendSuccess } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
 
@@ -11,6 +12,27 @@ export const notificationController = {
       const limit = req.query.limit ? Number(req.query.limit) : undefined;
       const data = await notificationService.listForUser(ctx.userId, ctx.schoolId, { page, limit });
       sendSuccess(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const data = await notificationService.getById(ctx.userId, req.params.id);
+      sendSuccess(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateCallStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const { studentId, status } = updateCallStatusSchema.parse(req.body);
+      const payload = await notificationService.updateCallStatus(ctx.userId, req.params.id, studentId, status);
+      sendSuccess(res, payload, 'Call status updated');
     } catch (err) {
       next(err);
     }

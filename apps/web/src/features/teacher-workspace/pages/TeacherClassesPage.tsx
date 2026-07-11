@@ -52,9 +52,15 @@ export function TeacherClassesPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useTeacherWorkspace();
 
-  // Derive unique class-section pairs from weekSchedule — this page only ever
-  // shows the class name; subjects/timetable/attendance all live on
-  // ClassDetailPage now, one tap away.
+  // Derive unique class-section pairs from weekSchedule plus class-teacher
+  // assignments — this page only ever shows the class name; subjects/
+  // timetable/attendance all live on ClassDetailPage now, one tap away.
+  //
+  // A class-teacher assignment must always surface its class here even when
+  // the teacher has no *subject* periods timetabled for it (e.g. a class
+  // teacher who doesn't personally teach that class) — otherwise "Mark
+  // Attendance" has nothing to route to right after the principal assigns
+  // them, until a timetable happens to be built too.
   const classes = useMemo<ClassEntry[]>(() => {
     if (!data) return [];
 
@@ -69,6 +75,12 @@ export function TeacherClassesPage() {
         if (!seen.has(key)) {
           seen.set(key, { cls: entry.class, section: entry.section, isClassTeacher: classTeacherKeys.has(key) });
         }
+      }
+    }
+    for (const { class: cls, section } of data.classTeacherOf ?? []) {
+      const key = `${cls}||${section}`;
+      if (!seen.has(key)) {
+        seen.set(key, { cls, section, isClassTeacher: true });
       }
     }
 

@@ -174,10 +174,10 @@ export const timetableApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  suggestSubstituteTeachers: async (cls: string, section: string, excludeTeacherId?: string): Promise<SubstituteSuggestion[]> => {
+  suggestSubstituteTeachers: async (cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number): Promise<SubstituteSuggestion[]> => {
     try {
       const res = await apiClient.get<{ data: SubstituteSuggestion[] }>(`${BASE}/substitutes/suggest-teachers`, {
-        params: { class: cls, section, excludeTeacherId },
+        params: { class: cls, section, excludeTeacherId, dayOfWeek },
       });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }

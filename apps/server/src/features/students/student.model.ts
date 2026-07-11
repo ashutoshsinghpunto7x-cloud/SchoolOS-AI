@@ -56,6 +56,8 @@ export interface IStudent extends Document {
   /** Standing discount applied to this student's fee records — only ever set via an approved FeeDiscountRequest, never directly. */
   approvedDiscountAmount?: number;
   approvedDiscountReason?: string;
+  /** Ad-hoc columns added from the accountant's Student Directory (e.g. Blood Group, Aadhar No.) — not part of the fixed schema. */
+  customFields?: Record<string, unknown>;
   // Soft delete
   isDeleted: boolean;
   deletedAt?: Date;
@@ -104,6 +106,7 @@ const studentSchema = new Schema<IStudent>(
     monthlyTuitionFee: { type: Number, min: 0 },
     approvedDiscountAmount: { type: Number, min: 0 },
     approvedDiscountReason: { type: String, trim: true },
+    customFields: { type: Schema.Types.Mixed },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
     deletedBy: { type: String },

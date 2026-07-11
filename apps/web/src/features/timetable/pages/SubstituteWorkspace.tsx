@@ -2,12 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Loader2, CalendarClock, X } from 'lucide-react';
 import { useSubstitutes, useUpdateSubstitute, useTimetables, usePeriodSlots } from '../hooks/useTimetable';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { SubstituteListOptions, Timetable } from '@schoolos/types';
 import { SubstituteForm } from '../components/SubstituteForm';
 
 
 export const SubstituteWorkspace = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Only admin/principal may assign or cancel a substitution — matches the
+  // server-side authorize() on POST/PATCH /timetable/substitutes. A daily
+  // substitution should only ever begin because the Principal assigned it.
+  const canManage = user?.role === 'admin' || user?.role === 'principal';
   const today = new Date().toISOString().slice(0, 10);
 
   const [filters, setFilters] = useState<SubstituteListOptions>({
@@ -41,11 +47,13 @@ export const SubstituteWorkspace = () => {
           <h1 className="text-2xl font-bold text-gray-900">Substitutes</h1>
           <p className="text-sm text-gray-500 mt-0.5">Manage temporary teacher replacements</p>
         </div>
-        <button type="button" onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-bold text-white transition-colors">
-          <Plus className="w-4 h-4" />
-          Assign Substitute
-        </button>
+        {canManage && (
+          <button type="button" onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white transition-colors">
+            <Plus className="w-4 h-4" />
+            Assign Substitute
+          </button>
+        )}
       </div>
 
       {/* Date filter */}
@@ -54,12 +62,12 @@ export const SubstituteWorkspace = () => {
           type="date"
           value={filters.dateFrom ?? today}
           onChange={handleFilterDate}
-          className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-blue-400"
+          className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-[#7C3AED]"
         />
         <select
           value={filters.class ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, class: e.target.value || undefined }))}
-          className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm cursor-pointer focus:outline-none focus:border-blue-400"
+          className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm cursor-pointer focus:outline-none focus:border-[#7C3AED]"
         >
           <option value="">All Classes</option>
           {timetables.map((tt) => (
@@ -90,7 +98,7 @@ export const SubstituteWorkspace = () => {
                 <select
                   value={selectedTt?._id ?? ''}
                   onChange={(e) => setSelectedTt(timetables.find((tt) => tt._id === e.target.value) ?? null)}
-                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-blue-400"
+                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-[#7C3AED]"
                 >
                   <option value="">Select published timetable</option>
                   {timetables.map((tt) => (
@@ -116,7 +124,7 @@ export const SubstituteWorkspace = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-blue-600 animate-spin" /></div>
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#5B21B6] animate-spin" /></div>
       ) : substitutes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <CalendarClock className="w-10 h-10 text-gray-300" />
@@ -132,6 +140,7 @@ export const SubstituteWorkspace = () => {
                 sub={sub}
                 slotName={slot?.name}
                 slotTime={slot ? `${slot.startTime}–${slot.endTime}` : undefined}
+                canManage={canManage}
               />
             );
           })}
@@ -142,11 +151,12 @@ export const SubstituteWorkspace = () => {
 };
 
 const SubstituteRow = ({
-  sub, slotName, slotTime,
+  sub, slotName, slotTime, canManage,
 }: {
   sub: ReturnType<typeof useSubstitutes>['data'] extends { data: (infer T)[] } | undefined ? T : never;
   slotName?: string;
   slotTime?: string;
+  canManage: boolean;
 }) => {
   const [confirmDel, setConfirmDel]               = useState(false);
   const { mutate: update, isPending: upPending }   = useUpdateSubstitute(sub._id);
@@ -171,7 +181,7 @@ const SubstituteRow = ({
           {sub.originalTeacherName && (
             <p className="text-xs text-gray-500">Original: {sub.originalTeacherName}</p>
           )}
-          <p className="text-sm text-blue-700 font-semibold">
+          <p className="text-sm text-[#4C1D95] font-semibold">
             Substitute: {sub.substituteTeacherName}
           </p>
           {sub.reason && <p className="text-xs text-gray-500">Reason: {sub.reason}</p>}
@@ -180,7 +190,7 @@ const SubstituteRow = ({
           <span className={`text-xs font-bold px-2 py-1 rounded-full ${isCancelled ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-700 border border-green-200'}`}>
             {isCancelled ? 'Cancelled' : 'Active'}
           </span>
-          {!isCancelled && !confirmDel && (
+          {canManage && !isCancelled && !confirmDel && (
             <button
               type="button"
               onClick={() => setConfirmDel(true)}
@@ -189,7 +199,7 @@ const SubstituteRow = ({
               Cancel
             </button>
           )}
-          {confirmDel && (
+          {canManage && confirmDel && (
             <div className="flex items-center gap-1.5 text-xs">
               <span className="text-red-600 font-medium">Cancel?</span>
               <button type="button" onClick={() => update({ status: 'cancelled' }, { onSuccess: () => setConfirmDel(false) })}

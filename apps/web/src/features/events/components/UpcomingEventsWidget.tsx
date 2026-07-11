@@ -27,14 +27,14 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
 const isToday = (dateStr: string) => new Date().toISOString().split('T')[0] === dateStr.split('T')[0];
 
 interface UpcomingEventsWidgetProps {
-  /** Tailwind class for the section title + "View all" accent (defaults to emerald). */
+  /** Tailwind class for the section title + "View all" accent (defaults to purple). */
   accentClassName?: string;
   limit?: number;
   days?: number;
 }
 
 export function UpcomingEventsWidget({
-  accentClassName = 'text-[#0B3D2E]',
+  accentClassName = 'text-[#5B21B6]',
   limit = 5,
   days = 14,
 }: UpcomingEventsWidgetProps) {

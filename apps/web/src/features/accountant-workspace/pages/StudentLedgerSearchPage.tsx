@@ -8,7 +8,7 @@ const PAGE_SIZE = 20;
 
 const selectCls =
   'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 ' +
-  'focus:outline-none focus:ring-2 focus:ring-gray-200 appearance-none pr-8';
+  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 appearance-none pr-8';
 
 export function StudentLedgerSearchPage() {
   const navigate = useNavigate();
@@ -58,7 +58,7 @@ export function StudentLedgerSearchPage() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && applySearch()}
                 placeholder="Admission no., name, phone, or guardian name"
-                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
               />
             </div>
             <input
@@ -67,7 +67,7 @@ export function StudentLedgerSearchPage() {
               onChange={(e) => setClassInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && applySearch()}
               placeholder="Class"
-              className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-200"
+              className="w-24 h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
             />
             <div className="relative">
               <select
@@ -85,7 +85,7 @@ export function StudentLedgerSearchPage() {
               </select>
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
-            <button onClick={applySearch} className="h-10 px-4 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-semibold">
+            <button onClick={applySearch} className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-semibold">
               Search
             </button>
           </div>
@@ -118,7 +118,7 @@ export function StudentLedgerSearchPage() {
                 onClick={() => navigate(`/accountant/student-ledger/${s._id}`)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-900 font-bold text-xs shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0">
                   {s.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">

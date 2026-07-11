@@ -25,6 +25,15 @@ export const studentChangeRequestsApi = {
     }
   },
 
+  async listPendingForStudent(studentId: string): Promise<StudentChangeRequest[]> {
+    try {
+      const res = await apiClient.get<ApiResponse<StudentChangeRequest[]>>(`/student-change-requests/student/${studentId}`);
+      return res.data.data ?? [];
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   async approve(id: string): Promise<StudentChangeRequest> {
     try {
       const res = await apiClient.patch<ApiResponse<StudentChangeRequest>>(`/student-change-requests/${id}/approve`);

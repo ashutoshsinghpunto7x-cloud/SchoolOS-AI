@@ -23,4 +23,12 @@ export const classTeacherRepository = {
       { new: true, upsert: true },
     ).lean<IClassTeacherAssignment>() as Promise<IClassTeacherAssignment>;
   },
+
+  /** teacherId is required at the schema level, so "unassign" deletes the
+   *  assignment doc outright rather than storing an empty teacherId — the
+   *  class-section then naturally reads back as unassigned. */
+  async remove(schoolId: string, cls: string, section: string): Promise<boolean> {
+    const result = await ClassTeacherAssignment.deleteOne({ schoolId, class: cls, section });
+    return result.deletedCount > 0;
+  },
 };

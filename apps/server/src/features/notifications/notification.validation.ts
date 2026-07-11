@@ -8,4 +8,10 @@ export const sendMessageToTeachersSchema = z.object({
   message: z.string({ required_error: 'message is required' }).min(1).trim(),
 });
 
+export const updateCallStatusSchema = z.object({
+  studentId: z.string({ required_error: 'studentId is required' }).min(1),
+  status: z.enum(['will_pay', 'no_answer', 'not_reached']),
+});
+
 export type SendMessageToTeachersInput = z.infer<typeof sendMessageToTeachersSchema>;
+export type UpdateCallStatusInput = z.infer<typeof updateCallStatusSchema>;
