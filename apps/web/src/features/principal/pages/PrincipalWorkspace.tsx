@@ -5,6 +5,7 @@ import { KPICard, KPICardSkeleton } from '../components/KPICard';
 import { LeaveApprovalsWidget } from '../components/LeaveApprovalsWidget';
 import { SubstitutionsTodayWidget } from '../components/SubstitutionsTodayWidget';
 import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal';
+import { AssistantPanel } from '@/features/principal-assistant/components/AssistantPanel';
 
 // ── PrincipalWorkspace ────────────────────────────────────────────────────────
 // Deliberately just a fast daily glance: the Command Centre, a scrollable row
@@ -95,6 +96,9 @@ export const PrincipalWorkspace = () => {
           <SubstitutionsTodayWidget />
           <LeaveApprovalsWidget />
         </div>
+
+        {/* ── AI Attendance Assistant (Milestone 1) ── */}
+        <AssistantPanel />
       </div>
     </PageContainer>
   );

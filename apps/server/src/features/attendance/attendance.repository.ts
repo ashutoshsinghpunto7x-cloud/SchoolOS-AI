@@ -220,4 +220,75 @@ export const attendanceRepository = {
   todayString(): string {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   },
+
+  /** Per-class attendance rate for a single date — used to find the highest/lowest
+   * attendance class (Principal Assistant, class-wise attendance widgets). */
+  async getClassBreakdown(
+    schoolId: string,
+    date: string,
+  ): Promise<{ class: string; section: string; total: number; present: number; attendanceRate: number }[]> {
+    const agg = await Attendance.aggregate<{
+      _id: { class: string; section: string; status: string };
+      count: number;
+    }>([
+      { $match: { schoolId, date, isDeleted: false } },
+      { $group: { _id: { class: '$class', section: '$section', status: '$status' }, count: { $sum: 1 } } },
+    ]);
+
+    const byClass = new Map<string, { class: string; section: string; total: number; present: number }>();
+    for (const row of agg) {
+      const key = `${row._id.class}::${row._id.section}`;
+      const entry = byClass.get(key) ?? { class: row._id.class, section: row._id.section, total: 0, present: 0 };
+      entry.total += row.count;
+      if (row._id.status === 'present' || row._id.status === 'late' || row._id.status === 'half_day') {
+        entry.present += row.count;
+      }
+      byClass.set(key, entry);
+    }
+
+    return Array.from(byClass.values()).map((entry) => ({
+      ...entry,
+      attendanceRate: entry.total > 0 ? Math.round((entry.present / entry.total) * 100) : 0,
+    }));
+  },
+
+  /** Students whose attendance rate over a date range falls below a threshold —
+   * used for "students below 75% attendance" (Principal Assistant). */
+  async getStudentsBelowThreshold(
+    schoolId: string,
+    opts: { dateFrom: string; dateTo: string; thresholdPercent: number },
+  ): Promise<{ studentId: string; class: string; section: string; total: number; present: number; attendanceRate: number }[]> {
+    const agg = await Attendance.aggregate<{
+      _id: string;
+      class: string;
+      section: string;
+      total: number;
+      present: number;
+    }>([
+      { $match: { schoolId, isDeleted: false, date: { $gte: opts.dateFrom, $lte: opts.dateTo } } },
+      { $sort: { date: -1 } },
+      {
+        $group: {
+          _id: '$studentId',
+          class: { $first: '$class' },
+          section: { $first: '$section' },
+          total: { $sum: 1 },
+          present: {
+            $sum: { $cond: [{ $in: ['$status', ['present', 'late', 'half_day']] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    return agg
+      .map((row) => ({
+        studentId: row._id,
+        class: row.class,
+        section: row.section,
+        total: row.total,
+        present: row.present,
+        attendanceRate: row.total > 0 ? Math.round((row.present / row.total) * 100) : 0,
+      }))
+      .filter((row) => row.attendanceRate < opts.thresholdPercent);
+  },
 };
