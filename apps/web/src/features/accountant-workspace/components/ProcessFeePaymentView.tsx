@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useUpdateAnyFeeRecord, useCreateFeeRecord, useRecordPayment } from '@/features/fees/hooks/useFees';
 import { FeeReceiptSuccessScreen, type CollectContext, type ReceiptLineItem } from './FeeReceipt';
-import type { AdmissionStatus, FeeRecord, PaymentMode, Student } from '@schoolos/types';
+import type { AdmissionStatus, FeeHead, FeeRecord, PaymentMode, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>
@@ -27,7 +27,15 @@ const STATUS_LABELS: Record<AdmissionStatus, { label: string; classes: string }>
   admission_pending:  { label: 'Adm. Pending', classes: 'bg-amber-100 text-amber-800' },
 };
 
-// ── Month candidates (arrears / current / advance) ───────────────────────────
+const FEE_HEAD_LABELS: Record<string, string> = {
+  tuition: 'Tuition Fee', admission: 'Admission Fee', examination: 'Examination Fee',
+  transport: 'Transport Fee', hostel: 'Hostel Fee', miscellaneous: 'Annual Maintenance',
+};
+
+// ── Month candidates for tuition arrears / current / advance ─────────────────
+// Tuition is the one fee head that still auto-generates month-to-month off
+// student.monthlyTuitionFee (independent of the Fee Structure catalog), so a
+// month can be "payable" here even before any FeeRecord exists for it yet.
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -37,43 +45,79 @@ function academicYearFor(date: Date): string {
   return `${startY}-${String(startY + 1).slice(-2)}`;
 }
 
-interface MonthCandidate {
+interface TuitionCandidate {
   key: string;
   month: string;
   academicYear: string;
   label: string;
   dueDate: string;
-  existing?: FeeRecord;
 }
 
-function buildMonthCandidates(feeRecords: FeeRecord[]): MonthCandidate[] {
+function buildTuitionCandidates(feeRecords: FeeRecord[]): TuitionCandidate[] {
   const now = new Date();
-  const byKey = new Map(feeRecords.filter((f) => f.feeHead === 'tuition').map((f) => [`${f.month}||${f.academicYear}`, f]));
-  const list: MonthCandidate[] = [];
+  const hasRecord = new Set(
+    feeRecords.filter((f) => f.feeHead === 'tuition').map((f) => `${f.month}||${f.academicYear}`),
+  );
+  const list: TuitionCandidate[] = [];
   for (let offset = -6; offset <= 5; offset++) {
     const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     const month = MONTH_NAMES[d.getMonth()];
     const academicYear = academicYearFor(d);
     const key = `${month}||${academicYear}`;
+    if (hasRecord.has(key)) continue; // already a real FeeRecord — shown in the main list below instead
     list.push({
       key, month, academicYear,
-      label: `${month} ${d.getFullYear()}`,
+      label: `${month} ${d.getFullYear()} — ${FEE_HEAD_LABELS.tuition}`,
       dueDate: new Date(d.getFullYear(), d.getMonth(), 10).toISOString().slice(0, 10),
-      existing: byKey.get(key),
     });
   }
   return list;
 }
 
-function MonthStatusPill({ candidate }: { candidate: MonthCandidate }) {
-  const status = candidate.existing?.status;
-  if (status === 'paid') {
-    return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-gray-100 text-gray-500">PAID</span>;
+// ── Unified payable line — either a real FeeRecord (any head) or a synthetic
+// not-yet-created tuition month ────────────────────────────────────────────
+
+interface PayableLine {
+  key: string;
+  label: string;
+  monthLabel: string; // group header — "April 2026" or "Whole Year"
+  sortKey: string;
+  dueDate: string;
+  existing?: FeeRecord;
+  tuitionCandidate?: TuitionCandidate;
+}
+
+function monthGroupLabel(month?: string, academicYear?: string, dueDate?: string): string {
+  if (!month) return 'Whole Year / One-Time';
+  if (dueDate) {
+    const d = new Date(dueDate);
+    return `${month} ${d.getFullYear()}`;
   }
-  if (status === 'overdue') {
-    return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-red-50 text-red-600">OVERDUE</span>;
-  }
-  return <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-blue-50 text-blue-600">PENDING</span>;
+  return `${month} (${academicYear})`;
+}
+
+function buildPayableLines(feeRecords: FeeRecord[]): PayableLine[] {
+  const existingLines: PayableLine[] = feeRecords
+    .filter((f) => f.status !== 'paid' && f.status !== 'waived')
+    .map((f) => ({
+      key: f._id,
+      label: f.feeHead === 'miscellaneous' && f.customHead ? f.customHead : (FEE_HEAD_LABELS[f.feeHead] ?? f.feeHead),
+      monthLabel: monthGroupLabel(f.month, f.academicYear, f.dueDate),
+      sortKey: f.dueDate,
+      dueDate: f.dueDate,
+      existing: f,
+    }));
+
+  const tuitionLines: PayableLine[] = buildTuitionCandidates(feeRecords).map((c) => ({
+    key: c.key,
+    label: FEE_HEAD_LABELS.tuition,
+    monthLabel: monthGroupLabel(c.month, c.academicYear, c.dueDate),
+    sortKey: c.dueDate,
+    dueDate: c.dueDate,
+    tuitionCandidate: c,
+  }));
+
+  return [...existingLines, ...tuitionLines].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 }
 
 // ── Payment method tiles ─────────────────────────────────────────────────────
@@ -87,31 +131,31 @@ const METHODS: { key: MethodKey; label: string; icon: React.ElementType; mode: P
   { key: 'cheque',        label: 'Cheque',        icon: FileText,   mode: 'cheque' },
 ];
 
-// ── One selectable month row ──────────────────────────────────────────────────
+// ── One selectable line row ────────────────────────────────────────────────
 
-function MonthRow({
-  candidate, checked, amount, onToggle, onAmountChange,
-}: { candidate: MonthCandidate; checked: boolean; amount: number; onToggle: () => void; onAmountChange: (v: number) => void }) {
-  const isPaid = candidate.existing?.status === 'paid';
+function LineRow({
+  line, checked, amount, onToggle, onAmountChange,
+}: { line: PayableLine; checked: boolean; amount: number; onToggle: () => void; onAmountChange: (v: number) => void }) {
+  const status = line.existing?.status;
+  const isOverdue = status === 'overdue';
   return (
     <div
       className={cn(
         'flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors',
-        isPaid ? 'bg-gray-50 border-gray-100' : checked ? 'bg-[#A855F7]/5 border-[#A855F7]/40' : 'bg-white border-gray-200 hover:border-gray-300',
+        checked ? 'bg-[#A855F7]/5 border-[#A855F7]/40' : 'bg-white border-gray-200 hover:border-gray-300',
       )}
     >
       <input
         type="checkbox"
         checked={checked}
-        disabled={isPaid}
         onChange={onToggle}
-        className="w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-[#A855F7]/40 shrink-0 disabled:cursor-not-allowed"
+        className="w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-[#A855F7]/40 shrink-0"
       />
-      <label className="flex-1 min-w-0 cursor-pointer" onClick={(e) => { if (!isPaid) { e.preventDefault(); onToggle(); } }}>
-        <p className="text-sm font-semibold text-gray-900">{candidate.label}</p>
-        <p className="text-xs text-gray-400 mt-0.5">Due {fmtDate(candidate.dueDate)}</p>
+      <label className="flex-1 min-w-0 cursor-pointer" onClick={(e) => { e.preventDefault(); onToggle(); }}>
+        <p className="text-sm font-semibold text-gray-900">{line.label}</p>
+        <p className="text-xs text-gray-400 mt-0.5">Due {fmtDate(line.dueDate)}</p>
       </label>
-      {checked && !isPaid ? (
+      {checked ? (
         <input
           type="number" min={0} step={0.01} value={amount}
           onClick={(e) => e.stopPropagation()}
@@ -120,12 +164,16 @@ function MonthRow({
         />
       ) : (
         <div className="text-right shrink-0">
-          <p className="text-sm font-bold text-gray-900">
-            {isPaid ? fmt(candidate.existing!.totalAmount) : fmt(candidate.existing ? candidate.existing.balance : amount)}
-          </p>
+          <p className="text-sm font-bold text-gray-900">{fmt(line.existing ? line.existing.balance : amount)}</p>
         </div>
       )}
-      <div className="shrink-0"><MonthStatusPill candidate={candidate} /></div>
+      <div className="shrink-0">
+        {isOverdue ? (
+          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-red-50 text-red-600">OVERDUE</span>
+        ) : (
+          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-blue-50 text-blue-600">PENDING</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -142,7 +190,7 @@ interface Props {
 }
 
 export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, onBack, onPaid }: Props) {
-  const candidates = useMemo(() => buildMonthCandidates(feeRecords), [feeRecords]);
+  const lines = useMemo(() => buildPayableLines(feeRecords), [feeRecords]);
 
   const [selected, setSelected] = useState<Record<string, number>>({});
   const [discount, setDiscount] = useState('');
@@ -158,16 +206,27 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
 
   const isPending = updating || creating || paying;
 
-  function toggle(c: MonthCandidate) {
+  function toggle(line: PayableLine) {
     setSelected((prev) => {
       const next = { ...prev };
-      if (c.key in next) { delete next[c.key]; return next; }
-      next[c.key] = c.existing ? c.existing.balance : (student.monthlyTuitionFee ?? 0);
+      if (line.key in next) { delete next[line.key]; return next; }
+      next[line.key] = line.existing ? line.existing.balance : (student.monthlyTuitionFee ?? 0);
       return next;
     });
   }
 
-  const selectedCandidates = candidates.filter((c) => c.key in selected);
+  // Group lines by month for display.
+  const grouped = useMemo(() => {
+    const map = new Map<string, PayableLine[]>();
+    for (const line of lines) {
+      const arr = map.get(line.monthLabel) ?? [];
+      arr.push(line);
+      map.set(line.monthLabel, arr);
+    }
+    return Array.from(map.entries());
+  }, [lines]);
+
+  const selectedLines = lines.filter((l) => l.key in selected);
   const subtotal = Object.values(selected).reduce((a, b) => a + b, 0);
   const discountNum = Math.min(Math.max(parseFloat(discount) || 0, 0), subtotal);
   const total = Math.round((subtotal - discountNum) * 100) / 100;
@@ -178,13 +237,13 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
 
   async function handleSubmit() {
     setError('');
-    if (!selectedCandidates.length) return setError('Select at least one month to collect.');
+    if (!selectedLines.length) return setError('Select at least one fee item to collect.');
     if (method !== 'cash' && !refNumber.trim()) return setError('Enter a reference / transaction number for this payment method.');
 
     const paymentMode = METHODS.find((m) => m.key === method)!.mode;
     const today = new Date().toISOString().slice(0, 10);
 
-    // Split the entered discount proportionally across the selected months so
+    // Split the entered discount proportionally across the selected items so
     // each fee record's own balance/discountAmount stays accurate for the
     // ledger — the last item absorbs the rounding remainder so allocations
     // sum exactly.
@@ -193,25 +252,27 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
     const receiptNumbers: string[] = [];
 
     try {
-      for (let i = 0; i < selectedCandidates.length; i++) {
-        const c = selectedCandidates[i];
-        const isLast = i === selectedCandidates.length - 1;
-        const requestedAmount = selected[c.key];
+      for (let i = 0; i < selectedLines.length; i++) {
+        const line = selectedLines[i];
+        const isLast = i === selectedLines.length - 1;
+        const requestedAmount = selected[line.key];
         const share = subtotal > 0 ? requestedAmount / subtotal : 0;
         const allocated = isLast ? remainingDiscount : Math.round(discountNum * share * 100) / 100;
         remainingDiscount = Math.round((remainingDiscount - allocated) * 100) / 100;
 
-        let record = c.existing;
+        let record = line.existing;
         if (!record) {
+          // Synthetic tuition candidate — no FeeRecord yet, create it now.
+          const candidate = line.tuitionCandidate!;
           const amount = student.monthlyTuitionFee;
-          if (!amount) throw new Error(`No monthly tuition fee set for this student — cannot create a due for ${c.label}.`);
+          if (!amount) throw new Error(`No monthly tuition fee set for this student — cannot create a due for ${candidate.label}.`);
           record = await createFeeRecord({
             studentId: student._id,
-            feeHead: 'tuition',
-            description: `${c.month} Tuition Fee`,
-            academicYear: c.academicYear,
-            month: c.month,
-            dueDate: c.dueDate,
+            feeHead: 'tuition' as FeeHead,
+            description: `${candidate.month} Tuition Fee`,
+            academicYear: candidate.academicYear,
+            month: candidate.month,
+            dueDate: candidate.dueDate,
             totalAmount: amount,
             discountAmount: allocated || undefined,
           });
@@ -231,7 +292,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
           remarks: remarks.trim() || undefined,
         });
 
-        lineItems.push({ label: `${c.label} Tuition Fee`, amount: Math.round((amountToPay + allocated) * 100) / 100 });
+        lineItems.push({ label: line.label, amount: Math.round((amountToPay + allocated) * 100) / 100 });
         if (result.payment.receiptNumber) receiptNumbers.push(result.payment.receiptNumber);
       }
 
@@ -271,7 +332,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
       </div>
 
       <div className="px-4 py-5 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-        {/* Left column: student card + month selection */}
+        {/* Left column: student card + fee selection */}
         <div className="lg:col-span-3 space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
             <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
@@ -313,21 +374,28 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-1">Select Month(s) to Collect</h3>
-            <p className="text-xs text-gray-400 mb-3">Pick any combination of past-due, current, or advance months — useful when a parent clears arrears or pays several months ahead.</p>
-            {!student.monthlyTuitionFee && !candidates.some((c) => c.existing) ? (
-              <p className="text-sm text-gray-400 text-center py-6">No monthly tuition fee set for this student yet.</p>
+            <h3 className="text-sm font-bold text-gray-900 mb-1">Select Fee(s) to Collect</h3>
+            <p className="text-xs text-gray-400 mb-3">Every outstanding fee category — Tuition, Admission, Examination, Transport, Hostel, Annual Maintenance — is listed by month. Pick any combination, including arrears or advance tuition months.</p>
+            {lines.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">No outstanding fees for this student.</p>
             ) : (
-              <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-                {candidates.map((c) => (
-                  <MonthRow
-                    key={c.key}
-                    candidate={c}
-                    checked={c.key in selected}
-                    amount={selected[c.key] ?? 0}
-                    onToggle={() => toggle(c)}
-                    onAmountChange={(v) => setSelected((prev) => ({ ...prev, [c.key]: v }))}
-                  />
+              <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
+                {grouped.map(([groupLabel, groupLines]) => (
+                  <div key={groupLabel}>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">{groupLabel}</p>
+                    <div className="space-y-2">
+                      {groupLines.map((line) => (
+                        <LineRow
+                          key={line.key}
+                          line={line}
+                          checked={line.key in selected}
+                          amount={selected[line.key] ?? 0}
+                          onToggle={() => toggle(line)}
+                          onAmountChange={(v) => setSelected((prev) => ({ ...prev, [line.key]: v }))}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -341,7 +409,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Subtotal ({selectedCandidates.length} month{selectedCandidates.length === 1 ? '' : 's'})</span>
+                <span className="text-sm text-gray-500">Subtotal ({selectedLines.length} item{selectedLines.length === 1 ? '' : 's'})</span>
                 <span className="text-sm font-semibold text-gray-800">{fmt(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -410,7 +478,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isPending || !selectedCandidates.length}
+              disabled={isPending || !selectedLines.length}
               className="w-full h-12 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}

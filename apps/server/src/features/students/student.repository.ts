@@ -86,6 +86,15 @@ export const studentRepository = {
   },
 
   /** Used by the Excel import pipeline to upsert — re-uploading a file updates existing students instead of duplicating them. */
+  /** Every active student in a class, across all sections — used to generate
+   *  fee records for a class-wide fee structure entry. Lean projection since
+   *  callers only need identity fields, not the full document. */
+  async findActiveByClass(schoolId: string, klass: string): Promise<Pick<IStudent, '_id' | 'fullName' | 'admissionNumber' | 'class' | 'section'>[]> {
+    return Student.find({ schoolId, class: klass, isDeleted: false })
+      .select('_id fullName admissionNumber class section')
+      .lean<Pick<IStudent, '_id' | 'fullName' | 'admissionNumber' | 'class' | 'section'>[]>();
+  },
+
   async findByAdmissionNumber(admissionNumber: string, schoolId: string): Promise<IStudent | null> {
     return Student.findOne({ admissionNumber, schoolId, isDeleted: false }).lean<IStudent>();
   },

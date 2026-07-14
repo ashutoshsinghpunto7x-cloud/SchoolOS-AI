@@ -53,7 +53,7 @@ export class HeuristicMapper implements IAIMapper {
     // header must resolve differently per type instead of one shared table.
     const map = HEURISTIC_MAPS[request.importType] ?? {};
     return request.sourceColumns.map((col) => {
-      const normalised = col.toLowerCase().replace(/[\s_\-\.]+/g, '');
+      const normalised = col.toLowerCase().replace(/[\s_\-.']+/g, '');
       const suggestedField = map[normalised] ?? null;
 
       return {
@@ -76,7 +76,12 @@ const HEURISTIC_MAPS: Record<string, Record<string, string>> = {
     studentfullname: 'fullName',
     class: 'class',
     grade: 'class',
+    std: 'class',
+    standard: 'class',
     section: 'section',
+    div: 'section',
+    division: 'section',
+    sec: 'section',
     gender: 'gender',
     sex: 'gender',
     dob: 'dateOfBirth',
@@ -109,6 +114,11 @@ const HEURISTIC_MAPS: Record<string, Record<string, string>> = {
     rollno: 'rollNumber',
     admissionnumber: 'admissionNumber',
     admissionno: 'admissionNumber',
+    admno: 'admissionNumber',
+    admissionid: 'admissionNumber',
+    studentid: 'admissionNumber',
+    locality: 'locality',
+    area: 'locality',
   },
 
   teachers: {
@@ -156,6 +166,9 @@ const HEURISTIC_MAPS: Record<string, Record<string, string>> = {
 
   fees: {
     studentid: 'studentId',
+    admissionnumber: 'admissionNumber',
+    admissionno: 'admissionNumber',
+    admno: 'admissionNumber',
     feehead: 'feeHead',
     feetype: 'feeHead',
     customhead: 'customHead',
@@ -178,6 +191,9 @@ const HEURISTIC_MAPS: Record<string, Record<string, string>> = {
     dob: 'studentDateOfBirth',
     studentdateofbirth: 'studentDateOfBirth',
     interestedclass: 'interestedClass',
+    class: 'interestedClass',
+    grade: 'interestedClass',
+    admissionclass: 'interestedClass',
     gender: 'gender',
     currentschool: 'currentSchool',
     currentclass: 'currentClass',
@@ -202,8 +218,15 @@ const HEURISTIC_MAPS: Record<string, Record<string, string>> = {
   attendance: {
     admissionnumber: 'admissionNumber',
     admissionno: 'admissionNumber',
+    admno: 'admissionNumber',
     class: 'class',
+    grade: 'class',
+    std: 'class',
+    standard: 'class',
     section: 'section',
+    div: 'section',
+    division: 'section',
+    sec: 'section',
     date: 'date',
     status: 'status',
     remarks: 'note',

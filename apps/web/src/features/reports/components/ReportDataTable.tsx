@@ -69,7 +69,7 @@ export const ReportDataTable = <T extends Record<string, unknown>>({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full h-8 pl-8 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-8 pl-8 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
           />
         </div>
       )}

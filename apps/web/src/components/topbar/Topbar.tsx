@@ -1,11 +1,64 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
 import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSearchBar';
+import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+
+// ── Premium theme toggle pill ─────────────────────────────────────────────────
+// A pill-shaped track with a sliding thumb + sparkle burst on switch.
+
+function ThemeTogglePill({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
+  const [sparkling, setSparkling] = useState(false);
+  const [sparkDir, setSparkDir] = useState<'to-dark' | 'to-light'>('to-dark');
+  const sparkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = useCallback(() => {
+    if (sparkTimer.current) clearTimeout(sparkTimer.current);
+    setSparkDir(theme === 'light' ? 'to-dark' : 'to-light');
+    setSparkling(false);
+    // Force a reflow so the CSS animation restarts
+    requestAnimationFrame(() => {
+      setSparkling(true);
+      sparkTimer.current = setTimeout(() => setSparkling(false), 600);
+    });
+    onToggle();
+  }, [theme, onToggle]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="relative flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 rounded-full"
+    >
+      {/* Sparkle burst */}
+      <span
+        className={cn(
+          'theme-toggle-sparkle',
+          sparkDir,
+          sparkling && 'animate-sparkle'
+        )}
+      />
+
+      {/* Pill track */}
+      <span className="theme-toggle-pill" data-theme={theme}>
+        {/* Thumb */}
+        <span className="theme-toggle-thumb">
+          {theme === 'dark' ? (
+            <Moon className="w-3 h-3 text-white" strokeWidth={2} />
+          ) : (
+            <Sun className="w-3 h-3 text-amber-500" strokeWidth={2} />
+          )}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -225,17 +278,25 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const { theme, toggleTheme } = useTeacherTheme();
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
     : '?';
+
+  const isTeacherDark = isTeacher && theme === 'dark';
 
   return (
     <header
       className={cn(
         'sticky top-0 z-10 flex h-[60px] items-center',
         usePillTopbar
-          ? 'bg-white border-b border-[#E8E8E8] px-8'
+          ? cn(
+              'border-b px-8',
+              isTeacherDark
+                ? 'teacher-glass-topbar border-white/5'
+                : 'bg-white dark:bg-[#0F0821] border-[#E8E8E8] dark:border-white/5'
+            )
           : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] px-6',
       )}
     >
@@ -274,11 +335,11 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             Daily Command Centre card already carries the page's identity */}
         {!isPrincipalDashboard && !isPrincipal && (
           <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
-            <span className="text-sm font-semibold text-gray-900">{section}</span>
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">{section}</span>
             {subLabel && (
               <>
-                <ChevronRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" strokeWidth={2.5} />
-                <span className="text-sm font-medium text-gray-500">{subLabel}</span>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-white/30 flex-shrink-0" strokeWidth={2.5} />
+                <span className="text-sm font-medium text-gray-500 dark:text-white/50">{subLabel}</span>
               </>
             )}
           </nav>
@@ -310,13 +371,18 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
               <button
                 type="button"
                 onClick={() => setReminderOpen((v) => !v)}
-                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-semibold text-gray-600 select-none tabular-nums transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
+                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-semibold text-gray-600 dark:text-white/70 select-none tabular-nums transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
               >
-                <Clock className="w-3.5 h-3.5 text-gray-400" strokeWidth={1.5} />
+                <Clock className="w-3.5 h-3.5 text-gray-400 dark:text-white/40" strokeWidth={1.5} />
                 {time} IST
               </button>
               {reminderOpen && <ReminderPanel onClose={() => setReminderOpen(false)} />}
             </div>
+          )}
+
+          {/* Theme toggle — teacher workspace only, applies across every teacher page */}
+          {isTeacher && (
+            <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
           )}
 
           {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date */}
@@ -326,9 +392,9 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
               <button
                 type="button"
                 onClick={() => setCalendarOpen((v) => !v)}
-                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white border border-[#E8E8E8] text-[12px] font-medium text-gray-500 select-none transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
+                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-medium text-gray-500 dark:text-white/60 select-none transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
               >
-                <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg className="w-3.5 h-3.5 text-gray-400 dark:text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                   <line x1="16" y1="2" x2="16" y2="6" />
                   <line x1="8" y1="2" x2="8" y2="6" />
@@ -361,13 +427,13 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             className={cn(
               "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
               usePillTopbar
-                ? "bg-white border border-[#E8E8E8] hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
+                ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
                 : "hover:bg-gray-100"
             )}
             aria-label="Profile"
           >
             {usePillTopbar ? (
-              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/20 flex items-center justify-center text-[11px] font-bold text-[#5B21B6]">
+              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-[#A855F7]/20 border border-[#A855F7]/20 dark:border-[#A855F7]/30 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-violet-300">
                 {initials}
               </span>
             ) : (

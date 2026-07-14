@@ -24,7 +24,7 @@ export const ReportFiltersBar = ({
           type="date"
           value={filters.dateFrom ?? ''}
           onChange={(e) => update('dateFrom', e.target.value)}
-          className="h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
         />
       </div>
       <div>
@@ -33,7 +33,7 @@ export const ReportFiltersBar = ({
           type="date"
           value={filters.dateTo ?? ''}
           onChange={(e) => update('dateTo', e.target.value)}
-          className="h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
         />
       </div>
 
@@ -45,7 +45,7 @@ export const ReportFiltersBar = ({
             placeholder="e.g. 5"
             value={filters.class ?? ''}
             onChange={(e) => update('class', e.target.value)}
-            className="h-9 px-3 w-20 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="h-9 px-3 w-20 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
           />
         </div>
       )}
@@ -58,7 +58,7 @@ export const ReportFiltersBar = ({
             placeholder="e.g. A"
             value={filters.section ?? ''}
             onChange={(e) => update('section', e.target.value)}
-            className="h-9 px-3 w-20 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="h-9 px-3 w-20 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
           />
         </div>
       )}
@@ -71,7 +71,7 @@ export const ReportFiltersBar = ({
             placeholder="2024-25"
             value={filters.academicYear ?? ''}
             onChange={(e) => update('academicYear', e.target.value)}
-            className="h-9 px-3 w-28 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="h-9 px-3 w-28 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
           />
         </div>
       )}

@@ -62,6 +62,18 @@ export const enquiryRepository = {
     return Enquiry.findOne({ _id: id, schoolId, isDeleted: false }).lean<IEnquiry>();
   },
 
+  /** Used by the import engine's duplicate check — there's no admission
+   *  number at the enquiry stage, so match on the same student+parent
+   *  combination a human would recognize as "the same enquiry" re-uploaded. */
+  async findByStudentAndParentPhone(schoolId: string, studentName: string, parentPhone: string): Promise<IEnquiry | null> {
+    return Enquiry.findOne({
+      schoolId,
+      isDeleted: false,
+      studentName: new RegExp(`^${studentName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+      parentPhone: parentPhone.trim(),
+    }).lean<IEnquiry>();
+  },
+
   async findAll(schoolId: string, opts: FindEnquiriesOptions = {}): Promise<PaginatedEnquiries> {
     const page  = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 20));

@@ -208,7 +208,7 @@ export const EventDetailPage = () => {
               type="button"
               onClick={() => setShowStatusMenu((v) => !v)}
               disabled={changingStatus}
-              className="flex items-center gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700
+              className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
                          text-sm font-bold text-white transition-colors disabled:opacity-50"
             >
               {changingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}

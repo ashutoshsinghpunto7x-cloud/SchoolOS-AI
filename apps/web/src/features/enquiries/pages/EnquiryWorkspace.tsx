@@ -55,7 +55,7 @@ export const EnquiryWorkspace = () => {
         <button
           type="button"
           onClick={() => navigate('/enquiries/new')}
-          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700
+          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
                      text-sm font-bold text-white transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
@@ -133,7 +133,7 @@ export const EnquiryWorkspace = () => {
                 onClick={() => setPage(p)}
                 className={`h-9 w-9 rounded-xl text-sm font-bold transition-colors ${
                   p === page
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-[#5B21B6] text-white'
                     : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >

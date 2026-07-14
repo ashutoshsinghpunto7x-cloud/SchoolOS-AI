@@ -160,7 +160,7 @@ export const CallModal = ({ student, onClose }: CallModalProps) => {
             </div>
 
             <div className="px-6 pb-6">
-              <button onClick={onClose} className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors">
+              <button onClick={onClose} className="w-full h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold transition-colors">
                 Done
               </button>
             </div>

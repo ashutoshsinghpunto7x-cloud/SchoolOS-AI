@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createEnquirySchema } from '../../enquiries/enquiry.validation';
 import { IValidator, RowValidationResult } from './validator.interface';
+import { normalizeGenderAbbrev } from './shared-helpers';
 
 export const enquiryValidator: IValidator = {
   importType: 'admissions',
@@ -28,9 +29,11 @@ export const enquiryValidator: IValidator = {
   validate(mappedData: Record<string, unknown>): RowValidationResult {
     const processed: Record<string, unknown> = { ...mappedData };
 
-    // Normalise gender
-    if (typeof processed.gender === 'string') {
-      processed.gender = processed.gender.toLowerCase().trim() || undefined;
+    // Normalise gender — accepts "M"/"F"/"O" as well as the full words.
+    if (typeof processed.gender === 'string' && processed.gender.trim()) {
+      processed.gender = normalizeGenderAbbrev(processed.gender);
+    } else if (typeof processed.gender === 'string') {
+      processed.gender = undefined;
     }
     // Normalise stage / source to snake_case lowercase
     for (const field of ['stage', 'source']) {

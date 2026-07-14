@@ -18,7 +18,7 @@ import { studentRepository } from '../students/student.repository';
 
 // ── Academic-year month helpers (Indian school year: April → March) ────────────
 
-const ACADEMIC_MONTH_ORDER = [
+export const ACADEMIC_MONTH_ORDER = [
   'April', 'May', 'June', 'July', 'August', 'September',
   'October', 'November', 'December', 'January', 'February', 'March',
 ];
@@ -41,7 +41,7 @@ function nextAcademicMonth(month: string, academicYear: string): { month: string
   return { month: nextMonth, academicYear: nextAcademicYear, calendarYear };
 }
 
-function calendarMonthIndex(month: string): number {
+export function calendarMonthIndex(month: string): number {
   // JS Date months are 0-indexed, calendar order (not academic order).
   return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].indexOf(month);
 }

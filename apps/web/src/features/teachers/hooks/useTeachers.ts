@@ -6,6 +6,7 @@ import type {
   TeacherListOptions,
   CreateTeacherNotePayload,
   UpdateTeacherNotePayload,
+  CreateTeacherLoginPayload,
 } from '@schoolos/types';
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
@@ -16,6 +17,7 @@ export const teacherKeys = {
   paginated: (opts: TeacherListOptions) => [...teacherKeys.all, 'paginated', opts] as const,
   detail:    (id: string) => [...teacherKeys.all, 'detail', id] as const,
   notes:     (teacherId: string) => [...teacherKeys.all, 'notes', teacherId] as const,
+  loginStatus: () => [...teacherKeys.all, 'login-status'] as const,
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -47,6 +49,12 @@ export const useTeacherNotes = (teacherId: string) =>
     queryKey: teacherKeys.notes(teacherId),
     queryFn:  () => teachersApi.listNotes(teacherId),
     enabled:  Boolean(teacherId),
+  });
+
+export const useTeacherLoginStatus = () =>
+  useQuery({
+    queryKey: teacherKeys.loginStatus(),
+    queryFn:  () => teachersApi.getLoginStatus(),
   });
 
 // ── Mutations ─────────────────────────────────────────────────────────────────
@@ -120,6 +128,15 @@ export const useLinkTeacherUser = (teacherId: string) => {
       qc.invalidateQueries({ queryKey: teacherKeys.all });
       qc.setQueryData(teacherKeys.detail(teacherId), updated);
     },
+  });
+};
+
+export const useCreateTeacherLogin = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ teacherId, payload }: { teacherId: string; payload: CreateTeacherLoginPayload }) =>
+      teachersApi.createLogin(teacherId, payload),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: teacherKeys.loginStatus() }),
   });
 };
 

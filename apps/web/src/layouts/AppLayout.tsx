@@ -6,10 +6,12 @@ import { Topbar } from '@/components/topbar/Topbar';
 import { NotificationNudge } from '@/features/notifications/components/NotificationNudge';
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
+import { TeacherThemeProvider, useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
-export const AppLayout = () => {
+// Inner layout — rendered inside TeacherThemeProvider so it can read the theme
+function AppLayoutInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Accountant-only: fully collapses the sidebar on desktop for more page
   // width. Separate from `sidebarOpen` (which drives the mobile overlay) so
@@ -20,6 +22,12 @@ export const AppLayout = () => {
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
   const isPrincipal = user?.role === 'principal';
+
+  // Read teacher theme — safe because this component is always wrapped in
+  // TeacherThemeProvider (see AppLayout below), but useTeacherTheme returns a
+  // safe default for non-teacher roles so it never throws.
+  const { theme: teacherTheme } = useTeacherTheme();
+  const isTeacherDark = isTeacher && teacherTheme === 'dark';
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -36,7 +44,14 @@ export const AppLayout = () => {
   }, []);
 
   return (
-    <div className={cn("flex h-screen overflow-hidden", isAccountant || isPrincipal ? "bg-white" : "bg-[#F5F5F7]")}>
+    <div className={cn(
+      "flex h-screen overflow-hidden",
+      isAccountant || isPrincipal ? "bg-white" : (
+        isTeacherDark
+          ? "teacher-aurora-bg"
+          : "bg-[#F5F5F7]"
+      )
+    )}>
       <NotificationNudge />
       <ReminderWatcher />
       <HighPriorityMessageGate />
@@ -83,4 +98,14 @@ export const AppLayout = () => {
       </div>
     </div>
   );
-};
+}
+
+// Dark mode is scoped to the teacher workspace only — the `dark` class is applied
+// by TeacherThemeProvider's wrapper div, so no other role is ever affected.
+// We always render TeacherThemeProvider (not just for teachers) so AppLayoutInner
+// can safely call useTeacherTheme() — the hook returns light/no-op for other roles.
+export const AppLayout = () => (
+  <TeacherThemeProvider>
+    <AppLayoutInner />
+  </TeacherThemeProvider>
+);

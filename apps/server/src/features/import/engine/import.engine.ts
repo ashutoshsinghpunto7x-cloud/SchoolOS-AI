@@ -6,7 +6,8 @@ import { ParsedRow } from '../parsers/parser.interface';
 import { getValidator } from '../validators/validator.registry';
 import { getProcessor } from '../processors/processor.registry';
 import { IProcessor } from '../processors/processor.interface';
-import { HeuristicMapper } from '../ai-mapper/ai-mapper.interface';
+import { HeuristicMapper, ColumnMappingSuggestion } from '../ai-mapper/ai-mapper.interface';
+import { OpenAiMapper } from '../ai-mapper/openai-mapper';
 import { schoolClassRepository } from '../../school-classes/school-class.repository';
 
 const BATCH_SIZE = 50;
@@ -39,6 +40,29 @@ export const buildColumnMapping = async (
     }
   }
   return mapping;
+};
+
+/**
+ * AI-assisted mapping for columns the heuristic mapper couldn't resolve.
+ * Only called from the explicit "AI Auto Map" action (never automatically)
+ * and never writes anything — the caller shows suggestions for the user to
+ * confirm/edit, then saves via the normal updateMapping flow.
+ */
+export const buildAIColumnMapping = async (
+  importType: ImportType,
+  unmappedHeaders: string[],
+  sampleRows: ParsedRow[],
+  schoolId: string
+): Promise<ColumnMappingSuggestion[]> => {
+  const mapper = new OpenAiMapper();
+  return mapper.suggestMappings(
+    {
+      importType,
+      sourceColumns: unmappedHeaders,
+      sampleRows: sampleRows.slice(0, 3).map((r) => r.data),
+    },
+    schoolId,
+  );
 };
 
 // ── Apply mapping to a raw row ────────────────────────────────────────────────
@@ -102,14 +126,16 @@ export const validateRows = async (
   importType: ImportType,
   rows: ParsedRow[],
   mapping: Record<string, string>
-): Promise<{ validRows: number; warningRows: number; failedRows: number; detectedNewClasses: IDetectedClass[] }> => {
+): Promise<{ validRows: number; warningRows: number; failedRows: number; duplicateRows: number; detectedNewClasses: IDetectedClass[] }> => {
   const validator = getValidator(importType);
+  const processor = getProcessor(importType);
   let validRows = 0;
   let warningRows = 0;
   let failedRows = 0;
+  let duplicateRows = 0;
   const cleanRows: Record<string, unknown>[] = [];
 
-  const rowDocs = rows.map((row) => {
+  const rowDocs = await Promise.all(rows.map(async (row) => {
     const mappedData = applyMapping(row.data, mapping);
     const result = validator.validate(mappedData);
 
@@ -124,6 +150,14 @@ export const validateRows = async (
     const persistedData = result.status === 'error' ? mappedData : result.cleanData;
     if (result.status !== 'error') cleanRows.push(persistedData);
 
+    // Duplicate check is read-only and only meaningful for rows that will
+    // actually be processed — skip it for rows already destined to be dropped.
+    let duplicateOf: string | undefined;
+    if (result.status !== 'error' && processor.findDuplicate) {
+      duplicateOf = await processor.findDuplicate(persistedData, schoolId);
+      if (duplicateOf) duplicateRows++;
+    }
+
     return {
       rowNumber: row.rowNumber,
       rawData: row.data,
@@ -131,14 +165,15 @@ export const validateRows = async (
       status: result.status as 'valid' | 'warning' | 'error',
       errors: result.errors,
       warnings: result.warnings,
+      duplicateOf,
     };
-  });
+  }));
 
   await importRowRepository.bulkCreate({ sessionId, schoolId, rows: rowDocs });
 
   const detectedNewClasses = await detectNewClasses(schoolId, importType, cleanRows);
 
-  return { validRows, warningRows, failedRows, detectedNewClasses };
+  return { validRows, warningRows, failedRows, duplicateRows, detectedNewClasses };
 };
 
 // ── Background processing ─────────────────────────────────────────────────────
@@ -180,20 +215,22 @@ export const runImport = async (
     const counts = await importRowRepository.countByStatus(sessionId);
     const importedRows = counts['imported'] ?? 0;
     const failedAfterProcess = counts['error'] ?? 0;
+    const skippedRows = counts['skipped'] ?? 0;
 
     await importSessionRepository.updateStatus(sessionId, schoolId, 'completed', {
       importedRows,
       failedRows: failedAfterProcess,
+      skippedRows,
       completedAt: new Date(),
     });
 
     await importSessionRepository.pushTimelineEvent(sessionId, schoolId, {
       event: 'completed',
       at: new Date(),
-      note: `${importedRows} records imported, ${failedAfterProcess} failed`,
+      note: `${importedRows} records imported, ${skippedRows} skipped, ${failedAfterProcess} failed`,
     });
 
-    logger.info('Import processing completed', { sessionId, importedRows, failedAfterProcess });
+    logger.info('Import processing completed', { sessionId, importedRows, skippedRows, failedAfterProcess });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown processing error';
     logger.error('Import processing failed', { sessionId, error: message });
@@ -275,7 +312,14 @@ const processRowsByStatus = async (
 
     await Promise.all(
       rows.map(async (row) => {
-        const result = await processor.processRow(row.mappedData, ctx);
+        const duplicateAction = row.duplicateOf ? (row.duplicateAction ?? 'update') : undefined;
+        const result = await processor.processRow(row.mappedData, ctx, duplicateAction);
+
+        if (result.success && result.skipped) {
+          await importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'skipped', result.recordId);
+          return;
+        }
+
         if (result.success && result.recordId) {
           const tasks = [
             importRowRepository.updateRowStatus(sessionId, row.rowNumber, 'imported', result.recordId),

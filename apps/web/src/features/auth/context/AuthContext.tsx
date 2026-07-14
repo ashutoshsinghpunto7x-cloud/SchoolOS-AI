@@ -5,7 +5,8 @@ export interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  /** Accepts either an email or an admin-issued username. */
+  login: (identifier: string, password: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   /** Re-fetches /auth/me — used after each account-recovery reset step so the forced-reset gate clears as soon as the server state does. */
   refreshUser: () => Promise<void>;

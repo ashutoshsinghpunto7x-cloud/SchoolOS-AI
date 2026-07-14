@@ -1,6 +1,6 @@
 import { UserPlus, ClipboardList, Phone, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { GreetingBanner } from '../components/GreetingBanner';
+import { PrincipalHeaderWidget } from '@/features/principal/components/PrincipalHeaderWidget';
 import { ReceptionActionCard } from '../components/ReceptionActionCard';
 import { Timeline, TimelineEntry } from '../components/Timeline';
 import { TaskCard, Task } from '../components/TaskCard';
@@ -19,7 +19,7 @@ const ACTION_CARDS = [
     title: 'New Admission',
     description: 'Register a new student and create their complete school profile.',
     buttonLabel: 'Start Admission',
-    accent: 'blue' as const,
+    accent: 'purple' as const,
   },
   {
     id: 'followups',
@@ -103,8 +103,8 @@ export const ReceptionWorkspace = () => {
     <PageContainer>
     <div className="flex flex-col gap-6">
 
-      {/* Greeting banner — full width */}
-      <GreetingBanner />
+      {/* Daily command-centre header — same as Principal/Teacher */}
+      <PrincipalHeaderWidget />
 
       {/* 2-column layout */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">

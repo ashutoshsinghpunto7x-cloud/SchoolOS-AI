@@ -72,7 +72,7 @@ const inputClass = (hasError?: boolean) =>
     'w-full h-12 px-4 rounded-xl border text-base text-gray-900',
     'placeholder:text-gray-400 bg-white',
     'transition-colors duration-150',
-    'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
+    'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
     hasError
       ? 'border-red-300 focus:border-red-400 focus:ring-red-500/20'
       : 'border-gray-200 hover:border-gray-300'
@@ -328,7 +328,7 @@ export const StudentForm = ({
               'w-full px-4 py-3 rounded-xl border text-base text-gray-900',
               'placeholder:text-gray-400 bg-white resize-none',
               'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
+              'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
               errors.address
                 ? 'border-red-300 focus:border-red-400'
                 : 'border-gray-200 hover:border-gray-300'
@@ -352,7 +352,7 @@ export const StudentForm = ({
               'w-full px-4 py-3 rounded-xl border text-base text-gray-900',
               'placeholder:text-gray-400 bg-white resize-none',
               'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
+              'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
               'border-gray-200 hover:border-gray-300'
             )}
           />
@@ -367,9 +367,9 @@ export const StudentForm = ({
           'w-full h-14 rounded-2xl',
           'flex items-center justify-center gap-3',
           'text-base font-bold text-white',
-          'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
+          'bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]',
           'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 focus-visible:ring-offset-2',
           'disabled:opacity-60 disabled:cursor-not-allowed'
         )}
       >

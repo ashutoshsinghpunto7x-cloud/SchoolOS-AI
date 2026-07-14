@@ -79,15 +79,15 @@ const TEMPLATES: Record<ImportType, ImportTemplate> = {
   fees: {
     importType: 'fees',
     name: 'Fee Records Import Template',
-    description: 'Import fee records. Required: studentId, feeHead, academicYear, dueDate, totalAmount.',
+    description: 'Import fee records. Required: admissionNumber (or studentId), feeHead, academicYear, dueDate, totalAmount. Matched by student + fee head + academic year + month — re-uploading updates the existing record instead of duplicating it.',
     headers: [
-      'studentId', 'feeHead', 'customHead', 'description',
+      'admissionNumber', 'studentId', 'feeHead', 'customHead', 'description',
       'academicYear', 'month', 'dueDate', 'totalAmount',
       'discountAmount', 'discountReason', 'notes',
     ],
     sampleRows: [
       {
-        studentId: '60d5ec49f1b2c8b1d8e4f123',
+        admissionNumber: 'ADM-2024-0001',
         feeHead: 'tuition',
         customHead: '',
         description: 'Term 1 Tuition Fee',

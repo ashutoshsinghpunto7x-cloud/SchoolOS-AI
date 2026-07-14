@@ -110,7 +110,7 @@ export function AttendanceCalendar({ records, loading }: Props) {
               key={dateStr}
               title={status ? STATUS_LABEL[status] : undefined}
               className={`relative flex items-center justify-center h-8 rounded-lg text-xs font-medium
-                ${isToday ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
+                ${isToday ? 'ring-2 ring-[#A855F7] ring-offset-1' : ''}
                 ${status ? `${STATUS_COLOR[status]} text-white` : 'text-gray-700 hover:bg-gray-50'}`}
             >
               {day}

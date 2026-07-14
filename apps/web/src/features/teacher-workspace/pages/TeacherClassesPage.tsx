@@ -31,15 +31,15 @@ function ClassRow({ entry, onPress }: { entry: ClassEntry; onPress: () => void }
     <button
       type="button"
       onClick={onPress}
-      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
     >
-      <div className="w-9 h-9 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
-        <GraduationCap className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
+      <div className="w-9 h-9 rounded-xl bg-[#A855F7]/10 dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
+        <GraduationCap className="w-4 h-4 text-[#5B21B6] dark:text-violet-300" strokeWidth={2} />
       </div>
-      <p className="flex-1 text-base font-bold text-gray-900">
+      <p className="flex-1 text-base font-bold text-gray-900 dark:text-white">
         Class {entry.cls}{entry.section && ` – ${entry.section}`}
       </p>
-      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+      <ChevronRight className="w-4 h-4 text-gray-300 dark:text-white/20 shrink-0" />
     </button>
   );
 }
@@ -90,19 +90,19 @@ export function TeacherClassesPage() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-6 pb-4">
+      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 pt-6 pb-4">
         <button
           onClick={() => navigate('/teacher')}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-3 -ml-1 p-1"
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-white/40 hover:text-gray-900 dark:hover:text-white transition-colors mb-3 -ml-1 p-1"
           type="button"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">My Classes</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">My Classes</h1>
+        <p className="text-sm text-gray-500 dark:text-white/40 mt-0.5">
           {classes.length} class{classes.length !== 1 ? 'es' : ''} assigned
         </p>
       </div>
@@ -110,7 +110,7 @@ export function TeacherClassesPage() {
       {/* Content */}
       <div className="px-4 py-4">
         {isLoading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
             <SkeletonRow />
             <SkeletonRow />
             <SkeletonRow />
@@ -124,17 +124,17 @@ export function TeacherClassesPage() {
             </div>
           </div>
         ) : classes.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-7 h-7 text-gray-400" />
+          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 p-10 text-center">
+            <div className="w-14 h-14 bg-gray-100 dark:bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-7 h-7 text-gray-400 dark:text-white/30" />
             </div>
-            <p className="text-base font-semibold text-gray-700">No classes assigned</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-base font-semibold text-gray-700 dark:text-white/70">No classes assigned</p>
+            <p className="text-sm text-gray-400 dark:text-white/30 mt-1">
               Your principal hasn't assigned you to any classes yet.
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             {classes.map((entry) => (
               <ClassRow
                 key={`${entry.cls}||${entry.section}`}

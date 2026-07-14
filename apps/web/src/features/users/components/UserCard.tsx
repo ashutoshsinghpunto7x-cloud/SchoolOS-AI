@@ -37,7 +37,7 @@ export const UserCard = ({ user, isSelf }: UserCardProps) => {
     <>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
         {/* Avatar */}
-        <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-xl bg-[#5B21B6] flex items-center justify-center flex-shrink-0 shadow-sm">
           <span className="text-base font-bold text-white">{initials}</span>
         </div>
 

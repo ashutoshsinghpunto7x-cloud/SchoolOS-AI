@@ -6,8 +6,8 @@ const SuggestionChip = ({ label }: { label: string }) => (
   <button
     type="button"
     className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-gray-700
-               bg-gray-50 hover:bg-blue-50 hover:text-blue-700
-               border border-gray-100 hover:border-blue-200
+               bg-gray-50 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]
+               border border-gray-100 hover:border-[#A855F7]/25
                transition-colors duration-150 font-medium"
   >
     {label}
@@ -28,8 +28,8 @@ export const AISidePanel = () => {
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-gray-50">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-blue-600" strokeWidth={1.75} />
+          <div className="w-9 h-9 rounded-xl bg-[#A855F7]/10 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-[#5B21B6]" strokeWidth={1.75} />
           </div>
           <div>
             <h3 className="text-base font-bold text-gray-900 leading-tight">AI Assistant</h3>
@@ -57,11 +57,11 @@ export const AISidePanel = () => {
       <div className="px-4 pb-5">
         <button
           type="button"
-          className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+          className="w-full h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
                      flex items-center justify-center gap-2
                      text-sm font-semibold text-white
                      transition-colors duration-150
-                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2"
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 focus-visible:ring-offset-2"
         >
           Ask AI
           <ArrowRight className="w-4 h-4" />

@@ -157,7 +157,7 @@ const ActiveAIPanel = ({ student, onCall, onWhatsApp }: ActiveAIPanelProps) => {
       <div className="flex-shrink-0 px-4 pb-5 pt-3 border-t border-gray-50">
         <button
           type="button"
-          className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white
+          className="w-full h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white
                      text-sm font-bold flex items-center justify-center gap-2 transition-colors"
         >
           <Sparkles className="w-4 h-4" strokeWidth={2} />

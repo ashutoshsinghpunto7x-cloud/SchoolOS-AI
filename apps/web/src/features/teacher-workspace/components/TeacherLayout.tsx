@@ -20,7 +20,7 @@ export function TeacherLayout() {
           the only nav and stays visible on every breakpoint. */}
       <nav
         aria-label="Teacher navigation"
-        className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-sm border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+        className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#0F0821]/95 backdrop-blur-sm border-t border-gray-100 dark:border-white/5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-center h-16 max-w-xl mx-auto">
@@ -29,12 +29,12 @@ export function TeacherLayout() {
               {({ isActive }) => (
                 <div
                   className={`flex flex-col items-center gap-0.5 py-1.5 transition-all duration-200 ${
-                    isActive ? 'text-[#5B21B6]' : 'text-gray-400 hover:text-gray-600'
+                    isActive ? 'text-[#5B21B6] dark:text-violet-300' : 'text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70'
                   }`}
                 >
                   <div
                     className={`w-11 h-7 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                      isActive ? 'bg-[#A855F7]/10' : ''
+                      isActive ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/20' : ''
                     }`}
                   >
                     <Icon

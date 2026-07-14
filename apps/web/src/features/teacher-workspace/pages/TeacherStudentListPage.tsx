@@ -102,7 +102,7 @@ function StudentCard({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 flex items-center gap-3">
       {/* Rank */}
       <span className="text-xs text-gray-400 w-6 text-right shrink-0">{index + 1}</span>
 
@@ -137,10 +137,10 @@ function StudentCard({
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 truncate">{student.fullName}</p>
-        <p className="text-xs text-gray-400">Adm: {student.admissionNumber}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{student.fullName}</p>
+        <p className="text-xs text-gray-400 dark:text-white/30">Adm: {student.admissionNumber}</p>
         {student.gender && (
-          <p className="text-xs text-gray-400 capitalize">{student.gender}</p>
+          <p className="text-xs text-gray-400 dark:text-white/30 capitalize">{student.gender}</p>
         )}
       </div>
 
@@ -204,12 +204,12 @@ function StudentCard({
 
 function SkeletonRow() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 animate-pulse">
-      <div className="w-6 h-4 bg-gray-100 rounded" />
-      <div className="w-10 h-10 bg-gray-100 rounded-xl shrink-0" />
+    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 flex items-center gap-3 animate-pulse">
+      <div className="w-6 h-4 bg-gray-100 dark:bg-white/10 rounded" />
+      <div className="w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-xl shrink-0" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-4 bg-gray-100 rounded w-32" />
-        <div className="h-3 bg-gray-100 rounded w-24" />
+        <div className="h-4 bg-gray-100 dark:bg-white/10 rounded w-32" />
+        <div className="h-3 bg-gray-100 dark:bg-white/10 rounded w-24" />
       </div>
     </div>
   );
@@ -246,20 +246,20 @@ export function TeacherStudentListPage() {
     .sort((a, b) => a.fullName.localeCompare(b.fullName));
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-4">
+      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 pt-4 pb-4">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => navigate('/teacher/classes')}
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 transition-colors"
             type="button"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
+            <ArrowLeft className="w-4 h-4 text-gray-600 dark:text-white/60" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-gray-900">Class {cls} – {section}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Class {cls} – {section}</h1>
+            <p className="text-sm text-gray-500 dark:text-white/40">
               {isLoading ? '…' : `${students.length} students enrolled`}
             </p>
           </div>
@@ -275,13 +275,13 @@ export function TeacherStudentListPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30 pointer-events-none" />
           <input
             type="text"
             placeholder="Search students…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+            className="w-full h-10 pl-10 pr-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
           />
         </div>
       </div>
@@ -296,15 +296,15 @@ export function TeacherStudentListPage() {
             <p className="text-sm font-semibold text-red-700">Failed to load students</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
+            <div className="w-14 h-14 bg-gray-100 dark:bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               {search ? (
-                <Search className="w-7 h-7 text-gray-400" />
+                <Search className="w-7 h-7 text-gray-400 dark:text-white/30" />
               ) : (
-                <Users className="w-7 h-7 text-gray-400" />
+                <Users className="w-7 h-7 text-gray-400 dark:text-white/30" />
               )}
             </div>
-            <p className="text-base font-semibold text-gray-700">
+            <p className="text-base font-semibold text-gray-700 dark:text-white/70">
               {search ? 'No students match your search' : 'No students yet'}
             </p>
             {!search && (

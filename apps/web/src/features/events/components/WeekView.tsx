@@ -90,7 +90,7 @@ export const WeekView = ({ weekStart, events, onWeekChange, onEventClick }: Week
                   className={cn(
                     'w-7 h-7 mx-auto mt-1 flex items-center justify-center rounded-full',
                     'text-sm font-bold',
-                    isToday ? 'bg-blue-600 text-white' : (isWeekend ? 'text-gray-400' : 'text-gray-800'),
+                    isToday ? 'bg-[#5B21B6] text-white' : (isWeekend ? 'text-gray-400' : 'text-gray-800'),
                   )}
                 >
                   {day.getDate()}

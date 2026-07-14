@@ -4,11 +4,27 @@ import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 import { ImportType, IImportSession } from './import-session.model';
 import { importSessionRepository, importRowRepository } from './import-session.repository';
+import { importMappingTemplateRepository } from './import-mapping-template.repository';
+import { computeHeaderSignature } from './import-mapping-template.model';
 import { excelParser } from './parsers/excel.parser';
-import { buildColumnMapping, validateRows, runImport, rollbackImport } from './engine/import.engine';
-import { listSessionsSchema, listRowsSchema, uploadSessionSchema, confirmMappingSchema } from './import.validation';
+import { buildColumnMapping, buildAIColumnMapping, validateRows, runImport, rollbackImport } from './engine/import.engine';
+import { ColumnMappingSuggestion } from './ai-mapper/ai-mapper.interface';
+import {
+  listSessionsSchema, listRowsSchema, uploadSessionSchema, confirmMappingSchema, setDuplicateStrategySchema,
+  saveMappingTemplateSchema, listMappingTemplatesSchema, updateRowSchema,
+} from './import.validation';
 import { listTemplates, generateTemplateBuffer } from './templates/template.registry';
 import { schoolClassRepository } from '../school-classes/school-class.repository';
+import { getValidator } from './validators/validator.registry';
+import { getProcessor } from './processors/processor.registry';
+
+// ── CSV helper ────────────────────────────────────────────────────────────────
+
+/** Quotes a CSV cell only when needed, escaping embedded quotes. */
+function csvCell(value: string): string {
+  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
 
 // ── Upload & Parse ────────────────────────────────────────────────────────────
 
@@ -38,12 +54,16 @@ export const importService = {
       await importSessionRepository.updateStatus(sessionId, ctx.schoolId, 'parsing');
       const parsed = excelParser.parse(file.buffer, file.mimetype);
 
-      // Build heuristic column mapping
+      // Priority order: this school's remembered mapping for this exact header
+      // shape (from a prior confirmed import) → rule-based heuristics. AI and
+      // manual mapping remain available afterward via their own endpoints.
       await importSessionRepository.updateStatus(sessionId, ctx.schoolId, 'validating');
-      const mapping = await buildColumnMapping(importType, parsed.headers, parsed.rows);
+      const headerSignature = computeHeaderSignature(parsed.headers);
+      const remembered = await importMappingTemplateRepository.findBySignature(ctx.schoolId, importType, headerSignature);
+      const mapping = remembered?.mapping ?? await buildColumnMapping(importType, parsed.headers, parsed.rows);
 
       // Validate all rows and persist them
-      const { validRows, warningRows, failedRows, detectedNewClasses } = await validateRows(
+      const { validRows, warningRows, failedRows, duplicateRows, detectedNewClasses } = await validateRows(
         sessionId,
         ctx.schoolId,
         importType,
@@ -57,7 +77,9 @@ export const importService = {
         validRows,
         warningRows,
         failedRows,
+        duplicateRows,
         mapping,
+        headerSignature,
         detectedNewClasses,
       });
 
@@ -100,13 +122,121 @@ export const importService = {
 
     const { mapping } = confirmMappingSchema.parse(rawBody);
 
-    // Delete old rows and re-validate with new mapping
+    // Rebuild every row from its stored rawData (persisted per-row at upload time) and
+    // re-validate against the new mapping — the original file itself is never kept
+    // around, but rawData is, so a full re-validation doesn't need it.
+    const existingRows = await importRowRepository.findAllBySession(id);
+    const rowsToRevalidate = existingRows.map((r) => ({ rowNumber: r.rowNumber, data: r.rawData }));
+
     await importRowRepository.deleteBySession(id);
 
-    // Re-fetch from DB to get original file data — we can't re-parse (file not stored)
-    // Instead we update the mapping on the session so next confirm uses it
-    const updated = await importSessionRepository.updateStatus(id, ctx.schoolId, 'preview', { mapping });
+    const { validRows, warningRows, failedRows, duplicateRows, detectedNewClasses } = await validateRows(
+      id,
+      ctx.schoolId,
+      session.importType,
+      rowsToRevalidate,
+      mapping,
+    );
+
+    const updated = await importSessionRepository.updateStatus(id, ctx.schoolId, 'preview', {
+      mapping,
+      validRows,
+      warningRows,
+      failedRows,
+      duplicateRows,
+      detectedNewClasses,
+    });
+
+    await importSessionRepository.pushTimelineEvent(id, ctx.schoolId, {
+      event: 'validated',
+      at: new Date(),
+      note: `Mapping updated — ${validRows} valid, ${warningRows} warnings, ${failedRows} errors`,
+    });
+
     return updated!;
+  },
+
+  // ── Duplicate resolution ───────────────────────────────────────────────────
+
+  /** Session-wide default for every row that matched an existing record —
+   *  set from the preview screen's Skip/Update/Import Anyway selector. */
+  async setDuplicateStrategy(id: string, rawBody: unknown, ctx: AuthContext): Promise<IImportSession> {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+    if (session.status !== 'preview') {
+      throw new ValidationError('Duplicate strategy can only be changed in preview state.');
+    }
+
+    const { strategy } = setDuplicateStrategySchema.parse(rawBody);
+    await importRowRepository.setDuplicateActionForSession(id, strategy);
+
+    const updated = await importSessionRepository.updateStatus(id, ctx.schoolId, 'preview', {
+      duplicateStrategy: strategy,
+    });
+    return updated!;
+  },
+
+  // ── AI-assisted mapping ────────────────────────────────────────────────────
+
+  /**
+   * Suggests mappings for every uploaded column not already resolved by the
+   * heuristic mapper. Read-only — never writes the mapping itself; the user
+   * reviews/edits the suggestions on the mapping screen, then saves via the
+   * normal updateMapping endpoint. Only ever called from an explicit
+   * "AI Auto Map" click, never automatically.
+   */
+  async suggestAIMapping(id: string, ctx: AuthContext): Promise<ColumnMappingSuggestion[]> {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+    if (session.status !== 'preview') {
+      throw new ValidationError('AI mapping is only available in preview state.');
+    }
+
+    const sampleRows = await importRowRepository.findAllBySession(id);
+    if (sampleRows.length === 0) throw new ValidationError('This session has no rows to map from.');
+
+    const allHeaders = Object.keys(sampleRows[0].rawData ?? {});
+    const unmappedHeaders = allHeaders.filter((h) => !(h in session.mapping));
+    if (unmappedHeaders.length === 0) return [];
+
+    const parsedSample = sampleRows.slice(0, 3).map((r) => ({ rowNumber: r.rowNumber, data: r.rawData }));
+
+    const suggestions = await buildAIColumnMapping(session.importType, unmappedHeaders, parsedSample, ctx.schoolId);
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'import.ai_mapping_requested',
+      resource: 'import_sessions',
+      resourceId: id,
+      details: { importType: session.importType, unmappedCount: unmappedHeaders.length },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return suggestions;
+  },
+
+  // ── Named mapping templates ────────────────────────────────────────────────
+
+  async saveMappingTemplate(sessionId: string, rawBody: unknown, ctx: AuthContext) {
+    const session = await importSessionRepository.findById(sessionId, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+
+    const { name } = saveMappingTemplateSchema.parse(rawBody);
+    return importMappingTemplateRepository.saveNamedTemplate(
+      ctx.schoolId, session.importType, name, session.mapping, ctx.displayName,
+    );
+  },
+
+  async listMappingTemplates(rawQuery: unknown, ctx: AuthContext) {
+    const { importType } = listMappingTemplatesSchema.parse(rawQuery);
+    return importMappingTemplateRepository.listNamedTemplates(ctx.schoolId, importType);
+  },
+
+  async deleteMappingTemplate(templateId: string, ctx: AuthContext): Promise<void> {
+    const deleted = await importMappingTemplateRepository.deleteNamedTemplate(templateId, ctx.schoolId);
+    if (!deleted) throw new NotFoundError('Mapping template');
   },
 
   // ── Confirm → trigger background processing ────────────────────────────────
@@ -152,6 +282,15 @@ export const importService = {
       event: 'confirmed',
       at: new Date(),
     });
+
+    // The user has now committed to this mapping — remember it for this exact
+    // header shape so the next matching upload from this school skips straight
+    // to preview instead of re-guessing.
+    if (session.headerSignature) {
+      await importMappingTemplateRepository.rememberMapping(
+        ctx.schoolId, session.importType, session.headerSignature, session.mapping, ctx.displayName,
+      );
+    }
 
     auditService.log({
       userId: ctx.userId,
@@ -260,6 +399,94 @@ export const importService = {
     if (!session) throw new NotFoundError('Import session');
     const opts = listRowsSchema.parse(rawQuery);
     return importRowRepository.findBySession(id, opts);
+  },
+
+  /**
+   * Inline preview editing — the user fixes a failed/warned row's field
+   * values directly (e.g. types in a missing Class) instead of re-editing
+   * the source file and re-uploading. Re-runs the same validator (and
+   * duplicate check) a fresh upload would, then updates the session's
+   * aggregate counts so the preview totals stay accurate.
+   */
+  async updateRow(id: string, rowNumber: number, rawBody: unknown, ctx: AuthContext) {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+    if (session.status !== 'preview') {
+      throw new ValidationError('Rows can only be edited in preview state.');
+    }
+
+    const row = await importRowRepository.findByRowNumber(id, rowNumber);
+    if (!row) throw new NotFoundError('Row');
+
+    const { mappedData: edits } = updateRowSchema.parse(rawBody);
+    const merged: Record<string, unknown> = { ...row.mappedData, ...edits };
+
+    const validator = getValidator(session.importType);
+    const result = validator.validate(merged);
+    const persistedData = result.status === 'error' ? merged : result.cleanData;
+
+    let duplicateOf: string | undefined;
+    const processor = getProcessor(session.importType);
+    if (result.status !== 'error' && processor.findDuplicate) {
+      duplicateOf = await processor.findDuplicate(persistedData, ctx.schoolId);
+    }
+
+    await importRowRepository.replaceRow(id, rowNumber, {
+      mappedData: persistedData,
+      status: result.status as 'valid' | 'warning' | 'error',
+      errors: result.errors,
+      warnings: result.warnings,
+      duplicateOf,
+    });
+
+    // Recompute session-wide totals from every row's current status.
+    const [counts, duplicateRows] = await Promise.all([
+      importRowRepository.countByStatus(id),
+      importRowRepository.countDuplicates(id),
+    ]);
+    const validRows = counts['valid'] ?? 0;
+    const warningRows = counts['warning'] ?? 0;
+    const failedRows = counts['error'] ?? 0;
+
+    const updatedSession = await importSessionRepository.updateStatus(id, ctx.schoolId, 'preview', {
+      validRows, warningRows, failedRows, duplicateRows,
+    });
+
+    return { session: updatedSession!, row: await importRowRepository.findByRowNumber(id, rowNumber) };
+  },
+
+  // ── Error report ───────────────────────────────────────────────────────────
+
+  /** CSV of every failed row — original values plus which field(s) failed and why —
+   *  so a school can fix a source file offline instead of re-reading errors on screen. */
+  async exportErrors(id: string, ctx: AuthContext): Promise<{ filename: string; csv: string }> {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+
+    const errorRows = await importRowRepository.findAllBySession(id, 'error');
+    if (errorRows.length === 0) throw new ValidationError('This session has no failed rows to export.');
+
+    const sourceColumns = Array.from(
+      new Set(errorRows.flatMap((r) => Object.keys(r.rawData ?? {})))
+    );
+
+    const header = ['Row #', ...sourceColumns, 'Errors'];
+    const lines = [header.map(csvCell).join(',')];
+
+    for (const row of errorRows) {
+      const errorText = (row.errors ?? []).map((e) => `${e.field}: ${e.message}`).join(' | ');
+      const cells = [
+        String(row.rowNumber),
+        ...sourceColumns.map((col) => String(row.rawData?.[col] ?? '')),
+        errorText,
+      ];
+      lines.push(cells.map(csvCell).join(','));
+    }
+
+    return {
+      filename: `${session.importType}-import-errors-${id}.csv`,
+      csv: lines.join('\r\n'),
+    };
   },
 
   // ── Templates ──────────────────────────────────────────────────────────────

@@ -173,7 +173,7 @@ function TodayClassCard({
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 transition-all duration-200 group"
+      className="w-full text-left bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
     >
       {/* Subject icon */}
       <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', bg)}>
@@ -183,7 +183,7 @@ function TodayClassCard({
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
         <div className="flex items-center gap-1.5">
-          <p className="text-xs text-gray-400 font-medium">
+          <p className="text-xs text-gray-400 dark:text-white/35 font-medium">
             {cls.startTime} - {cls.endTime}
           </p>
           {isNow && (
@@ -192,10 +192,10 @@ function TodayClassCard({
             </span>
           )}
         </div>
-        <p className="text-sm font-bold text-gray-900 truncate leading-tight mt-0.5">
+        <p className="text-sm font-bold text-gray-900 dark:text-white truncate leading-tight mt-0.5">
           {cls.subjectName}
         </p>
-        <span className="inline-block text-xs font-semibold text-[#5B21B6] bg-[#A855F7]/10 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-block text-xs font-semibold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2 py-0.5 rounded-full mt-1">
           {cls.class} - {cls.section}
         </span>
       </div>
@@ -263,19 +263,19 @@ function TodayClassCard({
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
-      <div className="px-4 pt-4 pb-3 border-b border-gray-50">
+    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden animate-pulse">
+      <div className="px-4 pt-4 pb-3 border-b border-gray-50 dark:border-white/5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
-            <div className="h-3 bg-gray-100 rounded w-24" />
-            <div className="h-5 bg-gray-100 rounded w-36" />
-            <div className="h-4 bg-gray-100 rounded w-20" />
+            <div className="h-3 bg-gray-100 dark:bg-white/10 rounded w-24" />
+            <div className="h-5 bg-gray-100 dark:bg-white/10 rounded w-36" />
+            <div className="h-4 bg-gray-100 dark:bg-white/10 rounded w-20" />
           </div>
-          <div className="w-10 h-10 bg-gray-100 rounded-xl" />
+          <div className="w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-xl" />
         </div>
       </div>
       <div className="px-4 py-3">
-        <div className="h-3 bg-gray-100 rounded w-32" />
+        <div className="h-3 bg-gray-100 dark:bg-white/10 rounded w-32" />
       </div>
     </div>
   );
@@ -312,21 +312,21 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+        <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">
           My Leave
         </h2>
         <button
           onClick={onApply}
-          className="text-xs font-semibold text-[#5B21B6] flex items-center gap-0.5 hover:underline"
+          className="text-xs font-semibold text-[#5B21B6] dark:text-violet-400 flex items-center gap-0.5 hover:underline"
         >
           Apply for leave
         </button>
       </div>
 
       {isLoading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 animate-pulse h-16" />
+        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 animate-pulse h-16" />
       ) : recent.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 text-sm text-gray-400">
+        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 text-sm text-gray-400 dark:text-white/30">
           No leave requests yet.
         </div>
       ) : (
@@ -339,15 +339,15 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
             {recent.map((req) => (
               <div
                 key={req._id}
-                className="w-full shrink-0 snap-center bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
+                className="w-full shrink-0 snap-center bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3 pr-10 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {req.leaveType === 'full_day' ? 'Full day' : 'Half day'}
                     {' · '}
                     {req.dateFrom === req.dateTo ? req.dateFrom : `${req.dateFrom} – ${req.dateTo}`}
                   </p>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">{req.reason}</p>
+                  <p className="text-xs text-gray-400 dark:text-white/30 truncate mt-0.5">{req.reason}</p>
                 </div>
                 <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full shrink-0 capitalize', LEAVE_STATUS_STYLE[req.status])}>
                   {req.status}
@@ -360,7 +360,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
               type="button"
               onClick={goNext}
               aria-label="Next leave request"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center text-gray-500 hover:text-[#5B21B6] transition-colors"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -438,7 +438,7 @@ function TodaysClassesCarousel({
           type="button"
           onClick={goNext}
           aria-label="Next class"
-          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center text-gray-500 hover:text-[#5B21B6] transition-colors"
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -496,7 +496,33 @@ export function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8F7FF] dark:bg-transparent relative overflow-x-hidden">
+      {/* ── Page-level decorative background — light mode only (dark uses aurora) ── */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden dark:hidden">
+        {/* Large soft blobs */}
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-200/40 blur-3xl" />
+        <div className="absolute top-1/3 -left-16 w-56 h-56 rounded-full bg-fuchsia-200/35 blur-3xl" />
+        <div className="absolute bottom-40 -right-10 w-48 h-48 rounded-full bg-pink-200/30 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-indigo-200/30 blur-3xl" />
+        {/* Small accent circles */}
+        <div className="absolute top-[12%] left-[8%] w-4 h-4 rounded-full bg-violet-400/30" />
+        <div className="absolute top-[28%] right-[12%] w-3 h-3 rounded-full bg-pink-400/40" />
+        <div className="absolute top-[55%] left-[5%] w-2.5 h-2.5 rounded-full bg-fuchsia-400/35" />
+        <div className="absolute top-[70%] right-[18%] w-2 h-2 rounded-full bg-indigo-400/40" />
+        {/* Sparkle/star shapes */}
+        <svg className="absolute top-[15%] right-[18%] w-6 h-6 text-violet-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute top-[42%] left-[12%] w-4 h-4 text-pink-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute bottom-[25%] right-[8%] w-5 h-5 text-fuchsia-300/50" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute bottom-[45%] left-[20%] w-3 h-3 text-indigo-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+      </div>
 
       {/* ── Hero header ────────────────────────────────────────────────────── */}
       <div
@@ -522,17 +548,18 @@ export function TeacherDashboard() {
         </button>
       </div>
 
+      {/* ── Section labels & section links ──────────────────────────────────── */}
       <div className="px-4 py-5 space-y-6">
 
         {/* ── Today's Classes ─────────────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+            <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">
               Today's Classes
             </h2>
             <button
               onClick={() => navigate('/teacher/timetable')}
-              className="text-xs font-semibold text-[#5B21B6] flex items-center gap-0.5 hover:underline"
+              className="text-xs font-semibold text-[#5B21B6] dark:text-violet-400 flex items-center gap-0.5 hover:underline"
             >
               View timetable
               <ChevronRight className="w-3 h-3" />
@@ -553,14 +580,14 @@ export function TeacherDashboard() {
               </div>
             </div>
           ) : !currentPeriod ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-              <div className="w-14 h-14 bg-[#A855F7]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <CalendarCheck className="w-7 h-7 text-[#5B21B6]" />
+            <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-8 text-center">
+              <div className="w-14 h-14 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <CalendarCheck className="w-7 h-7 text-[#5B21B6] dark:text-violet-300" />
               </div>
-              <p className="text-base font-semibold text-gray-700">
+              <p className="text-base font-semibold text-gray-700 dark:text-white/80">
                 {data?.todayClasses.length ? 'No more classes today' : 'No classes today'}
               </p>
-              <p className="text-sm text-gray-400 mt-1">Enjoy your free day!</p>
+              <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Enjoy your free day!</p>
             </div>
           ) : (
             <TodaysClassesCarousel

@@ -4,13 +4,37 @@ import {
   createTeacherSchema, updateTeacherSchema, changeStatusSchema,
   listTeachersSchema, createNoteSchema, updateNoteSchema,
 } from './teacher.validation';
-import { ITeacher } from './teacher.model';
+import { Teacher, ITeacher } from './teacher.model';
 import { ITeacherNote } from './teacher.note.model';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { User, IUser } from '../users/user.model';
+import { userRepository } from '../users/user.repository';
+import { createTeacherLoginSchema } from '../users/user.validation';
 import { nextSequence } from '../../lib/counter.model';
+import bcrypt from 'bcrypt';
+
+const LOGIN_SALT_ROUNDS = 12;
+
+export interface TeacherLoginStatus {
+  teacherId: string;
+  fullName: string;
+  employeeId: string;
+  email?: string;
+  hasLogin: boolean;
+  username?: string;
+}
+
+/** First token as firstName, remainder as lastName — User requires both, but a
+ *  Teacher record only has one fullName field. Falls back to a placeholder
+ *  lastName for single-word names so the User document still validates. */
+function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  const firstName = parts[0] || fullName;
+  const lastName = parts.slice(1).join(' ') || 'Teacher';
+  return { firstName, lastName };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -203,6 +227,82 @@ export const teacherService = {
     });
 
     return updated;
+  },
+
+  // ── Login Provisioning ──────────────────────────────────────────────────────
+  // Teachers are imported from a spreadsheet and have no self-signup flow, so
+  // an admin issues them a login directly: a custom username (kept separate
+  // from email — see auth.service.login) plus a password the admin chooses
+  // and hands off to the teacher out of band.
+
+  async listLoginStatus(ctx: AuthContext): Promise<TeacherLoginStatus[]> {
+    const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false })
+      .select('fullName employeeId email')
+      .sort({ fullName: 1 })
+      .lean<{ _id: { toString(): string }; fullName: string; employeeId: string; email?: string }[]>();
+
+    const emails = teachers.map((t) => t.email).filter((e): e is string => !!e);
+    const users = emails.length
+      ? await User.find({ schoolId: ctx.schoolId, role: 'teacher', email: { $in: emails } })
+          .select('email username')
+          .lean<{ email: string; username?: string }[]>()
+      : [];
+    const userByEmail = new Map(users.map((u) => [u.email, u]));
+
+    return teachers.map((t) => {
+      const linked = t.email ? userByEmail.get(t.email) : undefined;
+      return {
+        teacherId: t._id.toString(),
+        fullName: t.fullName,
+        employeeId: t.employeeId,
+        email: t.email,
+        hasLogin: !!linked,
+        username: linked?.username,
+      };
+    });
+  },
+
+  async createLogin(teacherId: string, rawInput: unknown, ctx: AuthContext): Promise<{ teacherId: string; username: string }> {
+    const { username, password } = createTeacherLoginSchema.parse(rawInput);
+
+    const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
+    if (!teacher) throw new NotFoundError('Teacher');
+    if (!teacher.email) {
+      throw new ValidationError("Add an email to this teacher's profile before creating a login.");
+    }
+
+    const existingUser = await userRepository.findByEmail(teacher.email);
+    if (existingUser) throw new ValidationError('This teacher already has login credentials.');
+
+    const usernameTaken = await userRepository.findByUsername(username);
+    if (usernameTaken) throw new ValidationError('That username is already taken.');
+
+    const passwordHash = await bcrypt.hash(password, LOGIN_SALT_ROUNDS);
+    const { firstName, lastName } = splitFullName(teacher.fullName);
+
+    await userRepository.create({
+      firstName,
+      lastName,
+      email: teacher.email,
+      username,
+      passwordHash,
+      role: 'teacher',
+      schoolId: ctx.schoolId,
+      createdBy: ctx.userId,
+    });
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'teacher.login_created',
+      resource: 'teachers',
+      resourceId: teacherId,
+      details: { username },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return { teacherId, username };
   },
 
   // ── Notes ──────────────────────────────────────────────────────────────────

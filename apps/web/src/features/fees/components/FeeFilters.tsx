@@ -31,7 +31,7 @@ const SORT_OPTIONS = [
   { value: 'balance',     label: 'Balance' },
 ];
 
-const selectCls = 'border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-blue-400 min-w-0';
+const selectCls = 'border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#A855F7] min-w-0';
 
 export function FeeFilters({ filters, onChange }: Props) {
   const set = (patch: Partial<FeeListOptions>) =>

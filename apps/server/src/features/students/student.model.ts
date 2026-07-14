@@ -80,7 +80,7 @@ const emergencyContactSchema = new Schema<IEmergencyContact>(
 const studentSchema = new Schema<IStudent>(
   {
     fullName: { type: String, required: true, trim: true },
-    admissionNumber: { type: String, required: true, unique: true, trim: true },
+    admissionNumber: { type: String, required: true, trim: true },
     rollNumber: { type: String, trim: true },
     class: { type: String, required: true, trim: true },
     section: { type: String, required: true, trim: true },
@@ -118,6 +118,14 @@ const studentSchema = new Schema<IStudent>(
 );
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
+
+// Scoped to active (non-deleted) records only — matching the same pattern
+// used by Attendance — so a soft-deleted student never blocks reuse of its
+// admission number by a new or re-imported record for the same school.
+studentSchema.index(
+  { schoolId: 1, admissionNumber: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } }
+);
 
 studentSchema.index({ schoolId: 1, isDeleted: 1, createdAt: -1 });
 studentSchema.index({ schoolId: 1, isDeleted: 1, admissionStatus: 1 });

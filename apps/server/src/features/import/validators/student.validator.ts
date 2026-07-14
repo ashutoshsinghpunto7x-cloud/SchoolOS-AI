@@ -1,20 +1,7 @@
 import { z } from 'zod';
 import { createStudentSchema } from '../../students/student.validation';
 import { IValidator, RowValidationResult } from './validator.interface';
-
-// Some source spreadsheets combine class and section into one column
-// (e.g. "Mont-A", "10-A", "9B") instead of providing a separate Section
-// column. Since `section` is required, that leaves every row unmatched
-// and failing validation even though the data is really there — split it
-// out so those imports don't get rejected wholesale.
-function splitClassSection(classRaw: string): { klass: string; section: string } | null {
-  const trimmed = classRaw.trim();
-  const withSeparator = trimmed.match(/^(.+?)[\s\-_/]+([A-Za-z]{1,3})$/);
-  if (withSeparator) return { klass: withSeparator[1].trim(), section: withSeparator[2].trim() };
-  const tight = trimmed.match(/^(\d+)([A-Za-z]{1,3})$/);
-  if (tight) return { klass: tight[1], section: tight[2] };
-  return null;
-}
+import { resolveClassSection, normalizeGenderAbbrev } from './shared-helpers';
 
 // The Student model stores dateOfBirth as a Date, but Indian-format source
 // sheets almost always write it as DD-MM-YY / DD-MM-YYYY (e.g. "30-10-22").
@@ -72,9 +59,9 @@ export const studentValidator: IValidator = {
     if (typeof processed.tags === 'string' && processed.tags) {
       processed.tags = processed.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
     }
-    // Normalise gender to lowercase
-    if (typeof processed.gender === 'string') {
-      processed.gender = processed.gender.toLowerCase().trim();
+    // Normalise gender — accepts "M"/"F"/"O" as well as the full words.
+    if (typeof processed.gender === 'string' && processed.gender.trim()) {
+      processed.gender = normalizeGenderAbbrev(processed.gender);
     }
     // Normalise day-first / 2-digit-year dates to an ISO string the Date column
     // can actually cast (source sheets commonly use "30-10-22" style DOBs).
@@ -86,18 +73,14 @@ export const studentValidator: IValidator = {
       processed.admissionStatus = 'active';
     }
 
-    // Derive section from a combined class value when no section was mapped
+    // Accepts either a single combined Class column ("NUR-A") or already-
+    // separate Class + Section columns — see shared-helpers.ts.
     let sectionInferred = false;
-    if (
-      (!processed.section || processed.section === '') &&
-      typeof processed.class === 'string'
-    ) {
-      const split = splitClassSection(processed.class);
-      if (split) {
-        processed.class = split.klass;
-        processed.section = split.section;
-        sectionInferred = true;
-      }
+    const resolved = resolveClassSection(processed.class, processed.section);
+    if (resolved) {
+      processed.class = resolved.class;
+      processed.section = resolved.section;
+      sectionInferred = resolved.inferred;
     }
 
     const result = createStudentSchema.safeParse(processed);

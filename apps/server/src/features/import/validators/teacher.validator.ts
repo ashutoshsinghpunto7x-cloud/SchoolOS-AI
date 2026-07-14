@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createTeacherSchema } from '../../teachers/teacher.validation';
 import { IValidator, RowValidationResult } from './validator.interface';
+import { normalizeGenderAbbrev } from './shared-helpers';
 
 // Every field createTeacherSchema recognizes — anything else in the mapped row
 // gets swept into customFields instead of being silently dropped (Zod's default
@@ -40,7 +41,9 @@ export const teacherValidator: IValidator = {
     // Rather than hard-failing every row, default to 'other' and flag it as a
     // warning so the accountant/admin can fix it up post-import instead of
     // being blocked from importing the rest of the sheet.
-    const normalisedGender = typeof processed.gender === 'string' ? processed.gender.toLowerCase().trim() : processed.gender;
+    const normalisedGender = typeof processed.gender === 'string' && processed.gender.trim()
+      ? normalizeGenderAbbrev(processed.gender)
+      : processed.gender;
     if (normalisedGender === 'male' || normalisedGender === 'female' || normalisedGender === 'other') {
       processed.gender = normalisedGender;
     } else {

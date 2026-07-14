@@ -25,7 +25,7 @@ export const SearchBar = ({
       <button
         type="button"
         onClick={() => onSearch && onSearch(value ?? '')}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-blue-500 transition-colors"
+        className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 hover:text-[#5B21B6] transition-colors"
         aria-label="Search"
         tabIndex={-1}
       >
@@ -48,7 +48,7 @@ export const SearchBar = ({
           'shadow-sm',
           'transition-all duration-200',
           'hover:border-gray-300 hover:shadow-md',
-          'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 focus:shadow-md',
+          'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7] focus:shadow-md',
         )}
       />
       {/* Clear button — shown only when there is a value */}

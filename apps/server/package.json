@@ -8,7 +8,9 @@
     "start": "cross-env UV_THREADPOOL_SIZE=16 node dist/server.js",
     "type-check": "tsc --noEmit",
     "seed:teachers": "tsx src/scripts/seed-teachers.ts",
-    "seed:reset-students": "tsx src/scripts/reset-and-seed-students.ts"
+    "seed:reset-students": "tsx src/scripts/reset-and-seed-students.ts",
+    "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",
+    "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts"
   },
   "dependencies": {
     "@schoolos/types": "*",

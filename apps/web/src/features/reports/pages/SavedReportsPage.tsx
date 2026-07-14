@@ -56,7 +56,7 @@ const SavedReportCard = ({
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-50">
         <button
           onClick={onRun}
-          className="flex items-center gap-1.5 flex-1 justify-center h-8 text-xs font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-1.5 flex-1 justify-center h-8 text-xs font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] transition-colors"
         >
           <Play size={12} />
           Run Report

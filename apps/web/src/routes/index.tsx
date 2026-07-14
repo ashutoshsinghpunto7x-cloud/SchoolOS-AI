@@ -121,6 +121,10 @@ const TeacherListPage = lazyPage(
   () => import('@/features/teachers/pages/TeacherListPage'),
   'TeacherListPage',
 );
+const TeacherLoginsPage = lazyPage(
+  () => import('@/features/teachers/pages/TeacherLoginsPage'),
+  'TeacherLoginsPage',
+);
 const NewTeacherPage = lazyPage(
   () => import('@/features/teachers/pages/NewTeacherPage'),
   'NewTeacherPage',
@@ -249,6 +253,10 @@ const TeachersSummaryPage = lazyPage(
   () => import('@/features/principal/pages/TeachersSummaryPage'),
   'TeachersSummaryPage',
 );
+const PrincipalTeacherDirectoryPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalTeacherDirectoryPage'),
+  'PrincipalTeacherDirectoryPage',
+);
 const DiscountApprovalsPage = lazyPage(
   () => import('@/features/principal/pages/DiscountApprovalsPage'),
   'DiscountApprovalsPage',
@@ -368,6 +376,10 @@ const TeacherWorkspaceTimetablePage = lazyPage(
 const TeacherWorkspaceProfilePage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherProfilePage'),
   'TeacherProfilePage',
+);
+const TeacherChangePasswordPage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/TeacherChangePasswordPage'),
+  'TeacherChangePasswordPage',
 );
 const AccountantLayout = lazyPage(
   () => import('@/features/accountant-workspace/components/AccountantLayout'),
@@ -522,6 +534,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/history',                                      element: <TeacherHistoryPage /> },
                       { path: 'teacher/timetable',                                    element: <TeacherWorkspaceTimetablePage /> },
                       { path: 'teacher/profile',                                      element: <TeacherWorkspaceProfilePage /> },
+                      { path: 'teacher/change-password',                              element: <TeacherChangePasswordPage /> },
                     ],
                   },
                 ],
@@ -564,6 +577,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/class-teachers', element: <ClassTeachersPage backTo="/principal" backLabel="Principal Dashboard" /> },
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
+                  { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
                 ],
               },
 
@@ -644,6 +658,15 @@ export const router = createBrowserRouter([
                 children: [
                   { path: 'teachers/new', element: <NewTeacherPage /> },
                   { path: 'teachers/:id/edit', element: <EditTeacherPage /> },
+                ],
+              },
+
+              // Teacher Logins — admin issues a username/password for teachers
+              // who were imported and have no self-signup flow.
+              {
+                element: <ProtectedRoute allowedRoles={['admin']} />,
+                children: [
+                  { path: 'teacher-logins', element: <TeacherLoginsPage /> },
                 ],
               },
 

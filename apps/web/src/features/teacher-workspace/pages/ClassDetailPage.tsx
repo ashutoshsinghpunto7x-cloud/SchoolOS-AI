@@ -49,19 +49,19 @@ export function ClassDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
-        <button onClick={() => navigate('/teacher/classes')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
+      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
+        <button onClick={() => navigate('/teacher/classes')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>
         <div className="flex-1">
-          <h1 className="text-base font-bold text-gray-900">Class {cls}{section ? ` – ${section}` : ''}</h1>
-          <p className="text-xs text-gray-500">Subjects & timetable</p>
+          <h1 className="text-base font-bold text-gray-900 dark:text-white">Class {cls}{section ? ` – ${section}` : ''}</h1>
+          <p className="text-xs text-gray-500 dark:text-white/40">Subjects & timetable</p>
         </div>
         {isClassTeacher && (
           <button
             onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
-            className="h-9 px-3.5 bg-[#5B21B6] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] transition-colors"
+            className="h-9 px-3.5 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
           >
             <CalendarCheck className="w-3.5 h-3.5" />
             Mark Attendance
@@ -71,25 +71,25 @@ export function ClassDetailPage() {
 
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
         {/* Subjects taught */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-            <BookOpen className="w-3.5 h-3.5" /> Subject Taught
+        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4">
+          <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-gray-400 dark:text-white/30" /> Subject Taught
           </h2>
           {subjectsTaught.length === 0 ? (
-            <p className="text-sm text-gray-400">No subjects on record for this class.</p>
+            <p className="text-sm text-gray-400 dark:text-white/30">No subjects on record for this class.</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {subjectsTaught.map((s) => (
-                <span key={s} className="text-xs font-semibold text-[#5B21B6] bg-[#A855F7]/10 px-2.5 py-1 rounded-full">{s}</span>
+                <span key={s} className="text-xs font-semibold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">{s}</span>
               ))}
             </div>
           )}
         </div>
 
         {/* Timetable */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
           <div className="px-4 pt-4">
-            <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Class Timetable</h2>
+            <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest mb-3">Class Timetable</h2>
             <div className="flex gap-1.5 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {[1, 2, 3, 4, 5, 6].map((day) => (
                 <button
@@ -97,7 +97,9 @@ export function ClassDetailPage() {
                   onClick={() => setActiveDay(day)}
                   className={cn(
                     'shrink-0 h-9 px-3.5 rounded-xl text-xs font-semibold transition-colors',
-                    activeDay === day ? 'bg-[#5B21B6] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                    activeDay === day 
+                      ? 'bg-[#5B21B6] dark:bg-violet-600 text-white' 
+                      : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/15',
                   )}
                 >
                   {DAY_FULL[day].slice(0, 3)}
@@ -108,23 +110,23 @@ export function ClassDetailPage() {
 
           {ttLoading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+              <Loader2 className="w-5 h-5 text-gray-400 dark:text-white/30 animate-spin" />
             </div>
           ) : ttError || !timetable ? (
-            <div className="flex items-center gap-2 text-sm text-gray-400 px-4 pb-5">
+            <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-white/30 px-4 pb-5">
               <AlertCircle className="w-4 h-4" /> No published timetable for this class yet.
             </div>
           ) : dayEntries.length === 0 ? (
-            <p className="text-sm text-gray-400 px-4 pb-5">No periods scheduled on {DAY_FULL[activeDay]}.</p>
+            <p className="text-sm text-gray-400 dark:text-white/30 px-4 pb-5">No periods scheduled on {DAY_FULL[activeDay]}.</p>
           ) : (
-            <div className="divide-y divide-gray-50 border-t border-gray-50">
+            <div className="divide-y divide-gray-50 dark:divide-white/5 border-t border-gray-50 dark:border-white/5">
               {dayEntries.map((entry) => (
                 <div key={String(entry._id)} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{entry.subjectName}</p>
-                    <p className="text-xs text-gray-400">{entry.teacherName ?? 'Unassigned'}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{entry.subjectName}</p>
+                    <p className="text-xs text-gray-400 dark:text-white/40">{entry.teacherName ?? 'Unassigned'}</p>
                   </div>
-                  <span className="text-xs text-gray-400 shrink-0">{slotLabel(entry.slotId)}</span>
+                  <span className="text-xs text-gray-400 dark:text-white/40 shrink-0">{slotLabel(entry.slotId)}</span>
                 </div>
               ))}
             </div>

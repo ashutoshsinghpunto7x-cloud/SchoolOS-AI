@@ -59,7 +59,7 @@ export const TagEditor = ({ tags, onChange, maxTags = 20, className }: TagEditor
             onKeyDown={onKeyDown}
             onBlur={addTag}
             placeholder="Add tag…"
-            className="h-8 px-3 rounded-full border border-dashed border-gray-300 text-xs text-gray-700 placeholder:text-gray-400 bg-white focus:outline-none focus:border-blue-400 w-28"
+            className="h-8 px-3 rounded-full border border-dashed border-gray-300 text-xs text-gray-700 placeholder:text-gray-400 bg-white focus:outline-none focus:border-[#A855F7] w-28"
             maxLength={30}
           />
           <button

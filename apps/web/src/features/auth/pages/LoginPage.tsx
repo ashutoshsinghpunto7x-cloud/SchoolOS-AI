@@ -147,20 +147,20 @@ export const LoginPage = () => {
           {mode === 'password' ? (
             <form onSubmit={handlePasswordSubmit} noValidate className="space-y-5">
 
-              {/* Email */}
+              {/* Email or Username */}
               <div>
                 <label
                   htmlFor="email"
                   className="block text-sm font-bold text-gray-700 mb-2"
                 >
-                  Email address
+                  Email or Username
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   <input
                     id="email"
-                    type="email"
-                    autoComplete="email"
+                    type="text"
+                    autoComplete="username"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

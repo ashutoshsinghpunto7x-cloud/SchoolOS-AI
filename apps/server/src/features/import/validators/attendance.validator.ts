@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IValidator, RowValidationResult } from './validator.interface';
+import { resolveClassSection } from './shared-helpers';
 
 // Accepts common register shorthand so schools can upload sheets that already
 // use single-letter or human-written status columns without reformatting first.
@@ -56,8 +57,17 @@ export const attendanceValidator: IValidator = {
   validate(mappedData: Record<string, unknown>): RowValidationResult {
     const processed: Record<string, unknown> = { ...mappedData };
 
-    if (typeof processed.class === 'string') processed.class = processed.class.trim();
-    if (typeof processed.section === 'string') processed.section = processed.section.trim().toUpperCase();
+    // Accepts either a single combined Class column ("NUR-A") or already-
+    // separate Class + Section columns — see shared-helpers.ts.
+    let sectionInferred = false;
+    const resolved = resolveClassSection(processed.class, processed.section);
+    if (resolved) {
+      processed.class = resolved.class;
+      processed.section = resolved.section.toUpperCase();
+      sectionInferred = resolved.inferred;
+    } else if (typeof processed.section === 'string') {
+      processed.section = processed.section.trim().toUpperCase();
+    }
     processed.date = normalizeDate(processed.date);
 
     if (typeof processed.status === 'string') {
@@ -68,7 +78,14 @@ export const attendanceValidator: IValidator = {
     const result = importAttendanceRowSchema.safeParse(processed);
 
     if (result.success) {
-      return { status: 'valid', errors: [], warnings: [], cleanData: result.data as Record<string, unknown> };
+      return {
+        status: sectionInferred ? 'warning' : 'valid',
+        errors: [],
+        warnings: sectionInferred
+          ? [{ field: 'section', message: `Section "${result.data.section}" inferred from class value`, code: 'inferred' }]
+          : [],
+        cleanData: result.data as Record<string, unknown>,
+      };
     }
 
     const errors = result.error.issues.map((issue: z.ZodIssue) => ({

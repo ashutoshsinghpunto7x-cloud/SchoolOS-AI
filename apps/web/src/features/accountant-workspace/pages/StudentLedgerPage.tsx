@@ -4,8 +4,9 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, Loader2, AlertCircle, Printer, MessageCircle, Mail, UserRound,
   IndianRupee, ChevronLeft, ChevronRight, ArrowUpDown, User, GraduationCap,
-  FolderKanban, Hash, Phone, MailIcon, MapPin, CalendarDays, Wallet, Receipt,
-  BadgePercent, X, Camera, Pencil, Check, Clock,
+  Hash, Phone, MailIcon, MapPin, CalendarDays, Wallet, Receipt,
+  BadgePercent, X, Camera, Pencil, Check, Clock, CheckCircle2,
+  BookOpen, Coins,
 } from 'lucide-react';
 import { useStudentLedger, useSendLedgerWhatsAppReminder, useSendLedgerStatementEmail, useInvalidateStudentLedger } from '../hooks/useAccountantWorkspace';
 import { CollectPaymentModal } from '../components/CollectPaymentModal';
@@ -37,23 +38,18 @@ const STATUS_LABELS: Record<AdmissionStatus, { label: string; classes: string }>
   admission_pending:  { label: 'Adm. Pending', classes: 'bg-amber-100 text-amber-800' },
 };
 
-// ── Student Information Card ──────────────────────────────────────────────────
+const ACADEMIC_MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
 
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5">
-      <Icon className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-[11px] text-gray-400">{label}</p>
-        <p className="text-sm font-semibold text-gray-800 truncate">{value}</p>
-      </div>
-    </div>
-  );
-}
+const FEE_HEAD_LABELS: Record<string, string> = {
+  tuition: 'Tuition Fee', admission: 'Admission Fee', examination: 'Examination Fee',
+  transport: 'Transport Fee', hostel: 'Hostel Fee', miscellaneous: 'Annual Maintenance',
+};
 
-// ── Monthly Tuition Fee — editable, but changes go through Principal approval ──
-// An accountant can propose a new amount; the old amount keeps applying to
-// every screen (including fee collection) until the Principal approves it.
+const MODE_LABELS: Record<string, string> = {
+  cash: 'Cash', cheque: 'Cheque', bank_transfer: 'Bank Transfer', online: 'Online', demand_draft: 'Demand Draft',
+};
+
+// ── Editable Tuition Fee ──────────────────────────────────────────────────────
 
 function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; currentFee?: number }) {
   const { user } = useAuth();
@@ -78,10 +74,6 @@ function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; c
     }
   }
 
-  if (!canEdit) {
-    return <InfoRow icon={Wallet} label="Monthly Tuition Fee" value={currentFee ? fmt(currentFee) : '—'} />;
-  }
-
   if (pendingFeeRequest) {
     return (
       <div className="flex items-start gap-2.5">
@@ -97,6 +89,15 @@ function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; c
     );
   }
 
+  if (!canEdit) {
+    return (
+      <div className="flex items-start gap-2.5">
+        <Wallet className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+        <div><p className="text-[11px] text-gray-400">Monthly Tuition Fee</p><p className="text-sm font-semibold text-gray-800">{currentFee ? fmt(currentFee) : '—'}</p></div>
+      </div>
+    );
+  }
+
   if (editing) {
     return (
       <div className="flex items-start gap-2.5">
@@ -104,8 +105,7 @@ function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; c
         <div className="min-w-0 flex-1">
           <p className="text-[11px] text-gray-400 mb-1">Monthly Tuition Fee</p>
           <div className="flex items-center gap-1.5">
-            <input
-              type="number" min={0} autoFocus value={value}
+            <input type="number" min={0} autoFocus value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void submit()}
               className="w-28 h-7 px-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
@@ -142,15 +142,16 @@ function EditableTuitionFeeRow({ studentId, currentFee }: { studentId: string; c
   );
 }
 
-function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedger>['data'] }) {
+// ── Compact Student Profile Card ──────────────────────────────────────────────
+
+function StudentProfileCard({ ledger }: { ledger: ReturnType<typeof useStudentLedger>['data'] }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: uploadPhoto, isPending: uploading } = useUploadStudentPhoto(ledger?.student._id ?? '');
   const { mutateAsync: removePhoto, isPending: removing } = useRemoveStudentPhoto(ledger?.student._id ?? '');
 
   if (!ledger) return null;
-  const { student, summary } = ledger;
+  const { student } = ledger;
   const status = STATUS_LABELS[student.admissionStatus] ?? { label: student.admissionStatus, classes: 'bg-gray-100 text-gray-600' };
-  const guardian = student.fatherName || student.motherName || '—';
   const initials = student.fullName.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -160,15 +161,18 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-      <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="relative w-14 h-14 shrink-0 group">
-            <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Gradient header strip */}
+      <div className="h-2 bg-gradient-to-r from-[#5B21B6] via-[#7C3AED] to-[#DB2777]" />
+      <div className="px-5 py-4">
+        <div className="flex items-center gap-4">
+          {/* Avatar */}
+          <div className="relative w-16 h-16 shrink-0 group">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#DB2777] flex items-center justify-center overflow-hidden shadow-md">
               {student.photoUrl ? (
                 <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-lg font-bold text-white">{initials}</span>
+                <span className="text-xl font-bold text-white">{initials}</span>
               )}
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={(e) => void handlePhotoChange(e)} className="hidden" />
@@ -176,8 +180,7 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              title={student.photoUrl ? 'Replace photo' : 'Add photo'}
-              className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#5B21B6] hover:border-[#A855F7]/30 transition-colors"
+              className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#5B21B6] transition-colors"
             >
               {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
             </button>
@@ -186,144 +189,412 @@ function StudentInfoCard({ ledger }: { ledger: ReturnType<typeof useStudentLedge
                 type="button"
                 onClick={() => void removePhoto()}
                 disabled={removing}
-                title="Remove photo"
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors opacity-0 group-hover:opacity-100"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
               >
                 <X className="w-2.5 h-2.5" />
               </button>
             )}
           </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-bold text-gray-900 truncate">{student.fullName}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{student.admissionNumber}</p>
+
+          {/* Name + details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 flex-wrap">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 leading-tight">{student.fullName}</h2>
+                <p className="text-xs text-gray-400 mt-0.5 font-medium tracking-wide">{student.admissionNumber}</p>
+              </div>
+              <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shrink-0', status.classes)}>
+                {status.label}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
+                <GraduationCap className="w-3.5 h-3.5 text-gray-300" />
+                Class {student.class} – {student.section}
+              </span>
+              {student.rollNumber && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Hash className="w-3.5 h-3.5 text-gray-300" />
+                  Roll {student.rollNumber}
+                </span>
+              )}
+              {student.parentPhone && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Phone className="w-3.5 h-3.5 text-gray-300" />
+                  {student.parentPhone}
+                </span>
+              )}
+              {student.fatherName && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <User className="w-3.5 h-3.5 text-gray-300" />
+                  {student.fatherName}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-        <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold shrink-0', status.classes)}>
-          {status.label}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-4 pt-4">
-        <InfoRow icon={GraduationCap} label="Class" value={student.class} />
-        <InfoRow icon={FolderKanban} label="Section" value={student.section} />
-        <InfoRow icon={Hash}         label="Roll Number" value={student.rollNumber || '—'} />
-        <InfoRow icon={CalendarDays} label="Academic Session" value={ledger.feeRecords[0]?.academicYear || String(student.admissionYear)} />
-        <InfoRow icon={User}         label="Guardian Name" value={guardian} />
-        <InfoRow icon={Phone}        label="Parent Phone" value={student.parentPhone || '—'} />
-        <InfoRow icon={MailIcon}     label="Email" value={student.email || '—'} />
-        <InfoRow icon={MapPin}       label="Address" value={student.address || '—'} />
-        <InfoRow icon={CalendarDays} label="Admission Year" value={student.admissionYear} />
-        <EditableTuitionFeeRow studentId={student._id} currentFee={student.monthlyTuitionFee} />
-        <InfoRow icon={Receipt}      label="Last Payment" value={fmtDate(summary.lastPaymentDate)} />
       </div>
     </div>
   );
 }
 
-// ── Fee Ledger Table ───────────────────────────────────────────────────────────
+// ── Month Tabs ────────────────────────────────────────────────────────────────
 
-const FEE_HEAD_LABELS: Record<string, string> = {
-  tuition: 'Tuition', admission: 'Admission', examination: 'Examination',
-  transport: 'Transport', hostel: 'Hostel', miscellaneous: 'Miscellaneous',
-};
-
-function FeeLedgerTable({ feeRecords, payments, onCollect }: { feeRecords: FeeRecord[]; payments: FeePayment[]; onCollect: (fee: FeeRecord) => void }) {
-  const sorted = useMemo(
-    () => [...feeRecords].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()),
-    [feeRecords],
-  );
-
-  function latestPaymentFor(feeRecordId: string): FeePayment | undefined {
-    return payments.filter((p) => p.feeRecordId === feeRecordId)[0]; // payments already sorted desc by date
-  }
+function MonthTabs({ feeRecords, selected, onSelect }: {
+  feeRecords: FeeRecord[];
+  selected: string | null;
+  onSelect: (month: string | null) => void;
+}) {
+  const monthsWithRecords = useMemo(() => {
+    const set = new Set(feeRecords.map((r) => r.month).filter(Boolean) as string[]);
+    return set;
+  }, [feeRecords]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-bold text-gray-900">Fee Ledger</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Every fee head assigned to this student</p>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Select Fee Period</p>
+      <div className="flex gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => onSelect(null)}
+          className={cn(
+            'h-8 px-3.5 rounded-xl text-xs font-semibold transition-colors',
+            selected === null
+              ? 'bg-[#5B21B6] text-white shadow-sm'
+              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          )}
+        >
+          All
+        </button>
+        {ACADEMIC_MONTHS.map((month) => {
+          const hasRecords = monthsWithRecords.has(month);
+          const isSelected = selected === month;
+          return (
+            <button
+              key={month}
+              type="button"
+              onClick={() => onSelect(month)}
+              className={cn(
+                'h-8 px-3.5 rounded-xl text-xs font-semibold transition-colors relative',
+                isSelected
+                  ? 'bg-[#5B21B6] text-white shadow-sm'
+                  : hasRecords
+                  ? 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100'
+                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 border border-gray-100'
+              )}
+            >
+              {month.slice(0, 3)}
+              {hasRecords && !isSelected && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-violet-500 border border-white" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Fee Structure Detail Card ─────────────────────────────────────────────────
+
+function FeeStructureDetailCard({ feeRecords, payments, month, onCollect }: {
+  feeRecords: FeeRecord[];
+  payments: FeePayment[];
+  month: string | null;
+  onCollect: (fee: FeeRecord) => void;
+}) {
+  const filtered = useMemo(() => {
+    if (month === null) return feeRecords;
+    return feeRecords.filter((r) => r.month === month);
+  }, [feeRecords, month]);
+
+  const sorted = useMemo(
+    () => [...filtered].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()),
+    [filtered],
+  );
+
+  const totalDue = sorted.reduce((sum, r) => sum + r.balance, 0);
+  const totalPaid = sorted.reduce((sum, r) => sum + r.paidAmount, 0);
+  const totalAssessed = sorted.reduce((sum, r) => sum + r.totalAmount, 0);
+  const earliestDue = sorted.find((r) => r.balance > 0)?.dueDate;
+
+  function latestPaymentFor(id: string) {
+    return payments.find((p) => p.feeRecordId === id);
+  }
+
+  const feeIconColor = (feeHead: string) => {
+    const map: Record<string, string> = {
+      tuition: 'bg-violet-100 text-violet-600',
+      admission: 'bg-blue-100 text-blue-600',
+      examination: 'bg-amber-100 text-amber-600',
+      transport: 'bg-emerald-100 text-emerald-600',
+      hostel: 'bg-pink-100 text-pink-600',
+      miscellaneous: 'bg-gray-100 text-gray-500',
+    };
+    return map[feeHead] ?? 'bg-gray-100 text-gray-500';
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Card header */}
+      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-gray-900">
+            {month ? `${month} — Fee Structure` : 'All Fee Records'}
+          </h3>
+          {earliestDue && (
+            <p className="text-xs text-gray-400 mt-0.5">Due Date: {fmtDate(earliestDue)}</p>
+          )}
+        </div>
+        {sorted.length > 0 && (
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400">
+            <span>{sorted.length} item{sorted.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
       </div>
 
-      {!sorted.length ? (
-        <div className="p-10 text-center">
-          <p className="text-sm font-semibold text-gray-700">No fee records for this student yet.</p>
+      {sorted.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-12">
+          <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center">
+            <BookOpen className="w-6 h-6 text-gray-300" />
+          </div>
+          <p className="text-sm font-semibold text-gray-500">No fees for {month || 'this period'}</p>
+          <p className="text-xs text-gray-400">Fee records will appear here when assigned.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-[11px] text-gray-400 uppercase tracking-wide">
-                <th className="text-left font-semibold px-4 py-2.5">Fee Head</th>
-                <th className="text-left font-semibold px-4 py-2.5">Installment</th>
-                <th className="text-left font-semibold px-4 py-2.5">Due Date</th>
-                <th className="text-right font-semibold px-4 py-2.5">Original</th>
-                <th className="text-right font-semibold px-4 py-2.5">Discount</th>
-                <th className="text-right font-semibold px-4 py-2.5">Fine</th>
-                <th className="text-right font-semibold px-4 py-2.5">Paid</th>
-                <th className="text-right font-semibold px-4 py-2.5">Remaining</th>
-                <th className="text-left font-semibold px-4 py-2.5">Status</th>
-                <th className="text-left font-semibold px-4 py-2.5">Receipt No.</th>
-                <th className="text-left font-semibold px-4 py-2.5">Payment Date</th>
-                <th className="text-left font-semibold px-4 py-2.5">Remarks</th>
-                <th className="px-4 py-2.5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {sorted.map((fee) => {
-                const lastPayment = latestPaymentFor(fee._id);
-                const canCollect = fee.status !== 'paid' && fee.status !== 'waived';
-                return (
-                  <tr key={fee._id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">
-                      {fee.feeHead === 'miscellaneous' && fee.customHead ? fee.customHead : FEE_HEAD_LABELS[fee.feeHead]}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                      {fee.month || '—'}
-                      {fee.month && <span className="text-gray-400 text-xs ml-1">({fee.academicYear})</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(fee.dueDate)}</td>
-                    <td className="px-4 py-3 text-right text-gray-800 whitespace-nowrap">{fmt(fee.totalAmount)}</td>
-                    <td className="px-4 py-3 text-right text-gray-500 whitespace-nowrap">{fee.discountAmount ? fmt(fee.discountAmount) : '—'}</td>
-                    <td className="px-4 py-3 text-right text-red-500 whitespace-nowrap">{fee.fineAmount ? fmt(fee.fineAmount) : '—'}</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-semibold whitespace-nowrap">{fmt(fee.paidAmount)}</td>
-                    <td className={cn('px-4 py-3 text-right font-semibold whitespace-nowrap', fee.balance > 0 ? 'text-amber-600' : 'text-gray-400')}>
-                      {fmt(fee.balance)}
-                    </td>
-                    <td className="px-4 py-3"><FeeStatusBadge status={fee.status} size="sm" /></td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{lastPayment?.receiptNumber || '—'}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{lastPayment ? fmtDate(lastPayment.paymentDate) : '—'}</td>
-                    <td className="px-4 py-3 text-gray-400 max-w-[160px] truncate">{fee.notes || '—'}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap print:hidden">
-                      {canCollect && (
-                        <button
-                          onClick={() => onCollect(fee)}
-                          className="h-8 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-lg text-xs font-semibold"
-                        >
-                          Collect
-                        </button>
+        <div className="divide-y divide-gray-50">
+          {sorted.map((fee) => {
+            const headLabel = fee.feeHead === 'miscellaneous' && fee.customHead ? fee.customHead : FEE_HEAD_LABELS[fee.feeHead] ?? fee.feeHead;
+            const iconCls = feeIconColor(fee.feeHead);
+            const latestPay = latestPaymentFor(fee._id);
+            const isPaid = fee.status === 'paid' || fee.status === 'waived';
+            const canCollect = !isPaid;
+
+            return (
+              <div key={fee._id} className="px-5 py-4 hover:bg-gray-50/60 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', iconCls)}>
+                    <IndianRupee className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-800">{headLabel}</p>
+                      {fee.month && !month && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-600">{fee.month}</span>
                       )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <FeeStatusBadge status={fee.status} size="sm" />
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                      <span className="text-xs text-gray-400">Due {fmtDate(fee.dueDate)}</span>
+                      {fee.discountAmount ? <span className="text-xs text-emerald-600">Discount {fmt(fee.discountAmount)}</span> : null}
+                      {fee.fineAmount ? <span className="text-xs text-red-500">Fine {fmt(fee.fineAmount)}</span> : null}
+                      {latestPay && <span className="text-xs text-gray-400">Receipt #{latestPay.receiptNumber}</span>}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {isPaid ? (
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <p className="text-sm font-bold text-emerald-600">{fmt(fee.totalAmount)}</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-bold text-amber-600">{fmt(fee.balance)}</p>
+                    )}
+                    <p className="text-[10px] text-gray-400 mt-0.5">{isPaid ? 'Paid' : 'Due'}</p>
+                  </div>
+                  {canCollect && (
+                    <button
+                      type="button"
+                      onClick={() => onCollect(fee)}
+                      className="ml-2 h-8 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold shrink-0 transition-colors print:hidden"
+                    >
+                      Pay
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {sorted.length > 0 && (
+        <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">Total Assessed</p>
+              <p className="text-sm font-bold text-gray-800">{fmt(totalAssessed)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">Paid</p>
+              <p className="text-sm font-bold text-emerald-600">{fmt(totalPaid)}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-bold">Balance Due</p>
+            <p className={cn('text-lg font-black', totalDue > 0 ? 'text-amber-600' : 'text-emerald-600')}>
+              {fmt(totalDue)}
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// ── Payment History ────────────────────────────────────────────────────────────
+// ── Total Amount Due Panel (sticky right sidebar) ─────────────────────────────
 
-const MODE_LABELS: Record<string, string> = {
-  cash: 'Cash', cheque: 'Cheque', bank_transfer: 'Bank Transfer', online: 'Online', demand_draft: 'Demand Draft',
-};
+function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
+  ledger: NonNullable<ReturnType<typeof useStudentLedger>['data']>;
+  month: string | null;
+  onCollect: () => void;
+  onRequestDiscount: () => void;
+}) {
+  const navigate = useNavigate();
+  const { student, feeRecords, summary } = ledger;
+  const { mutateAsync: sendWhatsApp, isPending: sendingWhatsApp } = useSendLedgerWhatsAppReminder();
+  const { mutateAsync: sendEmail, isPending: sendingEmail } = useSendLedgerStatementEmail();
+
+  const monthRecords = useMemo(() => {
+    if (month === null) return feeRecords;
+    return feeRecords.filter((r) => r.month === month);
+  }, [feeRecords, month]);
+
+  const monthBalance = monthRecords.reduce((s, r) => s + r.balance, 0);
+  const displayBalance = month !== null ? monthBalance : summary.remainingBalance;
+  const hasDues = displayBalance > 0;
+
+  async function handleWhatsApp() {
+    try {
+      await sendWhatsApp(student._id);
+      toast.success('WhatsApp reminder sent to guardian.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send reminder.');
+    }
+  }
+
+  async function handleEmail() {
+    try {
+      await sendEmail(student._id);
+      toast.success('Fee statement emailed.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to send statement.');
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Total due card */}
+      <div className="bg-gradient-to-br from-[#4C1D95] to-[#5B21B6] rounded-2xl p-5 text-white shadow-lg">
+        <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1">
+          {month ? `${month} Balance` : 'Total Amount Due'}
+        </p>
+        <p className="text-4xl font-black tracking-tight leading-none">{fmt(displayBalance)}</p>
+        {month && (
+          <p className="text-xs text-white/50 mt-1.5">
+            Overall balance: {fmt(summary.remainingBalance)}
+          </p>
+        )}
+        <button
+          onClick={onCollect}
+          className="w-full mt-4 h-11 rounded-xl bg-white text-[#5B21B6] text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/90 transition-colors"
+        >
+          <Coins className="w-4 h-4" /> Collect Payment
+        </button>
+      </div>
+
+      {/* Summary strip */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Summary</p>
+        {[
+          { label: 'Total Fees', value: fmt(summary.totalFees) },
+          { label: 'Total Paid', value: fmt(summary.totalPaid), color: 'text-emerald-600' },
+          { label: 'Discount', value: fmt(summary.totalDiscount) },
+          { label: 'Fine', value: fmt(summary.totalFine) },
+          { label: 'Waived', value: fmt(summary.totalWaived) },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="flex items-center justify-between">
+            <span className="text-xs text-gray-500">{label}</span>
+            <span className={cn('text-xs font-semibold text-gray-800', color)}>{value}</span>
+          </div>
+        ))}
+        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-700">Remaining</span>
+          <span className={cn('text-sm font-black', summary.remainingBalance > 0 ? 'text-amber-600' : 'text-emerald-600')}>
+            {fmt(summary.remainingBalance)}
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2 print:hidden">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Actions</p>
+        <button
+          onClick={() => window.print()}
+          className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-colors"
+        >
+          <Printer className="w-3.5 h-3.5" /> Print / Save PDF
+        </button>
+        <button
+          onClick={handleWhatsApp}
+          disabled={!student.parentPhone || !hasDues || sendingWhatsApp}
+          className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs font-semibold transition-colors"
+        >
+          {sendingWhatsApp ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
+          WhatsApp Reminder
+        </button>
+        <button
+          onClick={handleEmail}
+          disabled={!student.email || sendingEmail}
+          className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs font-semibold transition-colors"
+        >
+          {sendingEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
+          Email Statement
+        </button>
+        <button
+          onClick={onRequestDiscount}
+          className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-colors"
+        >
+          <BadgePercent className="w-3.5 h-3.5" /> Request Discount
+        </button>
+        <button
+          onClick={() => navigate(`/fees/student/${student._id}`)}
+          className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-semibold transition-colors"
+        >
+          <UserRound className="w-3.5 h-3.5" /> View Student Profile
+        </button>
+      </div>
+
+      {/* Editable tuition fee */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Fee Settings</p>
+        <EditableTuitionFeeRow studentId={student._id} currentFee={student.monthlyTuitionFee} />
+        <div className="mt-3 pt-3 border-t border-gray-50 space-y-2">
+          <div className="flex items-start gap-2.5">
+            <CalendarDays className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+            <div><p className="text-[11px] text-gray-400">Last Payment</p><p className="text-sm font-semibold text-gray-800">{fmtDate(summary.lastPaymentDate)}</p></div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <MailIcon className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+            <div><p className="text-[11px] text-gray-400">Email</p><p className="text-sm font-semibold text-gray-800 truncate">{student.email || '—'}</p></div>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <MapPin className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
+            <div><p className="text-[11px] text-gray-400">Address</p><p className="text-sm font-semibold text-gray-800">{student.address || '—'}</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Payment History (collapsible) ─────────────────────────────────────────────
 
 type SortKey = 'paymentDate' | 'amount';
 const HISTORY_PAGE_SIZE = 10;
 
-function PaymentHistoryCard({ payments }: { payments: FeePayment[] }) {
+function PaymentHistorySection({ payments }: { payments: FeePayment[] }) {
+  const [open, setOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('paymentDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
@@ -349,73 +620,78 @@ function PaymentHistoryCard({ payments }: { payments: FeePayment[] }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="text-sm font-bold text-gray-900">Payment History</h3>
-        <p className="text-xs text-gray-400 mt-0.5">{payments.length} payment{payments.length === 1 ? '' : 's'} recorded</p>
-      </div>
-
-      {!payments.length ? (
-        <div className="p-10 text-center">
-          <p className="text-sm font-semibold text-gray-700">No payments recorded yet.</p>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-5 py-4 flex items-center justify-between gap-3 hover:bg-gray-50/60 transition-colors"
+      >
+        <div className="text-left">
+          <p className="text-sm font-bold text-gray-900">Payment History</p>
+          <p className="text-xs text-gray-400 mt-0.5">{payments.length} payment{payments.length !== 1 ? 's' : ''} recorded</p>
         </div>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 text-[11px] text-gray-400 uppercase tracking-wide">
-                  <th className="text-left font-semibold px-4 py-2.5">Receipt No.</th>
-                  <th className="text-left font-semibold px-4 py-2.5">
-                    <button onClick={() => toggleSort('paymentDate')} className="inline-flex items-center gap-1 hover:text-gray-600">
-                      Date <ArrowUpDown className="w-3 h-3" />
-                    </button>
-                  </th>
-                  <th className="text-right font-semibold px-4 py-2.5">
-                    <button onClick={() => toggleSort('amount')} className="inline-flex items-center gap-1 hover:text-gray-600 ml-auto">
-                      Amount <ArrowUpDown className="w-3 h-3" />
-                    </button>
-                  </th>
-                  <th className="text-left font-semibold px-4 py-2.5">Method</th>
-                  <th className="text-left font-semibold px-4 py-2.5">Collected By</th>
-                  <th className="text-left font-semibold px-4 py-2.5">Transaction ID</th>
-                  <th className="text-left font-semibold px-4 py-2.5">Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {pageRows.map((p) => (
-                  <tr key={p._id} className="hover:bg-gray-50/60 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">{p.receiptNumber || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(p.paymentDate)}</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-semibold whitespace-nowrap">{fmt(p.amount)}</td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{MODE_LABELS[p.paymentMode] || p.paymentMode}</td>
-                    <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{p.recordedByName}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{p.referenceNumber || '—'}</td>
-                    <td className="px-4 py-3 text-gray-400 max-w-[160px] truncate">{p.remarks || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <ChevronRight className={cn('w-4 h-4 text-gray-400 transition-transform', open && 'rotate-90')} />
+      </button>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 print:hidden">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setPage(currentPage - 1)}
-                className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" /> Prev
-              </button>
-              <p className="text-xs text-gray-400">Page {currentPage} of {totalPages}</p>
-              <button
-                disabled={currentPage >= totalPages}
-                onClick={() => setPage(currentPage + 1)}
-                className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1"
-              >
-                Next <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+      {open && (
+        <>
+          {!payments.length ? (
+            <div className="p-8 text-center border-t border-gray-50">
+              <Receipt className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-gray-500">No payments recorded yet.</p>
             </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto border-t border-gray-50">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-[11px] text-gray-400 uppercase tracking-wide">
+                      <th className="text-left font-semibold px-4 py-2.5">Receipt No.</th>
+                      <th className="text-left font-semibold px-4 py-2.5">
+                        <button onClick={() => toggleSort('paymentDate')} className="inline-flex items-center gap-1 hover:text-gray-600">
+                          Date <ArrowUpDown className="w-3 h-3" />
+                        </button>
+                      </th>
+                      <th className="text-right font-semibold px-4 py-2.5">
+                        <button onClick={() => toggleSort('amount')} className="inline-flex items-center gap-1 hover:text-gray-600 ml-auto">
+                          Amount <ArrowUpDown className="w-3 h-3" />
+                        </button>
+                      </th>
+                      <th className="text-left font-semibold px-4 py-2.5">Method</th>
+                      <th className="text-left font-semibold px-4 py-2.5">Collected By</th>
+                      <th className="text-left font-semibold px-4 py-2.5">Transaction ID</th>
+                      <th className="text-left font-semibold px-4 py-2.5">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {pageRows.map((p) => (
+                      <tr key={p._id} className="hover:bg-gray-50/60 transition-colors">
+                        <td className="px-4 py-3 font-semibold text-gray-800 whitespace-nowrap">{p.receiptNumber || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{fmtDate(p.paymentDate)}</td>
+                        <td className="px-4 py-3 text-right text-emerald-600 font-semibold whitespace-nowrap">{fmt(p.amount)}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{MODE_LABELS[p.paymentMode] || p.paymentMode}</td>
+                        <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{p.recordedByName}</td>
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{p.referenceNumber || '—'}</td>
+                        <td className="px-4 py-3 text-gray-400 max-w-[160px] truncate">{p.remarks || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                  <button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}
+                    className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1">
+                    <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                  </button>
+                  <p className="text-xs text-gray-400">Page {currentPage} of {totalPages}</p>
+                  <button disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}
+                    className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1">
+                    Next <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -423,51 +699,7 @@ function PaymentHistoryCard({ payments }: { payments: FeePayment[] }) {
   );
 }
 
-// ── Payment Summary (sticky sidebar) ────────────────────────────────────────────
-
-function SummaryRow({ label, value, emphasis }: { label: string; value: string; emphasis?: 'positive' | 'negative' | 'strong' }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className={cn(
-        'text-sm font-semibold',
-        emphasis === 'positive' && 'text-emerald-600',
-        emphasis === 'negative' && 'text-amber-600',
-        emphasis === 'strong' && 'text-gray-900 text-base font-bold',
-        !emphasis && 'text-gray-800',
-      )}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function PaymentSummaryCard({ ledger }: { ledger: NonNullable<ReturnType<typeof useStudentLedger>['data']> }) {
-  const { summary } = ledger;
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-      <h3 className="text-sm font-bold text-gray-900 mb-1">Payment Summary</h3>
-      <p className="text-xs text-gray-400 mb-2">Computed live from all fee records</p>
-      <div className="divide-y divide-gray-50">
-        <SummaryRow label="Total Fees" value={fmt(summary.totalFees)} />
-        <SummaryRow label="Total Paid" value={fmt(summary.totalPaid)} emphasis="positive" />
-        <SummaryRow label="Late Fine" value={fmt(summary.totalFine)} />
-        <SummaryRow label="Discount" value={fmt(summary.totalDiscount)} />
-        <SummaryRow label="Waived" value={fmt(summary.totalWaived)} />
-        <SummaryRow label="Net Amount" value={fmt(summary.netAmount)} />
-      </div>
-      <div className="mt-2 pt-3 border-t border-gray-100">
-        <SummaryRow label="Remaining Balance" value={fmt(summary.remainingBalance)} emphasis={summary.remainingBalance > 0 ? 'negative' : 'strong'} />
-      </div>
-    </div>
-  );
-}
-
-// ── Quick Actions ───────────────────────────────────────────────────────────────
-
-// ── Request Discount ─────────────────────────────────────────────────────────
-// Submitting here never touches the student's balance directly — it only
-// creates a request the principal must approve before it takes effect.
+// ── Request Discount Modal ────────────────────────────────────────────────────
 
 function RequestDiscountModal({ studentId, onClose }: { studentId: string; onClose: () => void }) {
   const { mutateAsync, isPending } = useCreateDiscountRequest();
@@ -484,7 +716,6 @@ function RequestDiscountModal({ studentId, onClose }: { studentId: string; onClo
     const requestedAmount = parseFloat(amount);
     if (isNaN(requestedAmount) || requestedAmount <= 0) return setError('Enter a valid discount amount.');
     if (!reason.trim()) return setError('Enter a reason for the discount.');
-
     try {
       await mutateAsync({ studentId, requestedAmount: Math.round(requestedAmount * 100) / 100, reason: reason.trim() });
       toast.success('Discount request sent to the principal for approval.');
@@ -501,7 +732,6 @@ function RequestDiscountModal({ studentId, onClose }: { studentId: string; onClo
           <h2 className="text-lg font-bold text-gray-900">Request Discount</h2>
           <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
         </div>
-
         {pending ? (
           <div className="px-6 py-8 text-center">
             <BadgePercent className="w-8 h-8 text-amber-400 mx-auto mb-2" />
@@ -511,102 +741,27 @@ function RequestDiscountModal({ studentId, onClose }: { studentId: string; onClo
         ) : (
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
             <p className="text-xs text-gray-400 -mt-1">
-              This goes to the principal for approval before it applies. The decided amount will automatically show at collection time — nothing changes for this student until then.
+              This goes to the principal for approval before it applies. Nothing changes for this student until then.
             </p>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">Discount Amount (₹)</label>
               <input type="number" min={0.01} step={0.01} value={amount} onChange={(e) => setAmount(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+                className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">Reason</label>
               <textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-violet-100 focus:border-violet-400" />
             </div>
             {error && <p className="text-xs text-red-500">{error}</p>}
             <div className="flex gap-3 pt-1">
               <button type="button" onClick={onClose} className="flex-1 h-11 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-              <button type="submit" disabled={isPending} className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold">
+              <button type="submit" disabled={isPending} className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold">
                 {isPending ? 'Sending…' : 'Send for Approval'}
               </button>
             </div>
           </form>
         )}
-      </div>
-    </div>
-  );
-}
-
-function QuickActionsCard({ ledger, onCollect, onRequestDiscount }: { ledger: NonNullable<ReturnType<typeof useStudentLedger>['data']>; onCollect: () => void; onRequestDiscount: () => void }) {
-  const navigate = useNavigate();
-  const { student, summary } = ledger;
-  const { mutateAsync: sendWhatsApp, isPending: sendingWhatsApp } = useSendLedgerWhatsAppReminder();
-  const { mutateAsync: sendEmail, isPending: sendingEmail } = useSendLedgerStatementEmail();
-
-  async function handleWhatsApp() {
-    try {
-      await sendWhatsApp(student._id);
-      toast.success('WhatsApp reminder sent to guardian.');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to send reminder.');
-    }
-  }
-
-  async function handleEmail() {
-    try {
-      await sendEmail(student._id);
-      toast.success('Fee statement emailed.');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to send statement.');
-    }
-  }
-
-  const hasPendingDues = summary.remainingBalance > 0;
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 print:hidden">
-      <h3 className="text-sm font-bold text-gray-900 mb-3">Quick Actions</h3>
-      <div className="space-y-2">
-        <button
-          onClick={onCollect}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-semibold transition-colors"
-        >
-          <IndianRupee className="w-4 h-4" /> Collect Fee
-        </button>
-        <button
-          onClick={() => window.print()}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors"
-        >
-          <Printer className="w-4 h-4" /> Print / Save Ledger PDF
-        </button>
-        <button
-          onClick={handleWhatsApp}
-          disabled={!student.parentPhone || !hasPendingDues || sendingWhatsApp}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-sm font-semibold transition-colors"
-        >
-          {sendingWhatsApp ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-          Send WhatsApp Reminder
-        </button>
-        <button
-          onClick={handleEmail}
-          disabled={!student.email || sendingEmail}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-sm font-semibold transition-colors"
-        >
-          {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-          Email Statement
-        </button>
-        <button
-          onClick={onRequestDiscount}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors"
-        >
-          <BadgePercent className="w-4 h-4" /> Request Discount
-        </button>
-        <button
-          onClick={() => navigate(`/fees/student/${student._id}`)}
-          className="w-full h-11 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold transition-colors"
-        >
-          <UserRound className="w-4 h-4" /> View Student Profile
-        </button>
       </div>
     </div>
   );
@@ -622,6 +777,7 @@ export function StudentLedgerPage() {
   const [payFee, setPayFee] = useState<FeeRecord | null>(null);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
   const [showProcessPayment, setShowProcessPayment] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -659,31 +815,56 @@ export function StudentLedgerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 print:hidden">
-        <button
-          onClick={() => navigate('/accountant/student-ledger')}
-          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
-        </button>
-        <div>
-          <h1 className="text-base font-bold text-gray-900">Student Fee Ledger</h1>
-          <p className="text-xs text-gray-500">{ledger.student.fullName} · {ledger.student.admissionNumber}</p>
+    <div className="min-h-screen bg-[#F5F4FF]">
+      {/* Top nav bar */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3.5 flex items-center justify-between gap-3 print:hidden sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/accountant/student-ledger')}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-sm font-bold text-gray-900">Student Fee Ledger</h1>
+            <p className="text-[11px] text-gray-400">{ledger.student.fullName} · {ledger.student.admissionNumber}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.print()}
+            className="h-8 px-3 flex items-center gap-1.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            <Printer className="w-3.5 h-3.5" /> Print
+          </button>
+          <button
+            onClick={() => setShowProcessPayment(true)}
+            className="h-8 px-3 flex items-center gap-1.5 rounded-xl bg-[#5B21B6] text-white text-xs font-bold hover:bg-[#4C1D95] transition-colors"
+          >
+            <IndianRupee className="w-3.5 h-3.5" /> Collect Fee
+          </button>
         </div>
       </div>
 
-      <div className="px-4 py-5 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        <div className="lg:col-span-2 space-y-5">
-          <StudentInfoCard ledger={ledger} />
-          <FeeLedgerTable feeRecords={ledger.feeRecords} payments={ledger.payments} onCollect={setPayFee} />
-          <PaymentHistoryCard payments={ledger.payments} />
+      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
+        {/* Left column: main content */}
+        <div className="space-y-4 min-w-0">
+          <StudentProfileCard ledger={ledger} />
+          <MonthTabs feeRecords={ledger.feeRecords} selected={selectedMonth} onSelect={setSelectedMonth} />
+          <FeeStructureDetailCard
+            feeRecords={ledger.feeRecords}
+            payments={ledger.payments}
+            month={selectedMonth}
+            onCollect={setPayFee}
+          />
+          <PaymentHistorySection payments={ledger.payments} />
         </div>
 
-        <div className="space-y-5 lg:sticky lg:top-5">
-          <PaymentSummaryCard ledger={ledger} />
-          <QuickActionsCard
+        {/* Right column: total + actions */}
+        <div className="xl:sticky xl:top-20">
+          <TotalAmountPanel
             ledger={ledger}
+            month={selectedMonth}
             onCollect={() => setShowProcessPayment(true)}
             onRequestDiscount={() => setShowDiscountRequest(true)}
           />

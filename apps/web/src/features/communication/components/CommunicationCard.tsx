@@ -28,7 +28,7 @@ export const CommunicationCard = ({
       {/* Student header */}
       <div className="px-6 py-5 border-b border-gray-50">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-xl font-bold text-white">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">

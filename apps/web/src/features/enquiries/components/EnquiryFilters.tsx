@@ -36,7 +36,7 @@ export const EnquiryFilters = ({ filters, onChange }: EnquiryFiltersProps) => {
           onChange={(e) => set('search', e.target.value)}
           placeholder="Name, phone, class…"
           className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm
-                     focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                     focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100"
         />
       </div>
 
@@ -45,7 +45,7 @@ export const EnquiryFilters = ({ filters, onChange }: EnquiryFiltersProps) => {
         value={filters.stage}
         onChange={(e) => set('stage', e.target.value as EnquiryStage | '')}
         className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                   focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100 cursor-pointer"
       >
         <option value="">All Stages</option>
         {STAGE_ORDER.map((s) => (
@@ -58,7 +58,7 @@ export const EnquiryFilters = ({ filters, onChange }: EnquiryFiltersProps) => {
         value={filters.source}
         onChange={(e) => set('source', e.target.value as EnquirySource | '')}
         className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                   focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100 cursor-pointer"
       >
         <option value="">All Sources</option>
         {SOURCES.map((s) => (
@@ -73,7 +73,7 @@ export const EnquiryFilters = ({ filters, onChange }: EnquiryFiltersProps) => {
         onChange={(e) => set('interestedClass', e.target.value)}
         placeholder="Class…"
         className="h-10 w-24 px-3 rounded-xl border border-gray-200 bg-white text-sm
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                   focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100"
       />
 
       {/* Clear */}

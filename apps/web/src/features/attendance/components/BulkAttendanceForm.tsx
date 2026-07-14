@@ -26,7 +26,7 @@ const STATUS_BUTTONS: { status: AttendanceStatus; icon: React.ReactNode; label: 
   { status: 'absent',         icon: <XCircle      className="w-4 h-4" />, label: 'A',  activeClass: 'bg-red-600 text-white border-red-600' },
   { status: 'late',           icon: <Clock        className="w-4 h-4" />, label: 'L',  activeClass: 'bg-yellow-500 text-white border-yellow-500' },
   { status: 'half_day',       icon: <Minus        className="w-4 h-4" />, label: 'H',  activeClass: 'bg-orange-500 text-white border-orange-500' },
-  { status: 'leave_approved', icon: <Calendar     className="w-4 h-4" />, label: 'LV', activeClass: 'bg-blue-600 text-white border-blue-600' },
+  { status: 'leave_approved', icon: <Calendar     className="w-4 h-4" />, label: 'LV', activeClass: 'bg-[#5B21B6] text-white border-blue-600' },
 ];
 
 export function BulkAttendanceForm({ students, cls, section, date, onSuccess, onCancel }: Props) {
@@ -162,7 +162,7 @@ export function BulkAttendanceForm({ students, cls, section, date, onSuccess, on
               placeholder="Note (optional)"
               value={row.note}
               onChange={(e) => setNote(row.studentId, e.target.value)}
-              className="w-36 shrink-0 text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-blue-400"
+              className="w-36 shrink-0 text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-[#A855F7]"
             />
           </div>
         ))}
@@ -181,7 +181,7 @@ export function BulkAttendanceForm({ students, cls, section, date, onSuccess, on
           type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="px-6 py-2 text-sm font-semibold bg-[#5B21B6] text-white rounded-lg hover:bg-[#4C1D95] disabled:opacity-50 transition-colors"
         >
           {isPending ? 'Saving…' : `Submit Attendance (${rows.length})`}
         </button>

@@ -95,7 +95,7 @@ const teacherSchema = new Schema<ITeacher>(
     fullName:        { type: String, required: true, trim: true },
     gender:          { type: String, enum: ['male', 'female', 'other'], required: true },
     dateOfBirth:     { type: Date },
-    employeeId:      { type: String, required: true, unique: true, trim: true },
+    employeeId:      { type: String, required: true, trim: true },
     photoUrl:        { type: String },
     phone:           { type: String, required: true, trim: true },
     alternatePhone:  { type: String, trim: true },
@@ -123,6 +123,13 @@ const teacherSchema = new Schema<ITeacher>(
 );
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
+
+// Scoped to active (non-deleted) records only, matching Student/Attendance —
+// so a soft-deleted teacher never blocks reuse of its employee ID.
+teacherSchema.index(
+  { schoolId: 1, employeeId: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: false } }
+);
 
 teacherSchema.index({ schoolId: 1, isDeleted: 1, createdAt: -1 });
 teacherSchema.index({ schoolId: 1, isDeleted: 1, employmentStatus: 1 });

@@ -62,7 +62,7 @@ export const importSessionRepository = {
     id: string,
     schoolId: string,
     status: ImportStatus,
-    extra: Partial<Pick<IImportSession, 'totalRows' | 'validRows' | 'warningRows' | 'failedRows' | 'importedRows' | 'skippedRows' | 'mapping' | 'errorSummary' | 'startedAt' | 'completedAt' | 'rolledBackAt' | 'detectedNewClasses'>> = {}
+    extra: Partial<Pick<IImportSession, 'totalRows' | 'validRows' | 'warningRows' | 'failedRows' | 'importedRows' | 'skippedRows' | 'duplicateRows' | 'duplicateStrategy' | 'mapping' | 'headerSignature' | 'errorSummary' | 'startedAt' | 'completedAt' | 'rolledBackAt' | 'detectedNewClasses'>> = {}
   ): Promise<IImportSession | null> {
     return ImportSession.findOneAndUpdate(
       { _id: id, schoolId },
@@ -105,6 +105,7 @@ export interface CreateRowsPayload {
     status: ImportRowStatus;
     errors: IImportRow['errors'];
     warnings: IImportRow['warnings'];
+    duplicateOf?: string;
   }>;
 }
 
@@ -127,6 +128,31 @@ export const importRowRepository = {
       ...r,
     }));
     await ImportRow.insertMany(docs, { ordered: false });
+  },
+
+  async findByRowNumber(sessionId: string, rowNumber: number): Promise<IImportRow | null> {
+    return ImportRow.findOne({ sessionId, rowNumber }).lean<IImportRow>();
+  },
+
+  /** Used after an inline edit re-validates a single row — replaces its mapped
+   *  data/status/errors/warnings/duplicate fields in one write. */
+  async replaceRow(
+    sessionId: string,
+    rowNumber: number,
+    data: Pick<IImportRow, 'mappedData' | 'status' | 'errors' | 'warnings'> & { duplicateOf?: string },
+  ): Promise<void> {
+    await ImportRow.updateOne(
+      { sessionId, rowNumber },
+      { $set: { ...data, duplicateOf: data.duplicateOf ?? null } },
+    );
+  },
+
+  /** Unpaginated — used internally for remapping/re-validation and error-report export,
+   *  never returned directly from an HTTP handler as-is. */
+  async findAllBySession(sessionId: string, status?: ImportRowStatus): Promise<IImportRow[]> {
+    const filter: Record<string, unknown> = { sessionId };
+    if (status) filter.status = status;
+    return ImportRow.find(filter).sort({ rowNumber: 1 }).lean<IImportRow[]>();
   },
 
   async findBySession(sessionId: string, opts: ListRowsOptions = {}): Promise<PaginatedRows> {
@@ -164,6 +190,20 @@ export const importRowRepository = {
 
   async deleteBySession(sessionId: string): Promise<void> {
     await ImportRow.deleteMany({ sessionId });
+  },
+
+  /** Bulk-applies a duplicate-resolution strategy to every row that matched an
+   *  existing record — the session-wide default set from the preview screen. */
+  async setDuplicateActionForSession(sessionId: string, action: 'skip' | 'update' | 'create'): Promise<number> {
+    const result = await ImportRow.updateMany(
+      { sessionId, duplicateOf: { $exists: true, $ne: null } },
+      { $set: { duplicateAction: action } },
+    );
+    return result.modifiedCount;
+  },
+
+  async countDuplicates(sessionId: string): Promise<number> {
+    return ImportRow.countDocuments({ sessionId, duplicateOf: { $exists: true, $ne: null } });
   },
 
   async countByStatus(sessionId: string): Promise<Record<string, number>> {

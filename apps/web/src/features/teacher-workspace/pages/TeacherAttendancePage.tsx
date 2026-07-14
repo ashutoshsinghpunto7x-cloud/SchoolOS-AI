@@ -14,6 +14,7 @@ import {
   Search,
   X,
   Check,
+  Undo2,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { toast } from 'sonner';
@@ -59,7 +60,7 @@ function CompletionRing({ percent, size = 40 }: { percent: number; size?: number
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} stroke="#E5E7EB" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={radius} className="stroke-[#E5E7EB] dark:stroke-white/10" strokeWidth={stroke} fill="none" />
         <circle
           cx={size / 2} cy={size / 2} r={radius}
           stroke="#A855F7" strokeWidth={stroke} fill="none"
@@ -69,7 +70,7 @@ function CompletionRing({ percent, size = 40 }: { percent: number; size?: number
           style={{ transition: 'stroke-dashoffset 0.4s ease' }}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700">
+      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-white/80">
         {Math.round(percent)}%
       </span>
     </div>
@@ -159,7 +160,7 @@ function ActiveCard({
 
       {/* Draggable foreground card */}
       <motion.div
-        className="relative flex items-center gap-3 bg-white rounded-2xl border border-gray-200 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
+        className="relative flex items-center gap-3 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-200 dark:border-white/10 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
         style={{ x }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
@@ -168,14 +169,14 @@ function ActiveCard({
       >
         <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} />
         <div className="flex-1 min-w-0">
-          <p className="text-base font-bold text-gray-900 truncate">{row.fullName}</p>
+          <p className="text-base font-bold text-gray-900 dark:text-white truncate">{row.fullName}</p>
           {row.rollNumber && (
-            <p className="text-xs text-gray-400 mt-0.5">Roll No: {row.rollNumber}</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Roll No: {row.rollNumber}</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-0.5 shrink-0">
-          <GripVertical className="w-4 h-4 text-gray-300" />
-          <span className="text-[9px] font-bold text-gray-400 tracking-wide">SWIPE TO MARK</span>
+          <GripVertical className="w-4 h-4 text-gray-300 dark:text-white/20" />
+          <span className="text-[9px] font-bold text-gray-400 dark:text-white/30 tracking-wide">SWIPE TO MARK</span>
         </div>
       </motion.div>
     </div>
@@ -204,7 +205,7 @@ function CompactRow({
     <div
       className={cn(
         'w-full flex items-center px-4 py-3 gap-3 transition-colors',
-        marked && 'bg-gray-50/60',
+        marked && 'bg-gray-50/60 dark:bg-white/[0.03]',
       )}
     >
       <button
@@ -217,16 +218,16 @@ function CompactRow({
           !marked && 'cursor-default',
         )}
       >
-        <span className="text-sm text-gray-400 w-6 text-right shrink-0 font-mono">{index + 1}</span>
+        <span className="text-sm text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono">{index + 1}</span>
         <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} size="sm" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">{row.fullName}</p>
-          {row.rollNumber && <p className="text-[11px] text-gray-400">Roll No: {row.rollNumber}</p>}
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{row.fullName}</p>
+          {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
         </div>
       </button>
 
       {marked ? (
-        <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600' : 'text-red-500')}>
+        <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
           {row.status === 'present' ? 'Present' : 'Absent'}
         </span>
       ) : editable && onMark ? (
@@ -234,7 +235,7 @@ function CompactRow({
           <button
             type="button"
             onClick={() => onMark(row.studentId, 'present')}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
             title="Mark present"
           >
             <Check className="w-4 h-4" />
@@ -242,14 +243,14 @@ function CompactRow({
           <button
             type="button"
             onClick={() => onMark(row.studentId, 'absent')}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition-colors"
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 transition-colors"
             title="Mark absent"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       ) : (
-        <span className="w-2 h-2 rounded-full bg-gray-200 shrink-0" aria-hidden="true" />
+        <span className="w-2 h-2 rounded-full bg-gray-200 dark:bg-white/10 shrink-0" aria-hidden="true" />
       )}
     </div>
   );
@@ -259,11 +260,11 @@ function CompactRow({
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center px-4 py-3 border-b border-gray-50 gap-3 animate-pulse">
-      <div className="w-6 h-4 bg-gray-100 rounded shrink-0" />
-      <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0" />
+    <div className="flex items-center px-4 py-3 border-b border-gray-50 dark:border-white/5 gap-3 animate-pulse">
+      <div className="w-6 h-4 bg-gray-100 dark:bg-white/10 rounded shrink-0" />
+      <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 shrink-0" />
       <div className="flex-1 space-y-1.5">
-        <div className="h-4 bg-gray-100 rounded w-32" />
+        <div className="h-4 bg-gray-100 dark:bg-white/10 rounded w-32" />
       </div>
     </div>
   );
@@ -319,26 +320,26 @@ function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: st
   // }
 
   return (
-    <div className="w-full max-w-sm mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left">
-      <p className="font-bold text-gray-900">Absent Today ({absentees.length})</p>
-      <p className="text-xs text-gray-400 mb-3">{formatDisplayDate(date)}</p>
+    <div className="w-full max-w-sm mt-6 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5 text-left">
+      <p className="font-bold text-gray-900 dark:text-white">Absent Today ({absentees.length})</p>
+      <p className="text-xs text-gray-400 dark:text-white/40 mb-3">{formatDisplayDate(date)}</p>
 
       <div className="space-y-2">
         {absentees.map((a) => {
           const href = telHref(a.parentPhone);
           return (
             <div key={a.studentId} className="flex items-center gap-3 py-1.5">
-              <p className="flex-1 min-w-0 text-sm font-semibold text-gray-800 truncate">{a.fullName}</p>
+              <p className="flex-1 min-w-0 text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{a.fullName}</p>
               {href ? (
                 <a
                   href={href}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors shrink-0"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors shrink-0"
                   title="Call parent"
                 >
                   <Phone className="w-4 h-4" />
                 </a>
               ) : (
-                <span className="text-xs text-gray-300 shrink-0">No phone</span>
+                <span className="text-xs text-gray-300 dark:text-white/20 shrink-0">No phone</span>
               )}
             </div>
           );
@@ -401,34 +402,34 @@ function SubmittedScreen({
   const submitTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-6 py-10 text-center">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col items-center justify-center px-6 py-10 text-center">
       {/* Animated check */}
       <div className="relative w-24 h-24 mb-6">
-        <div className="absolute inset-0 rounded-full bg-emerald-100 animate-ping opacity-30" />
+        <div className="absolute inset-0 rounded-full bg-emerald-100 dark:bg-emerald-500/20 animate-ping opacity-30" />
         <div className="relative w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
           <CheckCircle2 className="w-12 h-12 text-white" strokeWidth={2.5} />
         </div>
       </div>
 
-      <h2 className="text-2xl font-bold text-gray-900">Attendance submitted</h2>
-      <p className="text-gray-500 mt-1">successfully!</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Attendance submitted</h2>
+      <p className="text-gray-500 dark:text-white/50 mt-1">successfully!</p>
 
       {/* Class summary card */}
-      <div className="w-full max-w-sm mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-left">
-        <p className="font-bold text-gray-900">
+      <div className="w-full max-w-sm mt-8 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5 text-left">
+        <p className="font-bold text-gray-900 dark:text-white">
           Class {cls}{section ? ` – ${section}` : ''}
         </p>
-        <p className="text-sm text-gray-500 mt-0.5">{formatDisplayDate(date)}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{submitTime}</p>
+        <p className="text-sm text-gray-500 dark:text-white/50 mt-0.5">{formatDisplayDate(date)}</p>
+        <p className="text-xs text-gray-400 dark:text-white/30 mt-0.5">{submitTime}</p>
 
         <div className="flex gap-6 mt-5">
           <div>
-            <p className="text-2xl font-bold text-emerald-600">{presentCount}</p>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">Present</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{presentCount}</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 font-medium mt-0.5">Present</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-red-500">{absentCount}</p>
-            <p className="text-xs text-gray-400 font-medium mt-0.5">Absent</p>
+            <p className="text-2xl font-bold text-red-500 dark:text-red-400">{absentCount}</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 font-medium mt-0.5">Absent</p>
           </div>
         </div>
       </div>
@@ -445,14 +446,14 @@ function SubmittedScreen({
         </button>
         <button
           onClick={onEdit}
-          className="h-12 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
+          className="h-12 bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 font-semibold rounded-xl text-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
         >
           <Pencil className="w-4 h-4" />
           Edit Attendance
         </button>
         <button
           onClick={onDashboard}
-          className="text-sm text-[#5B21B6] font-semibold py-1 hover:underline transition-colors"
+          className="text-sm text-[#5B21B6] dark:text-violet-300 font-semibold py-1 hover:underline transition-colors"
         >
           Back to Dashboard
         </button>
@@ -476,6 +477,7 @@ export function TeacherAttendancePage() {
   const [swipeMode,   setSwipeMode]   = useState(true);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastAction, setLastAction]  = useState<{ studentId: string; prevStatus: RowStatus } | null>(null);
   const markCounterRef = useRef(0);
   // Tracks swipes made since the page loaded / since the last successful save —
   // a teacher swiping through a class on their phone is exactly who's likely to
@@ -561,6 +563,8 @@ export function TeacherAttendancePage() {
   const useSwipeFlow = swipeMode && !isSearching;
 
   function markStatus(studentId: string, status: RowStatus) {
+    const prevStatus = rows.find((r) => r.studentId === studentId)?.status ?? 'unmarked';
+    setLastAction({ studentId, prevStatus });
     setRows((prev) => prev.map((r) =>
       r.studentId === studentId ? { ...r, status, markedSeq: markCounterRef.current++ } : r,
     ));
@@ -568,10 +572,22 @@ export function TeacherAttendancePage() {
   }
 
   function undoStatus(studentId: string) {
+    setLastAction(null);
     setRows((prev) => prev.map((r) =>
       r.studentId === studentId ? { ...r, status: 'unmarked', markedSeq: undefined } : r,
     ));
     setDirty(true);
+  }
+
+  function undoLastAction() {
+    if (!lastAction) return;
+    const { studentId, prevStatus } = lastAction;
+    setLastAction(null);
+    setRows((prev) => prev.map((r) =>
+      r.studentId === studentId
+        ? { ...r, status: prevStatus, markedSeq: prevStatus === 'unmarked' ? undefined : r.markedSeq }
+        : r,
+    ));
   }
 
   function toggleMarkAllPresent() {
@@ -645,29 +661,40 @@ export function TeacherAttendancePage() {
   // ── Attendance screen ─────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
 
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 py-4">
+      <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/70" />
           </button>
-          <h1 className="flex-1 text-base font-bold text-gray-900">
+          <h1 className="flex-1 text-base font-bold text-gray-900 dark:text-white">
             Class {cls} Attendance
           </h1>
           {!isLoading && !isDataError && rows.length > 0 && (
             <CompletionRing percent={completionPercent} />
           )}
+          {lastAction && editable && (
+            <button
+              type="button"
+              onClick={undoLastAction}
+              title="Undo last mark"
+              className="h-8 px-3 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/20 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5 transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5" />
+              Undo
+            </button>
+          )}
           {alreadySubmitted && (
             <button
               type="button"
               onClick={() => setEditMode(true)}
-              className="h-8 px-3 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-semibold text-gray-600 flex items-center gap-1.5 transition-colors"
+              className="h-8 px-3 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 flex items-center gap-1.5 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -680,23 +707,23 @@ export function TeacherAttendancePage() {
           {searchOpen ? (
             <>
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30" />
                 <input
                   autoFocus
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search student…"
-                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
                 title="Back to date"
               >
-                <CalendarDays className="w-5 h-5 text-[#5B21B6]" />
+                <CalendarDays className="w-5 h-5 text-[#5B21B6] dark:text-violet-300" />
               </button>
             </>
           ) : (
@@ -704,13 +731,13 @@ export function TeacherAttendancePage() {
               <button
                 type="button"
                 onClick={() => setDate((d) => addDays(d, -1))}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-500" />
+                <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-white/50" />
               </button>
               <div className="flex items-center gap-1.5">
-                <CalendarDays className="w-4 h-4 text-[#5B21B6]" />
-                <span className="text-sm font-semibold text-gray-800">
+                <CalendarDays className="w-4 h-4 text-[#5B21B6] dark:text-violet-300" />
+                <span className="text-sm font-semibold text-gray-800 dark:text-white/80">
                   {formatDisplayDate(date)}
                 </span>
               </div>
@@ -718,17 +745,17 @@ export function TeacherAttendancePage() {
                 type="button"
                 onClick={() => setDate((d) => addDays(d, 1))}
                 disabled={date >= today}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronRight className="w-5 h-5 text-gray-500" />
+                <ChevronRight className="w-5 h-5 text-gray-500 dark:text-white/50" />
               </button>
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
                 title="Search students"
               >
-                <Search className="w-4 h-4 text-gray-500" />
+                <Search className="w-4 h-4 text-gray-500 dark:text-white/50" />
               </button>
             </div>
           )}
@@ -737,22 +764,22 @@ export function TeacherAttendancePage() {
 
       {isLoading ? (
         <div className="flex-1">
-          <div className="mx-4 mt-4 h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />
-          <div className="mx-4 mt-4 h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
-          <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="mx-4 mt-4 h-16 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 animate-pulse" />
+          <div className="mx-4 mt-4 h-24 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 animate-pulse" />
+          <div className="mx-4 mt-4 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
             {Array.from({ length: 7 }).map((_, i) => <SkeletonRow key={i} />)}
           </div>
         </div>
       ) : isDataError ? (
-        <div className="mx-4 mt-4 bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+        <div className="mx-4 mt-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-2xl p-5 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-red-700">Couldn't load this class</p>
-            <p className="text-xs text-red-500 mt-0.5">Check your connection and try again.</p>
+            <p className="text-sm font-semibold text-red-700 dark:text-red-300">Couldn't load this class</p>
+            <p className="text-xs text-red-500 dark:text-red-400/80 mt-0.5">Check your connection and try again.</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="mt-3 h-9 px-4 bg-white border border-red-200 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-50 transition-colors"
+              className="mt-3 h-9 px-4 bg-white dark:bg-white/5 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-300 rounded-xl text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
             >
               Reload
             </button>
@@ -762,9 +789,9 @@ export function TeacherAttendancePage() {
         <>
           {/* Already submitted banner */}
           {alreadySubmitted && (
-            <div className="mx-4 mt-4 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <p className="text-sm font-semibold text-emerald-700">
+            <div className="mx-4 mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                 Attendance already submitted for this date
               </p>
             </div>
@@ -779,7 +806,7 @@ export function TeacherAttendancePage() {
                 className={cn(
                   'flex-1 h-11 font-bold rounded-xl text-sm transition-all',
                   isAllPresent
-                    ? 'bg-[#A855F7]/10 hover:bg-[#A855F7]/20 text-[#5B21B6]'
+                    ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 text-[#5B21B6] dark:text-violet-300'
                     : 'text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/20',
                 )}
               >
@@ -788,14 +815,14 @@ export function TeacherAttendancePage() {
               <button
                 type="button"
                 onClick={() => setSwipeMode((v) => !v)}
-                className="h-11 px-3 flex items-center gap-2 bg-white border border-gray-200 rounded-xl shrink-0"
+                className="h-11 px-3 flex items-center gap-2 bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0"
                 title="Toggle swipe mode"
               >
-                <span className="text-xs font-semibold text-gray-500">Swipe</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-white/50">Swipe</span>
                 <span
                   className={cn(
                     'relative w-9 h-5 rounded-full transition-colors',
-                    swipeMode ? 'bg-[#A855F7]' : 'bg-gray-200',
+                    swipeMode ? 'bg-[#A855F7]' : 'bg-gray-200 dark:bg-white/10',
                   )}
                 >
                   <span
@@ -821,11 +848,11 @@ export function TeacherAttendancePage() {
           )}
 
           {/* Student list */}
-          <div className="mx-4 mt-4 bg-white rounded-2xl shadow-sm overflow-hidden divide-y divide-gray-50">
+          <div className="mx-4 mt-4 bg-white dark:bg-[#150C29] rounded-2xl shadow-sm border border-transparent dark:border-white/10 overflow-hidden divide-y divide-gray-50 dark:divide-white/5">
             {rows.length === 0 ? (
               <div className="py-12 text-center">
-                <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-500">No students in this class</p>
+                <Users className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-500 dark:text-white/50">No students in this class</p>
                 <button
                   onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
                   className="mt-4 h-10 px-5 bg-[#5B21B6] text-white rounded-xl text-sm font-semibold hover:bg-[#4C1D95] transition-colors"
@@ -835,7 +862,7 @@ export function TeacherAttendancePage() {
               </div>
             ) : filteredRows.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-gray-400">No students match "{searchQuery}"</p>
+                <p className="text-sm text-gray-400 dark:text-white/30">No students match "{searchQuery}"</p>
               </div>
             ) : (
               filteredRows
@@ -864,18 +891,18 @@ export function TeacherAttendancePage() {
 
           {/* Absent Students Summary — live preview while marking, mirrors the reference design */}
           {rows.length > 0 && (
-            <div className="mx-4 mt-4 mb-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+            <div className="mx-4 mt-4 mb-2 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-4">
+              <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest mb-2">
                 Absent Students Summary
               </p>
               {absentCount === 0 ? (
-                <p className="text-sm text-gray-400">No students marked absent yet.</p>
+                <p className="text-sm text-gray-400 dark:text-white/30">No students marked absent yet.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {rows.filter((r) => r.status === 'absent').map((r) => (
                     <span
                       key={r.studentId}
-                      className="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-full px-2.5 py-1"
+                      className="text-xs font-semibold text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-full px-2.5 py-1"
                     >
                       {r.fullName}
                     </span>
@@ -893,9 +920,9 @@ export function TeacherAttendancePage() {
             <>
             {/* Spacer so the fixed bar below never covers the last card in the scroll area */}
             <div className="h-[168px] lg:h-[140px]" aria-hidden="true" />
-            <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-4 bg-[#F8FAFC] border-t border-gray-200/60">
+            <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-4 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5">
               {/* Save button — fills up like a liquid progress bar as students get marked */}
-              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 shadow-lg shadow-violet-500/10">
+              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 shadow-lg shadow-violet-500/10">
                 {/* Liquid fill */}
                 <motion.div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-600 to-pink-500"
@@ -916,7 +943,7 @@ export function TeacherAttendancePage() {
                   type="button"
                   onClick={handleSave}
                   disabled={isPending}
-                  className="absolute inset-0 w-full h-full flex items-center justify-center gap-2 text-base font-bold text-gray-400 disabled:opacity-60"
+                  className="absolute inset-0 w-full h-full flex items-center justify-center gap-2 text-base font-bold text-gray-400 dark:text-white/30 disabled:opacity-60"
                 >
                   {isPending ? (
                     <>

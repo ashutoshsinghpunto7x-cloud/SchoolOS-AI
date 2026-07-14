@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, CheckCircle2, RotateCcw, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
-import { useImportSession, useConfirmImport, useCancelImport, useRollbackImport, useUpdateMapping } from '../hooks/useImport';
+import { ArrowLeft, Loader2, CheckCircle2, RotateCcw, XCircle, RefreshCw, AlertTriangle, Download, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
+import { useImportSession, useConfirmImport, useCancelImport, useRollbackImport, useUpdateMapping, useSetDuplicateStrategy, useAIMap, useMappingTemplates, useSaveMappingTemplate } from '../hooks/useImport';
 import { ImportStatusBadge } from '../components/ImportStatusBadge';
 import { ImportProgress } from '../components/ImportProgress';
 import { ValidationTable } from '../components/ValidationTable';
+import { importApi, type ColumnMappingSuggestion } from '../api/import.api';
+import { cn } from '@/lib/utils';
 
 const ACTIVE_STATUSES = new Set(['processing', 'parsing', 'validating', 'confirmed']);
 
@@ -13,12 +16,18 @@ export function ImportSessionDetail() {
   const navigate = useNavigate();
   const [mappingEditing, setMappingEditing] = useState(false);
   const [localMapping, setLocalMapping] = useState<Record<string, string>>({});
+  const [downloadingErrors, setDownloadingErrors] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<Record<string, ColumnMappingSuggestion>>({});
 
   const { data: session, isLoading, refetch } = useImportSession(id);
   const confirm = useConfirmImport(id!);
   const cancel = useCancelImport(id!);
   const rollback = useRollbackImport(id!);
   const updateMapping = useUpdateMapping(id!);
+  const setDuplicateStrategy = useSetDuplicateStrategy(id!);
+  const aiMap = useAIMap(id!);
+  const { data: mappingTemplates } = useMappingTemplates(session?.importType);
+  const saveMappingTemplate = useSaveMappingTemplate(id!);
 
   if (isLoading) {
     return (
@@ -42,12 +51,92 @@ export function ImportSessionDetail() {
 
   const startMappingEdit = () => {
     setLocalMapping({ ...session.mapping });
+    setAiSuggestions({});
     setMappingEditing(true);
   };
 
   const saveMapping = async () => {
     await updateMapping.mutateAsync(localMapping);
     setMappingEditing(false);
+    setAiSuggestions({});
+  };
+
+  const runAIMap = async () => {
+    try {
+      const suggestions = await aiMap.mutateAsync();
+      if (suggestions.length === 0) {
+        toast.info('Every column is already mapped — nothing for AI to suggest.');
+        return;
+      }
+
+      // Confident picks (>=80%) are saved immediately — leaving them staged
+      // in the editor with no visual difference from an already-saved
+      // mapping is exactly what caused confirmed imports to silently miss
+      // columns before. Anything below the threshold still requires the
+      // user to review and explicitly save, per the "AI never imports on
+      // its own" rule.
+      const confident = suggestions.filter((s) => s.suggestedField && !s.requiresConfirmation);
+      const uncertain = suggestions.filter((s) => s.suggestedField && s.requiresConfirmation);
+
+      let currentMapping = { ...session.mapping };
+      if (confident.length > 0) {
+        for (const s of confident) currentMapping[s.sourceColumn] = s.suggestedField!;
+        await updateMapping.mutateAsync(currentMapping);
+      }
+
+      if (uncertain.length > 0) {
+        if (!mappingEditing) setMappingEditing(true);
+        setLocalMapping((prev) => {
+          const base = mappingEditing ? prev : currentMapping;
+          const next = { ...base };
+          for (const s of uncertain) next[s.sourceColumn] = s.suggestedField!;
+          return next;
+        });
+        setAiSuggestions((prev) => {
+          const next = { ...prev };
+          for (const s of suggestions) next[s.sourceColumn] = s;
+          return next;
+        });
+      } else {
+        setAiSuggestions({});
+      }
+
+      const parts: string[] = [];
+      if (confident.length) parts.push(`${confident.length} mapping${confident.length === 1 ? '' : 's'} applied automatically`);
+      if (uncertain.length) parts.push(`${uncertain.length} need${uncertain.length === 1 ? 's' : ''} your review before saving`);
+      toast.success(parts.join(' — ') || 'AI found no new mappings.');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'AI mapping failed');
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    const name = window.prompt('Name this mapping template (e.g. "CBSE Template"):');
+    if (!name?.trim()) return;
+    try {
+      await saveMappingTemplate.mutateAsync(name.trim());
+      toast.success(`Saved "${name.trim()}" — reuse it from the mapping menu on future uploads.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save template');
+    }
+  };
+
+  const applyTemplate = (mapping: Record<string, string>) => {
+    if (!mappingEditing) startMappingEdit();
+    setLocalMapping(mapping);
+    setAiSuggestions({});
+  };
+
+  const downloadErrorReport = async () => {
+    if (!id) return;
+    setDownloadingErrors(true);
+    try {
+      await importApi.downloadErrorReport(id, session.importType);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download error report');
+    } finally {
+      setDownloadingErrors(false);
+    }
   };
 
   return (
@@ -70,6 +159,16 @@ export function ImportSessionDetail() {
           {isRunning && (
             <button onClick={() => refetch()} className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
               <RefreshCw className="w-4 h-4" />
+            </button>
+          )}
+          {session.failedRows > 0 && (
+            <button
+              onClick={() => void downloadErrorReport()}
+              disabled={downloadingErrors}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+            >
+              {downloadingErrors ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Download Error Report
             </button>
           )}
           {canCancel && (
@@ -140,17 +239,97 @@ export function ImportSessionDetail() {
         </div>
       )}
 
+      {/* Duplicate resolution — rows that matched an existing record, surfaced
+          before confirming so the accountant chooses Skip/Update/Import Anyway
+          instead of it silently becoming an update. */}
+      {isPreview && session.duplicateRows > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-blue-900">
+                {session.duplicateRows} row{session.duplicateRows === 1 ? '' : 's'} match an existing record
+              </p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Choose what happens to those matches when you confirm.
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2.5">
+                {([
+                  { value: 'update' as const, label: 'Update Existing' },
+                  { value: 'skip' as const, label: 'Skip' },
+                  { value: 'create' as const, label: 'Import Anyway (create new)' },
+                ]).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setDuplicateStrategy.mutate(opt.value)}
+                    disabled={setDuplicateStrategy.isPending}
+                    className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-colors disabled:opacity-50 ${
+                      (session.duplicateStrategy ?? 'update') === opt.value
+                        ? 'bg-blue-600 border-blue-600 text-white'
+                        : 'bg-white border-blue-200 text-blue-800 hover:bg-blue-100'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Column mapping */}
-      {(isPreview || isCompleted) && Object.keys(session.mapping).length > 0 && (
+      {isPreview || (isCompleted && Object.keys(session.mapping).length > 0) ? (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-800">Column Mapping</h2>
             {isPreview && !mappingEditing && (
-              <button onClick={startMappingEdit} className="text-xs text-indigo-600 hover:underline">Edit</button>
+              <div className="flex items-center gap-3">
+                {!!mappingTemplates?.length && (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      const tpl = mappingTemplates.find((t) => t._id === e.target.value);
+                      if (tpl) applyTemplate(tpl.mapping);
+                      e.target.value = '';
+                    }}
+                    className="text-xs border border-gray-200 rounded px-2 py-1 text-gray-600"
+                  >
+                    <option value="" disabled>Use a saved template…</option>
+                    {mappingTemplates.map((t) => (
+                      <option key={t._id} value={t._id}>{t.name}</option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  onClick={() => void runAIMap()}
+                  disabled={aiMap.isPending}
+                  className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
+                >
+                  {aiMap.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI Auto Map
+                </button>
+                <button onClick={startMappingEdit} className="text-xs text-indigo-600 hover:underline">Edit</button>
+              </div>
             )}
             {mappingEditing && (
-              <div className="flex gap-2">
-                <button onClick={() => setMappingEditing(false)} className="text-xs text-gray-500 hover:underline">Cancel</button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => void handleSaveTemplate()}
+                  disabled={saveMappingTemplate.isPending}
+                  className="text-xs text-gray-500 font-medium hover:underline disabled:opacity-40"
+                >
+                  Save as Template
+                </button>
+                <button
+                  onClick={() => void runAIMap()}
+                  disabled={aiMap.isPending}
+                  className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
+                >
+                  {aiMap.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI Auto Map
+                </button>
+                <button onClick={() => { setMappingEditing(false); setAiSuggestions({}); }} className="text-xs text-gray-500 hover:underline">Cancel</button>
                 <button
                   onClick={saveMapping}
                   disabled={updateMapping.isPending}
@@ -162,24 +341,38 @@ export function ImportSessionDetail() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-            {Object.entries(mappingEditing ? localMapping : session.mapping).map(([src, dst]) => (
-              <div key={src} className="flex items-center gap-2 text-xs">
-                <span className="font-mono bg-gray-50 border border-gray-200 rounded px-2 py-0.5 flex-1 truncate">{src}</span>
-                <span className="text-gray-400">→</span>
-                {mappingEditing ? (
-                  <input
-                    value={localMapping[src] ?? ''}
-                    onChange={(e) => setLocalMapping((prev) => ({ ...prev, [src]: e.target.value }))}
-                    className="flex-1 font-mono border border-indigo-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                  />
-                ) : (
-                  <span className="font-mono text-indigo-700 flex-1 truncate">{dst}</span>
-                )}
-              </div>
-            ))}
+            {Object.entries(mappingEditing ? localMapping : session.mapping).map(([src, dst]) => {
+              const suggestion = aiSuggestions[src];
+              return (
+                <div key={src} className="flex items-center gap-2 text-xs">
+                  <span className="font-mono bg-gray-50 border border-gray-200 rounded px-2 py-0.5 flex-1 truncate">{src}</span>
+                  <span className="text-gray-400">→</span>
+                  {mappingEditing ? (
+                    <input
+                      value={localMapping[src] ?? ''}
+                      onChange={(e) => setLocalMapping((prev) => ({ ...prev, [src]: e.target.value }))}
+                      className="flex-1 font-mono border border-indigo-300 rounded px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    />
+                  ) : (
+                    <span className="font-mono text-indigo-700 flex-1 truncate">{dst}</span>
+                  )}
+                  {suggestion && (
+                    <span
+                      title={suggestion.requiresConfirmation ? 'Low confidence — please confirm' : 'AI suggestion'}
+                      className={cn(
+                        'shrink-0 text-[10px] font-bold rounded-full px-1.5 py-0.5',
+                        suggestion.confidence >= 0.8 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
+                      )}
+                    >
+                      {Math.round(suggestion.confidence * 100)}%
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Validation table (preview + completed) */}
       {(isPreview || isCompleted || session.status === 'failed') && session.totalRows > 0 && (

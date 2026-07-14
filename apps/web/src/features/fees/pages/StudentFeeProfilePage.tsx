@@ -106,7 +106,7 @@ export function StudentFeeProfilePage() {
       {/* Student header */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+          <div className="w-16 h-16 rounded-2xl bg-[#5B21B6] flex items-center justify-center flex-shrink-0">
             <span className="text-xl font-bold text-white">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
@@ -118,7 +118,7 @@ export function StudentFeeProfilePage() {
           </div>
           <button
             onClick={() => navigate(`/fees/new?studentId=${student._id}&studentName=${encodeURIComponent(student.fullName)}`)}
-            className="h-11 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-sm font-bold text-white transition-colors shrink-0"
+            className="h-11 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-2 text-sm font-bold text-white transition-colors shrink-0"
             type="button"
           >
             <PlusCircle className="w-4 h-4" />
@@ -172,7 +172,7 @@ export function StudentFeeProfilePage() {
             <p className="text-sm">No fee records for this student yet.</p>
             <button
               onClick={() => navigate(`/fees/new?studentId=${student._id}&studentName=${encodeURIComponent(student.fullName)}`)}
-              className="mt-4 h-10 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">
+              className="mt-4 h-10 px-5 rounded-xl bg-[#5B21B6] text-white text-sm font-semibold hover:bg-[#4C1D95]">
               Assign First Fee
             </button>
           </div>

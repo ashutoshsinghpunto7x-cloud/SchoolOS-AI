@@ -17,16 +17,23 @@ export const authService = {
     accessToken: string; refreshToken: string; user: AccessTokenPayload;
     mustResetPassword?: boolean; mustResetPin?: boolean;
   }> {
-    const { email, password } = loginSchema.parse(rawInput);
+    const { identifier: rawIdentifier, password } = loginSchema.parse(rawInput);
+    const identifier = rawIdentifier.trim().toLowerCase();
 
-    const user = await userRepository.findByEmail(email);
+    // Every existing account logs in by email exactly as before. A non-email
+    // identifier (no "@") is a staff-issued username — e.g. a teacher account
+    // an admin created without a self-signup flow — resolved separately so
+    // email-based login behavior is completely unaffected.
+    const user = identifier.includes('@')
+      ? await userRepository.findByEmail(identifier)
+      : await userRepository.findByUsername(identifier);
     if (!user) {
-      logger.warn('Login failed: user not found', { email, ip });
+      logger.warn('Login failed: user not found', { identifier, ip });
       throw new UnauthorizedError('Invalid credentials');
     }
 
     if (user.status !== 'active') {
-      logger.warn('Login failed: inactive user', { email, ip });
+      logger.warn('Login failed: inactive user', { identifier, ip });
       throw new UnauthorizedError('Account is inactive. Contact your administrator.');
     }
 
@@ -35,13 +42,13 @@ export const authService = {
     // the normal "invalid credentials" path rather than a distinguishing
     // message, so a stale temp password can't be used to probe account state.
     if (user.mustResetPassword && user.tempPasswordExpiresAt && user.tempPasswordExpiresAt < new Date()) {
-      logger.warn('Login failed: temporary password expired', { email, ip });
+      logger.warn('Login failed: temporary password expired', { identifier, ip });
       throw new UnauthorizedError('Invalid credentials');
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      logger.warn('Login failed: wrong password', { email, ip });
+      logger.warn('Login failed: wrong password', { identifier, ip });
       throw new UnauthorizedError('Invalid credentials');
     }
 
@@ -66,7 +73,7 @@ export const authService = {
       tokenVersion: user.tokenVersion,
     });
 
-    logger.info('Login success', { userId: payload.userId, email, ip });
+    logger.info('Login success', { userId: payload.userId, email: user.email, ip });
 
     auditService.log({
       userId: payload.userId,

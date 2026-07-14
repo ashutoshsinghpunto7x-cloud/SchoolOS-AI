@@ -95,6 +95,56 @@ export function useUpdateMapping(id: string) {
   });
 }
 
+export function useSetDuplicateStrategy(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (strategy: 'skip' | 'update' | 'create') => importApi.setDuplicateStrategy(id, strategy),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.session(id) }),
+  });
+}
+
+export function useAIMap(id: string) {
+  return useMutation({
+    mutationFn: () => importApi.aiMap(id),
+  });
+}
+
+export function useMappingTemplates(importType: ImportType | undefined) {
+  return useQuery({
+    queryKey: ['import', 'mapping-templates', importType ?? ''],
+    queryFn: () => importApi.listMappingTemplates(importType),
+    enabled: !!importType,
+  });
+}
+
+export function useSaveMappingTemplate(sessionId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => importApi.saveMappingTemplate(sessionId, name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['import', 'mapping-templates'] }),
+  });
+}
+
+export function useDeleteMappingTemplate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => importApi.deleteMappingTemplate(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['import', 'mapping-templates'] }),
+  });
+}
+
+export function useUpdateRow(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ rowNumber, mappedData }: { rowNumber: number; mappedData: Record<string, unknown> }) =>
+      importApi.updateRow(id, rowNumber, mappedData),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.session(id) });
+      qc.invalidateQueries({ queryKey: ['import', 'session', id, 'rows'] });
+    },
+  });
+}
+
 export function useConfirmImport(id: string) {
   const qc = useQueryClient();
   return useMutation({

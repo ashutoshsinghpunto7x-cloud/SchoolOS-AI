@@ -8,11 +8,11 @@ import { cn } from '@/lib/utils';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const inputCls =
-  'w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 ' +
+  'w-full h-12 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white ' +
+  'placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 ' +
   'focus:border-[#5B21B6] transition-colors';
 
-const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
+const labelCls = 'block text-sm font-medium text-gray-700 dark:text-white/60 mb-1.5';
 
 const todayStr = new Date().toISOString().slice(0, 10);
 const minDobStr = `${new Date().getFullYear() - 100}-01-01`;
@@ -109,48 +109,6 @@ export function TeacherAddStudentPage() {
         admissionStatus: 'active',
         remarks:         rollNumber ? `Roll: ${rollNumber}` : undefined,
       });
-      setLastAdded(fullName.trim());
-      setLastAddedId(created._id);
-      setPhotoUploaded(false);
-      setSuccess(true);
-    } catch (err) {
-      setServerErr(err instanceof Error ? err.message : 'Something went wrong');
-    }
-  }
-
-  function resetForm() {
-    setRollNumber(''); setFullName(''); setDateOfBirth('');
-    setGender(''); setPhone(''); setErrors({}); setServerErr(''); setSuccess(false);
-  }
-
-  async function handleImportFile(file: File) {
-    setImportErr('');
-    setImportResult(null);
-    if (!activeCls.trim()) {
-      setImportErr('Select or enter a class before importing.');
-      return;
-    }
-    try {
-      const result = await quickImport({ file, cls: activeCls.trim(), section: activeSec.trim() });
-      setImportResult(result);
-    } catch (err) {
-      setImportErr(err instanceof Error ? err.message : 'Import failed');
-    }
-  }
-
-  // ── Success screen ────────────────────────────────────────────────────────
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
-          <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900">Student Added!</h2>
-        <p className="text-gray-500 mt-2 text-sm">
-          <span className="font-semibold text-gray-700">{lastAdded}</span> added to Class {activeCls}
-          {activeSec ? ` – ${activeSec}` : ''}
-        </p>
 
         {/* Optional photo — nice to have but never blocks moving on */}
         <input
@@ -168,7 +126,7 @@ export function TeacherAddStudentPage() {
           type="button"
           onClick={() => photoInputRef.current?.click()}
           disabled={uploadingPhoto}
-          className="mt-5 flex items-center gap-2 h-11 px-5 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-60"
+          className="mt-5 flex items-center gap-2 h-11 px-5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-60"
         >
           {uploadingPhoto ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -181,19 +139,19 @@ export function TeacherAddStudentPage() {
         <div className="flex flex-col gap-3 mt-6 w-full max-w-xs">
           <button
             onClick={resetForm}
-            className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
+            className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors shadow-sm"
           >
             Add Another Student
           </button>
           <button
             onClick={() => navigate(`/teacher/classes/${activeCls}/${activeSec}/students`)}
-            className="h-12 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm hover:bg-gray-50 transition-colors"
+            className="h-12 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 font-semibold rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shadow-sm"
           >
             View Student List
           </button>
           <button
             onClick={() => navigate(`/teacher/attendance/${activeCls}/${activeSec}`)}
-            className="h-12 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm hover:bg-gray-50 transition-colors"
+            className="h-12 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 font-semibold rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shadow-sm"
           >
             Take Attendance
           </button>
@@ -205,21 +163,20 @@ export function TeacherAddStudentPage() {
   // ── Form ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>
-        <h1 className="text-base font-bold text-gray-900">Add Students</h1>
+        <h1 className="text-base font-bold text-gray-900 dark:text-white">Add Students</h1>
       </div>
 
       <div className="px-4 py-5 max-w-lg mx-auto space-y-4">
-
         {/* ── Class selector ── */}
         <div>
           <label className={labelCls}>Select Class</label>

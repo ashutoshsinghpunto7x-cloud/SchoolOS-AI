@@ -5,6 +5,7 @@ interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
+  username?: string;
   phone?: string;
   passwordHash: string;
   role: IUser['role'];

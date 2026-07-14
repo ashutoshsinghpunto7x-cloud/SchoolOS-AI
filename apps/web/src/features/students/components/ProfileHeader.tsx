@@ -46,7 +46,7 @@ export const ProfileHeader = ({ student }: ProfileHeaderProps) => {
       <div className="flex flex-col sm:flex-row sm:items-start gap-6">
         {/* Avatar */}
         <div className="relative w-24 h-24 flex-shrink-0 group">
-          <div className="w-24 h-24 rounded-2xl bg-blue-600 flex items-center justify-center shadow-md overflow-hidden">
+          <div className="w-24 h-24 rounded-2xl bg-[#5B21B6] flex items-center justify-center shadow-md overflow-hidden">
             {student.photoUrl ? (
               <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
             ) : (

@@ -21,7 +21,7 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 bg-white';
+const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#A855F7] bg-white';
 const labelCls = 'text-xs font-semibold text-gray-500 mb-1 block';
 
 const currentAcademicYear = () => {
@@ -140,7 +140,7 @@ export function NewFeeRecordPage() {
 
             {studentId && selectedStudent && (
               <div className="flex items-center gap-3 bg-blue-50 rounded-xl px-4 py-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-8 h-8 rounded-lg bg-[#5B21B6] flex items-center justify-center text-white text-xs font-bold">
                   {selectedStudent.fullName[0]}
                 </div>
                 <div>
@@ -269,7 +269,7 @@ export function NewFeeRecordPage() {
             Cancel
           </button>
           <button type="submit" disabled={isPending}
-            className="flex-1 h-12 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold transition-colors">
+            className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold transition-colors">
             {isPending ? 'Creating…' : 'Create Fee Record'}
           </button>
         </div>

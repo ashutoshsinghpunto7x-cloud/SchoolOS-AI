@@ -108,7 +108,7 @@ export const UserDetailPage = () => {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 mb-6">
         <div className="flex items-start gap-5">
           {/* Avatar */}
-          <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-[#5B21B6] flex items-center justify-center flex-shrink-0 shadow-sm">
             <span className="text-xl font-bold text-white">{initials}</span>
           </div>
 

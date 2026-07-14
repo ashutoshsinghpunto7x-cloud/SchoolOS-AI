@@ -62,7 +62,7 @@ export const AutomationJobDetailPage = () => {
     return (
       <PageContainer narrow>
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
         </div>
       </PageContainer>
     );
@@ -78,7 +78,7 @@ export const AutomationJobDetailPage = () => {
           <p className="text-base font-medium text-gray-700">Job not found</p>
           <button
             onClick={() => navigate('/administration/automation')}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-[#5B21B6] hover:underline"
             type="button"
           >
             Back to Automation Jobs

@@ -1,7 +1,7 @@
 import { LucideIcon, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type CardAccent = 'blue' | 'amber' | 'green' | 'emerald';
+type CardAccent = 'blue' | 'purple' | 'amber' | 'green' | 'emerald';
 
 const ACCENT: Record<CardAccent, { iconBg: string; iconColor: string; btn: string; ring: string }> = {
   blue: {
@@ -9,6 +9,12 @@ const ACCENT: Record<CardAccent, { iconBg: string; iconColor: string; btn: strin
     iconColor: 'text-blue-600',
     btn: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
     ring: 'focus-visible:ring-blue-500/50',
+  },
+  purple: {
+    iconBg: 'bg-[#A855F7]/10',
+    iconColor: 'text-[#5B21B6]',
+    btn: 'bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]',
+    ring: 'focus-visible:ring-[#A855F7]/50',
   },
   amber: {
     iconBg: 'bg-amber-50',
