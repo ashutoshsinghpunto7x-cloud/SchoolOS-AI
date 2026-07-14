@@ -80,7 +80,7 @@ export function AttendanceWorkspace() {
             <button
               type="button"
               onClick={() => setDate(today)}
-              className="text-xs font-semibold text-blue-600 hover:underline px-2"
+              className="text-xs font-semibold text-[#5B21B6] hover:underline px-2"
             >
               Today
             </button>
@@ -116,7 +116,7 @@ export function AttendanceWorkspace() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 min-w-[100px]"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#A855F7] min-w-[100px]"
               >
                 <option value="">Select</option>
                 {CLASSES.map((c) => <option key={c} value={c}>Class {c}</option>)}
@@ -127,7 +127,7 @@ export function AttendanceWorkspace() {
               <select
                 value={selectedSection}
                 onChange={(e) => setSelectedSection(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400 min-w-[100px]"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#A855F7] min-w-[100px]"
               >
                 <option value="">Select</option>
                 {SECTIONS.map((s) => <option key={s} value={s}>Section {s}</option>)}
@@ -142,7 +142,7 @@ export function AttendanceWorkspace() {
                       `/attendance/class/${encodeURIComponent(selectedClass)}/${encodeURIComponent(selectedSection)}?date=${date}`
                     )
                   }
-                  className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex items-center gap-2 px-5 py-2 bg-[#5B21B6] text-white text-sm font-semibold rounded-lg hover:bg-[#4C1D95] transition-colors"
                 >
                   <Users className="w-4 h-4" />
                   {isToday ? 'Take Attendance' : 'View Attendance'}

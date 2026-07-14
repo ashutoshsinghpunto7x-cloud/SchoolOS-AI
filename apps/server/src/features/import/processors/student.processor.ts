@@ -1,21 +1,33 @@
 import { AuthContext } from '../../../lib/auth-context';
 import { studentService } from '../../students/student.service';
 import { studentRepository } from '../../students/student.repository';
-import { IProcessor, ProcessRowResult } from './processor.interface';
+import { IProcessor, ProcessRowResult, DuplicateAction } from './processor.interface';
 import { logger } from '../../../lib/logger';
 
 export const studentProcessor: IProcessor = {
   importType: 'students',
 
+  async findDuplicate(cleanData: Record<string, unknown>, schoolId: string): Promise<string | undefined> {
+    const admissionNumber = typeof cleanData.admissionNumber === 'string' ? cleanData.admissionNumber.trim() : '';
+    if (!admissionNumber) return undefined;
+    const existing = await studentRepository.findByAdmissionNumber(admissionNumber, schoolId);
+    return existing ? existing._id.toString() : undefined;
+  },
+
   // Re-uploading the same file (e.g. updating records mid-year) should update
   // existing students, not create duplicates — matched by admission number
-  // when the source file provides one.
-  async processRow(cleanData: Record<string, unknown>, ctx: AuthContext): Promise<ProcessRowResult> {
+  // when the source file provides one. `duplicateAction` (from the preview
+  // step's Skip/Update/Import Anyway choice) overrides that default.
+  async processRow(cleanData: Record<string, unknown>, ctx: AuthContext, duplicateAction: DuplicateAction = 'update'): Promise<ProcessRowResult> {
     try {
       const admissionNumber = typeof cleanData.admissionNumber === 'string' ? cleanData.admissionNumber.trim() : '';
-      const existing = admissionNumber
+      const existing = admissionNumber && duplicateAction !== 'create'
         ? await studentRepository.findByAdmissionNumber(admissionNumber, ctx.schoolId)
         : null;
+
+      if (existing && duplicateAction === 'skip') {
+        return { success: true, recordId: existing._id.toString(), isUpdate: true, skipped: true };
+      }
 
       if (existing) {
         const { admissionNumber: _ignored, ...updateData } = cleanData;

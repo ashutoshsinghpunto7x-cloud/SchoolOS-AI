@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const IMPORT_TYPES = ['students', 'teachers', 'fees', 'admissions'] as const;
+const IMPORT_TYPES = ['students', 'teachers', 'fees', 'admissions', 'attendance'] as const;
 const IMPORT_STATUSES = [
   'uploading', 'parsing', 'validating', 'preview', 'confirmed',
   'processing', 'completed', 'failed', 'cancelled', 'rolled_back',
@@ -25,4 +25,16 @@ export const uploadSessionSchema = z.object({
 
 export const confirmMappingSchema = z.object({
   mapping: z.record(z.string()),
+});
+
+export const setDuplicateStrategySchema = z.object({
+  strategy: z.enum(['skip', 'update', 'create']),
+});
+
+export const saveMappingTemplateSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+});
+
+export const listMappingTemplatesSchema = z.object({
+  importType: z.enum(IMPORT_TYPES).optional(),
 });

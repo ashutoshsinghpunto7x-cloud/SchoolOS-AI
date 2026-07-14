@@ -45,7 +45,7 @@ export const MessagesPage = () => {
   const [tab, setTab] = useState<'inbox' | 'compose'>('inbox');
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto pb-24 lg:pb-6">
       {isTeacher && (
         <button
           onClick={() => navigate('/teacher')}
@@ -69,7 +69,7 @@ export const MessagesPage = () => {
           <button
             onClick={() => setTab('inbox')}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
-              tab === 'inbox' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              tab === 'inbox' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
             <Inbox className="w-3.5 h-3.5" /> Inbox
@@ -77,7 +77,7 @@ export const MessagesPage = () => {
           <button
             onClick={() => setTab('compose')}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
-              tab === 'compose' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              tab === 'compose' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
             <PenSquare className="w-3.5 h-3.5" /> Compose
@@ -227,7 +227,7 @@ function ComposePanel() {
             <select
               onChange={(e) => e.target.value && applyTemplate(e.target.value)}
               defaultValue=""
-              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
             >
               <option value="">Select a saved template…</option>
               {templates.map((t) => (
@@ -243,14 +243,14 @@ function ComposePanel() {
             <button
               type="button"
               onClick={() => setRecipientMode('individual')}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'individual' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'individual' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               Select Staff
             </button>
             <button
               type="button"
               onClick={() => setRecipientMode('role')}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'role' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'role' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               By Role
             </button>
@@ -277,7 +277,7 @@ function ComposePanel() {
                     value={staffSearch}
                     onChange={(e) => setStaffSearch(e.target.value)}
                     placeholder="Search by name…"
-                    className="w-full h-9 pl-9 pr-8 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    className="w-full h-9 pl-9 pr-8 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
                   />
                   {staffSearch && (
                     <button
@@ -321,7 +321,7 @@ function ComposePanel() {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value as UserRole)}
-              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
             >
               {ROLE_OPTIONS.map((r) => (
                 <option key={r.value} value={r.value}>{r.label}</option>
@@ -334,7 +334,7 @@ function ComposePanel() {
           <label className="block text-sm font-bold text-gray-700 mb-1.5">Subject</label>
           <input
             value={subject} onChange={(e) => setSubject(e.target.value)}
-            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
             placeholder="Message subject"
           />
         </div>
@@ -343,7 +343,7 @@ function ComposePanel() {
           <label className="block text-sm font-bold text-gray-700 mb-1.5">Message</label>
           <textarea
             value={body} onChange={(e) => setBody(e.target.value)} rows={5}
-            className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
             placeholder="Write your message…"
           />
         </div>
@@ -354,7 +354,7 @@ function ComposePanel() {
             <button
               type="button"
               onClick={() => setPriority('normal')}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border ${priority === 'normal' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border ${priority === 'normal' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               Normal
             </button>
@@ -379,7 +379,7 @@ function ComposePanel() {
           {saveAsTemplate && (
             <input
               value={templateTitle} onChange={(e) => setTemplateTitle(e.target.value)}
-              className="w-full h-10 mt-2 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-10 mt-2 px-3.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
               placeholder="Template name"
             />
           )}
@@ -398,7 +398,7 @@ function ComposePanel() {
 
         <button
           type="submit" disabled={sendMessage.isPending}
-          className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-base font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-base font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {sendMessage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           Send Message

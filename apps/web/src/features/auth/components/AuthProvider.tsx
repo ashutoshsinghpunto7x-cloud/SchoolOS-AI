@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<AuthUser> => {
-    const data = await authApi.login({ email, password });
+  const login = useCallback(async (identifier: string, password: string): Promise<AuthUser> => {
+    const data = await authApi.login({ identifier, password });
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     const mergedUser: AuthUser = {

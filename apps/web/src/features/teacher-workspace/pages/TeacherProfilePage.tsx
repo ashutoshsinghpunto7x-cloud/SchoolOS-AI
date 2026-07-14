@@ -15,6 +15,7 @@ import {
   UserPlus,
   Settings,
   LogOut,
+  KeyRound,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -258,9 +259,10 @@ export function TeacherProfilePage() {
 
           {/* Other options moved here from the old sidebar */}
           <div className="space-y-2">
-            <MenuRow icon={UserPlus} label="Add Students" onClick={() => navigate('/teacher/add-student')} />
-            <MenuRow icon={Settings} label="Settings"      onClick={() => navigate('/settings')} />
-            <MenuRow icon={LogOut}   label="Log Out"       onClick={() => void logout()} danger />
+            <MenuRow icon={UserPlus} label="Add Students"     onClick={() => navigate('/teacher/add-student')} />
+            <MenuRow icon={KeyRound} label="Change Password"  onClick={() => navigate('/teacher/change-password')} />
+            <MenuRow icon={Settings} label="Settings"         onClick={() => navigate('/settings')} />
+            <MenuRow icon={LogOut}   label="Log Out"          onClick={() => void logout()} danger />
           </div>
 
           {/* Employee badge */}

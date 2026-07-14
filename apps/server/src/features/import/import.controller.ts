@@ -89,6 +89,41 @@ export const importController = {
     }
   },
 
+  // GET /import/sessions/:id/errors/download
+  async downloadErrors(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const { filename, csv } = await importService.exportErrors(req.params.id, ctx);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // PATCH /import/sessions/:id/duplicates
+  async setDuplicateStrategy(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const session = await importService.setDuplicateStrategy(req.params.id, req.body, ctx);
+      sendSuccess(res, session, 'Duplicate strategy updated');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /import/sessions/:id/ai-map
+  async aiMap(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const suggestions = await importService.suggestAIMapping(req.params.id, ctx);
+      sendSuccess(res, suggestions);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // POST /import/sessions/:id/confirm
   async confirm(req: Request, res: Response, next: NextFunction) {
     try {
@@ -117,6 +152,39 @@ export const importController = {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
       const session = await importService.rollback(req.params.id, ctx);
       sendSuccess(res, session, 'Rollback started');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // POST /import/sessions/:id/save-mapping-template
+  async saveMappingTemplate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const template = await importService.saveMappingTemplate(req.params.id, req.body, ctx);
+      sendCreated(res, template, 'Mapping template saved');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // GET /import/mapping-templates
+  async listMappingTemplates(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const templates = await importService.listMappingTemplates(req.query, ctx);
+      sendSuccess(res, templates);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // DELETE /import/mapping-templates/:id
+  async deleteMappingTemplate(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      await importService.deleteMappingTemplate(req.params.id, ctx);
+      sendSuccess(res, null, 'Mapping template deleted');
     } catch (err) {
       next(err);
     }

@@ -162,6 +162,13 @@ export const teacherRepository = {
     return result.modifiedCount > 0;
   },
 
+  /** Permanent removal — used only by the admin "delete teacher" action, which
+   * also cascades linked records (see teacherService.deleteTeacher). */
+  async hardDelete(id: string, schoolId: string): Promise<boolean> {
+    const result = await Teacher.deleteOne({ _id: id, schoolId });
+    return result.deletedCount > 0;
+  },
+
   async countAll(schoolId: string): Promise<number> {
     return Teacher.countDocuments({ schoolId, isDeleted: false });
   },

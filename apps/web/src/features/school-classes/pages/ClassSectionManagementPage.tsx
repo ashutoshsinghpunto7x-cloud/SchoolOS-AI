@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check, ChevronDown, IndianRupee } from 'lucide-react';
+import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check, ChevronDown, IndianRupee, CalendarRange } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import {
@@ -8,6 +8,7 @@ import {
 } from '../hooks/useSchoolClasses';
 import { useFeeStructure, useUpsertFeeStructure } from '@/features/fees/hooks/useFeeStructure';
 import type { SchoolClass, FeeHead } from '@schoolos/types';
+import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
@@ -21,6 +22,8 @@ const FEE_HEADS: { value: FeeHead; label: string }[] = [
   { value: 'miscellaneous', label: 'Miscellaneous' },
 ];
 
+const ACADEMIC_MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
+
 function currentAcademicYear(): string {
   const y = new Date().getFullYear();
   const m = new Date().getMonth();
@@ -28,8 +31,13 @@ function currentAcademicYear(): string {
 }
 
 // ── Fee structure — one row of amount fields per fee head, for one class ───────
+// Each academic month can have its own set of fee heads (e.g. April = Admission
+// + Tuition, May = Tuition only). A month of "null" ("Whole Year") is for heads
+// that don't vary by month, such as Transport.
 
-function FeeAmountCell({ cls, feeHead, academicYear, existingAmount }: { cls: string; feeHead: FeeHead; academicYear: string; existingAmount?: number }) {
+function FeeAmountCell({ cls, feeHead, academicYear, month, existingAmount }: {
+  cls: string; feeHead: FeeHead; academicYear: string; month: string | null; existingAmount?: number;
+}) {
   const [value, setValue] = useState(existingAmount != null ? String(existingAmount) : '');
   const [dirty, setDirty] = useState(false);
   const { mutateAsync, isPending } = useUpsertFeeStructure();
@@ -37,7 +45,7 @@ function FeeAmountCell({ cls, feeHead, academicYear, existingAmount }: { cls: st
   async function save() {
     const amount = parseFloat(value);
     if (isNaN(amount) || amount < 0) return;
-    await mutateAsync({ class: cls, feeHead, academicYear, amount: Math.round(amount * 100) / 100 });
+    await mutateAsync({ class: cls, feeHead, academicYear, month, amount: Math.round(amount * 100) / 100 });
     setDirty(false);
   }
 
@@ -64,24 +72,69 @@ function FeeAmountCell({ cls, feeHead, academicYear, existingAmount }: { cls: st
 function ClassFeeStructure({ cls }: { cls: string }) {
   const academicYear = currentAcademicYear();
   const { data: structure, isLoading } = useFeeStructure(academicYear);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>('April');
+
+  const monthsWithEntries = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of structure ?? []) {
+      if (s.class === cls && s.month) set.add(s.month);
+    }
+    return set;
+  }, [structure, cls]);
 
   function amountFor(feeHead: FeeHead): number | undefined {
-    return structure?.find((s) => s.class === cls && s.feeHead === feeHead)?.amount;
+    return structure?.find((s) => s.class === cls && s.feeHead === feeHead && (s.month ?? null) === selectedMonth)?.amount;
   }
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-100">
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5">Fee Structure · {academicYear}</p>
+      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
+        <CalendarRange className="w-3.5 h-3.5" /> Fee Structure · {academicYear}
+      </p>
+
+      {/* Month tabs */}
+      <div className="flex gap-1.5 flex-wrap mb-3">
+        <button
+          type="button"
+          onClick={() => setSelectedMonth(null)}
+          className={cn(
+            'h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors',
+            selectedMonth === null ? 'bg-[#5B21B6] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          )}
+        >
+          Whole Year
+        </button>
+        {ACADEMIC_MONTHS.map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setSelectedMonth(m)}
+            className={cn(
+              'h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors relative',
+              selectedMonth === m
+                ? 'bg-[#5B21B6] text-white'
+                : monthsWithEntries.has(m)
+                ? 'bg-violet-50 text-violet-700 hover:bg-violet-100'
+                : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+            )}
+          >
+            {m.slice(0, 3)}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <div className="h-16 bg-gray-50 rounded-lg animate-pulse" />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {FEE_HEADS.map((h) => (
-            <FeeAmountCell key={h.value} cls={cls} feeHead={h.value} academicYear={academicYear} existingAmount={amountFor(h.value)} />
+            <FeeAmountCell key={`${h.value}-${selectedMonth ?? 'year'}`} cls={cls} feeHead={h.value} academicYear={academicYear} month={selectedMonth} existingAmount={amountFor(h.value)} />
           ))}
         </div>
       )}
-      <p className="text-[11px] text-gray-400 mt-2.5">Click a field and tap away to save. Leave blank if that fee doesn't apply.</p>
+      <p className="text-[11px] text-gray-400 mt-2.5">
+        Click a field and tap away to save. Amounts apply only to <strong>{selectedMonth ?? 'the whole year'}</strong> — leave blank if a fee doesn't apply then. Changing an amount updates every unpaid fee record already generated for this class/month.
+      </p>
     </div>
   );
 }
@@ -138,13 +191,13 @@ function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSu
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') setEditingName(false); }}
                 maxLength={30}
-                className="h-8 w-32 px-2 rounded-lg border border-gray-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                className="h-8 w-32 px-2 rounded-lg border border-gray-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
               />
               <button
                 type="button"
                 onClick={() => void saveName()}
                 disabled={renaming}
-                className="w-7 h-7 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white flex items-center justify-center shrink-0"
+                className="w-7 h-7 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white flex items-center justify-center shrink-0"
               >
                 {renaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               </button>
@@ -207,12 +260,12 @@ function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSu
           onChange={(e) => setNewSection(e.target.value)}
           placeholder="e.g. A"
           maxLength={10}
-          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
         />
         <button
           type="submit"
           disabled={adding || !newSection.trim()}
-          className="h-9 px-3.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-1.5"
+          className="h-9 px-3.5 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-1.5"
         >
           {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
           Add Section
@@ -286,12 +339,12 @@ export function ClassSectionManagementPage() {
             value={newClassName}
             onChange={(e) => setNewClassName(e.target.value)}
             placeholder="e.g. 10 or Nursery"
-            className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+            className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
           />
           <button
             type="submit"
             disabled={creating || !newClassName.trim()}
-            className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-2"
+            className="h-10 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-2"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Add Class

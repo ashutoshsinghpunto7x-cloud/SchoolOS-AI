@@ -36,7 +36,7 @@ function TeacherPicker({ row, onDone }: { row: ClassSectionSummary; onDone: () =
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search teacher…"
-          className="w-full h-9 pl-8 pr-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+          className="w-full h-9 pl-8 pr-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
         />
       </div>
 
@@ -66,7 +66,7 @@ function TeacherPicker({ row, onDone }: { row: ClassSectionSummary; onDone: () =
               className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg hover:bg-blue-50 text-left text-sm text-gray-700 disabled:opacity-50"
             >
               <span className="truncate">{t.fullName}</span>
-              {row.teacherId === t._id && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+              {row.teacherId === t._id && <Check className="w-3.5 h-3.5 text-[#5B21B6] shrink-0" />}
             </button>
           ))}
         </div>

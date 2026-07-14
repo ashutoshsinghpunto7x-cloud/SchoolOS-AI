@@ -9,6 +9,24 @@ import type {
   ImportRowStatus,
 } from '@schoolos/types';
 
+export interface ColumnMappingSuggestion {
+  sourceColumn: string;
+  suggestedField: string | null;
+  confidence: number;
+  fieldLabel: string;
+  requiresConfirmation: boolean;
+}
+
+export interface ImportMappingTemplate {
+  _id: string;
+  schoolId: string;
+  importType: ImportType;
+  name?: string;
+  mapping: Record<string, string>;
+  createdBy: string;
+  createdAt: string;
+}
+
 const handle = async <T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> => {
   try {
     const res = await promise;
@@ -72,6 +90,39 @@ export const importApi = {
 
   updateMapping: (id: string, mapping: Record<string, string>) =>
     handle(apiClient.patch<ApiResponse<ImportSession>>(`/import/sessions/${id}/mapping`, { mapping })),
+
+  setDuplicateStrategy: (id: string, strategy: 'skip' | 'update' | 'create') =>
+    handle(apiClient.patch<ApiResponse<ImportSession>>(`/import/sessions/${id}/duplicates`, { strategy })),
+
+  aiMap: (id: string) =>
+    handle(apiClient.post<ApiResponse<ColumnMappingSuggestion[]>>(`/import/sessions/${id}/ai-map`, {})),
+
+  saveMappingTemplate: (sessionId: string, name: string) =>
+    handle(apiClient.post<ApiResponse<ImportMappingTemplate>>(`/import/sessions/${sessionId}/save-mapping-template`, { name })),
+
+  listMappingTemplates: (importType?: ImportType) =>
+    handle(apiClient.get<ApiResponse<ImportMappingTemplate[]>>('/import/mapping-templates', { params: importType ? { importType } : {} })),
+
+  deleteMappingTemplate: (id: string) =>
+    handle(apiClient.delete<ApiResponse<null>>(`/import/mapping-templates/${id}`)),
+
+  // Downloads the failed-rows CSV via the authenticated axios client (a plain
+  // <a href> would skip the Authorization header) and triggers a client-side save.
+  async downloadErrorReport(id: string, importType: string): Promise<void> {
+    try {
+      const res = await apiClient.get(`/import/sessions/${id}/errors/download`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${importType}-import-errors.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
 
   confirm: (id: string) =>
     handle(apiClient.post<ApiResponse<ImportSession>>(`/import/sessions/${id}/confirm`, {})),

@@ -10,6 +10,7 @@ import { teacherRepository } from '../teachers/teacher.repository';
 import { userRepository } from '../users/user.repository';
 import { notificationRepository } from '../notifications/notification.repository';
 import { internalMessageRepository } from '../internal-messages/internal-message.repository';
+import { teacherTimetableRepository } from '../teacher-timetable/teacher-timetable.repository';
 import {
   createPeriodSlotSchema, updatePeriodSlotSchema,
   createTimetableSchema, updateTimetableSchema,
@@ -21,6 +22,7 @@ import {
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { logger } from '../../lib/logger';
 
 export interface NeedsSubstituteEntry {
   class: string;
@@ -40,6 +42,47 @@ export interface SubstituteSuggestion {
   teacherName: string;
   teachesThisClass: boolean;
   freePeriodsToday: number;
+}
+
+/**
+ * Auto-sync into each affected teacher's personal TeacherTimetable whenever a
+ * class Timetable's entries change. Diffs old vs. new entries by (dayOfWeek,
+ * slotId): a slot whose teacher was removed/changed gets pulled from the old
+ * teacher's schedule; a slot with a teacher assigned (new or changed) gets
+ * pushed/updated on the new teacher's schedule. Best-effort — sync failures
+ * are logged but never block the class timetable save itself.
+ */
+async function syncTeacherTimetables(
+  schoolId: string, klass: string, section: string, academicYear: string,
+  oldEntries: ITimetableEntry[], newEntries: ITimetableEntry[], updatedBy: string,
+): Promise<void> {
+  const key = (e: { dayOfWeek: number; slotId: string }) => `${e.dayOfWeek}::${e.slotId}`;
+  const oldByKey = new Map(oldEntries.map((e) => [key(e), e]));
+  const newByKey = new Map(newEntries.map((e) => [key(e), e]));
+  const allKeys = new Set([...oldByKey.keys(), ...newByKey.keys()]);
+
+  for (const k of allKeys) {
+    const before = oldByKey.get(k);
+    const after = newByKey.get(k);
+    if (before?.teacherId === after?.teacherId && before?.subjectName === after?.subjectName && before?.roomNumber === after?.roomNumber) continue;
+
+    try {
+      if (before?.teacherId && before.teacherId !== after?.teacherId) {
+        await teacherTimetableRepository.removeEntryForTeacher(
+          schoolId, before.teacherId, academicYear, before.dayOfWeek, before.slotId, updatedBy,
+        );
+      }
+      if (after?.teacherId) {
+        await teacherTimetableRepository.syncEntryFromClassTimetable({
+          schoolId, teacherId: after.teacherId, teacherName: after.teacherName ?? '', academicYear,
+          dayOfWeek: after.dayOfWeek, slotId: after.slotId, subjectName: after.subjectName,
+          class: klass, section, roomNumber: after.roomNumber, updatedBy,
+        });
+      }
+    } catch (err) {
+      logger.error('[timetableService] Teacher timetable sync failed', { schoolId, teacherId: after?.teacherId ?? before?.teacherId, err });
+    }
+  }
 }
 
 export const timetableService = {
@@ -165,6 +208,9 @@ export const timetableService = {
       resourceId: id, ip: ctx.ip, schoolId: ctx.schoolId,
       details: { dayOfWeek: entry.dayOfWeek, slotId: entry.slotId, subjectName: entry.subjectName },
     });
+
+    await syncTeacherTimetables(ctx.schoolId, tt.class, tt.section, tt.academicYear, existing.entries, tt.entries, ctx.displayName);
+
     return tt;
   },
 
@@ -173,6 +219,9 @@ export const timetableService = {
     if (!existing) throw new NotFoundError('Timetable');
     const tt = await timetableRepository.removeEntry(id, ctx.schoolId, dayOfWeek, slotId, ctx.displayName);
     if (!tt) throw new NotFoundError('Timetable');
+
+    await syncTeacherTimetables(ctx.schoolId, tt.class, tt.section, tt.academicYear, existing.entries, tt.entries, ctx.displayName);
+
     return tt;
   },
 
@@ -189,6 +238,9 @@ export const timetableService = {
       resourceId: id, ip: ctx.ip, schoolId: ctx.schoolId,
       details: { entryCount: entries.length },
     });
+
+    await syncTeacherTimetables(ctx.schoolId, tt.class, tt.section, tt.academicYear, existing.entries, tt.entries, ctx.displayName);
+
     return tt;
   },
 

@@ -159,7 +159,7 @@ export function FeeRecordDetailPage() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={() => setShowPayModal(true)}
-            className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-sm font-bold text-white transition-colors"
+            className="h-11 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-2 text-sm font-bold text-white transition-colors"
             type="button"
           >
             <IndianRupee className="w-4 h-4" />
@@ -267,7 +267,7 @@ export function FeeRecordDetailPage() {
                 onChange={(e) => setNotesValue(e.target.value)}
                 rows={5}
                 maxLength={2000}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 resize-none"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#A855F7] resize-none"
                 placeholder="Internal notes visible only to staff…"
               />
               <div className="flex gap-2">
@@ -276,7 +276,7 @@ export function FeeRecordDetailPage() {
                   Cancel
                 </button>
                 <button type="button" onClick={saveNotes} disabled={savingNotes}
-                  className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  className="px-4 py-2 text-sm font-semibold bg-[#5B21B6] text-white rounded-lg hover:bg-[#4C1D95] disabled:opacity-50">
                   {savingNotes ? 'Saving…' : 'Save Notes'}
                 </button>
               </div>

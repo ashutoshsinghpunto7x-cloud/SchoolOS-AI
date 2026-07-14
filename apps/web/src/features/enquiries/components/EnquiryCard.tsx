@@ -87,7 +87,7 @@ export const EnquiryCard = ({ enquiry }: EnquiryCardProps) => {
           <button
             type="button"
             onClick={() => navigate(`/enquiries/${enquiry._id}`)}
-            className="flex-1 h-9 rounded-xl bg-blue-600 hover:bg-blue-700
+            className="flex-1 h-9 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
                        flex items-center justify-center gap-1.5
                        text-sm font-semibold text-white transition-colors"
           >

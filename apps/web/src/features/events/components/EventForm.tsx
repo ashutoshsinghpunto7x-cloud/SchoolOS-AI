@@ -119,7 +119,7 @@ export const EventForm = ({
 
   const inputCls = (field: keyof FormState) =>
     `w-full h-11 px-3 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-colors
-     ${errors[field] ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-blue-400'}`;
+     ${errors[field] ? 'border-red-400 focus:border-red-400' : 'border-gray-200 focus:border-[#A855F7]'}`;
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-6">
@@ -201,7 +201,7 @@ export const EventForm = ({
                 type="checkbox"
                 checked={form.isAllDay}
                 onChange={(e) => set('isAllDay', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-[#A855F7] cursor-pointer"
               />
               <span className="text-sm font-semibold text-gray-700">All-day event</span>
             </label>
@@ -214,7 +214,7 @@ export const EventForm = ({
                     type="time"
                     value={form.startTime}
                     onChange={(e) => set('startTime', e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#A855F7]"
                   />
                 </div>
                 <div>
@@ -223,7 +223,7 @@ export const EventForm = ({
                     type="time"
                     value={form.endTime}
                     onChange={(e) => set('endTime', e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400"
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#A855F7]"
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ export const EventForm = ({
                   onClick={() => toggleAudience(value)}
                   className={`h-9 px-4 rounded-xl text-sm font-semibold border transition-colors
                     ${form.audience.includes(value)
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-[#5B21B6] text-white border-blue-600'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}
                 >
                   {label}
@@ -295,7 +295,7 @@ export const EventForm = ({
               maxLength={2000}
               placeholder="Brief description of the event…"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm
-                         focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+                         focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100 resize-none"
             />
           </div>
 
@@ -308,7 +308,7 @@ export const EventForm = ({
               maxLength={5000}
               placeholder="Internal notes for staff only…"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm
-                         focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+                         focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100 resize-none"
             />
           </div>
 
@@ -331,7 +331,7 @@ export const EventForm = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="h-11 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50
+          className="h-11 px-8 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50
                      text-sm font-bold text-white transition-colors flex items-center gap-2"
         >
           {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}

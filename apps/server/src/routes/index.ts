@@ -32,6 +32,7 @@ import schoolClassRouter from '../features/school-classes/school-class.routes';
 import feeStructureRouter from '../features/fees/fee-structure.routes';
 import internalMessageRouter from '../features/internal-messages/internal-message.routes';
 import deviceTokenRouter from '../features/device-tokens/device-token.routes';
+import auditRouter from '../features/audit/audit.routes';
 
 const router = Router();
 
@@ -68,5 +69,6 @@ router.use('/school-classes', schoolClassRouter);
 router.use('/fee-structure', feeStructureRouter);
 router.use('/internal-messages', internalMessageRouter);
 router.use('/users/me/device-tokens', deviceTokenRouter);
+router.use('/audit', auditRouter);
 
 export default router;

@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History } from 'lucide-react';
 import {
   useSalaryList, useSalarySummary, useCreateSalaryRecord, useMarkSalaryPaid, useForcePendingSalary,
+  useUpdateSalaryRecord,
 } from '../hooks/useSalary';
+import { BulkAddSalaryModal } from '../components/BulkAddSalaryModal';
+import { AuditLogPanel } from '@/features/audit/components/AuditLogPanel';
 import type { SalaryRecord, PaymentMode, SalaryStatus } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -155,6 +158,57 @@ function MarkPaidModal({ record, onClose }: { record: SalaryRecord; onClose: () 
   );
 }
 
+// ── Inline-editable field — click to edit, Enter/blur to save ──────────────────
+
+function EditableField({
+  record, field, type = 'text',
+}: { record: SalaryRecord; field: 'employeeName' | 'designation' | 'amount'; type?: 'text' | 'number' }) {
+  const { mutateAsync, isPending } = useUpdateSalaryRecord(record._id);
+  const [editing, setEditing] = useState(false);
+  const rawValue = record[field];
+  const [value, setValue] = useState(String(rawValue));
+
+  useEffect(() => { setValue(String(rawValue)); }, [rawValue]);
+
+  async function save() {
+    setEditing(false);
+    if (value === String(rawValue)) return;
+    if (field === 'amount') {
+      const amt = parseFloat(value);
+      if (isNaN(amt) || amt <= 0) return;
+      await mutateAsync({ amount: Math.round(amt * 100) / 100 });
+    } else {
+      if (!value.trim()) return;
+      await mutateAsync({ [field]: value.trim() });
+    }
+  }
+
+  if (record.status === 'paid') {
+    return <span>{field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue)}</span>;
+  }
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        type={type}
+        value={value}
+        disabled={isPending}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={() => void save()}
+        onKeyDown={(e) => e.key === 'Enter' && void save()}
+        className="w-full h-7 px-1.5 rounded-md border border-[#A855F7] text-xs focus:outline-none"
+      />
+    );
+  }
+
+  return (
+    <button type="button" onClick={() => setEditing(true)} className="text-left hover:bg-gray-50 rounded px-1 -mx-1" title="Click to edit">
+      {field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue)}
+    </button>
+  );
+}
+
 // ── Status label (no color, text + icon only) ──────────────────────────────────
 
 function StatusLabel({ status }: { status: SalaryStatus }) {
@@ -172,12 +226,25 @@ function StatusLabel({ status }: { status: SalaryStatus }) {
 export function SalaryPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'all' | SalaryStatus>('all');
+  const [designation, setDesignation] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkAddOpen, setBulkAddOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [payingRecord, setPayingRecord] = useState<SalaryRecord | null>(null);
   const { mutate: forcePending, isPending: forcingId } = useForcePendingSalary();
 
   const { data, isLoading } = useSalaryList({ status: status === 'all' ? undefined : status, limit: 100 });
   const { data: summary } = useSalarySummary();
+
+  const designations = useMemo(() => {
+    const set = new Set((data?.data ?? []).map((r) => r.designation));
+    return [...set].sort();
+  }, [data]);
+
+  const records = useMemo(
+    () => (designation ? (data?.data ?? []).filter((r) => r.designation === designation) : data?.data ?? []),
+    [data, designation],
+  );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -188,6 +255,18 @@ export function SalaryPage() {
         <div className="flex-1">
           <h1 className="text-base font-bold text-gray-900">Salary Management</h1>
         </div>
+        <button
+          onClick={() => setHistoryOpen(true)}
+          className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5"
+        >
+          <History className="w-3.5 h-3.5" /> History
+        </button>
+        <button
+          onClick={() => setBulkAddOpen(true)}
+          className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5"
+        >
+          <Users className="w-3.5 h-3.5" /> Bulk Add
+        </button>
         <button
           onClick={() => setAddOpen(true)}
           className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
@@ -214,7 +293,7 @@ export function SalaryPage() {
         </div>
 
         {/* Status filter */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(['all', 'scheduled', 'pending', 'paid'] as const).map((s) => (
             <button
               key={s}
@@ -227,32 +306,40 @@ export function SalaryPage() {
               {s}
             </button>
           ))}
+          <select
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            className="ml-auto h-8 px-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          >
+            <option value="">All roles</option>
+            {designations.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
         </div>
 
         {/* List */}
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
-        ) : !data?.data.length ? (
+        ) : !records.length ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
             <IndianRupee className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-700">No salary records yet</p>
+            <p className="text-sm font-semibold text-gray-700">No salary records{designation ? ` for ${designation}` : ''}</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {data.data.map((rec) => (
+            {records.map((rec) => (
               <div key={rec._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
                   {rec.employeeName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate">{rec.employeeName}</p>
-                  <p className="text-xs text-gray-400">
-                    {rec.designation} · {rec.month} {rec.year}
+                  <p className="text-sm font-bold text-gray-900 truncate"><EditableField record={rec} field="employeeName" /></p>
+                  <p className="text-xs text-gray-400 flex items-center gap-1 flex-wrap">
+                    <EditableField record={rec} field="designation" /> · {rec.month} {rec.year}
                     {rec.status !== 'paid' && ` · Due ${new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-gray-800">{fmt(rec.amount)}</p>
+                  <p className="text-sm font-bold text-gray-800">₹<EditableField record={rec} field="amount" type="number" /></p>
                   <div className="mt-1 flex items-center justify-end gap-2">
                     <StatusLabel status={rec.status} />
                   </div>
@@ -284,6 +371,8 @@ export function SalaryPage() {
       </div>
 
       {addOpen && <AddSalaryModal onClose={() => setAddOpen(false)} />}
+      {bulkAddOpen && <BulkAddSalaryModal onClose={() => setBulkAddOpen(false)} />}
+      {historyOpen && <AuditLogPanel resource="salary" title="Salary Change History" onClose={() => setHistoryOpen(false)} />}
       {payingRecord && <MarkPaidModal record={payingRecord} onClose={() => setPayingRecord(null)} />}
     </div>
   );

@@ -15,12 +15,14 @@ router.use(authenticate);
 router.post('/',   authorize('admin', 'principal', 'reception'), teacherController.create);
 router.get('/',    teacherController.list);
 router.get('/search', teacherController.search);       // lightweight autocomplete
+router.get('/login-status', authorize('admin'), teacherController.listLoginStatus); // must precede /:id
 router.get('/:id', teacherController.getById);
 router.patch('/:id', authorize('admin', 'principal', 'reception', 'accountant'), teacherController.update);
 router.post('/:id/photo',   authorize('admin', 'reception', 'accountant'), imageUploadMiddleware, teacherController.uploadPhoto);
 router.delete('/:id/photo', authorize('admin', 'reception', 'accountant'), teacherController.removePhoto);
 router.patch('/:id/status',    authorize('admin', 'principal', 'reception'), teacherController.changeStatus);
 router.patch('/:id/link-user', authorize('admin'), teacherController.linkUserAccount);
+router.post('/:id/login',      authorize('admin'), teacherController.createLogin);
 router.delete('/:id',          authorize('admin'), teacherController.deleteTeacher);
 
 // ── Teacher Notes ─────────────────────────────────────────────────────────────

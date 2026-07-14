@@ -128,7 +128,7 @@ export const CalendarGrid = ({
               <span
                 className={cn(
                   'w-6 h-6 text-xs font-semibold flex items-center justify-center rounded-full mb-1',
-                  isToday    && 'bg-blue-600 text-white',
+                  isToday    && 'bg-[#5B21B6] text-white',
                   isSelected && !isToday && 'bg-blue-100 text-blue-700',
                   !isToday && !isSelected && (isWeekend ? 'text-gray-400' : 'text-gray-700'),
                 )}

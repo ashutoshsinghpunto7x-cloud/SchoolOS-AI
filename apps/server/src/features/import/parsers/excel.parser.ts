@@ -2,6 +2,47 @@ import * as XLSX from 'xlsx';
 import { IParser, ParseResult, ParsedRow } from './parser.interface';
 import { ValidationError } from '../../../middlewares/errorHandler';
 
+const isBlankCell = (cell: unknown): boolean => cell === null || cell === undefined || String(cell).trim() === '';
+
+/** A cell "looks like a header label" if it's short text that isn't purely numeric/date-like. */
+function looksLikeHeaderCell(cell: unknown): boolean {
+  const s = String(cell ?? '').trim();
+  if (!s || s.length > 40) return false;
+  if (/^-?\d+(\.\d+)?$/.test(s)) return false; // pure number
+  if (/^\d{1,4}[/-]\d{1,2}[/-]\d{1,4}$/.test(s)) return false; // date-like
+  return true;
+}
+
+/**
+ * Many school ERPs export sheets with a preamble above the real table —
+ * school name, address, report title, generation date, blank rows — before
+ * the actual header row. Scan the first few rows and pick the first one that
+ * looks like a header (mostly short text cells) immediately followed by a
+ * row of comparable width (the first data row). Falls back to row 0 so
+ * already-correct files (header already on row 1) behave exactly as before.
+ */
+function detectHeaderRowIndex(aoa: unknown[][]): number {
+  const SCAN_LIMIT = Math.min(20, aoa.length - 1);
+
+  for (let i = 0; i < SCAN_LIMIT; i++) {
+    const row = aoa[i] ?? [];
+    const nonBlank = row.filter((c) => !isBlankCell(c));
+    if (nonBlank.length < 2) continue; // titles/blank rows are usually 0-1 cells wide
+
+    const headerLikeCount = nonBlank.filter(looksLikeHeaderCell).length;
+    const textRatio = headerLikeCount / nonBlank.length;
+    if (textRatio < 0.6) continue; // reads like a data row, not labels
+
+    const nextRow = aoa[i + 1] ?? [];
+    const nextNonBlank = nextRow.filter((c) => !isBlankCell(c)).length;
+    if (nextNonBlank === 0 || nextNonBlank < nonBlank.length * 0.5) continue; // no real table follows
+
+    return i;
+  }
+
+  return 0; // no better candidate found — assume row 1 is the header, as before
+}
+
 /**
  * Unified parser for .xlsx, .xls, and .csv files using SheetJS.
  * All three formats share the same parse path — SheetJS normalises them.
@@ -35,16 +76,17 @@ export const excelParser: IParser = {
     if (aoa.length === 0) throw new ValidationError('The file is empty.');
     if (aoa.length === 1) throw new ValidationError('The file has a header row but no data rows.');
 
-    const rawHeaders = (aoa[0] as string[]).map((h) => String(h ?? '').trim());
+    const headerRowIndex = detectHeaderRowIndex(aoa);
+    const rawHeaders = (aoa[headerRowIndex] as string[]).map((h) => String(h ?? '').trim());
 
     // Deduplicate blank/null headers — skip them
     const headers = rawHeaders.filter((h) => h.length > 0);
 
-    if (headers.length === 0) throw new ValidationError('No column headers found in the first row.');
+    if (headers.length === 0) throw new ValidationError('No column headers found.');
 
     // Maximum 10,000 data rows per import
     const MAX_ROWS = 10_000;
-    const dataRows = aoa.slice(1);
+    const dataRows = aoa.slice(headerRowIndex + 1);
 
     if (dataRows.length > MAX_ROWS) {
       throw new ValidationError(

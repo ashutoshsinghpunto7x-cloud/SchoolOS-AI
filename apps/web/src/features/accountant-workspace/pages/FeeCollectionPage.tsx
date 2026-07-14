@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
@@ -41,6 +41,7 @@ export function FeeCollectionPage() {
   const [classInput, setClassInput] = useState('');
   const [sectionInput, setSectionInput] = useState('');
   const [nameInput, setNameInput] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const classRef = useRef<HTMLInputElement>(null);
   const sectionRef = useRef<HTMLInputElement>(null);
@@ -73,6 +74,20 @@ export function FeeCollectionPage() {
     navigate(`/accountant/student-ledger/${s._id}`);
   }
 
+  const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!filtered.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filtered.length) {
+      e.preventDefault();
+      openStudent(filtered[focusedIndex]);
+    }
+  }, [filtered, focusedIndex]);
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <div className="bg-white border-b border-gray-100 px-4 py-4">
@@ -88,7 +103,10 @@ export function FeeCollectionPage() {
               ref={classRef}
               type="text"
               value={classInput}
-              onChange={(e) => setClassInput(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setClassInput(v ? v.charAt(0).toUpperCase() + v.slice(1) : v);
+              }}
               onKeyDown={(e) => { if (e.key === 'Enter' && classInput.trim()) { e.preventDefault(); sectionRef.current?.focus(); } }}
               placeholder="e.g. 10 or Nursery"
               className={fieldCls}
@@ -118,7 +136,8 @@ export function FeeCollectionPage() {
                 ref={nameRef}
                 type="text"
                 value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
+                onChange={(e) => { setNameInput(e.target.value); setFocusedIndex(-1); }}
+                onKeyDown={handleNameKeyDown}
                 placeholder="Type to filter by name, roll no. or admission no."
                 className={`${fieldCls} pl-10`}
               />
@@ -138,11 +157,15 @@ export function FeeCollectionPage() {
                 <p className="text-xs text-slate-400 mt-1">Check the class and section, then try again.</p>
               </div>
             ) : (
-              filtered.map((s) => (
+              filtered.map((s, idx) => (
                 <button
                   key={s._id}
                   onClick={() => openStudent(s)}
-                  className="w-full flex items-center gap-3 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:border-[#1E293B]/30 hover:shadow-md transition-all text-left"
+                  className={`w-full flex items-center gap-3 rounded-xl border shadow-sm px-4 py-3 hover:border-[#1E293B]/30 hover:shadow-md transition-all text-left ${
+                    idx === focusedIndex
+                      ? 'bg-[#5B21B6]/5 border-[#5B21B6]/40 ring-2 ring-[#5B21B6]/20'
+                      : 'bg-white border-gray-200'
+                  }`}
                 >
                   <div className="w-9 h-9 rounded-full bg-[#1E293B]/10 flex items-center justify-center text-[#1E293B] font-bold text-xs shrink-0">
                     {initials(s.fullName)}

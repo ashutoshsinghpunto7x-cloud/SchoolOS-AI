@@ -6,6 +6,7 @@ export const upsertFeeStructureSchema = z.object({
   feeHead: z.enum(FEE_HEADS, { required_error: 'feeHead is required' }),
   academicYear: z.string({ required_error: 'academicYear is required' })
     .regex(/^\d{4}-\d{2,4}$/, 'academicYear must be like 2024-25'),
+  month: z.string().trim().min(1).nullable().optional(),
   amount: z.number({ required_error: 'amount is required' }).min(0),
 });
 

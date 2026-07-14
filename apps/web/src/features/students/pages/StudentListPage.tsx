@@ -47,7 +47,7 @@ export const StudentListPage = () => {
         action={
           <button
             onClick={() => navigate('/students/new')}
-            className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+            className="h-12 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
                        flex items-center gap-2 text-sm font-bold text-white transition-colors duration-150"
             type="button"
           >
@@ -168,7 +168,7 @@ export const StudentListPage = () => {
                         disabled={isFetching}
                         className={`h-10 w-10 rounded-xl text-sm font-semibold transition-colors ${
                           currentPage === item
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-[#5B21B6] text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >

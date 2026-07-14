@@ -349,7 +349,7 @@ export const ReportBuilderPage = () => {
           <button
             onClick={() => setShowSaveModal(true)}
             disabled={!data}
-            className="flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Bookmark size={14} />
             Save

@@ -61,6 +61,10 @@ export interface IImportSession extends Document {
 
   // Column mapping: sourceHeader → schemaField
   mapping: Record<string, string>;
+  /** Order-independent signature of the uploaded file's headers — used to
+   *  auto-reuse this school's confirmed mapping the next time the same
+   *  export shape is uploaded. See import-mapping-template.model.ts. */
+  headerSignature: string;
 
   // Stats
   totalRows: number;
@@ -69,6 +73,11 @@ export interface IImportSession extends Document {
   failedRows: number;
   importedRows: number;
   skippedRows: number;
+  /** Rows (within validRows/warningRows) that matched an existing record. */
+  duplicateRows: number;
+  /** Last strategy applied via PATCH /sessions/:id/duplicates, shown in the UI
+   *  as "currently applying: …" — individual rows may still be overridden. */
+  duplicateStrategy?: 'skip' | 'update' | 'create';
 
   // Rollback support — IDs of successfully created records
   importedIds: string[];
@@ -106,6 +115,11 @@ export interface IImportRow {
 
   errors: IImportRowError[];
   warnings: IImportRowError[];
+
+  /** _id of an existing record this row matched during validation, if any. */
+  duplicateOf?: string;
+  /** How to handle that match at processing time — defaults to 'update'. */
+  duplicateAction?: 'skip' | 'update' | 'create';
 
   /** _id of the domain record created during import */
   importedId?: string;
@@ -163,6 +177,7 @@ const importSessionSchema = new Schema<IImportSession>(
     mimeType: { type: String, required: true },
 
     mapping: { type: Schema.Types.Mixed, default: {} },
+    headerSignature: { type: String, default: '' },
 
     totalRows: { type: Number, default: 0 },
     validRows: { type: Number, default: 0 },
@@ -170,6 +185,8 @@ const importSessionSchema = new Schema<IImportSession>(
     failedRows: { type: Number, default: 0 },
     importedRows: { type: Number, default: 0 },
     skippedRows: { type: Number, default: 0 },
+    duplicateRows: { type: Number, default: 0 },
+    duplicateStrategy: { type: String, enum: ['skip', 'update', 'create'] },
 
     importedIds: { type: [String], default: [] },
 
@@ -204,6 +221,8 @@ const importRowSchema = new Schema<IImportRow>(
     },
     errors: { type: [importRowErrorSchema], default: [] },
     warnings: { type: [importRowErrorSchema], default: [] },
+    duplicateOf: { type: String },
+    duplicateAction: { type: String, enum: ['skip', 'update', 'create'] },
     importedId: { type: String },
   },
   { timestamps: { createdAt: true, updatedAt: false }, versionKey: false }

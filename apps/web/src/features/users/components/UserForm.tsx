@@ -20,7 +20,7 @@ const ROLES: { value: UserRole; label: string }[] = [
 
 const fieldCls =
   'w-full h-12 px-4 rounded-xl border border-gray-200 bg-white text-base text-gray-900 placeholder:text-gray-400 ' +
-  'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors';
+  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7] transition-colors';
 
 const labelCls = 'block text-sm font-semibold text-gray-700 mb-1.5';
 
@@ -217,7 +217,7 @@ export const UserForm = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-sm font-bold text-white transition-colors disabled:opacity-60 flex items-center gap-2"
+          className="h-12 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94] text-sm font-bold text-white transition-colors disabled:opacity-60 flex items-center gap-2"
         >
           {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
           {isEdit ? 'Save Changes' : 'Create User'}

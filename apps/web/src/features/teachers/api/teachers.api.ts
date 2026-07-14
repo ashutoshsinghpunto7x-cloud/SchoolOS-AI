@@ -9,6 +9,8 @@ import type {
   TeacherListOptions,
   CreateTeacherNotePayload,
   UpdateTeacherNotePayload,
+  TeacherLoginStatus,
+  CreateTeacherLoginPayload,
 } from '@schoolos/types';
 
 export const teachersApi = {
@@ -107,6 +109,29 @@ export const teachersApi = {
   async linkUser(teacherId: string, userId: string): Promise<Teacher> {
     try {
       const res = await apiClient.patch<ApiResponse<Teacher>>(`/teachers/${teacherId}/link-user`, { userId });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  // ── Login Provisioning ────────────────────────────────────────────────────
+
+  async getLoginStatus(): Promise<TeacherLoginStatus[]> {
+    try {
+      const res = await apiClient.get<ApiResponse<TeacherLoginStatus[]>>('/teachers/login-status');
+      return res.data.data ?? [];
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async createLogin(teacherId: string, payload: CreateTeacherLoginPayload): Promise<{ teacherId: string; username: string }> {
+    try {
+      const res = await apiClient.post<ApiResponse<{ teacherId: string; username: string }>>(
+        `/teachers/${teacherId}/login`,
+        payload,
+      );
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

@@ -13,7 +13,7 @@ interface ConvertToStudentModalProps {
 }
 
 const inputCls = `h-11 w-full rounded-xl border border-gray-200 px-3 text-sm
-  focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white`;
+  focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100 bg-white`;
 
 const Field = ({
   label, required, children,

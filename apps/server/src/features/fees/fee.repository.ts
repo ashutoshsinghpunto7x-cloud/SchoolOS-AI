@@ -145,6 +145,22 @@ export const feeRepository = {
     return rows.map((r) => ({ class: r._id.class, section: r._id.section, collected: r.collected, pending: r.pending }));
   },
 
+  /** All non-deleted fee records for a class + fee head (+ academic year, + optional
+   * month) — used to propagate a fee structure amount change onto every
+   * not-yet-settled record. A null month matches only records without a month. */
+  async findByClassFeeHead(
+    schoolId: string,
+    klass: string,
+    feeHead: FeeHead,
+    academicYear: string,
+    month?: string | null,
+  ): Promise<IFeeRecord[]> {
+    const query: Record<string, unknown> = { schoolId, class: klass, feeHead, academicYear, isDeleted: false };
+    if (month) query.month = month;
+    else query.month = { $in: [null, undefined] };
+    return FeeRecord.find(query).lean<IFeeRecord[]>();
+  },
+
   /** Find a specific month's fee record for a student (used to avoid duplicate months on recurring/bulk generation). */
   async findByStudentAndMonth(
     schoolId: string,

@@ -22,7 +22,7 @@ const fmt = (amount: number) =>
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 bg-white';
+const inputCls = 'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#A855F7] bg-white';
 const labelCls = 'text-xs font-semibold text-gray-500 mb-1 block';
 
 export function RecordPaymentModal({ fee, onClose, onSuccess }: Props) {
@@ -206,7 +206,7 @@ export function RecordPaymentModal({ fee, onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-bold transition-colors"
+              className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold transition-colors"
             >
               {isPending ? 'Saving…' : 'Confirm Payment'}
             </button>

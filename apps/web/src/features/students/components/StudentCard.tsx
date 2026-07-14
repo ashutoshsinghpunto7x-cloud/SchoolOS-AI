@@ -21,7 +21,7 @@ export const StudentCard = ({ student }: StudentCardProps) => {
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out p-6 flex flex-col gap-5">
       {/* Top row: avatar + name + status */}
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center flex-shrink-0 shadow-sm">
           <span className="text-lg font-bold text-white">{initials}</span>
         </div>
 
@@ -75,7 +75,7 @@ export const StudentCard = ({ student }: StudentCardProps) => {
       <div className="flex gap-3">
         <button
           onClick={() => navigate(`/students/${student._id}`)}
-          className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+          className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
                      flex items-center justify-center gap-2
                      text-sm font-semibold text-white transition-colors duration-150"
           type="button"

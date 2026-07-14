@@ -28,6 +28,8 @@ import {
   Mail,
   BadgePercent,
   UserCog,
+  KeyRound,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -70,7 +72,7 @@ const NAV_ITEMS_ACCOUNTANT = [
   { label: 'Pending Fees',  icon: Wallet,          path: '/accountant/pending-fees',  end: false },
   { label: 'Students',      icon: GraduationCap,   path: '/accountant/student-directory', end: false },
   { label: 'Teachers',      icon: Users,           path: '/accountant/teacher-directory', end: false },
-  { label: 'Student Data',  icon: Upload,          path: '/import',                   end: false },
+  { label: 'Import',         icon: Upload,          path: '/import',                   end: false },
   { label: 'Classes & Fee Structure', icon: Settings2, path: '/classes',              end: false },
   { label: 'Salary',        icon: FileBarChart,    path: '/accountant/salary',        end: false },
   { label: 'Expenses',      icon: Receipt,         path: '/accountant/expenses',      end: false },
@@ -81,6 +83,7 @@ const NAV_ITEMS_ACCOUNTANT = [
 const NAV_ITEMS_ADMIN = [
   { label: 'Reports',            icon: FileBarChart2,  path: '/reports' },
   { label: 'Classes & Sections', icon: GraduationCap,  path: '/classes' },
+  { label: 'Teacher Logins',     icon: KeyRound,       path: '/teacher-logins' },
   { label: 'Automation',         icon: Zap,            path: '/automation' },
   { label: 'Data Import',        icon: Database,       path: '/import' },
   { label: 'Integrations',       icon: Plug,           path: '/integrations' },
@@ -90,8 +93,10 @@ const NAV_ITEMS_ADMIN = [
 // Principal gets its own dedicated nav — not the admin operational toolbox.
 const NAV_ITEMS_PRINCIPAL = [
   { label: 'Dashboard',           icon: LayoutDashboard, path: '/principal',                       end: true  },
-  { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/approvals',             end: false },
+  { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/leave-approvals',       end: false },
+  { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
+  { label: 'Teachers',            icon: Users,           path: '/principal/teachers',              end: false },
   { label: 'Timetable',           icon: LayoutGrid,      path: '/timetable',                       end: false },
   { label: 'Teacher Timetable',   icon: UserCog,         path: '/timetable/teacher-builder',       end: false },
   { label: 'Class Teachers',      icon: GraduationCap,   path: '/principal/class-teachers',        end: false },

@@ -9,10 +9,10 @@ export const feeStructureRepository = {
   },
 
   async upsert(
-    schoolId: string, cls: string, feeHead: FeeHead, academicYear: string, amount: number, updatedBy: string,
+    schoolId: string, cls: string, feeHead: FeeHead, academicYear: string, month: string | null, amount: number, updatedBy: string,
   ): Promise<IFeeStructure> {
     return FeeStructure.findOneAndUpdate(
-      { schoolId, class: cls, feeHead, academicYear },
+      { schoolId, class: cls, feeHead, academicYear, month: month ?? null },
       { $set: { amount, updatedBy } },
       { new: true, upsert: true },
     ).lean<IFeeStructure>() as Promise<IFeeStructure>;

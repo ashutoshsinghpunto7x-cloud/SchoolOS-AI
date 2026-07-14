@@ -133,7 +133,7 @@ export function TeacherDirectoryPage() {
   const [newColumnName, setNewColumnName] = useState('');
 
   const teachers = useMemo(
-    () => allTeachers.filter((t) => (t.department?.trim() || UNASSIGNED_DEPARTMENT) === selectedDept),
+    () => (selectedDept ? allTeachers.filter((t) => (t.department?.trim() || UNASSIGNED_DEPARTMENT) === selectedDept) : allTeachers),
     [allTeachers, selectedDept],
   );
 
@@ -201,7 +201,7 @@ export function TeacherDirectoryPage() {
         </button>
         <div className="flex-1">
           <h1 className="text-base font-bold text-gray-900">Teacher Directory</h1>
-          <p className="text-xs text-gray-500">Browse by department — click any field to edit it directly</p>
+          <p className="text-xs text-gray-500">All teachers — filter by department, or click any field to edit it directly</p>
         </div>
         <button
           onClick={exportToExcel}
@@ -221,7 +221,7 @@ export function TeacherDirectoryPage() {
               onChange={(e) => setSelectedDept(e.target.value)}
               className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm min-w-[160px] focus:outline-none focus:ring-2 focus:ring-gray-200"
             >
-              <option value="">{isLoading ? 'Loading…' : 'Select department'}</option>
+              <option value="">{isLoading ? 'Loading…' : 'All departments'}</option>
               {departments.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
@@ -249,18 +249,16 @@ export function TeacherDirectoryPage() {
           )}
         </div>
 
-        {!selectedDept ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <UserRound className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-700">Select a department</p>
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="h-64 bg-white rounded-2xl border border-gray-100 animate-pulse flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
         ) : !teachers.length ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <p className="text-sm font-semibold text-gray-700">No teachers found in {selectedDept}</p>
+            <UserRound className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-gray-700">
+              {selectedDept ? `No teachers found in ${selectedDept}` : 'No teachers found'}
+            </p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">

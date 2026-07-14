@@ -115,13 +115,28 @@ export interface AuthUser {
 }
 
 export interface LoginPayload {
-  email: string;
+  /** Email or admin-issued username. */
+  identifier: string;
   password: string;
 }
 
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface TeacherLoginStatus {
+  teacherId: string;
+  fullName: string;
+  employeeId: string;
+  email?: string;
+  hasLogin: boolean;
+  username?: string;
+}
+
+export interface CreateTeacherLoginPayload {
+  username: string;
+  password: string;
 }
 
 export type RecoveryRequestStatus = 'pending' | 'approved' | 'rejected' | 'completed';
@@ -1828,6 +1843,9 @@ export interface FeeStructureEntry extends BaseEntity {
   class: string;
   feeHead: FeeHead;
   academicYear: string;
+  /** Academic month this fee head applies to (e.g. "April"). Null/undefined means
+   *  the head applies year-round regardless of month (e.g. Transport). */
+  month?: string | null;
   amount: number;
   updatedBy: string;
 }
@@ -1836,6 +1854,7 @@ export interface UpsertFeeStructurePayload {
   class: string;
   feeHead: FeeHead;
   academicYear: string;
+  month?: string | null;
   amount: number;
 }
 
@@ -2085,6 +2104,10 @@ export interface ImportSession extends BaseEntity {
   failedRows: number;
   importedRows: number;
   skippedRows: number;
+  /** Rows (within validRows/warningRows) that matched an existing record. */
+  duplicateRows: number;
+  /** Last strategy applied via the preview screen's Skip/Update/Import Anyway selector. */
+  duplicateStrategy?: 'skip' | 'update' | 'create';
   importedIds: string[];
   /** 'students' imports only — new class/section combos not yet in the school's
    * Classes & Sections catalog, detected during validation for review before confirming. */
@@ -2112,6 +2135,10 @@ export interface ImportRow {
   status: ImportRowStatus;
   errors: ImportRowError[];
   warnings: ImportRowError[];
+  /** _id of an existing record this row matched during validation, if any. */
+  duplicateOf?: string;
+  /** How to handle that match at processing time — defaults to 'update'. */
+  duplicateAction?: 'skip' | 'update' | 'create';
   importedId?: string;
   createdAt: string;
 }

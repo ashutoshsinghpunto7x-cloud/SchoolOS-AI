@@ -9,7 +9,10 @@ export interface Reminder {
   id: string;
   title: string;
   time: string; // "HH:MM", 24h, today
-  firedAt?: string; // ISO — set once triggered so it won't repeat
+  firedAt?: string; // ISO — set once first detected due (fires the toast/notification once)
+  /** Set only when the user explicitly dismisses the due-reminder popup — until
+   *  then, the popup keeps reappearing so a forgotten reminder can't be missed. */
+  acknowledged?: boolean;
 }
 
 const KEY = 'schoolos.reminders';
@@ -25,4 +28,13 @@ export function loadReminders(): Reminder[] {
 
 export function saveReminders(reminders: Reminder[]): void {
   localStorage.setItem(KEY, JSON.stringify(reminders));
+}
+
+export function acknowledgeReminder(id: string): void {
+  const reminders = loadReminders();
+  const target = reminders.find((r) => r.id === id);
+  if (target) {
+    target.acknowledged = true;
+    saveReminders(reminders);
+  }
 }

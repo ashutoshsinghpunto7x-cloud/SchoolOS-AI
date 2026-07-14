@@ -131,7 +131,7 @@ export const StudentProfilePage = () => {
       <div className="flex flex-wrap gap-3 mb-8">
         <button
           onClick={() => navigate(`/students/${student._id}/edit`)}
-          className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800
+          className="h-12 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
                      flex items-center gap-2.5 text-sm font-bold text-white transition-colors duration-150"
           type="button"
         >

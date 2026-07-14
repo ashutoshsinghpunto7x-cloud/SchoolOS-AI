@@ -44,7 +44,7 @@ export const SaveReportModal = ({ category, filters, onClose }: SaveReportModalP
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Monthly Attendance — Class 5"
-              className="w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
               autoFocus
             />
           </div>
@@ -55,7 +55,7 @@ export const SaveReportModal = ({ category, filters, onClose }: SaveReportModalP
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional notes about this report"
               rows={2}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]"
             />
           </div>
           <div className="text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
@@ -77,7 +77,7 @@ export const SaveReportModal = ({ category, filters, onClose }: SaveReportModalP
           <button
             onClick={handleSave}
             disabled={!name.trim() || isPending}
-            className="flex-1 h-9 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 h-9 text-sm font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isPending ? 'Saving…' : 'Save Report'}
           </button>

@@ -82,7 +82,7 @@ const NoteRow = ({ note, studentId }: NoteRowProps) => {
             onChange={(e) => setDraft(e.target.value)}
             autoFocus
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="w-full px-3 py-2 rounded-lg border border-blue-300 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20"
           />
           <div className="flex gap-2 justify-end">
             <button
@@ -96,7 +96,7 @@ const NoteRow = ({ note, studentId }: NoteRowProps) => {
               type="button"
               onClick={save}
               disabled={updateNote.isPending}
-              className="h-8 px-3 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-1 disabled:opacity-60"
+              className="h-8 px-3 rounded-lg text-sm font-semibold text-white bg-[#5B21B6] hover:bg-[#4C1D95] transition-colors flex items-center gap-1 disabled:opacity-60"
             >
               {updateNote.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               Save
@@ -138,7 +138,7 @@ const AddNoteForm = ({ studentId, onDone }: AddNoteFormProps) => {
         placeholder="Write a note…"
         rows={3}
         autoFocus
-        className="w-full px-3 py-2 rounded-lg border border-blue-200 bg-white text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        className="w-full px-3 py-2 rounded-lg border border-blue-200 bg-white text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20"
       />
 
       <div className="flex items-center justify-between gap-3">
@@ -164,7 +164,7 @@ const AddNoteForm = ({ studentId, onDone }: AddNoteFormProps) => {
             type="button"
             onClick={submit}
             disabled={!content.trim() || createNote.isPending}
-            className="h-9 px-4 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-60"
+            className="h-9 px-4 rounded-lg text-sm font-semibold text-white bg-[#5B21B6] hover:bg-[#4C1D95] transition-colors flex items-center gap-2 disabled:opacity-60"
           >
             {createNote.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Add Note
@@ -205,7 +205,7 @@ export const StudentNotesPanel = ({ studentId }: StudentNotesPanelProps) => {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-semibold text-white transition-colors flex items-center gap-2"
+            className="h-9 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-semibold text-white transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Note

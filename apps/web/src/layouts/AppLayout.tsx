@@ -6,6 +6,7 @@ import { Topbar } from '@/components/topbar/Topbar';
 import { NotificationNudge } from '@/features/notifications/components/NotificationNudge';
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
+import { TeacherThemeProvider } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
@@ -35,8 +36,8 @@ export const AppLayout = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  return (
-    <div className={cn("flex h-screen overflow-hidden", isAccountant || isPrincipal ? "bg-white" : "bg-[#F5F5F7]")}>
+  const content = (
+    <div className={cn("flex h-screen overflow-hidden", isAccountant || isPrincipal ? "bg-white" : "bg-[#F5F5F7] dark:bg-[#0B0518]")}>
       <NotificationNudge />
       <ReminderWatcher />
       <HighPriorityMessageGate />
@@ -83,4 +84,9 @@ export const AppLayout = () => {
       </div>
     </div>
   );
+
+  // Dark mode is scoped to the teacher workspace only — the `dark` class only
+  // ever wraps this tree when the signed-in user is a teacher, so no other
+  // role is ever affected by a teacher's theme choice on a shared browser.
+  return isTeacher ? <TeacherThemeProvider>{content}</TeacherThemeProvider> : content;
 };

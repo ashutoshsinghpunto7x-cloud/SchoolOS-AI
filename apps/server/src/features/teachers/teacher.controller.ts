@@ -94,6 +94,24 @@ export const teacherController = {
     } catch (err) { next(err); }
   },
 
+  // ── Login Provisioning ────────────────────────────────────────────────────
+
+  async listLoginStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const status = await teacherService.listLoginStatus(ctx);
+      sendSuccess(res, status);
+    } catch (err) { next(err); }
+  },
+
+  async createLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await teacherService.createLogin(req.params.id, req.body, ctx);
+      sendCreated(res, result, 'Login created successfully');
+    } catch (err) { next(err); }
+  },
+
   // ── Notes ──────────────────────────────────────────────────────────────────
 
   async createNote(req: Request, res: Response, next: NextFunction): Promise<void> {

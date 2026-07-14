@@ -339,7 +339,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
             {recent.map((req) => (
               <div
                 key={req._id}
-                className="w-full shrink-0 snap-center bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between gap-3"
+                className="w-full shrink-0 snap-center bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3 pr-10 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">
@@ -496,7 +496,33 @@ export function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8F7FF] relative overflow-x-hidden">
+      {/* ── Page-level decorative background (mirrors the reference design) ── */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* Large soft blobs */}
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-200/40 blur-3xl" />
+        <div className="absolute top-1/3 -left-16 w-56 h-56 rounded-full bg-fuchsia-200/35 blur-3xl" />
+        <div className="absolute bottom-40 -right-10 w-48 h-48 rounded-full bg-pink-200/30 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-indigo-200/30 blur-3xl" />
+        {/* Small accent circles */}
+        <div className="absolute top-[12%] left-[8%] w-4 h-4 rounded-full bg-violet-400/30" />
+        <div className="absolute top-[28%] right-[12%] w-3 h-3 rounded-full bg-pink-400/40" />
+        <div className="absolute top-[55%] left-[5%] w-2.5 h-2.5 rounded-full bg-fuchsia-400/35" />
+        <div className="absolute top-[70%] right-[18%] w-2 h-2 rounded-full bg-indigo-400/40" />
+        {/* Sparkle/star shapes */}
+        <svg className="absolute top-[15%] right-[18%] w-6 h-6 text-violet-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute top-[42%] left-[12%] w-4 h-4 text-pink-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute bottom-[25%] right-[8%] w-5 h-5 text-fuchsia-300/50" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+        <svg className="absolute bottom-[45%] left-[20%] w-3 h-3 text-indigo-300/60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
+        </svg>
+      </div>
 
       {/* ── Hero header ────────────────────────────────────────────────────── */}
       <div

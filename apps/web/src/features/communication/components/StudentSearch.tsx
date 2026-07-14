@@ -40,7 +40,7 @@ export const StudentSearch = ({ selectedStudent, onSelect }: StudentSearchProps)
             placeholder="Search student…"
             className="w-full h-11 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-xl
                        text-sm text-gray-900 placeholder:text-gray-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400
+                       focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]
                        transition-colors"
           />
         </div>
@@ -90,7 +90,7 @@ export const StudentSearch = ({ selectedStudent, onSelect }: StudentSearchProps)
                   'flex items-center gap-3',
                   'transition-all duration-150',
                   isSelected
-                    ? 'bg-blue-600 shadow-md'
+                    ? 'bg-[#5B21B6] shadow-md'
                     : 'hover:bg-gray-100'
                 )}
               >

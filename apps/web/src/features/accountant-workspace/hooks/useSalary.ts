@@ -40,6 +40,17 @@ export const useCreateSalaryRecord = () => {
   });
 };
 
+export const useBulkCreateSalaryRecords = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (records: CreateSalaryRecordPayload[]) => salaryApi.bulkCreate(records),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salaryKeys.all });
+      qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.dashboard });
+    },
+  });
+};
+
 export const useUpdateSalaryRecord = (id: string) => {
   const qc = useQueryClient();
   return useMutation({

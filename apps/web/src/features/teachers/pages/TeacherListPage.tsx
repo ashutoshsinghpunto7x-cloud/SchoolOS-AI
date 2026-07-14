@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Users, ChevronLeft, ChevronRight, Loader2, MessageSquare, X } from 'lucide-react';
+import { UserPlus, Users, ChevronLeft, ChevronRight, Loader2, MessageSquare, X, History } from 'lucide-react';
 import { useTeachersPaginated } from '../hooks/useTeachers';
 import { TeacherCard } from '../components/TeacherCard';
 import { TeacherFilters } from '../components/TeacherFilters';
@@ -10,6 +10,7 @@ import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { AuditLogPanel } from '@/features/audit/components/AuditLogPanel';
 import type { Teacher, TeacherListOptions } from '@schoolos/types';
 
 const PAGE_SIZE = 18;
@@ -23,6 +24,7 @@ export const TeacherListPage = () => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selected, setSelected] = useState<Map<string, Teacher>>(new Map());
   const [showMessageModal, setShowMessageModal] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const toggleSelect = (teacher: Teacher) => {
     setSelected((prev) => {
@@ -82,6 +84,17 @@ export const TeacherListPage = () => {
                 </button>
               )
             )}
+            {isAdmin && (
+              <button
+                onClick={() => setHistoryOpen(true)}
+                className="h-12 px-5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200
+                           flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors duration-150"
+                type="button"
+              >
+                <History className="w-4 h-4" />
+                Activity Log
+              </button>
+            )}
             <button
               onClick={() => navigate('/teachers/new')}
               className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
@@ -94,6 +107,10 @@ export const TeacherListPage = () => {
           </div>
         }
       />
+
+      {historyOpen && (
+        <AuditLogPanel resource="teachers" title="Teacher Activity Log" onClose={() => setHistoryOpen(false)} />
+      )}
 
       <div className="flex flex-col gap-3 mb-6">
         <SearchBar

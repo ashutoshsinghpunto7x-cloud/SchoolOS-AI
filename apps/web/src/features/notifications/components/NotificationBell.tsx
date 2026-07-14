@@ -75,7 +75,7 @@ export const NotificationBell = () => {
         className={cn(
           "relative p-2 rounded-xl transition-all duration-200",
           usePillStyle
-            ? "bg-white border border-[#E8E8E8] text-gray-500 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 hover:text-[#5B21B6] shadow-sm"
+            ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-gray-500 dark:text-white/60 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 hover:text-[#5B21B6] shadow-sm"
             : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
         )}
         aria-label="Notifications"

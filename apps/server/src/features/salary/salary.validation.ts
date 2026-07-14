@@ -20,6 +20,12 @@ export const createSalaryRecordSchema = z.object({
   notes:        z.string().max(1000).trim().optional(),
 });
 
+// ── Bulk Create ───────────────────────────────────────────────────────────────
+
+export const bulkCreateSalarySchema = z.object({
+  records: z.array(createSalaryRecordSchema).min(1, 'At least one record is required').max(200, 'At most 200 records per batch'),
+});
+
 // ── Update ────────────────────────────────────────────────────────────────────
 
 export const updateSalaryRecordSchema = z.object({
@@ -54,6 +60,7 @@ export const listSalarySchema = z.object({
 // ── Inferred types ────────────────────────────────────────────────────────────
 
 export type CreateSalaryRecordInput = z.infer<typeof createSalaryRecordSchema>;
+export type BulkCreateSalaryInput   = z.infer<typeof bulkCreateSalarySchema>;
 export type UpdateSalaryRecordInput = z.infer<typeof updateSalaryRecordSchema>;
 export type MarkSalaryPaidInput     = z.infer<typeof markSalaryPaidSchema>;
 export type ListSalaryInput         = z.infer<typeof listSalarySchema>;

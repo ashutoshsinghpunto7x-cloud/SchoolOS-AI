@@ -8,7 +8,7 @@ import type { AutomationJob, AutomationJobType } from '@schoolos/types';
 const TYPE_CONFIG: Record<AutomationJobType, { label: string; icon: React.ElementType; iconBg: string; iconColor: string }> = {
   VOICE_CALL:       { label: 'Voice Call',       icon: Phone,          iconBg: 'bg-green-50',  iconColor: 'text-green-600' },
   WHATSAPP:         { label: 'WhatsApp',          icon: MessageCircle,  iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-  EMAIL:            { label: 'Email',             icon: Mail,           iconBg: 'bg-blue-50',   iconColor: 'text-blue-600' },
+  EMAIL:            { label: 'Email',             icon: Mail,           iconBg: 'bg-blue-50',   iconColor: 'text-[#5B21B6]' },
   SMS:              { label: 'SMS',               icon: MessageSquare,  iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
   FEE_REMINDER:     { label: 'Fee Reminder',      icon: BellRing,       iconBg: 'bg-amber-50',  iconColor: 'text-amber-600' },
   PTM_REMINDER:     { label: 'PTM Reminder',      icon: BellRing,       iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },

@@ -20,14 +20,30 @@ export const feeStructureService = {
 
   async upsert(rawInput: unknown, ctx: AuthContext): Promise<IFeeStructure> {
     const data = upsertFeeStructureSchema.parse(rawInput);
+    const month = data.month ?? null;
     const structure = await feeStructureRepository.upsert(
-      ctx.schoolId, data.class, data.feeHead, data.academicYear, data.amount, ctx.displayName,
+      ctx.schoolId, data.class, data.feeHead, data.academicYear, month, data.amount, ctx.displayName,
     );
+
+    // Propagate the new amount onto every not-yet-settled fee record that
+    // matches this class/feeHead/academicYear(/month) — paid and waived
+    // records are left untouched so settled history never gets rewritten.
+    const affected = await feeRepository.findByClassFeeHead(ctx.schoolId, data.class, data.feeHead, data.academicYear, month);
+    for (const record of affected) {
+      if (record.status === 'paid' || record.status === 'waived') continue;
+      const newBalance = Math.max(0, data.amount + record.fineAmount - record.discountAmount - record.waivedAmount - record.paidAmount);
+      await feeRepository.update(String((record as unknown as { _id: { toString(): string } })._id), ctx.schoolId, {
+        totalAmount: data.amount,
+        balance: newBalance,
+        status: newBalance === 0 ? 'paid' : record.status,
+        updatedBy: ctx.displayName,
+      });
+    }
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
       action: 'fee.updated', resource: 'fee_structure', resourceId: `${data.class}-${data.feeHead}-${data.academicYear}`,
-      details: { class: data.class, feeHead: data.feeHead, amount: data.amount },
+      details: { class: data.class, feeHead: data.feeHead, amount: data.amount, month, recordsUpdated: affected.length },
       ip: ctx.ip, schoolId: ctx.schoolId,
     });
 

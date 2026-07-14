@@ -39,7 +39,7 @@ const NoteEditor = ({
         placeholder="Add a note…"
         rows={3}
         className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm
-                   focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                   focus:outline-none focus:border-[#A855F7] focus:ring-2 focus:ring-blue-100"
       />
       <div className="flex gap-2 justify-end">
         <button
@@ -55,7 +55,7 @@ const NoteEditor = ({
           type="button"
           onClick={() => text.trim() && onSave(text.trim())}
           disabled={isPending || !text.trim()}
-          className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700
+          className="h-8 px-3 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95]
                      flex items-center gap-1.5 text-sm font-semibold text-white
                      transition-colors disabled:opacity-50"
         >

@@ -32,7 +32,7 @@ const JOB_STATUSES: { value: AutomationJobStatus | ''; label: string }[] = [
 
 const selectCls =
   'h-11 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 font-medium ' +
-  'shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 ' +
+  'shadow-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7] ' +
   'transition-colors appearance-none cursor-pointer hover:border-gray-300';
 
 export const AutomationJobsPage = () => {

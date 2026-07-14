@@ -12,7 +12,7 @@ interface PipelineOverviewProps {
 
 const STAGE_COLOR: Record<EnquiryStage, { bg: string; text: string; activeBg: string; activeText: string; border: string }> = {
   new_enquiry:           { bg: 'bg-sky-50',     text: 'text-sky-600',    activeBg: 'bg-sky-600',     activeText: 'text-white', border: 'border-sky-200' },
-  contacted:             { bg: 'bg-blue-50',    text: 'text-blue-600',   activeBg: 'bg-blue-600',    activeText: 'text-white', border: 'border-blue-200' },
+  contacted:             { bg: 'bg-blue-50',    text: 'text-blue-600',   activeBg: 'bg-[#5B21B6]',    activeText: 'text-white', border: 'border-blue-200' },
   follow_up_scheduled:   { bg: 'bg-indigo-50',  text: 'text-indigo-600', activeBg: 'bg-indigo-600',  activeText: 'text-white', border: 'border-indigo-200' },
   campus_visit:          { bg: 'bg-purple-50',  text: 'text-purple-600', activeBg: 'bg-purple-600',  activeText: 'text-white', border: 'border-purple-200' },
   application_submitted: { bg: 'bg-amber-50',   text: 'text-amber-600',  activeBg: 'bg-amber-600',   activeText: 'text-white', border: 'border-amber-200' },

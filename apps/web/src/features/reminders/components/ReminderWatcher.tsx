@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { loadReminders, saveReminders } from '../reminders.storage';
+import { loadReminders, saveReminders, acknowledgeReminder, Reminder } from '../reminders.storage';
+import { ReminderDueModal } from './ReminderDueModal';
 
 const CHECK_INTERVAL_MS = 15_000;
 
@@ -9,17 +10,23 @@ function nowHM(): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// Renders nothing — mounted once (in AppLayout) so reminders keep firing
-// regardless of whether the clock's reminder panel is open or closed.
+// Renders the due-reminders modal — mounted once (in AppLayout) so reminders
+// keep firing regardless of whether the clock's reminder panel is open or
+// closed. A reminder stays in `dueReminders` (and the modal stays visible)
+// until the user explicitly dismisses it — it does not auto-clear.
 export function ReminderWatcher() {
+  const [dueReminders, setDueReminders] = useState<Reminder[]>([]);
+
   useEffect(() => {
-    const id = setInterval(() => {
+    const check = () => {
       const reminders = loadReminders();
       const currentHM = nowHM();
       let changed = false;
 
-      for (const r of reminders) {
-        if (!r.firedAt && r.time <= currentHM) {
+      const due = reminders.filter((r) => !r.acknowledged && r.time <= currentHM);
+
+      for (const r of due) {
+        if (!r.firedAt) {
           r.firedAt = new Date().toISOString();
           changed = true;
 
@@ -36,10 +43,18 @@ export function ReminderWatcher() {
       }
 
       if (changed) saveReminders(reminders);
-    }, CHECK_INTERVAL_MS);
+      setDueReminders(due);
+    };
 
+    check();
+    const id = setInterval(check, CHECK_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 
-  return null;
+  const handleDismiss = (id: string) => {
+    acknowledgeReminder(id);
+    setDueReminders((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  return <ReminderDueModal reminders={dueReminders} onDismiss={handleDismiss} />;
 }

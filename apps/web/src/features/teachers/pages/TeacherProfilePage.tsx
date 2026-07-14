@@ -1,18 +1,19 @@
 import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Pencil, Phone, StickyNote,
+  ArrowLeft, Pencil, Phone, StickyNote, Trash2,
   Briefcase, BookOpen, Tag, MapPin, FileText,
   Loader2, AlertCircle, GraduationCap, Camera, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useTeacher, useUploadTeacherPhoto, useRemoveTeacherPhoto } from '../hooks/useTeachers';
+import { useTeacher, useUploadTeacherPhoto, useRemoveTeacherPhoto, useDeleteTeacher } from '../hooks/useTeachers';
 import { EmploymentStatusBadge } from '../components/EmploymentStatusBadge';
 import { TeacherNotesPanel } from '../components/TeacherNotesPanel';
 import { LinkUserAccountCard } from '../components/LinkUserAccountCard';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { InfoCard } from '@/features/students/components/InfoCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
@@ -42,8 +43,17 @@ export const TeacherProfilePage = () => {
   const { data: teacher, isLoading, isError } = useTeacher(id!);
   const { mutateAsync: uploadPhoto, isPending: uploading } = useUploadTeacherPhoto(id!);
   const { mutateAsync: removePhoto, isPending: removing } = useRemoveTeacherPhoto(id!);
+  const { mutateAsync: deleteTeacher, isPending: deleting } = useDeleteTeacher();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const canManagePhoto = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'accountant';
   const canEdit = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'principal';
+  const canDelete = user?.role === 'admin';
+
+  async function handleDelete() {
+    if (!id) return;
+    await deleteTeacher(id);
+    navigate('/teachers');
+  }
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -187,6 +197,14 @@ export const TeacherProfilePage = () => {
           <StickyNote className="w-4 h-4" />
           Add Note
         </button>
+        {canDelete && (
+          <button onClick={() => setConfirmDeleteOpen(true)}
+            className="h-12 px-6 rounded-xl bg-red-50 hover:bg-red-100 flex items-center gap-2.5 text-sm font-bold text-red-600 border border-red-200 transition-colors ml-auto"
+            type="button">
+            <Trash2 className="w-4 h-4" />
+            Delete Teacher
+          </button>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -280,6 +298,18 @@ export const TeacherProfilePage = () => {
       {/* ── Notes tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'notes' && (
         <TeacherNotesPanel teacherId={teacher._id} />
+      )}
+
+      {confirmDeleteOpen && (
+        <ConfirmDialog
+          title={`Permanently delete ${teacher.fullName}?`}
+          description="This cannot be undone. Their salary history, leave requests, and personal timetable will be permanently deleted, and they'll be removed from any class timetable they're assigned to."
+          confirmLabel="Delete Permanently"
+          variant="danger"
+          isLoading={deleting}
+          onConfirm={() => void handleDelete()}
+          onCancel={() => setConfirmDeleteOpen(false)}
+        />
       )}
     </PageContainer>
   );
