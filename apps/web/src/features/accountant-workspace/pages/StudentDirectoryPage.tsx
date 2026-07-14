@@ -32,6 +32,18 @@ const FIXED_COLUMNS: ColumnDef[] = [
   { key: 'monthlyTuitionFee', label: 'Monthly Fee (₹)', type: 'number' },
 ];
 
+// Numeric-aware roll number sort — blank/non-numeric roll numbers sort last.
+function sortByRoll(students: Student[]): Student[] {
+  return [...students].sort((a, b) => {
+    const an = parseInt(a.rollNumber ?? '', 10);
+    const bn = parseInt(b.rollNumber ?? '', 10);
+    if (!isNaN(an) && !isNaN(bn)) return an - bn;
+    if (!isNaN(an)) return -1;
+    if (!isNaN(bn)) return 1;
+    return (a.rollNumber ?? '').localeCompare(b.rollNumber ?? '');
+  });
+}
+
 const CUSTOM_COLUMNS_STORAGE_KEY = 'schoolos.studentDirectory.customColumns';
 
 function loadStoredCustomColumns(): string[] {
@@ -127,7 +139,7 @@ export function StudentDirectoryPage() {
   const { data, isLoading } = useStudentsPaginated(
     canSearch ? { class: selectedClass, section: selectedSection, status: 'active', limit: 200 } : {},
   );
-  const students = useMemo(() => (canSearch ? data?.data ?? [] : []), [canSearch, data]);
+  const students = useMemo(() => (canSearch ? sortByRoll(data?.data ?? []) : []), [canSearch, data]);
 
   // Custom columns actually present in the data but not yet known locally.
   useEffect(() => {

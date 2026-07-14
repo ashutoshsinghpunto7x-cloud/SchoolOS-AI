@@ -71,4 +71,55 @@ export const teacherTimetableRepository = {
     );
     return result.modifiedCount > 0;
   },
+
+  /** Auto-sync from the class timetable: upsert (by dayOfWeek+slotId) the entry
+   * a teacher was just assigned to in a class's Timetable, creating their
+   * TeacherTimetable document on first use. */
+  async syncEntryFromClassTimetable(data: {
+    schoolId: string;
+    teacherId: string;
+    teacherName: string;
+    academicYear: string;
+    dayOfWeek: number;
+    slotId: string;
+    subjectName: string;
+    class: string;
+    section: string;
+    roomNumber?: string;
+    updatedBy: string;
+  }): Promise<void> {
+    await this.getOrCreate({
+      schoolId: data.schoolId, teacherId: data.teacherId, teacherName: data.teacherName || 'Teacher',
+      academicYear: data.academicYear, createdBy: data.updatedBy,
+    });
+
+    await TeacherTimetable.updateOne(
+      { schoolId: data.schoolId, teacherId: data.teacherId, academicYear: data.academicYear, isDeleted: false },
+      { $pull: { entries: { dayOfWeek: data.dayOfWeek, slotId: data.slotId } } },
+    );
+    await TeacherTimetable.updateOne(
+      { schoolId: data.schoolId, teacherId: data.teacherId, academicYear: data.academicYear, isDeleted: false },
+      {
+        $push: {
+          entries: {
+            dayOfWeek: data.dayOfWeek, slotId: data.slotId, subjectName: data.subjectName,
+            class: data.class, section: data.section, roomNumber: data.roomNumber,
+          },
+        },
+        $set: { updatedBy: data.updatedBy, ...(data.teacherName ? { teacherName: data.teacherName } : {}) },
+      },
+    );
+  },
+
+  /** Auto-sync from the class timetable: remove the entry for one day/slot
+   * (used when a teacher is unassigned or replaced on that slot). No-op if
+   * the teacher has no TeacherTimetable document yet. */
+  async removeEntryForTeacher(
+    schoolId: string, teacherId: string, academicYear: string, dayOfWeek: number, slotId: string, updatedBy: string,
+  ): Promise<void> {
+    await TeacherTimetable.updateOne(
+      { schoolId, teacherId, academicYear, isDeleted: false },
+      { $pull: { entries: { dayOfWeek, slotId } }, $set: { updatedBy } },
+    );
+  },
 };

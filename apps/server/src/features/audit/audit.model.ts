@@ -72,6 +72,7 @@ export type AuditAction =
   | 'fee.discount_approved'
   | 'fee.discount_rejected'
   | 'salary.created'
+  | 'salary.bulk_created'
   | 'salary.updated'
   | 'salary.paid'
   | 'salary.deleted'

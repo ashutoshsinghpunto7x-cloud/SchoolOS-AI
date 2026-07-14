@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, Trash2 } from 'lucide-react';
+import { X, Loader2, Trash2, Search, Check } from 'lucide-react';
 import type { PeriodSlot, TimetableEntry } from '@schoolos/types';
 import { useUpsertEntry, useRemoveEntry } from '../hooks/useTimetable';
+import { useTeachersPaginated } from '@/features/teachers/hooks/useTeachers';
 
 const DAY_NAMES: Record<number, string> = {
   1: 'Monday', 2: 'Tuesday', 3: 'Wednesday',
@@ -32,6 +33,15 @@ export const EntryEditDrawer = ({
     roomNumber:  entry?.roomNumber  ?? '',
   });
 
+  // Teacher picker — search against real Teacher records instead of free
+  // text, so teacherId is always a genuine system ID (required for both
+  // conflict detection here and the class→teacher timetable auto-sync).
+  const [teacherQuery, setTeacherQuery] = useState(entry?.teacherName ?? '');
+  const [teacherDropdownOpen, setTeacherDropdownOpen] = useState(false);
+  const { data: teacherResults, isLoading: teacherSearching } = useTeachersPaginated(
+    teacherDropdownOpen && teacherQuery.trim().length >= 2 ? { search: teacherQuery.trim(), limit: 8 } : {},
+  );
+
   useEffect(() => {
     setForm({
       subjectName: entry?.subjectName ?? '',
@@ -39,10 +49,22 @@ export const EntryEditDrawer = ({
       teacherId:   entry?.teacherId   ?? '',
       roomNumber:  entry?.roomNumber  ?? '',
     });
+    setTeacherQuery(entry?.teacherName ?? '');
   }, [entry]);
 
   const set = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  function selectTeacher(t: { _id: string; fullName: string }) {
+    setForm((p) => ({ ...p, teacherName: t.fullName, teacherId: t._id }));
+    setTeacherQuery(t.fullName);
+    setTeacherDropdownOpen(false);
+  }
+
+  function clearTeacher() {
+    setForm((p) => ({ ...p, teacherName: '', teacherId: '' }));
+    setTeacherQuery('');
+  }
 
   function handleSave(ev: React.FormEvent) {
     ev.preventDefault();
@@ -105,25 +127,46 @@ export const EntryEditDrawer = ({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Teacher Name</label>
-            <input
-              value={form.teacherName}
-              onChange={set('teacherName')}
-              className={inputCls}
-              placeholder="e.g. Mrs. Sharma"
-            />
-          </div>
+          <div className="flex flex-col gap-1.5 relative">
+            <label className="text-sm font-semibold text-gray-700">Teacher</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                value={teacherQuery}
+                onChange={(e) => { setTeacherQuery(e.target.value); setTeacherDropdownOpen(true); if (!e.target.value.trim()) clearTeacher(); }}
+                onFocus={() => setTeacherDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setTeacherDropdownOpen(false), 150)}
+                className={`${inputCls} pl-9`}
+                placeholder="Search a teacher by name…"
+                autoComplete="off"
+              />
+              {form.teacherId && (
+                <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+              )}
+            </div>
+            <p className="text-xs text-gray-400">Picked from existing teacher records — enables automatic conflict detection and syncs to their personal timetable.</p>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-gray-700">Teacher ID</label>
-            <input
-              value={form.teacherId}
-              onChange={set('teacherId')}
-              className={inputCls}
-              placeholder="System teacher ID (for conflict check)"
-            />
-            <p className="text-xs text-gray-400">Used for automatic conflict detection</p>
+            {teacherDropdownOpen && teacherQuery.trim().length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                {teacherSearching ? (
+                  <div className="p-3 text-center"><Loader2 className="w-4 h-4 animate-spin text-gray-400 mx-auto" /></div>
+                ) : !teacherResults?.data.length ? (
+                  <p className="p-3 text-xs text-gray-400 text-center">No teachers found</p>
+                ) : (
+                  teacherResults.data.map((t) => (
+                    <button
+                      key={t._id}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); selectTeacher(t); }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
+                    >
+                      <span>{t.fullName}</span>
+                      {t.department && <span className="text-xs text-gray-400">{t.department}</span>}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

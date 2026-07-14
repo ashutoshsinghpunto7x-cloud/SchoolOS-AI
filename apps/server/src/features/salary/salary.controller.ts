@@ -12,6 +12,14 @@ export const salaryController = {
     } catch (err) { next(err); }
   },
 
+  async bulkCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx     = buildAuthContext(req.user!);
+      const records = await salaryService.bulkCreateSalaryRecords(req.body, ctx);
+      sendCreated(res, records, `${records.length} salary records created`);
+    } catch (err) { next(err); }
+  },
+
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx    = buildAuthContext(req.user!);

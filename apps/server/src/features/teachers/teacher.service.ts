@@ -14,6 +14,10 @@ import { userRepository } from '../users/user.repository';
 import { createTeacherLoginSchema } from '../users/user.validation';
 import { nextSequence } from '../../lib/counter.model';
 import bcrypt from 'bcrypt';
+import { SalaryRecord } from '../salary/salary.model';
+import { LeaveRequest } from '../leave-requests/leave-request.model';
+import { TeacherTimetable } from '../teacher-timetable/teacher-timetable.model';
+import { Timetable } from '../timetable/timetable.model';
 
 const LOGIN_SALT_ROUNDS = 12;
 
@@ -172,11 +176,30 @@ export const teacherService = {
     return teacher;
   },
 
+  /**
+   * Permanent delete — removes the Teacher record and cascades every record
+   * that belongs to them (salary history, leave requests, their personal
+   * timetable), and strips them out of any class timetable they were
+   * assigned to. Irreversible, so a full snapshot of the deleted teacher
+   * plus cascade counts is captured in the audit log — since the record
+   * itself won't exist afterward for future lookups.
+   */
   async deleteTeacher(id: string, ctx: AuthContext): Promise<void> {
     const teacher = await teacherRepository.findById(id, ctx.schoolId);
     if (!teacher) throw new NotFoundError('Teacher');
 
-    const deleted = await teacherRepository.softDelete(id, ctx.schoolId, ctx.displayName);
+    const [salaryResult, leaveResult, teacherTimetableResult, classTimetableResult] = await Promise.all([
+      SalaryRecord.deleteMany({ schoolId: ctx.schoolId, teacherId: id }),
+      LeaveRequest.deleteMany({ schoolId: ctx.schoolId, teacherId: id }),
+      TeacherTimetable.deleteMany({ schoolId: ctx.schoolId, teacherId: id }),
+      Timetable.updateMany(
+        { schoolId: ctx.schoolId, 'entries.teacherId': id },
+        { $set: { 'entries.$[e].teacherId': undefined, 'entries.$[e].teacherName': undefined } },
+        { arrayFilters: [{ 'e.teacherId': id }] },
+      ),
+    ]);
+
+    const deleted = await teacherRepository.hardDelete(id, ctx.schoolId);
     if (!deleted) throw new NotFoundError('Teacher');
 
     auditService.log({
@@ -185,7 +208,18 @@ export const teacherService = {
       action: 'teacher.deleted',
       resource: 'teachers',
       resourceId: id,
-      details: { fullName: teacher.fullName },
+      details: {
+        deletedRecord: {
+          fullName: teacher.fullName, employeeId: teacher.employeeId, email: teacher.email,
+          phone: teacher.phone, department: teacher.department, employmentStatus: teacher.employmentStatus,
+        },
+        cascaded: {
+          salaryRecords: salaryResult.deletedCount,
+          leaveRequests: leaveResult.deletedCount,
+          teacherTimetables: teacherTimetableResult.deletedCount,
+          classTimetableEntriesCleared: classTimetableResult.modifiedCount,
+        },
+      },
       ip: ctx.ip,
       schoolId: ctx.schoolId,
     });

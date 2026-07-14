@@ -20,6 +20,13 @@ export const salaryApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
+  async bulkCreate(records: CreateSalaryRecordPayload[]): Promise<SalaryRecord[]> {
+    try {
+      const res = await apiClient.post<ApiResponse<SalaryRecord[]>>(`${BASE}/bulk`, { records });
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
   async list(opts: SalaryListOptions = {}): Promise<PaginatedResponse<SalaryRecord>> {
     try {
       const res = await apiClient.get<PaginatedResponse<SalaryRecord>>(BASE, { params: opts });

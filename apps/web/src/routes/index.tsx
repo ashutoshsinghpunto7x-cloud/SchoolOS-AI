@@ -233,6 +233,10 @@ const PendingApprovalsPage = lazyPage(
   () => import('@/features/principal/pages/PendingApprovalsPage'),
   'PendingApprovalsPage',
 );
+const LeaveApprovalsPage = lazyPage(
+  () => import('@/features/principal/pages/LeaveApprovalsPage'),
+  'LeaveApprovalsPage',
+);
 const PrincipalInsightsPage = lazyPage(
   () => import('@/features/principal/pages/PrincipalInsightsPage'),
   'PrincipalInsightsPage',
@@ -573,6 +577,7 @@ export const router = createBrowserRouter([
                   { path: 'principal', element: <PrincipalWorkspace /> },
                   { path: 'principal/insights', element: <PrincipalInsightsPage /> },
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
+                  { path: 'principal/leave-approvals', element: <LeaveApprovalsPage /> },
                   { path: 'principal/discount-approvals', element: <DiscountApprovalsPage /> },
                   { path: 'principal/class-teachers', element: <ClassTeachersPage backTo="/principal" backLabel="Principal Dashboard" /> },
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },

@@ -29,6 +29,7 @@ import {
   BadgePercent,
   UserCog,
   KeyRound,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -92,7 +93,8 @@ const NAV_ITEMS_ADMIN = [
 // Principal gets its own dedicated nav — not the admin operational toolbox.
 const NAV_ITEMS_PRINCIPAL = [
   { label: 'Dashboard',           icon: LayoutDashboard, path: '/principal',                       end: true  },
-  { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/approvals',             end: false },
+  { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/leave-approvals',       end: false },
+  { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
   { label: 'Teachers',            icon: Users,           path: '/principal/teachers',              end: false },
   { label: 'Timetable',           icon: LayoutGrid,      path: '/timetable',                       end: false },

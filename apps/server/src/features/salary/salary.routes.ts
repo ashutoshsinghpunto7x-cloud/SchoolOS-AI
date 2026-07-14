@@ -11,6 +11,8 @@ router.use(authorize('admin', 'accountant'));
 // ── Static routes first (must precede /:id) ───────────────────────────────────
 router.get('/summary', salaryController.getSummary);
 
+router.post('/bulk',            salaryController.bulkCreate);
+
 // ── Generic resource routes ───────────────────────────────────────────────────
 router.post('/',                salaryController.create);
 router.get('/',                 salaryController.list);

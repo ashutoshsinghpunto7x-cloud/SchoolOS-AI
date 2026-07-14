@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wallet, Send, ChevronDown, CalendarClock, IndianRupee, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { ArrowLeft, Wallet, Send, ChevronDown, CalendarClock, IndianRupee, AlertTriangle, CheckCircle2, X, FileWarning } from 'lucide-react';
 import { useFeeList } from '@/features/fees/hooks/useFees';
 import { useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { useClassSections } from '@/features/administration/hooks/useClasses';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
+import { GenerateDefaultersListModal } from '../components/GenerateDefaultersListModal';
 import type { FeeRecord, ClassDefaulterGroup } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -208,6 +209,7 @@ export function PendingFeesPage() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [notifyOpen, setNotifyOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
 
   const { data, isLoading } = useFeeList({
     dueBefore: selectedDate,
@@ -240,6 +242,12 @@ export function PendingFeesPage() {
             {totalStudents} student{totalStudents !== 1 ? 's' : ''} · {fmt(totalDue)} outstanding as of the selected date
           </p>
         </div>
+        <button
+          onClick={() => setGenerateOpen(true)}
+          className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5"
+        >
+          <FileWarning className="w-3.5 h-3.5" /> Generate Defaulters List
+        </button>
         <button
           onClick={() => setNotifyOpen(true)}
           className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5"
@@ -291,6 +299,7 @@ export function PendingFeesPage() {
       </div>
 
       {notifyOpen && <NotifyClassTeachersPanel onClose={() => setNotifyOpen(false)} />}
+      {generateOpen && <GenerateDefaultersListModal onClose={() => setGenerateOpen(false)} />}
     </div>
   );
 }

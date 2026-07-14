@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -5,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FormSection } from './FormSection';
 import { TagEditor } from './TagEditor';
+import { useStudentsPaginated } from '../hooks/useStudents';
 import type { Student } from '@schoolos/types';
 
 // ── Zod schema ────────────────────────────────────────────────────────────────
@@ -111,6 +113,9 @@ export const StudentForm = ({
     register,
     control,
     handleSubmit,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<StudentFormValues>({
     resolver: zodResolver(studentFormSchema),
@@ -143,6 +148,31 @@ export const StudentForm = ({
         },
   });
 
+  // Auto-suggest the next roll number once Class + Section are chosen, so the
+  // accountant/reception staff can rely on roll order instead of typing it —
+  // still editable, and only applied while creating (never overwrites an
+  // existing student's roll number in edit mode).
+  const watchedClass = watch('class');
+  const watchedSection = watch('section');
+  const rollAutoFillEnabled = !initialData && !!watchedClass && !!watchedSection;
+
+  const { data: classmatesPage } = useStudentsPaginated(
+    rollAutoFillEnabled ? { class: watchedClass, section: watchedSection, limit: 200 } : {},
+  );
+
+  useEffect(() => {
+    if (!rollAutoFillEnabled || !classmatesPage) return;
+    if (getValues('rollNumber')) return; // don't override a value the user already typed
+
+    const maxRoll = classmatesPage.data.reduce((max, s) => {
+      const n = parseInt(s.rollNumber ?? '', 10);
+      return !isNaN(n) && n > max ? n : max;
+    }, 0);
+
+    setValue('rollNumber', String(maxRoll + 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classmatesPage, rollAutoFillEnabled]);
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
 
@@ -169,7 +199,7 @@ export const StudentForm = ({
             <input
               {...register('rollNumber')}
               type="text"
-              placeholder="Optional — class roll number"
+              placeholder={initialData ? 'Optional — class roll number' : 'Auto-filled once Class & Section are set'}
               className={inputClass(!!errors.rollNumber)}
             />
           </Field>

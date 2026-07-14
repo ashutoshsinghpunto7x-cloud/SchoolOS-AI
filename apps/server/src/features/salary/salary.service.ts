@@ -2,6 +2,7 @@ import { salaryRepository, PaginatedSalary, SalarySummary, CreateSalaryData } fr
 import { ISalaryRecord } from './salary.model';
 import {
   createSalaryRecordSchema,
+  bulkCreateSalarySchema,
   updateSalaryRecordSchema,
   markSalaryPaidSchema,
   listSalarySchema,
@@ -55,6 +56,41 @@ export const salaryService = {
     return record;
   },
 
+  /** Enter many salary records (e.g. the whole staff roster for a month) in one
+   * click instead of one form submission each. One summary audit entry is
+   * logged for the whole batch rather than per-record, to avoid audit spam. */
+  async bulkCreateSalaryRecords(rawInput: unknown, ctx: AuthContext): Promise<ISalaryRecord[]> {
+    const { records } = bulkCreateSalarySchema.parse(rawInput);
+
+    const created = await Promise.all(records.map((data) => {
+      const dueDate = new Date(data.dueDate);
+      const initialStatus: ISalaryRecord['status'] = dueDate.getTime() <= Date.now() ? 'pending' : 'scheduled';
+      const createData: CreateSalaryData = {
+        schoolId:     ctx.schoolId,
+        employeeName: data.employeeName,
+        designation:  data.designation,
+        teacherId:    data.teacherId,
+        month:        data.month,
+        year:         data.year,
+        amount:       data.amount,
+        dueDate,
+        status:       initialStatus,
+        notes:        data.notes,
+        createdBy:    ctx.displayName,
+      };
+      return salaryRepository.create(createData);
+    }));
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'salary.bulk_created', resource: 'salary', resourceId: 'bulk',
+      details: { count: created.length, employeeNames: records.map((r) => r.employeeName) },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return created;
+  },
+
   async listSalaryRecords(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedSalary> {
     await ensureDueMarked();
     const opts = listSalarySchema.parse(rawQuery);
@@ -77,6 +113,15 @@ export const salaryService = {
       throw new ValidationError('Cannot edit a salary record that is already paid');
     }
 
+    // Capture the actual before/after value of every field being changed —
+    // "what was changed" needs the values themselves, not just the field names.
+    const changes: Record<string, { from: unknown; to: unknown }> = {};
+    for (const field of Object.keys(data) as (keyof typeof data)[]) {
+      const before = field === 'dueDate' ? existing.dueDate.toISOString().slice(0, 10) : existing[field as keyof ISalaryRecord];
+      const after = data[field];
+      if (before !== after) changes[field] = { from: before, to: after };
+    }
+
     const record = await salaryRepository.update(id, ctx.schoolId, {
       ...data,
       dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
@@ -87,7 +132,7 @@ export const salaryService = {
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
       action: 'salary.updated', resource: 'salary', resourceId: id,
-      details: { fields: Object.keys(data) }, ip: ctx.ip, schoolId: ctx.schoolId,
+      details: { employeeName: existing.employeeName, changes }, ip: ctx.ip, schoolId: ctx.schoolId,
     });
 
     return record;
