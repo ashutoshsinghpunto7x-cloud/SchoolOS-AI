@@ -22,21 +22,38 @@ connectDatabase().catch((error) => {
 });
 
 // ── Security ──────────────────────────────────────────────────────────────────
-// Production allows a comma-separated list in FRONTEND_URL (e.g. the old Vercel
-// URL + a custom domain during a DNS/SSL cutover) rather than a single origin —
-// trim each entry so accidental whitespace around commas doesn't cause a silent
-// mismatch against the browser's Origin header.
-const allowedProductionOrigins = env.FRONTEND_URL.split(',').map((origin) => origin.trim()).filter(Boolean);
+// FRONTEND_URL may be a comma-separated list (e.g. the old Vercel URL + a custom
+// domain during a DNS/SSL cutover) rather than a single origin — trim each entry
+// so accidental whitespace around commas doesn't cause a silent mismatch against
+// the browser's Origin header. These combine with a fixed baseline of known
+// frontend origins so a misconfigured env var can't lock out production traffic.
+const baselineOrigins = [
+  'https://fnicschool.com',
+  'https://www.fnicschool.com',
+  'https://fnic.vercel.app',
+];
+const envOrigins = env.FRONTEND_URL.split(',').map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = Array.from(new Set([...baselineOrigins, ...envOrigins]));
+// Vite may fall back to another port (5174, 5175, ...) if 5173 is already taken
+// by another running dev server — allow any localhost port rather than a fixed one.
+const isLocalhostOrigin = (origin: string): boolean => /^https?:\/\/localhost:\d+$/.test(origin);
 
 app.use(helmet());
 app.use(
   cors({
-    // In development, Vite may fall back to another port (5174, 5175, ...) if 5173
-    // is already taken by another running dev server — allow any localhost port
-    // rather than hardcoding one.
-    origin: env.NODE_ENV === 'development'
-      ? /^http:\/\/localhost:\d+$/
-      : allowedProductionOrigins,
+    // Passing a function (rather than an array or a raw string) guarantees the
+    // response ever carries a single, exact-match Access-Control-Allow-Origin
+    // value — never a joined list, which is what triggers "multiple values ...
+    // only one is allowed" in the browser.
+    origin: (origin, callback) => {
+      // No Origin header = same-origin, server-to-server, or a non-browser
+      // client (curl, health checks) — nothing to restrict.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin) || isLocalhostOrigin(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
