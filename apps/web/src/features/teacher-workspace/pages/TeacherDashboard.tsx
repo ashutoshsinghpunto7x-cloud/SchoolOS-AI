@@ -167,7 +167,6 @@ function TodayClassCard({
   const pct = cls.totalStudents > 0
     ? Math.round((cls.attendanceCount / cls.totalStudents) * 100)
     : 0;
-  const { icon: SubjectIcon, bg, text } = getSubjectStyle(cls.subjectName);
 
   return (
     <button
