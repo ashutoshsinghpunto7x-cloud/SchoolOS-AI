@@ -46,8 +46,8 @@ export function TeacherLayout() {
           the only nav and stays visible on every breakpoint. */}
       <nav
         aria-label="Teacher navigation"
-        className="fixed bottom-3 inset-x-3 z-40 sm:inset-x-0 sm:mx-auto sm:max-w-md"
-        style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 inset-x-0 z-40 sm:mx-auto sm:max-w-md"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-center h-16 px-2 rounded-full bg-white/90 dark:bg-[#0F0821]/90 backdrop-blur-xl border border-gray-100 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
           {NAV.map(({ to, image, crop, roundedBadge, label, end }) => (
