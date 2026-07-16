@@ -33,7 +33,7 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
   const Icon = meta.icon;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 hover:border-[#A855F7]/30 transition-colors">
+    <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3 hover:border-[#A855F7]/30 transition-colors">
       <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
         <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] shrink-0">
           <Icon className="w-5 h-5" />
@@ -46,7 +46,7 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
       <div className="text-right shrink-0">
         <p className="text-sm font-bold text-gray-800">{fmt(exp.amount)}</p>
         {exp.status === 'approved' ? (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 mt-1">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-900 mt-1">
             <CheckCircle2 className="w-3 h-3" /> Approved
           </span>
         ) : (
@@ -54,7 +54,7 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
             type="button"
             disabled={isPending}
             onClick={() => approve({ status: 'approved' })}
-            className="mt-1.5 h-7 px-2.5 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-60 text-emerald-600 rounded-lg text-[11px] font-semibold"
+            className="mt-1.5 h-7 px-2.5 bg-gray-900 hover:bg-black disabled:opacity-60 text-white rounded-lg text-[11px] font-semibold"
           >
             {isPending ? 'Approving…' : 'Approve'}
           </button>
@@ -165,8 +165,8 @@ export function ExpensesPage() {
   const { data: summary } = useExpenseSummary();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
@@ -182,15 +182,15 @@ export function ExpensesPage() {
       </div>
 
       <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
-        {/* Summary */}
+        {/* Summary — neutral, no color coding */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
-            <p className="text-lg font-bold text-amber-600">{fmt(summary?.totalPending ?? 0)}</p>
-            <p className="text-xs text-amber-500 font-medium">Pending ({summary?.pendingCount ?? 0})</p>
+          <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+            <p className="text-lg font-bold text-gray-900">{fmt(summary?.totalPending ?? 0)}</p>
+            <p className="text-xs text-gray-500 font-medium">Pending ({summary?.pendingCount ?? 0})</p>
           </div>
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-3">
-            <p className="text-lg font-bold text-emerald-600">{fmt(summary?.totalApproved ?? 0)}</p>
-            <p className="text-xs text-emerald-500 font-medium">Approved ({summary?.approvedCount ?? 0})</p>
+          <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+            <p className="text-lg font-bold text-gray-900">{fmt(summary?.totalApproved ?? 0)}</p>
+            <p className="text-xs text-gray-500 font-medium">Approved ({summary?.approvedCount ?? 0})</p>
           </div>
         </div>
 
@@ -215,9 +215,9 @@ export function ExpensesPage() {
 
         {/* List */}
         {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
         ) : !data?.data.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <Receipt className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700">No expenses recorded yet</p>
           </div>

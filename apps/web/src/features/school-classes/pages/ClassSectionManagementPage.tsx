@@ -1,217 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useBlocker } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check, ChevronDown, IndianRupee, CalendarRange, Save } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import {
   useSchoolClasses, useCreateSchoolClass, useRenameSchoolClass, useAddSection, useRemoveSection, useDeleteSchoolClass,
   useClassFeeOverview,
 } from '../hooks/useSchoolClasses';
-import { useFeeStructure, useUpsertFeeStructure } from '@/features/fees/hooks/useFeeStructure';
-import type { SchoolClass, FeeHead } from '@schoolos/types';
-import { cn } from '@/lib/utils';
+import type { SchoolClass } from '@schoolos/types';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const FEE_HEADS: { value: FeeHead; label: string }[] = [
-  { value: 'tuition',       label: 'Tuition' },
-  { value: 'admission',     label: 'Admission' },
-  { value: 'examination',   label: 'Examination' },
-  { value: 'transport',     label: 'Transport' },
-  { value: 'hostel',        label: 'Hostel' },
-  { value: 'miscellaneous', label: 'Miscellaneous' },
-];
+// Per-class fee amounts are managed on the dedicated Fee Structure page
+// (accountant sidebar) — this page only shows classes/sections and a
+// read-only collected/pending summary per class, to avoid two places that
+// both claim to "manage" fee structure.
 
-const ACADEMIC_MONTHS = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
-
-function currentAcademicYear(): string {
-  const y = new Date().getFullYear();
-  const m = new Date().getMonth();
-  return m >= 3 ? `${y}-${String(y + 1).slice(-2)}` : `${y - 1}-${String(y).slice(-2)}`;
-}
-
-// ── Fee structure — one row of amount fields per fee head, for one class ───────
-// Each academic month can have its own set of fee heads (e.g. April = Admission
-// + Tuition, May = Tuition only). A month of "null" ("Whole Year") is for heads
-// that don't vary by month, such as Transport.
-//
-// Edits are batched behind an explicit Save button rather than saving on blur —
-// each save now also creates/updates the actual fee record for every student
-// in the class (not just a pricing-catalog row), so it's a heavier action the
-// accountant should trigger deliberately, with a clear "did this save?" answer
-// instead of an easy-to-miss autosave-on-blur.
-
-function ClassFeeStructure({ cls }: { cls: string }) {
-  const academicYear = currentAcademicYear();
-  const { data: structure, isLoading } = useFeeStructure(academicYear);
-  const [selectedMonth, setSelectedMonth] = useState<string | null>('April');
-  const [values, setValues] = useState<Partial<Record<FeeHead, string>>>({});
-  const [dirtyHeads, setDirtyHeads] = useState<Set<FeeHead>>(new Set());
-  const { mutateAsync: upsertFeeStructure, isPending: saving } = useUpsertFeeStructure();
-
-  const isDirty = dirtyHeads.size > 0;
-
-  const monthsWithEntries = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of structure ?? []) {
-      if (s.class === cls && s.month) set.add(s.month);
-    }
-    return set;
-  }, [structure, cls]);
-
-  function amountFor(feeHead: FeeHead): number | undefined {
-    return structure?.find((s) => s.class === cls && s.feeHead === feeHead && (s.month ?? null) === selectedMonth)?.amount;
-  }
-
-  function valueFor(feeHead: FeeHead): string {
-    if (feeHead in values) return values[feeHead] ?? '';
-    const existing = amountFor(feeHead);
-    return existing != null ? String(existing) : '';
-  }
-
-  function handleChange(feeHead: FeeHead, v: string) {
-    setValues((prev) => ({ ...prev, [feeHead]: v }));
-    setDirtyHeads((prev) => new Set(prev).add(feeHead));
-  }
-
-  // Warn before an in-app route change with unsaved edits.
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) => isDirty && currentLocation.pathname !== nextLocation.pathname,
-  );
-  useEffect(() => {
-    if (blocker.state !== 'blocked') return;
-    const leave = window.confirm('You have unsaved fee structure changes. Leave without saving?');
-    if (leave) blocker.proceed();
-    else blocker.reset();
-  }, [blocker]);
-
-  // Warn before closing/refreshing the tab with unsaved edits.
-  useEffect(() => {
-    if (!isDirty) return;
-    function handleBeforeUnload(e: BeforeUnloadEvent) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  function switchMonth(next: string | null) {
-    if (isDirty) {
-      const discard = window.confirm(
-        `You have unsaved changes for ${selectedMonth ?? 'the whole year'}. Discard them and switch?`,
-      );
-      if (!discard) return;
-    }
-    setValues({});
-    setDirtyHeads(new Set());
-    setSelectedMonth(next);
-  }
-
-  async function saveAll() {
-    const heads = Array.from(dirtyHeads);
-    let savedCount = 0;
-    try {
-      for (const feeHead of heads) {
-        const raw = values[feeHead];
-        const amount = parseFloat(raw ?? '');
-        if (isNaN(amount) || amount < 0) continue; // blank/invalid — leave that head untouched
-        await upsertFeeStructure({ class: cls, feeHead, academicYear, month: selectedMonth, amount: Math.round(amount * 100) / 100 });
-        savedCount++;
-      }
-      setValues({});
-      setDirtyHeads(new Set());
-      toast.success(savedCount > 0 ? `Saved ${savedCount} fee amount${savedCount === 1 ? '' : 's'} for every student in Class ${cls}.` : 'Nothing to save.');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save fee structure');
-    }
-  }
-
-  return (
-    <div className="mt-3 pt-3 border-t border-gray-100">
-      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2.5 flex items-center gap-1.5">
-        <CalendarRange className="w-3.5 h-3.5" /> Fee Structure · {academicYear}
-      </p>
-
-      {/* Month tabs */}
-      <div className="flex gap-1.5 flex-wrap mb-3">
-        <button
-          type="button"
-          onClick={() => switchMonth(null)}
-          className={cn(
-            'h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors',
-            selectedMonth === null ? 'bg-[#5B21B6] text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-          )}
-        >
-          Whole Year
-        </button>
-        {ACADEMIC_MONTHS.map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => switchMonth(m)}
-            className={cn(
-              'h-7 px-2.5 rounded-lg text-[11px] font-semibold transition-colors relative',
-              selectedMonth === m
-                ? 'bg-[#5B21B6] text-white'
-                : monthsWithEntries.has(m)
-                ? 'bg-violet-50 text-violet-700 hover:bg-violet-100'
-                : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-            )}
-          >
-            {m.slice(0, 3)}
-          </button>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div className="h-16 bg-gray-50 rounded-lg animate-pulse" />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          {FEE_HEADS.map((h) => (
-            <div key={h.value}>
-              <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{h.label}</label>
-              <div className="relative">
-                <IndianRupee className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" />
-                <input
-                  type="number"
-                  min={0}
-                  value={valueFor(h.value)}
-                  onChange={(e) => handleChange(h.value, e.target.value)}
-                  placeholder="—"
-                  className={cn(
-                    'w-full h-9 pl-8 pr-2 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400',
-                    dirtyHeads.has(h.value) ? 'border-amber-300 bg-amber-50/40' : 'border-gray-200',
-                  )}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between gap-3 mt-3">
-        <p className="text-[11px] text-gray-400">
-          Amounts apply only to <strong>{selectedMonth ?? 'the whole year'}</strong> — leave blank if a fee doesn't apply then.
-          Saving creates/updates the fee record for every student in this class right away.
-        </p>
-        <button
-          type="button"
-          onClick={() => void saveAll()}
-          disabled={!isDirty || saving}
-          className="shrink-0 h-9 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-        >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-          Save Changes
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSummary?: { collected: number; pending: number }; canManageFees: boolean }) {
+function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { collected: number; pending: number } }) {
   const [newSection, setNewSection] = useState('');
   const { mutateAsync: addSection, isPending: adding } = useAddSection();
   const { mutateAsync: removeSection } = useRemoveSection();
@@ -221,7 +26,6 @@ function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSu
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(cls.name);
   const [renameError, setRenameError] = useState('');
-  const [feesOpen, setFeesOpen] = useState(false);
 
   async function handleAddSection(e: React.FormEvent) {
     e.preventDefault();
@@ -301,8 +105,8 @@ function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSu
 
       {feeSummary && (feeSummary.collected > 0 || feeSummary.pending > 0) && (
         <div className="flex items-center gap-3 text-xs mb-3 bg-gray-50 rounded-lg px-3 py-2">
-          <span className="font-semibold text-emerald-600">{fmt(feeSummary.collected)} collected</span>
-          {feeSummary.pending > 0 && <span className="font-semibold text-amber-600">{fmt(feeSummary.pending)} pending</span>}
+          <span className="font-semibold text-gray-800">{fmt(feeSummary.collected)} collected</span>
+          {feeSummary.pending > 0 && <span className="font-semibold text-gray-500">{fmt(feeSummary.pending)} pending</span>}
         </div>
       )}
 
@@ -343,20 +147,6 @@ function ClassCard({ cls, feeSummary, canManageFees }: { cls: SchoolClass; feeSu
           Add Section
         </button>
       </form>
-
-      {canManageFees && (
-        <>
-          <button
-            type="button"
-            onClick={() => setFeesOpen((v) => !v)}
-            className="w-full flex items-center justify-between mt-3 pt-3 border-t border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide hover:text-gray-700"
-          >
-            <span className="flex items-center gap-1.5"><IndianRupee className="w-3.5 h-3.5" /> Manage Fee Structure</span>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${feesOpen ? 'rotate-180' : ''}`} />
-          </button>
-          {feesOpen && <ClassFeeStructure cls={cls.name} />}
-        </>
-      )}
     </div>
   );
 }
@@ -396,10 +186,10 @@ export function ClassSectionManagementPage() {
 
   return (
     <PageContainer>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">{canManageFees ? 'Classes & Fee Structure' : 'Classes & Sections'}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Classes & Sections</h1>
       <p className="text-sm text-gray-500 mb-6">
         {canManageFees
-          ? 'Manage the class/section structure and each class\'s fee structure in one place.'
+          ? 'Manage the class and section structure used across student records. Per-class fee amounts live on the Fee Structure page.'
           : 'Manage the class and section structure used across student records.'}
       </p>
 
@@ -441,7 +231,7 @@ export function ClassSectionManagementPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {classes.map((c) => <ClassCard key={c._id} cls={c} feeSummary={feeByClass.get(c.name.toLowerCase())} canManageFees={canManageFees} />)}
+          {classes.map((c) => <ClassCard key={c._id} cls={c} feeSummary={feeByClass.get(c.name.toLowerCase())} />)}
         </div>
       )}
     </PageContainer>

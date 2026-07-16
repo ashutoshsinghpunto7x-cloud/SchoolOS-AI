@@ -21,48 +21,48 @@ const CATEGORIES: CategoryCard[] = [
     label: 'Students',
     description: 'Enrollment by class, gender, status',
     icon: Users,
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
+    color: 'text-gray-700',
+    bg: 'bg-gray-100',
   },
   {
     category: 'attendance',
     label: 'Attendance',
     description: 'Daily trends, class-wise rates',
     icon: CalendarCheck,
-    color: 'text-green-600',
-    bg: 'bg-green-50',
+    color: 'text-[#5B21B6]',
+    bg: 'bg-[#A855F7]/10',
   },
   {
     category: 'fees',
     label: 'Fees',
     description: 'Collection trends, outstanding dues',
     icon: DollarSign,
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
+    color: 'text-gray-700',
+    bg: 'bg-gray-100',
   },
   {
     category: 'admissions',
     label: 'Admissions',
     description: 'Pipeline, source breakdown, monthly trends',
     icon: UserPlus,
-    color: 'text-purple-600',
-    bg: 'bg-purple-50',
+    color: 'text-[#5B21B6]',
+    bg: 'bg-[#A855F7]/10',
   },
   {
     category: 'timetable',
     label: 'Timetable',
     description: 'Teacher workload, subject distribution',
     icon: Grid,
-    color: 'text-rose-600',
-    bg: 'bg-rose-50',
+    color: 'text-gray-700',
+    bg: 'bg-gray-100',
   },
   {
     category: 'calendar',
     label: 'Calendar',
     description: 'Upcoming events, event type breakdown',
     icon: Calendar,
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
+    color: 'text-[#5B21B6]',
+    bg: 'bg-[#A855F7]/10',
   },
 ];
 
@@ -81,7 +81,7 @@ const SavedReportRow = ({ report, onDelete }: { report: SavedReport; onDelete: (
           onClick={() =>
             navigate(`/reports/builder?category=${report.category}&savedId=${report.id}`)
           }
-          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#5B21B6] hover:bg-[#A855F7]/10 rounded-lg transition-colors"
         >
           Run
         </button>
@@ -147,7 +147,7 @@ export const ReportsWorkspace = () => {
           {(saved?.length ?? 0) > 3 && (
             <button
               onClick={() => navigate('/reports/saved')}
-              className="text-xs font-medium text-blue-600 hover:underline"
+              className="text-xs font-medium text-[#5B21B6] hover:underline"
             >
               View all
             </button>

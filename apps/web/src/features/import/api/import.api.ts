@@ -73,12 +73,13 @@ export const importApi = {
     handle(apiClient.get<ApiResponse<ImportSession>>(`/import/sessions/${id}`)),
 
   // Get rows for a session
-  async getRows(id: string, params: { page?: number; limit?: number; status?: ImportRowStatus } = {}): Promise<PaginatedResponse<ImportRow>> {
+  async getRows(id: string, params: { page?: number; limit?: number; status?: ImportRowStatus; search?: string } = {}): Promise<PaginatedResponse<ImportRow>> {
     try {
       const query = new URLSearchParams();
       if (params.page) query.set('page', String(params.page));
       if (params.limit) query.set('limit', String(params.limit));
       if (params.status) query.set('status', params.status);
+      if (params.search) query.set('search', params.search);
       const res = await apiClient.get<PaginatedResponse<ImportRow>>(
         `/import/sessions/${id}/rows${query.toString() ? `?${query}` : ''}`
       );
@@ -95,6 +96,14 @@ export const importApi = {
     handle(apiClient.patch<ApiResponse<{ session: ImportSession; row: ImportRow }>>(
       `/import/sessions/${id}/rows/${rowNumber}`, { mappedData },
     )),
+
+  addRow: (id: string, mappedData: Record<string, unknown> = {}) =>
+    handle(apiClient.post<ApiResponse<{ session: ImportSession; row: ImportRow }>>(
+      `/import/sessions/${id}/rows`, { mappedData },
+    )),
+
+  deleteRow: (id: string, rowNumber: number) =>
+    handle(apiClient.delete<ApiResponse<ImportSession>>(`/import/sessions/${id}/rows/${rowNumber}`)),
 
   setDuplicateStrategy: (id: string, strategy: 'skip' | 'update' | 'create') =>
     handle(apiClient.patch<ApiResponse<ImportSession>>(`/import/sessions/${id}/duplicates`, { strategy })),

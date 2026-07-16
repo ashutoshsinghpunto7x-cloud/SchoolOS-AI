@@ -16,6 +16,9 @@ import {
   Settings,
   LogOut,
   KeyRound,
+  CreditCard,
+  ScanLine,
+  Wallet,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -260,6 +263,9 @@ export function TeacherProfilePage() {
           {/* Other options moved here from the old sidebar */}
           <div className="space-y-2">
             <MenuRow icon={UserPlus} label="Add Students"     onClick={() => navigate('/teacher/add-student')} />
+            <MenuRow icon={CreditCard} label="My ID Card"     onClick={() => navigate('/teacher/id-card')} />
+            <MenuRow icon={ScanLine} label="My Attendance"    onClick={() => navigate('/teacher/my-attendance')} />
+            <MenuRow icon={Wallet} label="My Payslips"        onClick={() => navigate('/teacher/my-payslips')} />
             <MenuRow icon={KeyRound} label="Change Password"  onClick={() => navigate('/teacher/change-password')} />
             <MenuRow icon={Settings} label="Settings"         onClick={() => navigate('/settings')} />
             <MenuRow icon={LogOut}   label="Log Out"          onClick={() => void logout()} danger />

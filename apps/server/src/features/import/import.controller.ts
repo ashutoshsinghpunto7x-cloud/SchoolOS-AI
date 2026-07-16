@@ -91,6 +91,30 @@ export const importController = {
     }
   },
 
+  // POST /import/sessions/:id/rows
+  async addRow(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const result = await importService.addRow(req.params.id, req.body, ctx);
+      sendCreated(res, result, 'Row added');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // DELETE /import/sessions/:id/rows/:rowNumber
+  async deleteRow(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const rowNumber = Number(req.params.rowNumber);
+      if (!Number.isInteger(rowNumber)) throw new ValidationError('Invalid row number');
+      const session = await importService.deleteRow(req.params.id, rowNumber, ctx);
+      sendSuccess(res, session, 'Row deleted');
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // PATCH /import/sessions/:id/mapping
   async updateMapping(req: Request, res: Response, next: NextFunction) {
     try {

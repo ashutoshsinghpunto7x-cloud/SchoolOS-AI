@@ -62,7 +62,7 @@ export function useImportSession(id: string | undefined) {
   return query;
 }
 
-export function useImportRows(id: string | undefined, params: { page?: number; limit?: number; status?: ImportRowStatus } = {}) {
+export function useImportRows(id: string | undefined, params: { page?: number; limit?: number; status?: ImportRowStatus; search?: string } = {}) {
   return useQuery({
     queryKey: KEYS.rows(id ?? '', params),
     queryFn: () => importApi.getRows(id!, params),
@@ -138,6 +138,28 @@ export function useUpdateRow(id: string) {
   return useMutation({
     mutationFn: ({ rowNumber, mappedData }: { rowNumber: number; mappedData: Record<string, unknown> }) =>
       importApi.updateRow(id, rowNumber, mappedData),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.session(id) });
+      qc.invalidateQueries({ queryKey: ['import', 'session', id, 'rows'] });
+    },
+  });
+}
+
+export function useAddRow(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (mappedData: Record<string, unknown> = {}) => importApi.addRow(id, mappedData),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.session(id) });
+      qc.invalidateQueries({ queryKey: ['import', 'session', id, 'rows'] });
+    },
+  });
+}
+
+export function useDeleteRow(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rowNumber: number) => importApi.deleteRow(id, rowNumber),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.session(id) });
       qc.invalidateQueries({ queryKey: ['import', 'session', id, 'rows'] });

@@ -4,6 +4,26 @@ import { ValidationError } from '../../../middlewares/errorHandler';
 
 const isBlankCell = (cell: unknown): boolean => cell === null || cell === undefined || String(cell).trim() === '';
 
+/** Known junk tokens some school-ERP exports leave behind as a lone value in an
+ *  otherwise-blank row — e.g. a stray "New" under the admission-number column,
+ *  flagging the record above as a new admission rather than being a second row. */
+const ARTIFACT_TOKENS = new Set(['new', 'n/a', 'na', '-', '--', 'total', 'grand total']);
+
+/**
+ * A row is real data if it has at least one non-blank cell — full stop. The
+ * only exception is a row so sparse (exactly one populated cell) that the
+ * lone value is itself a known formatting artifact rather than content; that
+ * pattern is specific enough that it can't be confused with a genuinely
+ * minimal but real row (e.g. a Teacher import with only a Name column, where
+ * a single populated cell is the entire, valid record).
+ */
+function isValidStudentRow(data: Record<string, unknown>, nonEmptyCount: number): boolean {
+  if (nonEmptyCount === 0) return false;
+  if (nonEmptyCount > 1) return true;
+  const loneValue = Object.values(data).find((v) => !isBlankCell(v));
+  return !ARTIFACT_TOKENS.has(String(loneValue ?? '').trim().toLowerCase());
+}
+
 /** A cell "looks like a header label" if it's short text that isn't purely numeric/date-like. */
 function looksLikeHeaderCell(cell: unknown): boolean {
   const s = String(cell ?? '').trim();
@@ -116,14 +136,12 @@ export const excelParser: IParser = {
         if (value !== '') nonEmptyCount++;
       });
 
-      // Skip empty rows, and near-empty ones (exactly one populated cell).
-      // Report exports commonly stack a stray footnote/annotation row under
-      // a real record — e.g. a lone "New" in the admission-number column on
-      // its own row, marking the student above as newly admitted — which
-      // isn't a second record at all. A genuine data row for a person
-      // always carries more than one field, so a single stray cell is
-      // reliably noise rather than a minimal-but-real row.
-      if (nonEmptyCount > 1) {
+      // Skip truly blank rows and single-cell formatting artifacts (e.g. a
+      // lone "New") — but keep any row with real content, however sparse.
+      // Import types with few required columns (e.g. a Teacher import with
+      // only a Name column) legitimately have just one populated cell per
+      // row, and that must not be discarded as "near-empty".
+      if (isValidStudentRow(data, nonEmptyCount)) {
         rows.push({ rowNumber: idx + 1, data });
       }
     });

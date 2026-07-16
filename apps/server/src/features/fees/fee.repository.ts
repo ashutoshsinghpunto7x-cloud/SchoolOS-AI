@@ -271,10 +271,20 @@ export const feeRepository = {
     return result.modifiedCount > 0;
   },
 
-  /** Aggregate summary stats for the dashboard. */
-  async getSummary(schoolId: string, opts: { academicYear?: string } = {}): Promise<FeeCollectionSummary> {
+  /**
+   * Aggregate summary stats for the dashboard.
+   *
+   * `dueOnOrBefore` — when set, only fee records whose due date has already
+   * arrived count toward the totals (used by the accountant dashboard's
+   * "Pending Fees" KPI so a tuition fee due next month doesn't show up as
+   * pending today). Every other caller (the general Fee Summary endpoint,
+   * reports, Fee Structure) omits it and keeps counting every record
+   * regardless of due date, exactly as before.
+   */
+  async getSummary(schoolId: string, opts: { academicYear?: string; dueOnOrBefore?: Date } = {}): Promise<FeeCollectionSummary> {
     const match: Record<string, unknown> = { schoolId, isDeleted: false };
     if (opts.academicYear) match.academicYear = opts.academicYear;
+    if (opts.dueOnOrBefore) match.dueDate = { $lte: opts.dueOnOrBefore };
 
     const agg = await FeeRecord.aggregate<{
       _id: FeeStatus;

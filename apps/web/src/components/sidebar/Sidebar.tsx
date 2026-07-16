@@ -30,6 +30,9 @@ import {
   UserCog,
   KeyRound,
   ClipboardCheck,
+  CreditCard,
+  QrCode,
+  ScanLine,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -37,6 +40,7 @@ import { SidebarNavItem } from './SidebarNavItem';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { getHomePathForRole } from '@/features/auth/utils/roleHome';
+import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const NAV_ITEMS_ALL = [
   { label: 'Reception',      icon: LayoutDashboard, path: '/reception' },
@@ -71,9 +75,10 @@ const NAV_ITEMS_ACCOUNTANT = [
   { label: 'Fee Records',   icon: ClipboardList,   path: '/accountant/fee-records',   end: false },
   { label: 'Pending Fees',  icon: Wallet,          path: '/accountant/pending-fees',  end: false },
   { label: 'Students',      icon: GraduationCap,   path: '/accountant/student-directory', end: false },
-  { label: 'Teachers',      icon: Users,           path: '/accountant/teacher-directory', end: false },
+  { label: 'Teachers',      icon: Users,           path: '/accountant/teachers',       end: false },
   { label: 'Import',         icon: Upload,          path: '/import',                   end: false },
-  { label: 'Classes & Fee Structure', icon: Settings2, path: '/classes',              end: false },
+  { label: 'Classes',       icon: Settings2,       path: '/classes',                  end: false },
+  { label: 'Fee Structure', icon: IndianRupee,     path: '/accountant/fee-structure', end: false },
   { label: 'Salary',        icon: FileBarChart,    path: '/accountant/salary',        end: false },
   { label: 'Expenses',      icon: Receipt,         path: '/accountant/expenses',      end: false },
   { label: 'Reports',       icon: FileBarChart2,   path: '/accountant/reports',       end: false },
@@ -90,9 +95,19 @@ const NAV_ITEMS_ADMIN = [
   { label: 'Administration',     icon: ShieldCheck,    path: '/administration' },
 ] as const;
 
+// Smart QR Attendance & Payroll — Phase 1 (HR admin tools) + Phase 2 (payroll UI).
+const NAV_ITEMS_HR = [
+  { label: 'Employees',     icon: Users,    path: '/admin/employees' },
+  { label: 'Attendance',    icon: ScanLine, path: '/admin/attendance-qr' },
+  { label: 'ID Cards',      icon: CreditCard, path: '/admin/id-cards' },
+  { label: 'QR Management', icon: QrCode,   path: '/admin/qr-management' },
+  { label: 'Payroll',       icon: Wallet,   path: '/admin/payroll' },
+] as const;
+
 // Principal gets its own dedicated nav — not the admin operational toolbox.
 const NAV_ITEMS_PRINCIPAL = [
   { label: 'Dashboard',           icon: LayoutDashboard, path: '/principal',                       end: true  },
+  { label: 'Attendance Scanner',  icon: ScanLine,        path: '/principal/attendance-scanner',    end: false },
   { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/leave-approvals',       end: false },
   { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
@@ -176,11 +191,7 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
               ? "bg-gradient-to-br from-violet-600 to-pink-500 text-white"
               : "bg-blue-600 text-white"
           )}>
-            {schoolSettings?.logoUrl ? (
-              <img src={schoolSettings.logoUrl} alt="School logo" className="w-full h-full object-cover" />
-            ) : (
-              <GraduationCap className="w-[18px] h-[18px]" strokeWidth={1.5} />
-            )}
+            <img src={schoolSettings?.logoUrl || fnicLogo} alt="School logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <div className={cn(
@@ -290,6 +301,21 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
                 label={item.label}
               />
             ))}
+            {user?.role === 'admin' && (
+              <>
+                <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  HR Management
+                </p>
+                {NAV_ITEMS_HR.map((item) => (
+                  <SidebarNavItem
+                    key={item.path}
+                    to={item.path}
+                    icon={item.icon}
+                    label={item.label}
+                  />
+                ))}
+              </>
+            )}
           </>
         )}
       </nav>

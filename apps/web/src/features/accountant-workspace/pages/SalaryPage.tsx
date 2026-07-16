@@ -28,6 +28,13 @@ function defaultDueDate(): string {
   return new Date(d.getFullYear(), d.getMonth(), 7).toISOString().slice(0, 10);
 }
 
+/** Safely format a possibly-missing/invalid date into an `<input type="date">` value, without throwing. */
+function safeDateInputValue(value: string | Date | undefined | null): string {
+  if (!value) return '';
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
 // ── Add Salary Modal ──────────────────────────────────────────────────────────
 
 function AddSalaryModal({ onClose }: { onClose: () => void }) {
@@ -161,11 +168,17 @@ function MarkPaidModal({ record, onClose }: { record: SalaryRecord; onClose: () 
 // ── Inline-editable field — click to edit, Enter/blur to save ──────────────────
 
 function EditableField({
-  record, field, type = 'text',
-}: { record: SalaryRecord; field: 'employeeName' | 'designation' | 'amount'; type?: 'text' | 'number' }) {
+  record, field, type = 'text', displayValue,
+}: {
+  record: SalaryRecord;
+  field: 'employeeName' | 'designation' | 'amount' | 'dueDate';
+  type?: 'text' | 'number' | 'date';
+  /** Override what's shown when not editing (e.g. "Due 7 Apr" instead of the raw ISO date). */
+  displayValue?: string;
+}) {
   const { mutateAsync, isPending } = useUpdateSalaryRecord(record._id);
   const [editing, setEditing] = useState(false);
-  const rawValue = record[field];
+  const rawValue = field === 'dueDate' ? safeDateInputValue(record.dueDate) : record[field];
   const [value, setValue] = useState(String(rawValue));
 
   useEffect(() => { setValue(String(rawValue)); }, [rawValue]);
@@ -177,13 +190,18 @@ function EditableField({
       const amt = parseFloat(value);
       if (isNaN(amt) || amt <= 0) return;
       await mutateAsync({ amount: Math.round(amt * 100) / 100 });
+    } else if (field === 'dueDate') {
+      if (!value) return;
+      await mutateAsync({ dueDate: value });
     } else {
       if (!value.trim()) return;
       await mutateAsync({ [field]: value.trim() });
     }
   }
 
-  if (record.status === 'paid') {
+  // Due date stays editable even after payment (an accountant may need to
+  // correct it for record-keeping), unlike the other fields which lock once paid.
+  if (record.status === 'paid' && field !== 'dueDate') {
     return <span>{field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue)}</span>;
   }
 
@@ -204,7 +222,7 @@ function EditableField({
 
   return (
     <button type="button" onClick={() => setEditing(true)} className="text-left hover:bg-gray-50 rounded px-1 -mx-1" title="Click to edit">
-      {field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue)}
+      {displayValue ?? (field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue))}
     </button>
   );
 }
@@ -247,8 +265,8 @@ export function SalaryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
@@ -318,24 +336,29 @@ export function SalaryPage() {
 
         {/* List */}
         {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
         ) : !records.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <IndianRupee className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700">No salary records{designation ? ` for ${designation}` : ''}</p>
           </div>
         ) : (
           <div className="space-y-2">
             {records.map((rec) => (
-              <div key={rec._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
+              <div key={rec._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
                   {rec.employeeName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 truncate"><EditableField record={rec} field="employeeName" /></p>
                   <p className="text-xs text-gray-400 flex items-center gap-1 flex-wrap">
-                    <EditableField record={rec} field="designation" /> · {rec.month} {rec.year}
-                    {rec.status !== 'paid' && ` · Due ${new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                    <EditableField record={rec} field="designation" /> · {rec.month} {rec.year} · Due{' '}
+                    <EditableField
+                      record={rec}
+                      field="dueDate"
+                      type="date"
+                      displayValue={new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    />
                   </p>
                 </div>
                 <div className="text-right shrink-0">

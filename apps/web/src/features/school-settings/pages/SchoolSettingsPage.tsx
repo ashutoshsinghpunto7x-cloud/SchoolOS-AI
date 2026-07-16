@@ -4,6 +4,7 @@ import { Building2, Upload, X, Loader2, ShieldCheck, LogOut, ChevronRight } from
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../hooks/useSchoolSettings';
+import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
 
 export function SchoolSettingsPage() {
   const navigate = useNavigate();
@@ -79,6 +80,8 @@ export function SchoolSettingsPage() {
 
         {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
       </div>
+
+      {user?.role === 'admin' && <AttendanceRulesPanel />}
 
       {user?.role === 'principal' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mt-5 overflow-hidden divide-y divide-gray-50">

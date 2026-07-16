@@ -46,23 +46,23 @@ function BrowseByClass() {
       </div>
 
       {!classInput.trim() || !sectionInput.trim() ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
           <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-sm font-semibold text-gray-700">Enter a class and section</p>
           <p className="text-xs text-gray-400 mt-1">Students will be listed in roll number order with their overall fee balance.</p>
         </div>
       ) : isLoading ? (
-        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+        <div className="space-y-2">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
       ) : isError ? (
         <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
           <AlertCircle className="w-4 h-4 shrink-0" /> Couldn't load this class.
         </div>
       ) : !data?.students.length ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
           <p className="text-sm font-semibold text-gray-700">No students found in Class {classInput}-{sectionInput}</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden divide-y divide-gray-50">
           {data.students.map((s) => (
             <button
               key={s.studentId}
@@ -98,8 +98,8 @@ function BrowseByClass() {
 export function FeeRecordsPage() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>

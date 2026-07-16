@@ -13,7 +13,12 @@ const createEventBaseSchema = z.object({
   title:       z.string().trim().min(1, 'Title is required').max(200),
   description: z.string().trim().max(2000).optional(),
   eventType:   z.enum(EVENT_TYPES),
-  status:      z.enum(EVENT_STATUSES).default('draft'),
+  // The create form has no draft/publish toggle — whatever the principal
+  // submits is meant to show up immediately on every dashboard, so default
+  // to 'published' rather than 'draft' (was silently hiding new events from
+  // upcoming-events widgets on every dashboard until someone manually
+  // changed status via the event detail page).
+  status:      z.enum(EVENT_STATUSES).default('published'),
   startDate:   z.string().min(1, 'Start date is required'),
   endDate:     z.string().min(1, 'End date is required'),
   startTime:   z.string().regex(TIME_REGEX, 'Expected HH:MM').optional(),

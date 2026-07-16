@@ -82,7 +82,7 @@ export function CollectPaymentModal({ fee, onClose, onSuccess }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-200">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Collect Fee</h2>
             <p className="text-sm text-gray-500 mt-0.5 truncate max-w-xs">

@@ -90,7 +90,12 @@ export const accountantWorkspaceService = {
       recentAuditLogs,
     ] = await Promise.all([
       feePaymentRepository.getTotalCollectedBetween(ctx.schoolId, today, tomorrow),
-      feeRepository.getSummary(ctx.schoolId),
+      // Dashboard-only: "Pending Fees" should only count fees whose due date has
+      // actually arrived — a tuition fee due next month doesn't belong in today's
+      // pending total. Every other fee summary in the app (Reports, Fee
+      // Structure, the general Fee Summary endpoint) keeps counting all fees
+      // regardless of due date.
+      feeRepository.getSummary(ctx.schoolId, { dueOnOrBefore: today }),
       salaryRepository.getSummary(ctx.schoolId),
       expenseRepository.getSummary(ctx.schoolId),
       feePaymentRepository.getRecentWithStudent(ctx.schoolId, 8),

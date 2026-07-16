@@ -1,6 +1,6 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
 import type {
-  ApiResponse, FeeStructureEntry, UpsertFeeStructurePayload,
+  ApiResponse, FeeStructureEntry, UpsertFeeStructurePayload, ApplyAllClassesFeeStructurePayload,
   FeeDiscountRequest, CreateDiscountRequestPayload, ReviewDiscountRequestPayload,
 } from '@schoolos/types';
 
@@ -17,6 +17,20 @@ export const feeStructureApi = {
   async upsert(payload: UpsertFeeStructurePayload): Promise<FeeStructureEntry> {
     try {
       const res = await apiClient.post<ApiResponse<FeeStructureEntry>>(BASE, payload);
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async getTemplate(academicYear: string): Promise<FeeStructureEntry[]> {
+    try {
+      const res = await apiClient.get<ApiResponse<FeeStructureEntry[]>>(`${BASE}/template`, { params: { academicYear } });
+      return res.data.data ?? [];
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async applyToAllClasses(payload: ApplyAllClassesFeeStructurePayload): Promise<{ classesUpdated: number }> {
+    try {
+      const res = await apiClient.post<ApiResponse<{ classesUpdated: number }>>(`${BASE}/apply-all`, payload);
       return res.data.data!;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

@@ -85,7 +85,7 @@ function StudentRow({ student, selectedDate }: { student: StudentGroup; selected
   const earlierCount = student.records.filter((r) => !isSameMonth(r.dueDate, selectedDate)).length;
 
   return (
-    <div className="border-b border-gray-50 last:border-0">
+    <div className="border-b border-gray-200 last:border-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -227,8 +227,8 @@ export function PendingFeesPage() {
   const totalDue = classGroups.reduce((s, g) => s + g.totalDue, 0);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button
           type="button"
           onClick={() => navigate('/accountant')}
@@ -271,17 +271,17 @@ export function PendingFeesPage() {
 
         {/* Class-wise grouped list */}
         {isLoading ? (
-          <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-100 animate-pulse" />)}</div>
+          <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
         ) : !classGroups.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <Wallet className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700">No pending fees as of this date</p>
           </div>
         ) : (
           <div className="space-y-4">
             {classGroups.map((g) => (
-              <div key={g.class} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <div key={g.class} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                   <p className="text-sm font-bold text-gray-900">Class {g.class}</p>
                   <p className="text-xs text-gray-500">
                     {g.students.length} student{g.students.length !== 1 ? 's' : ''} · <span className="font-semibold text-gray-800">{fmt(g.totalDue)}</span>

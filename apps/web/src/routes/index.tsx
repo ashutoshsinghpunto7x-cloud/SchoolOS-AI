@@ -245,6 +245,10 @@ const ClassSectionManagementPage = lazyPage(
   () => import('@/features/school-classes/pages/ClassSectionManagementPage'),
   'ClassSectionManagementPage',
 );
+const FeeStructureBuilderPage = lazyPage(
+  () => import('@/features/fees/pages/FeeStructureBuilderPage'),
+  'FeeStructureBuilderPage',
+);
 const SchoolSettingsPage = lazyPage(
   () => import('@/features/school-settings/pages/SchoolSettingsPage'),
   'SchoolSettingsPage',
@@ -441,6 +445,55 @@ const AccountantTeacherProfilePage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantTeacherProfilePage'),
   'AccountantTeacherProfilePage',
 );
+// Smart QR Attendance & Payroll — Phase 1 (employees, ID cards, QR management,
+// principal's webcam scanner, teacher read-only views)
+const EmployeesPage = lazyPage(
+  () => import('@/features/employees/pages/EmployeesPage'),
+  'EmployeesPage',
+);
+const EmployeeProfilePage = lazyPage(
+  () => import('@/features/employees/pages/EmployeeProfilePage'),
+  'EmployeeProfilePage',
+);
+const IdCardsPage = lazyPage(
+  () => import('@/features/employees/pages/IdCardsPage'),
+  'IdCardsPage',
+);
+const QrManagementPage = lazyPage(
+  () => import('@/features/employees/pages/QrManagementPage'),
+  'QrManagementPage',
+);
+const AttendanceOverviewPage = lazyPage(
+  () => import('@/features/employees/pages/AttendanceOverviewPage'),
+  'AttendanceOverviewPage',
+);
+// Smart QR Attendance & Payroll — Phase 2 (payroll UI, admin-only)
+const PayrollPage = lazyPage(
+  () => import('@/features/payroll/pages/PayrollPage'),
+  'PayrollPage',
+);
+const PayrollDetailPage = lazyPage(
+  () => import('@/features/payroll/pages/PayrollDetailPage'),
+  'PayrollDetailPage',
+);
+const AttendanceScannerPage = lazyPage(
+  () => import('@/features/principal/pages/AttendanceScannerPage'),
+  'AttendanceScannerPage',
+);
+const TeacherIdCardPage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/TeacherIdCardPage'),
+  'TeacherIdCardPage',
+);
+const TeacherMyAttendancePage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/TeacherMyAttendancePage'),
+  'TeacherMyAttendancePage',
+);
+// Smart QR Attendance & Payroll — Phase 2 (teacher read-only payslip view)
+const TeacherMyPayslipsPage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/TeacherMyPayslipsPage'),
+  'TeacherMyPayslipsPage',
+);
+
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
   'ComingSoon',
@@ -539,6 +592,9 @@ export const router = createBrowserRouter([
                       { path: 'teacher/timetable',                                    element: <TeacherWorkspaceTimetablePage /> },
                       { path: 'teacher/profile',                                      element: <TeacherWorkspaceProfilePage /> },
                       { path: 'teacher/change-password',                              element: <TeacherChangePasswordPage /> },
+                      { path: 'teacher/id-card',                                      element: <TeacherIdCardPage /> },
+                      { path: 'teacher/my-attendance',                                element: <TeacherMyAttendancePage /> },
+                      { path: 'teacher/my-payslips',                                  element: <TeacherMyPayslipsPage /> },
                     ],
                   },
                 ],
@@ -555,7 +611,7 @@ export const router = createBrowserRouter([
                       { path: 'accountant/collect-fee',   element: <FeeCollectionPage /> },
                       { path: 'accountant/pending-fees',  element: <PendingFeesPage /> },
                       { path: 'accountant/fee-records',   element: <FeeRecordsPage /> },
-                      { path: 'accountant/fee-structure', element: <Navigate to="/classes" replace /> },
+                      { path: 'accountant/fee-structure', element: <FeeStructureBuilderPage /> },
                       { path: 'accountant/student-ledger', element: <StudentLedgerSearchPage /> },
                       { path: 'accountant/student-ledger/:studentId', element: <StudentLedgerPage /> },
                       { path: 'accountant/student-directory', element: <StudentDirectoryPage /> },
@@ -575,6 +631,7 @@ export const router = createBrowserRouter([
                 element: <ProtectedRoute allowedRoles={['principal']} />,
                 children: [
                   { path: 'principal', element: <PrincipalWorkspace /> },
+                  { path: 'principal/attendance-scanner', element: <AttendanceScannerPage /> },
                   { path: 'principal/insights', element: <PrincipalInsightsPage /> },
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
                   { path: 'principal/leave-approvals', element: <LeaveApprovalsPage /> },
@@ -683,6 +740,21 @@ export const router = createBrowserRouter([
 
               // Notification full-page detail (all authenticated roles)
               { path: 'notifications/:id', element: <NotificationDetailPage /> },
+
+              // Smart QR Attendance & Payroll — Phase 1 HR admin tools (admin-only;
+              // payroll UI is out of scope for this phase)
+              {
+                element: <ProtectedRoute allowedRoles={['admin']} />,
+                children: [
+                  { path: 'admin/employees', element: <EmployeesPage /> },
+                  { path: 'admin/employees/:id', element: <EmployeeProfilePage /> },
+                  { path: 'admin/attendance-qr', element: <AttendanceOverviewPage /> },
+                  { path: 'admin/id-cards', element: <IdCardsPage /> },
+                  { path: 'admin/qr-management', element: <QrManagementPage /> },
+                  { path: 'admin/payroll', element: <PayrollPage /> },
+                  { path: 'admin/payroll/:id', element: <PayrollDetailPage /> },
+                ],
+              },
 
               // Administration (admin-only)
               {

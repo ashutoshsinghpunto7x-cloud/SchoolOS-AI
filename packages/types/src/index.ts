@@ -1858,6 +1858,36 @@ export interface UpsertFeeStructurePayload {
   amount: number;
 }
 
+/** Define an amount once and apply it to every class in the school — the
+ *  "global fee structure template" builder, as opposed to `UpsertFeeStructurePayload`
+ *  which edits a single class at a time. */
+export interface ApplyAllClassesFeeStructurePayload {
+  feeHead: FeeHead;
+  academicYear: string;
+  month?: string | null;
+  amount: number;
+}
+
+export interface CollectionScheduleItem {
+  /** Academic month the fee component belongs to (from the Fee Components tab), e.g. "April". */
+  academicMonth: string;
+  feeHead: FeeHead;
+}
+
+export interface CollectionScheduleEntry extends BaseEntity {
+  schoolId: string;
+  academicYear: string;
+  depositMonth: string;
+  items: CollectionScheduleItem[];
+  updatedBy: string;
+}
+
+export interface UpsertCollectionSchedulePayload {
+  academicYear: string;
+  depositMonth: string;
+  items: CollectionScheduleItem[];
+}
+
 export type FeeDiscountStatus = 'pending' | 'approved' | 'rejected';
 
 export interface FeeDiscountRequest extends BaseEntity {
@@ -1893,10 +1923,23 @@ export interface SchoolClass extends BaseEntity {
   updatedBy?: string;
 }
 
+export interface AttendanceRules {
+  startTime: string;
+  lateAfter: string;
+  halfDayAfter: string;
+  schoolEndTime: string;
+}
+
+export interface PayrollConfig {
+  workingDaysPerMonth: number;
+}
+
 export interface SchoolSettings extends BaseEntity {
   schoolId: string;
   schoolName: string;
   logoUrl?: string;
+  attendanceRules: AttendanceRules;
+  payrollConfig: PayrollConfig;
   updatedBy?: string;
 }
 
@@ -2466,4 +2509,220 @@ export type DevicePlatform = 'ios' | 'android';
 export interface RegisterDeviceTokenPayload {
   token: string;
   platform: DevicePlatform;
+}
+
+// ── Employee (Smart QR Attendance & Payroll — Phase 1) ─────────────────────────
+
+export type EmployeeRole =
+  | 'teacher'
+  | 'principal'
+  | 'vice_principal'
+  | 'receptionist'
+  | 'accountant'
+  | 'librarian'
+  | 'driver'
+  | 'peon'
+  | 'other';
+
+export type EmploymentType = 'full_time' | 'part_time' | 'contract';
+
+export type EmployeeStatus = 'active' | 'inactive';
+
+export type QrStatus = 'active' | 'expired' | 'disabled';
+
+export interface EmployeeQr {
+  token: string;
+  issuedAt: string;
+  status: QrStatus;
+}
+
+export interface Employee extends BaseEntity {
+  fullName: string;
+  gender: Gender;
+  dateOfBirth?: string;
+  employeeId: string;
+  photoUrl?: string;
+  signatureUrl?: string;
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+  address?: string;
+  designation: string;
+  department?: string;
+  joiningDate?: string;
+  monthlySalary?: number;
+  employmentType?: EmploymentType;
+  /** HR job-role classification — distinct from the auth UserRole enum. */
+  role: EmployeeRole;
+  teacherId?: string;
+  userId?: string;
+  qr?: EmployeeQr;
+  status: EmployeeStatus;
+  createdBy?: string;
+  updatedBy?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface CreateEmployeePayload {
+  fullName: string;
+  gender: Gender;
+  dateOfBirth?: string;
+  phone: string;
+  alternatePhone?: string;
+  email?: string;
+  address?: string;
+  designation: string;
+  department?: string;
+  joiningDate?: string;
+  monthlySalary?: number;
+  employmentType?: EmploymentType;
+  role: EmployeeRole;
+  status?: EmployeeStatus;
+}
+
+export type UpdateEmployeePayload = Partial<CreateEmployeePayload>;
+
+export interface EmployeeListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  department?: string;
+  role?: EmployeeRole;
+  status?: EmployeeStatus;
+  sortBy?: 'fullName' | 'createdAt' | 'joiningDate';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface CreateEmployeeLoginPayload {
+  username: string;
+  password: string;
+}
+
+export interface EmployeeQrImage {
+  dataUri: string;
+  status: QrStatus;
+  issuedAt: string;
+}
+
+// ── Staff Attendance (QR check-in/check-out) ────────────────────────────────────
+
+export type StaffAttendanceStatus = 'present' | 'late' | 'half_day' | 'absent';
+
+export interface StaffAttendancePunch {
+  time: string;
+  recordedBy: string;
+  device?: string;
+}
+
+export interface StaffAttendanceRecord extends BaseEntity {
+  employeeId: string;
+  employeeObjectId: string;
+  date: string;
+  checkIn?: StaffAttendancePunch;
+  checkOut?: StaffAttendancePunch;
+  workingMinutes?: number;
+  status: StaffAttendanceStatus;
+}
+
+export type StaffAttendanceScanAction = 'check_in' | 'check_out' | 'already_marked';
+
+export interface StaffAttendanceScanSummary {
+  photoUrl?: string;
+  fullName: string;
+  department?: string;
+  designation: string;
+}
+
+export interface StaffAttendanceScanResult {
+  action: StaffAttendanceScanAction;
+  record: StaffAttendanceRecord;
+  employee: StaffAttendanceScanSummary;
+}
+
+export interface ScanQrPayload {
+  token: string;
+  device?: string;
+}
+
+// ── Payroll (Smart QR Attendance & Payroll — Phase 2) ───────────────────────────
+
+export type PayrollStatus = 'draft' | 'generated' | 'paid';
+
+export interface PayrollRecord extends BaseEntity {
+  employeeObjectId: string;
+  employeeId: string;
+  employeeName: string;
+  designation: string;
+  department?: string;
+
+  month: number; // 1-12
+  year: number;
+
+  workingDaysPerMonth: number;
+  dailyRate: number;
+
+  presentDays: number;
+  lateDays: number;
+  halfDays: number;
+  absentDays: number;
+
+  grossSalary: number;
+  deductions: number;
+  netSalary: number;
+
+  status: PayrollStatus;
+  generatedAt: string;
+  paidAt?: string;
+  paidBy?: string;
+  paymentMode?: PaymentMode;
+  notes?: string;
+
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface GeneratePayrollPayload {
+  employeeObjectId: string;
+  month: number;
+  year: number;
+}
+
+export interface GenerateAllPayrollPayload {
+  month: number;
+  year: number;
+}
+
+export interface GenerateAllPayrollResult {
+  succeeded: string[];
+  failed: { employeeId: string; error: string }[];
+}
+
+export interface MarkPayrollPaidPayload {
+  paidDate: string;
+  paymentMode?: PaymentMode;
+  notes?: string;
+}
+
+export interface PayrollListOptions {
+  page?: number;
+  limit?: number;
+  month?: number;
+  year?: number;
+  department?: string;
+  status?: PayrollStatus;
+}
+
+export interface PayrollSummary {
+  totalGross: number;
+  totalDeductions: number;
+  totalNet: number;
+  draftCount: number;
+  generatedCount: number;
+  paidCount: number;
 }

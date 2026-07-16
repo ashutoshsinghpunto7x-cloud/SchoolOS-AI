@@ -194,8 +194,8 @@ export function TeacherDirectoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
@@ -250,18 +250,18 @@ export function TeacherDirectoryPage() {
         </div>
 
         {isLoading ? (
-          <div className="h-64 bg-white rounded-2xl border border-gray-100 animate-pulse flex items-center justify-center">
+          <div className="h-64 bg-white rounded-2xl border border-gray-200 animate-pulse flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
           </div>
         ) : !teachers.length ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <UserRound className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700">
               {selectedDept ? `No teachers found in ${selectedDept}` : 'No teachers found'}
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
             <table className="w-full text-sm min-w-[1300px]">
               <thead>
                 <tr className="bg-gray-50 text-[10px] text-gray-400 uppercase tracking-wide">

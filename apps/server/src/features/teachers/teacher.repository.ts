@@ -106,6 +106,10 @@ export const teacherRepository = {
     return Teacher.findOne({ _id: id, schoolId, isDeleted: false }).lean<ITeacher>();
   },
 
+  async findByEmployeeId(employeeId: string, schoolId: string): Promise<ITeacher | null> {
+    return Teacher.findOne({ employeeId, schoolId, isDeleted: false }).lean<ITeacher>();
+  },
+
   /** Used by the Excel import pipeline to detect duplicates — email first (more
    * reliable), falling back to phone — so re-uploading a file updates existing
    * teachers instead of creating duplicates. employeeId can't be used here since

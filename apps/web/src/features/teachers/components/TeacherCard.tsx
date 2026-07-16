@@ -1,4 +1,4 @@
-import { Briefcase, Phone, Eye, Pencil, Check } from 'lucide-react';
+import { Pencil, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { EmploymentStatusBadge } from './EmploymentStatusBadge';
 import { cn } from '@/lib/utils';
@@ -63,13 +63,11 @@ export const TeacherCard = ({ teacher, selectable, selected, onToggleSelect }: T
       {/* Meta */}
       <div className="flex flex-col gap-2 border-t border-gray-50 pt-4">
         {teacher.department && (
-          <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={1.75} />
+          <div className="flex items-center">
             <span className="text-sm font-medium text-gray-600 truncate">{teacher.department}</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={1.75} />
+        <div className="flex items-center">
           <span className="text-sm font-medium text-gray-600">{teacher.phone}</span>
         </div>
         {teacher.subjects.length > 0 && (
@@ -104,11 +102,10 @@ export const TeacherCard = ({ teacher, selectable, selected, onToggleSelect }: T
           <button
             onClick={() => navigate(`/teachers/${teacher._id}`)}
             className="flex-1 h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
-                       flex items-center justify-center gap-2
+                       flex items-center justify-center
                        text-sm font-semibold text-white transition-colors duration-150"
             type="button"
           >
-            <Eye className="w-4 h-4" />
             View Profile
           </button>
           <button

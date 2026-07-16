@@ -55,6 +55,7 @@ interface TuitionCandidate {
 
 function buildTuitionCandidates(feeRecords: FeeRecord[]): TuitionCandidate[] {
   const now = new Date();
+  const currentAcademicYear = academicYearFor(now);
   const hasRecord = new Set(
     feeRecords.filter((f) => f.feeHead === 'tuition').map((f) => `${f.month}||${f.academicYear}`),
   );
@@ -63,6 +64,10 @@ function buildTuitionCandidates(feeRecords: FeeRecord[]): TuitionCandidate[] {
     const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     const month = MONTH_NAMES[d.getMonth()];
     const academicYear = academicYearFor(d);
+    // Academic year starts in April — never suggest a "new" tuition due from
+    // before the current academic year started; only real, already-recorded
+    // arrears (handled above via existingLines) should surface for those months.
+    if (academicYear < currentAcademicYear) continue;
     const key = `${month}||${academicYear}`;
     if (hasRecord.has(key)) continue; // already a real FeeRecord — shown in the main list below instead
     list.push({
@@ -81,6 +86,7 @@ interface PayableLine {
   key: string;
   label: string;
   monthLabel: string; // group header — "April 2026" or "Whole Year"
+  month?: string; // raw month name, e.g. "April" — used to match the ledger screen's selected month
   sortKey: string;
   dueDate: string;
   existing?: FeeRecord;
@@ -103,6 +109,7 @@ function buildPayableLines(feeRecords: FeeRecord[]): PayableLine[] {
       key: f._id,
       label: f.feeHead === 'miscellaneous' && f.customHead ? f.customHead : (FEE_HEAD_LABELS[f.feeHead] ?? f.feeHead),
       monthLabel: monthGroupLabel(f.month, f.academicYear, f.dueDate),
+      month: f.month,
       sortKey: f.dueDate,
       dueDate: f.dueDate,
       existing: f,
@@ -112,6 +119,7 @@ function buildPayableLines(feeRecords: FeeRecord[]): PayableLine[] {
     key: c.key,
     label: FEE_HEAD_LABELS.tuition,
     monthLabel: monthGroupLabel(c.month, c.academicYear, c.dueDate),
+    month: c.month,
     sortKey: c.dueDate,
     dueDate: c.dueDate,
     tuitionCandidate: c,
@@ -184,15 +192,26 @@ interface Props {
   student: Student;
   feeRecords: FeeRecord[];
   lastPaymentDate?: string;
+  /** Month already chosen on the ledger screen (e.g. "July") — when set, its fee line(s) are pre-selected here so the accountant isn't asked to pick them again. */
+  initialMonth?: string | null;
   onBack: () => void;
   /** Called once the payment has actually been recorded, so the caller can refresh its ledger data. */
   onPaid: () => void;
 }
 
-export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, onBack, onPaid }: Props) {
+export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, initialMonth, onBack, onPaid }: Props) {
   const lines = useMemo(() => buildPayableLines(feeRecords), [feeRecords]);
 
-  const [selected, setSelected] = useState<Record<string, number>>({});
+  const [selected, setSelected] = useState<Record<string, number>>(() => {
+    if (!initialMonth) return {};
+    const preSelected: Record<string, number> = {};
+    for (const line of lines) {
+      if (line.month === initialMonth) {
+        preSelected[line.key] = line.existing ? line.existing.balance : (student.monthlyTuitionFee ?? 0);
+      }
+    }
+    return preSelected;
+  });
   const [discount, setDiscount] = useState('');
   const [remarks, setRemarks] = useState('');
   const [method, setMethod] = useState<MethodKey>('cash');
@@ -323,8 +342,8 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
         <button onClick={onBack} className="text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-2">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Ledger
         </button>
@@ -335,7 +354,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
         {/* Left column: student card + fee selection */}
         <div className="lg:col-span-3 space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
               <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden shrink-0">
                 {student.photoUrl ? (
                   <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
@@ -404,10 +423,10 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
 
         {/* Right column: payment summary */}
         <div className="lg:col-span-2 lg:sticky lg:top-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-4">Payment Summary</h3>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Payment Summary</h3>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-500">Subtotal ({selectedLines.length} item{selectedLines.length === 1 ? '' : 's'})</span>
                 <span className="text-sm font-semibold text-gray-800">{fmt(subtotal)}</span>
@@ -418,59 +437,60 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
                   type="number" min={0} max={subtotal} step={0.01} value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
                   placeholder="0"
-                  className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  className="w-28 h-8 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
               <span className="text-sm font-bold text-gray-900">Total Amount</span>
-              <span className="text-2xl font-bold text-gray-900">{fmt(total)}</span>
+              <span className="text-xl font-bold text-gray-900">{fmt(total)}</span>
             </div>
 
-            <div className="mt-5">
-              <p className="text-xs font-semibold text-gray-600 mb-2">Select Payment Method</p>
-              <div className="grid grid-cols-2 gap-2.5">
+            <div className="mt-3">
+              <p className="text-xs font-semibold text-gray-600 mb-1.5">Select Payment Method</p>
+              <div className="grid grid-cols-4 gap-1.5">
                 {METHODS.map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
                     type="button"
                     onClick={() => setMethod(key)}
+                    title={label}
                     className={cn(
-                      'flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border-2 font-semibold text-xs transition-colors',
+                      'flex flex-col items-center justify-center gap-1 h-12 rounded-xl border-2 font-semibold text-[10px] transition-colors',
                       method === key ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                     )}
                   >
-                    <Icon className="w-4 h-4" /> {label}
+                    <Icon className="w-3.5 h-3.5" /> {label}
                   </button>
                 ))}
               </div>
             </div>
 
             {method !== 'cash' && (
-              <div className="mt-3">
+              <div className="mt-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">
                   {method === 'card' ? 'Transaction / UTR Number' : method === 'cheque' ? 'Cheque Number' : 'Transaction Reference'}
                 </label>
                 <input
                   type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  className="w-full h-9 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                   placeholder="e.g. 123456789012" maxLength={30}
                 />
               </div>
             )}
 
-            <div className="mt-4">
+            <div className="mt-2">
               <label className="block text-xs font-semibold text-gray-600 mb-1">Remarks / Notes</label>
               <textarea
-                rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)}
+                rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter transaction details or notes…"
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
               />
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2 mt-4">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2 mt-2">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {error}
               </div>
             )}
@@ -479,14 +499,11 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, on
               type="button"
               onClick={handleSubmit}
               disabled={isPending || !selectedLines.length}
-              className="w-full h-12 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
+              className="w-full h-11 mt-3 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
               {isPending ? 'Collecting…' : 'Collect & Print Receipt'}
             </button>
-            <p className="text-[11px] text-gray-400 text-center mt-2">
-              This action will generate an official invoice and update the student ledger instantly.
-            </p>
           </div>
         </div>
       </div>

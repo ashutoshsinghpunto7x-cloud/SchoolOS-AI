@@ -53,8 +53,20 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
     setError('');
     setResults(null);
     try {
-      const page = await feesApi.list({ class: selectedClass, section: selectedSection, limit: 500 });
-      const defaulters = page.data.filter(
+      // Server caps `limit` at 100 per request, so page through everything
+      // for this class/section instead of asking for 500 in one shot (that
+      // was failing validation outright and blocking generation entirely).
+      const records: FeeRecord[] = [];
+      let pageNum = 1;
+      let total = Infinity;
+      while (records.length < total) {
+        const res = await feesApi.list({ class: selectedClass, section: selectedSection, page: pageNum, limit: 100 });
+        records.push(...res.data);
+        total = res.meta.total;
+        if (res.data.length === 0) break;
+        pageNum += 1;
+      }
+      const defaulters = records.filter(
         (r) => selectedMonths.includes(r.month ?? '') && r.status !== 'paid' && r.status !== 'waived',
       );
       setResults(defaulters);
@@ -141,7 +153,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
         </button>
 
         {results && (
-          <div className="border-t border-gray-100 pt-4">
+          <div className="border-t border-gray-200 pt-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-gray-800">
                 {results.length} record{results.length !== 1 ? 's' : ''} · {fmt(totalDue)} outstanding
@@ -159,7 +171,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
             {results.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-6">No defaulters for this selection.</p>
             ) : (
-              <div className="max-h-64 overflow-y-auto rounded-xl border border-gray-100 divide-y divide-gray-50">
+              <div className="max-h-64 overflow-y-auto rounded-xl border border-gray-200 divide-y divide-gray-50">
                 {results.map((r) => (
                   <div key={r._id} className="flex items-center justify-between gap-3 px-3.5 py-2.5">
                     <div className="min-w-0">

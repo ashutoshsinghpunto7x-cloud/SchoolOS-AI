@@ -9,7 +9,7 @@ interface MiniBarProps {
   formatted?: string;
 }
 
-export const MiniBar = ({ label, value, max, color = 'bg-blue-500', suffix = '', formatted }: MiniBarProps) => {
+export const MiniBar = ({ label, value, max, color = 'bg-[#5B21B6]', suffix = '', formatted }: MiniBarProps) => {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="flex items-center gap-3">

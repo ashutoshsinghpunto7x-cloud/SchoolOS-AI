@@ -47,7 +47,7 @@ export function AccountantTeacherProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
+      <div className="min-h-screen bg-white flex items-center justify-center py-24">
         <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
       </div>
     );
@@ -55,7 +55,7 @@ export function AccountantTeacherProfilePage() {
 
   if (isError || !teacher) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center py-24 gap-4 text-center">
         <AlertCircle className="w-10 h-10 text-red-400" />
         <p className="text-gray-600">Could not load this teacher's profile.</p>
         <button
@@ -72,8 +72,8 @@ export function AccountantTeacherProfilePage() {
   const initials = teacher.fullName.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate('/accountant/teachers')}
           className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors"
@@ -88,7 +88,7 @@ export function AccountantTeacherProfilePage() {
 
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative w-16 h-16 shrink-0 group">
                 <div className="w-16 h-16 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden">

@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { Download, ArrowLeft, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, FileSpreadsheet } from 'lucide-react';
 import { useImportTemplates } from '../hooks/useImport';
 import { importApi } from '../api/import.api';
 
 const TYPE_COLORS: Record<string, string> = {
   students:   'bg-blue-50 border-blue-100',
   teachers:   'bg-purple-50 border-purple-100',
-  fees:       'bg-green-50 border-green-100',
+  fees:       'bg-gray-50 border-gray-200',
   admissions: 'bg-orange-50 border-orange-100',
   attendance: 'bg-teal-50 border-teal-100',
 };
@@ -57,9 +57,8 @@ export function TemplatesLibrary() {
                 </div>
                 <button
                   onClick={() => handleDownload(tpl.importType)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"
+                  className="flex items-center px-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors flex-shrink-0"
                 >
-                  <Download className="w-3.5 h-3.5" />
                   Download
                 </button>
               </div>

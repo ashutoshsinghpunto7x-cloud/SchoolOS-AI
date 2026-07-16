@@ -17,6 +17,8 @@ export const listRowsSchema = z.object({
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(200).optional().default(50),
   status: z.enum(['pending', 'valid', 'warning', 'error', 'imported', 'skipped']).optional(),
+  /** Case-insensitive substring match against any value in the row's mapped data. */
+  search: z.string().trim().min(1).max(200).optional(),
 });
 
 export const uploadSessionSchema = z.object({
@@ -33,6 +35,12 @@ export const setDuplicateStrategySchema = z.object({
 
 export const updateRowSchema = z.object({
   mappedData: z.record(z.string(), z.unknown()),
+});
+
+/** A manually-added row (not from the uploaded file) — same shape as an edit,
+ *  starts out empty and gets filled in via the normal inline-edit flow. */
+export const addRowSchema = z.object({
+  mappedData: z.record(z.string(), z.unknown()).default({}),
 });
 
 export const saveMappingTemplateSchema = z.object({

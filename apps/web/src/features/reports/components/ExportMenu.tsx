@@ -39,7 +39,7 @@ export const ExportMenu = ({ onExportCSV, onExportPDF, disabled = false }: Expor
             className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             type="button"
           >
-            <Table size={14} className="text-green-600" />
+            <Table size={14} className="text-gray-500" />
             Export CSV
           </button>
           <button
@@ -49,7 +49,7 @@ export const ExportMenu = ({ onExportCSV, onExportPDF, disabled = false }: Expor
             type="button"
             title={!onExportPDF ? 'PDF export coming soon' : undefined}
           >
-            <FileText size={14} className="text-red-500" />
+            <FileText size={14} className="text-gray-500" />
             Export PDF
             {!onExportPDF && <span className="ml-auto text-[10px] text-gray-400">Soon</span>}
           </button>

@@ -18,6 +18,8 @@ import { SalaryRecord } from '../salary/salary.model';
 import { LeaveRequest } from '../leave-requests/leave-request.model';
 import { TeacherTimetable } from '../teacher-timetable/teacher-timetable.model';
 import { Timetable } from '../timetable/timetable.model';
+import { Employee } from '../employees/employee.model';
+import { employeeIdCounterKey, seedEmployeeIdSequence } from '../employees/employee-id.util';
 
 const LOGIN_SALT_ROUNDS = 12;
 
@@ -47,13 +49,28 @@ function splitFullName(fullName: string): { firstName: string; lastName: string 
 // number in one DB round trip — no read-then-write race, no retries needed.
 // `seedFrom` continues from the existing teacher count the first time this
 // key is ever used, so schools with pre-existing teachers don't restart at 1.
+// Teachers can also be created via the Employee feature (employee.service.ts),
+// which uses a separate counter and writes a linked Teacher with the same ID —
+// so this sequence and that one can independently produce the same string.
+// Re-draw from the counter until the candidate is free in both collections,
+// rather than trusting the counter alone (see employee.service.ts's
+// generateEmployeeId for the matching guard on that side).
 const generateEmployeeId = async (schoolId: string): Promise<string> => {
   const year = new Date().getFullYear();
-  const seq = await nextSequence(
-    `teacher-employeeId:${schoolId}:${year}`,
-    () => teacherRepository.countAll(schoolId)
-  );
-  return `EMP-${year}-${String(seq).padStart(4, '0')}`;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const seq = await nextSequence(
+      employeeIdCounterKey(schoolId, year),
+      () => seedEmployeeIdSequence(schoolId, year)
+    );
+    const candidate = `EMP-${year}-${String(seq).padStart(4, '0')}`;
+
+    const [teacherClash, employeeClash] = await Promise.all([
+      teacherRepository.findByEmployeeId(candidate, schoolId),
+      Employee.findOne({ employeeId: candidate, schoolId, isDeleted: false }).lean(),
+    ]);
+    if (!teacherClash && !employeeClash) return candidate;
+  }
+  throw new ValidationError('Could not generate a unique employee ID — please try again.');
 };
 
 // ── Service ───────────────────────────────────────────────────────────────────

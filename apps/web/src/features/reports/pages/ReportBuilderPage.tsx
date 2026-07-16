@@ -42,7 +42,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 );
 
 const StatCard = ({
-  label, value, color = 'text-gray-700', bg = 'bg-gray-50',
+  label, value, color = 'text-gray-900', bg = 'bg-gray-50',
 }: { label: string; value: string | number; color?: string; bg?: string }) => (
   <div className={`p-4 rounded-2xl border border-gray-100 ${bg}`}>
     <p className={`text-xl font-bold ${color}`}>{value}</p>
@@ -54,12 +54,12 @@ const StatCard = ({
 const StudentsView = ({ data }: { data: StudentAnalytics }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <Section title="Enrollment by Class">
-      <MiniBarList items={data.byClass} color="bg-blue-500" />
+      <MiniBarList items={data.byClass} color="bg-[#5B21B6]" />
     </Section>
     <Section title="Gender Breakdown">
       <div className="space-y-2.5">
         {data.byGender.map((g) => (
-          <MiniBar key={g.label} label={g.label} value={g.count} max={data.summary.total || 1} color="bg-purple-500" />
+          <MiniBar key={g.label} label={g.label} value={g.count} max={data.summary.total || 1} color="bg-[#5B21B6]" />
         ))}
       </div>
     </Section>
@@ -71,7 +71,7 @@ const StudentsView = ({ data }: { data: StudentAnalytics }) => (
             label={s.label}
             value={s.count}
             max={data.summary.total || 1}
-            color={s.label === 'active' ? 'bg-green-500' : 'bg-gray-400'}
+            color={s.label === 'active' ? 'bg-[#5B21B6]' : 'bg-gray-400'}
           />
         ))}
       </div>
@@ -80,15 +80,15 @@ const StudentsView = ({ data }: { data: StudentAnalytics }) => (
       <TrendSparkline
         data={data.monthlyTrend.map((m) => ({ month: m.month, count: m.count }))}
         valueKey="count"
-        color="#3b82f6"
+        color="#5B21B6"
         showLabels
       />
     </Section>
     <div className="col-span-full">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Students" value={data.summary.total} color="text-blue-700" bg="bg-blue-50" />
-        <StatCard label="Active" value={data.summary.active} color="text-green-700" bg="bg-green-50" />
-        <StatCard label="New This Month" value={data.summary.newThisMonth} color="text-indigo-700" bg="bg-indigo-50" />
+        <StatCard label="Total Students" value={data.summary.total} />
+        <StatCard label="Active" value={data.summary.active} />
+        <StatCard label="New This Month" value={data.summary.newThisMonth} />
       </div>
     </div>
   </div>
@@ -100,16 +100,16 @@ const AttendanceView = ({ data }: { data: AttendanceAnalytics }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Present" value={data.summary.present} color="text-green-700" bg="bg-green-50" />
-        <StatCard label="Absent" value={data.summary.absent} color="text-red-700" bg="bg-red-50" />
-        <StatCard label="Late" value={data.summary.late} color="text-amber-700" bg="bg-amber-50" />
-        <StatCard label="Attendance Rate" value={`${rate}%`} color="text-blue-700" bg="bg-blue-50" />
+        <StatCard label="Present" value={data.summary.present} />
+        <StatCard label="Absent" value={data.summary.absent} color="text-red-600" bg="bg-red-50" />
+        <StatCard label="Late" value={data.summary.late} />
+        <StatCard label="Attendance Rate" value={`${rate}%`} />
       </div>
       <Section title="Daily Rate Trend">
         <TrendSparkline
           data={data.dailyTrend.map((d) => ({ date: d.date, rate: d.rate }))}
           valueKey="rate"
-          color="#10b981"
+          color="#5B21B6"
           showLabels
         />
       </Section>
@@ -140,15 +140,15 @@ const FeesView = ({ data }: { data: FeeAnalytics }) => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Charged" value={fmt(s.totalCharged)} />
-        <StatCard label="Collected" value={fmt(s.totalCollected)} color="text-green-700" bg="bg-green-50" />
-        <StatCard label="Outstanding" value={fmt(s.totalOutstanding)} color="text-red-700" bg="bg-red-50" />
-        <StatCard label="Collection Rate" value={`${rate}%`} color="text-blue-700" bg="bg-blue-50" />
+        <StatCard label="Collected" value={fmt(s.totalCollected)} />
+        <StatCard label="Outstanding" value={fmt(s.totalOutstanding)} color="text-red-600" bg="bg-red-50" />
+        <StatCard label="Collection Rate" value={`${rate}%`} />
       </div>
       <Section title="Monthly Collection Trend">
         <TrendSparkline
           data={data.monthlyTrend.map((m) => ({ month: m.month, collected: m.collected }))}
           valueKey="collected"
-          color="#f59e0b"
+          color="#5B21B6"
           showLabels
         />
       </Section>
@@ -160,7 +160,7 @@ const FeesView = ({ data }: { data: FeeAnalytics }) => {
               label={fh.label}
               value={fh.collected}
               max={s.totalCollected || 1}
-              color="bg-amber-500"
+              color="bg-[#5B21B6]"
               formatted={fmt(fh.collected)}
             />
           ))}
@@ -176,24 +176,24 @@ const AdmissionsView = ({ data }: { data: AdmissionsAnalytics }) => {
     <div className="space-y-4">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard label="Total Applications" value={s.total} />
-        <StatCard label="New This Month" value={s.newThisMonth} color="text-blue-700" bg="bg-blue-50" />
-        <StatCard label="Converted This Month" value={s.convertedThisMonth} color="text-green-700" bg="bg-green-50" />
-        <StatCard label="Pending Follow-up" value={s.pendingFollowUp} color="text-amber-700" bg="bg-amber-50" />
-        <StatCard label="Conversion Rate" value={`${s.conversionRate.toFixed(1)}%`} color="text-indigo-700" bg="bg-indigo-50" />
+        <StatCard label="New This Month" value={s.newThisMonth} />
+        <StatCard label="Converted This Month" value={s.convertedThisMonth} />
+        <StatCard label="Pending Follow-up" value={s.pendingFollowUp} />
+        <StatCard label="Conversion Rate" value={`${s.conversionRate.toFixed(1)}%`} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Section title="By Stage">
-          <MiniBarList items={data.byStage} color="bg-purple-500" />
+          <MiniBarList items={data.byStage} color="bg-[#5B21B6]" />
         </Section>
         <Section title="By Source">
-          <MiniBarList items={data.bySource} color="bg-indigo-500" />
+          <MiniBarList items={data.bySource} color="bg-gray-500" />
         </Section>
       </div>
       <Section title="Monthly Applications Trend">
         <TrendSparkline
           data={data.monthlyTrend.map((m) => ({ month: m.month, count: m.count }))}
           valueKey="count"
-          color="#8b5cf6"
+          color="#5B21B6"
           showLabels
         />
       </Section>
@@ -206,8 +206,8 @@ const TimetableView = ({ data }: { data: TimetableAnalytics }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Published" value={s.published} color="text-green-700" bg="bg-green-50" />
-        <StatCard label="Draft" value={s.draft} color="text-amber-700" bg="bg-amber-50" />
+        <StatCard label="Published" value={s.published} />
+        <StatCard label="Draft" value={s.draft} />
         <StatCard label="Archived" value={s.archived} />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,7 +222,7 @@ const TimetableView = ({ data }: { data: TimetableAnalytics }) => {
           />
         </Section>
         <Section title="Subject Distribution">
-          <MiniBarList items={data.subjectDistribution} color="bg-rose-500" />
+          <MiniBarList items={data.subjectDistribution} color="bg-[#5B21B6]" />
         </Section>
       </div>
     </div>
@@ -234,12 +234,12 @@ const CalendarView = ({ data }: { data: CalendarAnalytics }) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="This Month" value={s.thisMonthCount} color="text-blue-700" bg="bg-blue-50" />
-        <StatCard label="Upcoming" value={s.upcomingCount} color="text-indigo-700" bg="bg-indigo-50" />
+        <StatCard label="This Month" value={s.thisMonthCount} />
+        <StatCard label="Upcoming" value={s.upcomingCount} />
         <StatCard label="Total Published" value={s.totalPublished} />
       </div>
       <Section title="By Event Type">
-        <MiniBarList items={data.byType} color="bg-indigo-500" />
+        <MiniBarList items={data.byType} color="bg-[#5B21B6]" />
       </Section>
       {data.upcoming.length > 0 && (
         <Section title="Upcoming Events">
@@ -333,7 +333,7 @@ export const ReportBuilderPage = () => {
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{CATEGORY_LABELS[category]} Report</h1>
           {savedReport && (
-            <p className="text-xs text-blue-600 mt-0.5">Running: {savedReport.name}</p>
+            <p className="text-xs text-[#5B21B6] mt-0.5">Running: {savedReport.name}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export const ReportBuilderPage = () => {
         <div className="py-12 text-center">
           <p className="text-sm text-red-600 font-medium">Failed to load data</p>
           <p className="text-xs text-gray-400 mt-1">{error.message}</p>
-          <button onClick={() => void refetch()} className="mt-3 text-xs text-blue-600 hover:underline">
+          <button onClick={() => void refetch()} className="mt-3 text-xs text-[#5B21B6] hover:underline">
             Retry
           </button>
         </div>

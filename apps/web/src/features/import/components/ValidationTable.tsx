@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Pencil, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, Pencil, Loader2, Search, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ImportRow, ImportRowStatus } from '@schoolos/types';
-import { useImportRows, useUpdateRow } from '../hooks/useImport';
+import { useImportRows, useUpdateRow, useAddRow, useDeleteRow } from '../hooks/useImport';
 import { cn } from '@/lib/utils';
 
 interface ValidationTableProps {
@@ -19,10 +19,10 @@ const STATUS_FILTER_OPTIONS: { label: string; value: ImportRowStatus | 'all' }[]
 
 const ROW_BADGE: Record<ImportRowStatus, string> = {
   pending:  'bg-gray-100 text-gray-600',
-  valid:    'bg-green-50 text-green-700',
-  warning:  'bg-yellow-50 text-yellow-700',
+  valid:    'bg-[#A855F7]/10 text-[#5B21B6]',
+  warning:  'bg-amber-50 text-amber-700',
   error:    'bg-red-50 text-red-700',
-  imported: 'bg-blue-50 text-blue-700',
+  imported: 'bg-gray-100 text-gray-600',
   skipped:  'bg-gray-100 text-gray-500',
 };
 
@@ -87,13 +87,25 @@ function EditableCell({ sessionId, row, col }: { sessionId: string; row: ImportR
 export function ValidationTable({ sessionId }: ValidationTableProps) {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<ImportRowStatus | 'all'>('all');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const PAGE_SIZE = 20;
+
+  // Debounce the search box so every keystroke doesn't fire a request.
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const { data, isLoading } = useImportRows(sessionId, {
     page,
     limit: PAGE_SIZE,
     status: statusFilter === 'all' ? undefined : statusFilter,
+    search: search || undefined,
   });
+
+  const addRow = useAddRow(sessionId);
+  const deleteRow = useDeleteRow(sessionId);
 
   const rows: ImportRow[] = data?.data ?? [];
   const total = data?.meta?.total ?? 0;
@@ -106,6 +118,26 @@ export function ValidationTable({ sessionId }: ValidationTableProps) {
   const columns = Array.from(new Set(rows.flatMap((r) => Object.keys(r.mappedData))));
 
   const hasEditableRows = rows.some((r) => EDITABLE_STATUSES.includes(r.status));
+
+  async function handleAddRow() {
+    try {
+      await addRow.mutateAsync({});
+      toast.success('Row added — fill in its values below.');
+      setStatusFilter('all');
+      setPage(1);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to add row');
+    }
+  }
+
+  async function handleDeleteRow(rowNumber: number) {
+    if (!window.confirm(`Remove row ${rowNumber} from this import?`)) return;
+    try {
+      await deleteRow.mutateAsync(rowNumber);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete row');
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -125,6 +157,31 @@ export function ValidationTable({ sessionId }: ValidationTableProps) {
             {opt.label}
           </button>
         ))}
+
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search rows…"
+            className="h-7 pl-8 pr-7 rounded-full border border-gray-200 text-xs w-40 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          />
+          {searchInput && (
+            <button onClick={() => setSearchInput('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={() => void handleAddRow()}
+          disabled={addRow.isPending}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 text-gray-500 hover:border-indigo-300 hover:text-indigo-600 disabled:opacity-50"
+        >
+          {addRow.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+          Add Row
+        </button>
+
         <span className="text-xs text-gray-500 ml-auto">{total} rows</span>
       </div>
 
@@ -143,13 +200,14 @@ export function ValidationTable({ sessionId }: ValidationTableProps) {
                 <th key={col} className="px-3 py-2.5 text-left font-medium text-gray-500 whitespace-nowrap">{col}</th>
               ))}
               <th className="px-3 py-2.5 text-left font-medium text-gray-500">Issues</th>
+              <th className="px-3 py-2.5 w-9" />
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={columns.length + 3} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={columns.length + 4} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={columns.length + 3} className="px-4 py-8 text-center text-gray-400">No rows found</td></tr>
+              <tr><td colSpan={columns.length + 4} className="px-4 py-8 text-center text-gray-400">No rows found</td></tr>
             ) : (
               rows.map((row) => (
                 <tr key={row._id} className={cn('border-t border-gray-50 hover:bg-gray-50/50', row.status === 'error' && 'bg-red-50/20')}>
@@ -168,6 +226,18 @@ export function ValidationTable({ sessionId }: ValidationTableProps) {
                         <span className="font-medium">{e.field}:</span> {e.message}
                       </div>
                     ))}
+                  </td>
+                  <td className="px-3 py-2">
+                    {row.status !== 'imported' && row.status !== 'skipped' && (
+                      <button
+                        onClick={() => void handleDeleteRow(row.rowNumber)}
+                        disabled={deleteRow.isPending}
+                        title="Remove this row"
+                        className="text-gray-300 hover:text-red-500 disabled:opacity-40"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

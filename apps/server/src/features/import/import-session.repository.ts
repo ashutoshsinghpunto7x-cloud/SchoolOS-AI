@@ -113,11 +113,16 @@ export interface ListRowsOptions {
   page?: number;
   limit?: number;
   status?: ImportRowStatus;
+  search?: string;
 }
 
 export interface PaginatedRows {
   data: IImportRow[];
   meta: { page: number; limit: number; total: number };
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export const importRowRepository = {
@@ -162,6 +167,20 @@ export const importRowRepository = {
 
     const filter: Record<string, unknown> = { sessionId };
     if (opts.status) filter.status = opts.status;
+    if (opts.search) {
+      const pattern = new RegExp(escapeRegex(opts.search), 'i');
+      // $objectToArray flattens mappedData into {k, v} pairs so we can regex-match
+      // against every field's stringified value without knowing column names upfront.
+      filter.$expr = {
+        $anyElementTrue: {
+          $map: {
+            input: { $objectToArray: '$mappedData' },
+            as: 'field',
+            in: { $regexMatch: { input: { $toString: '$$field.v' }, regex: pattern.source, options: 'i' } },
+          },
+        },
+      };
+    }
 
     const [data, total] = await Promise.all([
       ImportRow.find(filter).sort({ rowNumber: 1 }).skip(skip).limit(limit).lean<IImportRow[]>(),
@@ -169,6 +188,25 @@ export const importRowRepository = {
     ]);
 
     return { data, meta: { page, limit, total } };
+  },
+
+  async maxRowNumber(sessionId: string): Promise<number> {
+    const top = await ImportRow.findOne({ sessionId }).sort({ rowNumber: -1 }).select('rowNumber').lean<{ rowNumber: number }>();
+    return top?.rowNumber ?? 0;
+  },
+
+  async insertRow(row: {
+    sessionId: string; schoolId: string; rowNumber: number;
+    rawData: Record<string, unknown>; mappedData: Record<string, unknown>;
+    status: ImportRowStatus; errors: IImportRow['errors']; warnings: IImportRow['warnings'];
+  }): Promise<IImportRow> {
+    const doc = await ImportRow.create(row);
+    return doc.toObject() as IImportRow;
+  },
+
+  async deleteRow(sessionId: string, rowNumber: number): Promise<boolean> {
+    const result = await ImportRow.deleteOne({ sessionId, rowNumber });
+    return result.deletedCount > 0;
   },
 
   async updateRowStatus(

@@ -144,7 +144,7 @@ export function AccountantReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-white">
       {/* Print-only header — hidden on screen, shown when printing so a printed report reads professionally */}
       <style>{`
         @media print {
@@ -160,8 +160,11 @@ export function AccountantReportsPage() {
         </p>
       </div>
 
-      <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 print:hidden">
-        <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
+      <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3 print:hidden">
+        {/* Unlike the other accountant pages, Reports isn't reachable by re-clicking
+            a highlighted sidebar item once you're inside it, so its back button stays
+            visible at every breakpoint instead of only lg:hidden. */}
+        <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
         </button>
         <h1 className="text-base font-bold text-gray-900 flex-1">Reports</h1>
@@ -211,12 +214,12 @@ export function AccountantReportsPage() {
               <div className="bg-gray-900 rounded-2xl p-4"><p className="text-xs text-gray-300">Net Position</p><p className="text-lg font-bold text-white">{fmt(netPosition.net)}</p></div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <h3 className="text-sm font-bold text-gray-800 mb-3">Fee Collection Trend (last 6 months)</h3>
               <BarChart data={collectionByMonth} />
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <h3 className="text-sm font-bold text-gray-800 mb-3">Expenses by Category</h3>
               <BarChart data={expenseByCategory} />
             </div>
@@ -225,8 +228,8 @@ export function AccountantReportsPage() {
 
         {/* Fee Collection Report */}
         {tab === 'fees' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-3 gap-3 p-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-3 gap-3 p-4 border-b border-gray-200">
               <div><p className="text-xs text-gray-400">Total Charged</p><p className="text-sm font-bold text-gray-800">{fmt(feeSummary?.totalCharged ?? 0)}</p></div>
               <div><p className="text-xs text-gray-400">Total Collected</p><p className="text-sm font-bold text-gray-800">{fmt(feeSummary?.totalCollected ?? 0)}</p></div>
               <div><p className="text-xs text-gray-400">Outstanding</p><p className="text-sm font-bold text-gray-800">{fmt(feeSummary?.totalOutstanding ?? 0)}</p></div>
@@ -245,7 +248,7 @@ export function AccountantReportsPage() {
 
         {/* Pending Fee Report */}
         {tab === 'pending-fees' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="divide-y divide-gray-50 max-h-[65vh] overflow-y-auto">
               {filteredOutstanding.map((f) => (
                 <div key={f._id} className="flex items-center justify-between px-4 py-2.5 text-sm">
@@ -260,8 +263,8 @@ export function AccountantReportsPage() {
 
         {/* Salary Report */}
         {tab === 'salary' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-3 gap-3 p-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-3 gap-3 p-4 border-b border-gray-200">
               <div><p className="text-xs text-gray-400">Scheduled</p><p className="text-sm font-bold text-gray-800">{fmt(salarySummary?.totalScheduled ?? 0)}</p></div>
               <div><p className="text-xs text-gray-400">Pending</p><p className="text-sm font-bold text-gray-800">{fmt(salarySummary?.totalPending ?? 0)}</p></div>
               <div><p className="text-xs text-gray-400">Paid</p><p className="text-sm font-bold text-gray-800">{fmt(salarySummary?.totalPaid ?? 0)}</p></div>
@@ -280,8 +283,8 @@ export function AccountantReportsPage() {
 
         {/* Expense Report */}
         {tab === 'expenses' && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-50">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-2 gap-3 p-4 border-b border-gray-200">
               <div><p className="text-xs text-gray-400">Total Pending</p><p className="text-sm font-bold text-gray-800">{fmt(expenseSummary?.totalPending ?? 0)}</p></div>
               <div><p className="text-xs text-gray-400">Total Approved</p><p className="text-sm font-bold text-gray-800">{fmt(expenseSummary?.totalApproved ?? 0)}</p></div>
             </div>

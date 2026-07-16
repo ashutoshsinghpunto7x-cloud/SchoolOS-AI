@@ -67,7 +67,7 @@ export function FileDropzone({ onFile, disabled = false }: FileDropzoneProps) {
 
           {selected ? (
             <div className="flex items-center justify-center gap-3">
-              <FileSpreadsheet className="w-8 h-8 text-green-500 flex-shrink-0" />
+              <FileSpreadsheet className="w-8 h-8 text-gray-500 flex-shrink-0" />
               <div className="text-left">
                 <p className="text-sm font-medium text-gray-800">{selected.name}</p>
                 <p className="text-xs text-gray-500">{(selected.size / 1024).toFixed(1)} KB</p>

@@ -6,12 +6,13 @@ import {
 } from 'lucide-react';
 import { useUpdateStudent } from '@/features/students/hooks/useStudents';
 import { useSendReceiptEmail } from '../hooks/useAccountantWorkspace';
+import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 export const SCHOOL_NAME = 'Florence Nightingale Inter College';
-export const SCHOOL_ADDRESS = 'Triveni Nagar, Kanpur – 208001, Uttar Pradesh, India'; // Edit with the full postal address as needed.
+export const SCHOOL_ADDRESS = 'Tulsi Puram, Triveni Nagar - 2, Triveni Nagar, Lucknow, Uttar Pradesh 226020';
 
 export interface CollectContext {
   studentId?: string;
@@ -58,23 +59,22 @@ export function ReceiptCopy({
         {copyLabel.toUpperCase()}
       </span>
 
-      <div className="flex items-start justify-between pb-6 border-b border-gray-100">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full border-2 border-emerald-600 flex items-center justify-center bg-white shrink-0">
-            <GraduationCap className="w-8 h-8 text-emerald-600" strokeWidth={1.5} />
-          </div>
-          <div>
-            <p className="font-serif text-2xl font-bold text-gray-900 leading-tight">{SCHOOL_NAME}</p>
-            <p className="text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-gray-300 shrink-0" />{SCHOOL_ADDRESS}
-            </p>
-            <p className="text-lg font-bold text-emerald-600 mt-2">Fee Receipt</p>
-          </div>
-        </div>
-        <div className="text-right shrink-0 w-40">
+      {/* Centered brand header — logo, school name, full address, "Fee Receipt" banner */}
+      <div className="flex flex-col items-center text-center pb-5 border-b border-gray-200">
+        <img src={fnicLogo} alt={SCHOOL_NAME} className="w-20 h-20 rounded-full object-cover shrink-0 mb-3" />
+        <p className="font-serif text-2xl font-bold text-gray-900 leading-tight">{SCHOOL_NAME}</p>
+        <p className="text-sm text-gray-400 mt-1 flex items-center justify-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-gray-300 shrink-0" />{SCHOOL_ADDRESS}
+        </p>
+        <p className="text-lg font-bold text-emerald-600 mt-2">Fee Receipt</p>
+      </div>
+
+      <div className="flex items-center justify-between pt-4">
+        <div>
           <p className="text-[11px] font-semibold text-gray-400 tracking-wide">RECEIPT NO.</p>
           <p className="text-base font-bold text-gray-900 mt-0.5">{receiptNumber || '—'}</p>
-          <div className="border-t border-dashed border-gray-200 my-2" />
+        </div>
+        <div className="text-right">
           <p className="text-[11px] font-semibold text-gray-400 tracking-wide">DATE</p>
           <p className="text-base font-bold text-gray-900 mt-0.5">{dateLabel}</p>
         </div>
@@ -115,6 +115,7 @@ export function ReceiptCopy({
           <div className="border-t-2 border-gray-800 mb-2" />
           <p className="text-[11px] text-gray-400">Student/Guardian Signature</p>
         </div>
+        <StampSeal className="w-20 h-20 shrink-0" />
         <div className="w-56 text-right">
           <div className="border-t-2 border-gray-800 mb-2" />
           <p className="text-[11px] text-gray-400">Accountant Stamp/Signature</p>
@@ -151,35 +152,34 @@ export function PrintReceiptCopy({
   const dateLabel = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="print-receipt-copy relative bg-white rounded-[3mm] border border-gray-200 p-[7mm] text-left w-full">
-      <span className="inline-flex items-center gap-[1mm] text-[7px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-[3mm] py-[1mm] mb-[3mm]">
+    <div className="print-receipt-copy relative bg-white rounded-[3mm] border border-gray-200 p-[6mm] text-left w-full h-full flex flex-col">
+      <span className="inline-flex items-center gap-[1mm] text-[7px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-[3mm] py-[1mm] mb-[2mm] self-start">
         <ShieldCheck className="w-[3mm] h-[3mm]" />
         {copyLabel.toUpperCase()}
       </span>
 
-      <div className="flex items-start justify-between pb-[3mm] border-b border-gray-100">
-        <div className="flex items-center gap-[4mm]">
-          <div className="w-[13mm] h-[13mm] rounded-full border-[1.2px] border-emerald-600 flex items-center justify-center bg-white shrink-0">
-            <GraduationCap className="w-[6.5mm] h-[6.5mm] text-emerald-600" strokeWidth={1.5} />
-          </div>
-          <div>
-            <p className="font-serif text-[13px] font-bold text-gray-900 leading-tight">{SCHOOL_NAME}</p>
-            <p className="text-[7.5px] text-gray-400 mt-[0.5mm] flex items-center gap-[1mm]">
-              <MapPin className="w-[2.5mm] h-[2.5mm] text-gray-300 shrink-0" />{SCHOOL_ADDRESS}
-            </p>
-            <p className="text-[11px] font-bold text-emerald-600 mt-[1.5mm]">Fee Receipt</p>
-          </div>
-        </div>
-        <div className="text-right shrink-0 w-[30mm]">
+      {/* Centered brand header — logo, school name, full address, "Fee Receipt" banner */}
+      <div className="flex flex-col items-center text-center pb-[2mm] border-b border-gray-200">
+        <img src={fnicLogo} alt={SCHOOL_NAME} className="w-[16mm] h-[16mm] rounded-full object-cover shrink-0 mb-[1.5mm]" />
+        <p className="font-serif text-[13px] font-bold text-gray-900 leading-tight">{SCHOOL_NAME}</p>
+        <p className="text-[7.5px] text-gray-400 mt-[0.5mm] flex items-center justify-center gap-[1mm]">
+          <MapPin className="w-[2.5mm] h-[2.5mm] text-gray-300 shrink-0" />{SCHOOL_ADDRESS}
+        </p>
+        <p className="text-[11px] font-bold text-emerald-600 mt-[1.5mm]">Fee Receipt</p>
+      </div>
+
+      <div className="flex items-center justify-between pt-[2mm]">
+        <div>
           <p className="text-[7px] font-semibold text-gray-400 tracking-wide">RECEIPT NO.</p>
           <p className="text-[10px] font-bold text-gray-900">{receiptNumber || '—'}</p>
-          <div className="border-t border-dashed border-gray-200 my-[1.5mm]" />
+        </div>
+        <div className="text-right">
           <p className="text-[7px] font-semibold text-gray-400 tracking-wide">DATE</p>
           <p className="text-[10px] font-bold text-gray-900">{dateLabel}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-[8mm] py-[3.5mm]">
+      <div className="grid grid-cols-2 gap-[8mm] py-[3mm] flex-1">
         <div>
           <PrintReceiptRow icon={User} label="Student Name" value={context.studentName} />
           <PrintReceiptRow icon={User} label="Father's Name" value={context.fatherName || '—'} />
@@ -209,12 +209,13 @@ export function PrintReceiptCopy({
         </div>
       </div>
 
-      <div className="flex items-end justify-between pt-[4mm] mt-[1mm] border-t border-dashed border-gray-200">
-        <div className="w-[45mm]">
+      <div className="flex items-end justify-between pt-[3mm] mt-[1mm] border-t border-dashed border-gray-200">
+        <div className="w-[40mm]">
           <div className="border-t-2 border-gray-800 mb-[1.5mm]" />
           <p className="text-[7px] text-gray-400">Student/Guardian Signature</p>
         </div>
-        <div className="w-[45mm] text-right">
+        <StampSeal className="w-[16mm] h-[16mm] shrink-0" />
+        <div className="w-[40mm] text-right">
           <div className="border-t-2 border-gray-800 mb-[1.5mm]" />
           <p className="text-[7px] text-gray-400">Accountant Stamp/Signature</p>
         </div>
@@ -226,40 +227,6 @@ export function PrintReceiptCopy({
 // ── "Classic" template — a formal, portrait certificate-style receipt ──────────
 // Alternative to the landscape design above; selectable via the toggle in
 // FeeReceiptSuccessScreen and remembered per-browser (localStorage).
-
-function CrestLogo({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 120 120" className={className} fill="none">
-      {/* laurel wreath */}
-      <g stroke="#0F5132" strokeWidth="2" strokeLinecap="round" opacity="0.8">
-        <path d="M58 112 C40 106 24 92 20 72 C18 60 19 48 23 38" />
-        <ellipse cx="34" cy="102" rx="5.5" ry="2.5" transform="rotate(-35 34 102)" fill="#0F5132" stroke="none" />
-        <ellipse cx="26" cy="90" rx="5.5" ry="2.5" transform="rotate(-55 26 90)" fill="#0F5132" stroke="none" />
-        <ellipse cx="21" cy="76" rx="5.5" ry="2.5" transform="rotate(-75 21 76)" fill="#0F5132" stroke="none" />
-        <ellipse cx="20" cy="60" rx="5.5" ry="2.5" transform="rotate(-95 20 60)" fill="#0F5132" stroke="none" />
-        <ellipse cx="22" cy="46" rx="5.5" ry="2.5" transform="rotate(-110 22 46)" fill="#0F5132" stroke="none" />
-      </g>
-      <g stroke="#0F5132" strokeWidth="2" strokeLinecap="round" opacity="0.8" transform="scale(-1,1) translate(-120,0)">
-        <path d="M58 112 C40 106 24 92 20 72 C18 60 19 48 23 38" />
-        <ellipse cx="34" cy="102" rx="5.5" ry="2.5" transform="rotate(-35 34 102)" fill="#0F5132" stroke="none" />
-        <ellipse cx="26" cy="90" rx="5.5" ry="2.5" transform="rotate(-55 26 90)" fill="#0F5132" stroke="none" />
-        <ellipse cx="21" cy="76" rx="5.5" ry="2.5" transform="rotate(-75 21 76)" fill="#0F5132" stroke="none" />
-        <ellipse cx="20" cy="60" rx="5.5" ry="2.5" transform="rotate(-95 20 60)" fill="#0F5132" stroke="none" />
-        <ellipse cx="22" cy="46" rx="5.5" ry="2.5" transform="rotate(-110 22 46)" fill="#0F5132" stroke="none" />
-      </g>
-      {/* shield */}
-      <path
-        d="M60 10 L96 22 L96 58 C96 82 80 98 60 108 C40 98 24 82 24 58 L24 22 Z"
-        fill="white" stroke="#0F5132" strokeWidth="3"
-      />
-      {/* open book */}
-      <path d="M60 48 L60 70" stroke="#0F5132" strokeWidth="2" />
-      <path d="M60 50 C54 46 46 46 41 49 L41 66 C46 63 54 63 60 67 Z" fill="none" stroke="#0F5132" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M60 50 C66 46 74 46 79 49 L79 66 C74 63 66 63 60 67 Z" fill="none" stroke="#0F5132" strokeWidth="2" strokeLinejoin="round" />
-      <text x="60" y="88" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0F5132" fontFamily="serif">FNIC</text>
-    </svg>
-  );
-}
 
 function BuildingWatermark({ className = '' }: { className?: string }) {
   return (
@@ -299,7 +266,7 @@ function ClassicRow({
   icon: Icon, label, value,
 }: { icon: LucideIcon; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between py-3.5 border-b border-gray-100 last:border-b-0">
+    <div className="flex items-center justify-between py-3.5 border-b border-gray-200 last:border-b-0">
       <span className="flex items-center gap-3 text-gray-500">
         <Icon className="w-[18px] h-[18px] text-gray-400" strokeWidth={1.5} />
         {label}
@@ -318,7 +285,7 @@ export function ClassicReceiptCopy({
   const dateLabel = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="classic-receipt-copy relative bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden p-10 text-left w-full">
+    <div className="classic-receipt-copy relative bg-white rounded-[32px] shadow-sm border border-gray-200 overflow-hidden p-10 text-left w-full">
       {/* Decorative corner accent */}
       <div
         className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#14532D] to-[#0B3D2E]"
@@ -332,7 +299,7 @@ export function ClassicReceiptCopy({
       </span>
 
       <div className="relative z-10 text-center pt-2 pb-4">
-        <CrestLogo className="w-24 h-24 mx-auto mb-3" />
+        <img src={fnicLogo} alt={SCHOOL_NAME} className="w-24 h-24 rounded-full object-cover mx-auto mb-3" />
         <p className="font-serif text-3xl font-bold text-gray-900">{SCHOOL_NAME}</p>
         <p className="text-sm text-gray-400 mt-2 flex items-center justify-center gap-3">
           <span className="w-8 h-px bg-amber-200" />{SCHOOL_ADDRESS.split(',')[0]}<span className="w-8 h-px bg-amber-200" />
@@ -362,7 +329,7 @@ export function ClassicReceiptCopy({
         </div>
       </div>
 
-      <div className="relative z-10 bg-white rounded-2xl border border-gray-100 px-4 mb-4">
+      <div className="relative z-10 bg-white rounded-2xl border border-gray-200 px-4 mb-4">
         <ClassicRow icon={User} label="Student Name" value={context.studentName} />
         <ClassicRow icon={User} label="Father's Name" value={context.fatherName || '—'} />
         <ClassicRow icon={GraduationCap} label="Class" value={context.class} />
@@ -436,7 +403,7 @@ export function ClassicPrintCopy({
   const dateLabel = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
-    <div className="classic-print-copy relative bg-white rounded-[4mm] border border-gray-100 overflow-hidden p-[5mm] text-left w-full h-full flex flex-col">
+    <div className="classic-print-copy relative bg-white rounded-[4mm] border border-gray-200 overflow-hidden p-[5mm] text-left w-full h-full flex flex-col">
       <div
         className="absolute top-0 right-0 w-[20mm] h-[20mm] bg-gradient-to-br from-[#14532D] to-[#0B3D2E]"
         style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 0)' }}
@@ -449,7 +416,7 @@ export function ClassicPrintCopy({
       </span>
 
       <div className="relative z-10 text-center pt-[1mm] pb-[2mm]">
-        <CrestLogo className="w-[15mm] h-[15mm] mx-auto mb-[1mm]" />
+        <img src={fnicLogo} alt={SCHOOL_NAME} className="w-[15mm] h-[15mm] rounded-full object-cover mx-auto mb-[1mm]" />
         <p className="font-serif text-[12px] font-bold text-gray-900 leading-tight">{SCHOOL_NAME}</p>
         <p className="text-[7px] text-gray-400 mt-[0.5mm] flex items-center justify-center gap-[2mm]">
           <span className="w-[5mm] h-px bg-amber-200" />{SCHOOL_ADDRESS.split(',')[0]}<span className="w-[5mm] h-px bg-amber-200" />
@@ -552,26 +519,30 @@ export function FeeReceiptSuccessScreen({
   return (
     <div className="min-h-screen flex flex-col items-center px-6 text-center py-10">
       {/*
-        The receipt printer's actual paper is a small landscape sheet — 8.5in x
-        5.5in (216mm x 140mm) — NOT a full A4 page, and it holds exactly one
-        copy per physical sheet. So we no longer split one big page into two
-        halves with a cut-line; each copy just gets its own page at the
-        printer's native size, centered on it. `@page` stays OUTSIDE
-        `@media print` — nesting it inside the media block is unreliable
-        across browsers.
+        Both copies print on a single standard A4 sheet — the parent/student
+        copy on the top half, the school copy on the bottom half, separated
+        by a dashed cut-line — rather than one copy per page. `@page` stays
+        OUTSIDE `@media print` — nesting it inside the media block is
+        unreliable across browsers.
       */}
       <style>{`
-        @page { size: 216mm 140mm; margin: 6mm; }
+        @page { size: A4 portrait; margin: 8mm; }
         @media print {
           body * { visibility: hidden; }
           #receipt-print-area, #receipt-print-area * { visibility: visible; }
-          #receipt-print-area { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-          #receipt-print-area .print-page {
-            width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            page-break-after: always;
+          #receipt-print-area {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column;
           }
-          #receipt-print-area .print-page:last-child { page-break-after: auto; }
+          #receipt-print-area .print-page {
+            width: 100%; height: calc(50% - 4mm);
+            display: flex; align-items: stretch; justify-content: center;
+          }
+          #receipt-print-area .print-cut-line {
+            width: 100%; height: 8mm; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-top: 1px dashed #9CA3AF;
+          }
         }
       `}</style>
 
@@ -606,13 +577,14 @@ export function FeeReceiptSuccessScreen({
         )}
       </div>
 
-      {/* Two identical copies, only rendered for print — each on its own page, sized to the printer's native 216mm x 140mm paper. */}
+      {/* Both copies, only rendered for print — stacked as the top and bottom halves of one A4 page, split by a dashed cut-line. */}
       <div id="receipt-print-area" className="hidden print:block">
         {template === 'classic' ? (
           <>
             <div className="print-page">
               <ClassicPrintCopy context={context} lineItems={lineItems} total={total} paymentMode={paymentMode} receiptNumber={receiptNumber} copyLabel="Student / Parent Copy" />
             </div>
+            <div className="print-cut-line" />
             <div className="print-page">
               <ClassicPrintCopy context={context} lineItems={lineItems} total={total} paymentMode={paymentMode} receiptNumber={receiptNumber} copyLabel="School Copy" />
             </div>
@@ -622,6 +594,7 @@ export function FeeReceiptSuccessScreen({
             <div className="print-page">
               <PrintReceiptCopy context={context} lineItems={lineItems} total={total} paymentMode={paymentMode} receiptNumber={receiptNumber} copyLabel="Student / Parent Copy" />
             </div>
+            <div className="print-cut-line" />
             <div className="print-page">
               <PrintReceiptCopy context={context} lineItems={lineItems} total={total} paymentMode={paymentMode} receiptNumber={receiptNumber} copyLabel="School Copy" />
             </div>

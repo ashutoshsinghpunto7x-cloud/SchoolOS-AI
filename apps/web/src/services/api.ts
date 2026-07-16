@@ -13,7 +13,7 @@ export const apiClient: AxiosInstance = axios.create({
 // ── Request Interceptor ───────────────────────────────────────────────────────
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -40,8 +40,8 @@ export const resetAuthRefreshState = () => {
 };
 
 const clearAuthAndRedirect = () => {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('refreshToken');
   window.location.href = '/login';
 };
 
@@ -67,7 +67,7 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     if (!refreshToken) {
       clearAuthAndRedirect();
       return Promise.reject(error);
@@ -93,8 +93,8 @@ apiClient.interceptors.response.use(
       }>(`${BASE_URL}/auth/refresh`, { refreshToken });
 
       const { accessToken, refreshToken: newRefreshToken } = res.data.data;
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', newRefreshToken);
+      sessionStorage.setItem('accessToken', accessToken);
+      sessionStorage.setItem('refreshToken', newRefreshToken);
 
       pendingRequests.forEach(({ resolve }) => resolve(accessToken));
       pendingRequests = [];

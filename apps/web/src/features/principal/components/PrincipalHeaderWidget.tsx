@@ -151,7 +151,7 @@ function WeatherChip() {
 
 // ── Widget ────────────────────────────────────────────────────────────────────
 
-export function PrincipalHeaderWidget(_props: { upcomingEvents?: PrincipalUpcomingEvent[] }) {
+export function PrincipalHeaderWidget({ showWeather = true }: { upcomingEvents?: PrincipalUpcomingEvent[]; showWeather?: boolean }) {
   const { user } = useAuth();
   const now = useNow(1000);
 
@@ -188,9 +188,14 @@ export function PrincipalHeaderWidget(_props: { upcomingEvents?: PrincipalUpcomi
             <InfoRow icon={Clock} label="Today's Date" value={dateStr} />
           </div>
 
-          <div className="mt-3">
-            <WeatherChip />
-          </div>
+          {/* Weather is a principal-only nicety — the admin/reception dashboard
+              hides it (via showWeather={false}) since it takes up space
+              without being useful there. */}
+          {showWeather && (
+            <div className="mt-3">
+              <WeatherChip />
+            </div>
+          )}
         </div>
 
         <div className="w-full lg:w-72">

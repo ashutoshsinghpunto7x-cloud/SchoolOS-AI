@@ -3,6 +3,14 @@ import { createTeacherSchema } from '../../teachers/teacher.validation';
 import { IValidator, RowValidationResult } from './validator.interface';
 import { normalizeGenderAbbrev } from './shared-helpers';
 
+// NOTE: phone stays required here (mirroring createTeacherSchema) because the
+// Teacher DB model itself requires it (`teacher.model.ts`, `phone: { required: true }`) —
+// relaxing it here would let a row show "valid" in preview and then fail at
+// confirm/processing time, which is worse than the row surfacing a clear,
+// fixable "Phone is required" error up front. A Name-only sheet still
+// uploads and previews successfully (the parser no longer rejects sparse
+// files outright); rows missing phone are editable inline before confirming.
+
 // Every field createTeacherSchema recognizes — anything else in the mapped row
 // gets swept into customFields instead of being silently dropped (Zod's default
 // object behavior strips unrecognized keys with no trace).
@@ -87,8 +95,13 @@ export const teacherValidator: IValidator = {
     const result = createTeacherSchema.safeParse(processed);
 
     if (result.success) {
+      // A defaulted-but-reasonable value (e.g. gender not provided) is
+      // informational, not something blocking — especially for sparse imports
+      // (a Teacher Name-only sheet) where nearly every optional field is
+      // defaulted. The row's data is complete enough to import; `warnings`
+      // still carries the note for visibility.
       return {
-        status: warnings.length ? 'warning' : 'valid',
+        status: 'valid',
         errors: [],
         warnings,
         cleanData: result.data as Record<string, unknown>,

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
 import { recoveryApi } from '../api/recovery.api';
 import { resetAuthRefreshState } from '@/services/api';
+import { queryClient } from '@/lib/queryClient';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthUser } from '@schoolos/types';
 
@@ -15,9 +16,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Validate existing session on mount
+  // Validate existing session on mount. Session lives in sessionStorage so each
+  // browser tab has its own isolated token — on shared front-office computers,
+  // logging in on one tab must not silently swap the session of another tab
+  // that's already open (was causing spurious /forbidden redirects and
+  // wrong-user data on dashboards that were mid-session in another tab).
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = sessionStorage.getItem('accessToken');
     if (!token) {
       setIsLoading(false);
       return;
@@ -27,16 +32,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .me()
       .then((data) => setUser(data))
       .catch(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('accessToken');
+        sessionStorage.removeItem('refreshToken');
       })
       .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (identifier: string, password: string): Promise<AuthUser> => {
     const data = await authApi.login({ identifier, password });
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
+    queryClient.clear();
+    sessionStorage.setItem('accessToken', data.accessToken);
+    sessionStorage.setItem('refreshToken', data.refreshToken);
     const mergedUser: AuthUser = {
       ...data.user,
       mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
@@ -53,8 +59,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const loginWithPin = useCallback(async (deviceId: string, pin: string): Promise<AuthUser> => {
     const tokens = await recoveryApi.loginWithPin({ deviceId, pin });
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
+    queryClient.clear();
+    sessionStorage.setItem('accessToken', tokens.accessToken);
+    sessionStorage.setItem('refreshToken', tokens.refreshToken);
     const data = await authApi.me();
     setUser(data);
     return data;
@@ -66,9 +73,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = useCallback(async (): Promise<void> => {
     await authApi.logout();
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
     resetAuthRefreshState();
+    queryClient.clear();
     setUser(null);
     navigate('/login', { replace: true });
   }, [navigate]);

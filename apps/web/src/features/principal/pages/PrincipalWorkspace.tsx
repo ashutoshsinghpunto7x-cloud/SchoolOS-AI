@@ -15,7 +15,7 @@ import { AssistantPanel } from '@/features/principal-assistant/components/Assist
 
 export const PrincipalWorkspace = () => {
   const navigate = useNavigate();
-  const { data, isLoading, error } = usePrincipalDashboard();
+  const { data, isLoading, error, refetch } = usePrincipalDashboard();
   const { data: teachersSummary } = useTeachersSummary();
 
   return (
@@ -27,8 +27,15 @@ export const PrincipalWorkspace = () => {
 
         {/* Error */}
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm font-medium text-red-600">
-            {error.message}
+          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-red-600">{error.message}</p>
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              className="h-8 px-3 shrink-0 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
+            >
+              Retry
+            </button>
           </div>
         )}
 

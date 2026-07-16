@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, List, LayoutGrid, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Calendar, List, LayoutGrid, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -80,9 +80,19 @@ export const CalendarWorkspace = () => {
     <PageContainer>
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">School Calendar</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage events, holidays, and school activities</p>
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors shrink-0 mt-0.5"
+            type="button"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">School Calendar</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage events, holidays, and school activities</p>
+          </div>
         </div>
         {canCreate && (
           <button

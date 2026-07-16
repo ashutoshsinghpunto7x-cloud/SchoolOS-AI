@@ -1,5 +1,5 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
-import type { ApiResponse, SchoolSettings } from '@schoolos/types';
+import type { ApiResponse, SchoolSettings, AttendanceRules, PayrollConfig } from '@schoolos/types';
 
 export const schoolSettingsApi = {
   async getSettings(): Promise<SchoolSettings> {
@@ -27,6 +27,24 @@ export const schoolSettingsApi = {
   async removeLogo(): Promise<SchoolSettings> {
     try {
       const res = await apiClient.delete<ApiResponse<SchoolSettings>>('/school-settings/logo');
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async updateAttendanceRules(payload: AttendanceRules): Promise<SchoolSettings> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/attendance-rules', payload);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async updatePayrollConfig(payload: PayrollConfig): Promise<SchoolSettings> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/payroll-config', payload);
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

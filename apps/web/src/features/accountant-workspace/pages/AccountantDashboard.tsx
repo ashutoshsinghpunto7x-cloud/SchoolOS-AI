@@ -9,6 +9,7 @@ import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEvent
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { ClassDefaulterGroup } from '@schoolos/types';
 import { motion } from 'framer-motion';
+import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '../gradient';
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -98,10 +99,20 @@ function SkeletonRow() {
 }
 
 // ── KPI CONFIG ────────────────────────────────────────────────────────────────
-
+// This array drives the 4 KPI cards rendered near the top of the page (the
+// `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4` block further down). Each
+// object here becomes one <KpiCard>. All the actual numbers come from a single
+// network call — `useAccountantDashboard()` — which hits GET
+// /accountant-workspace/dashboard on the server (see
+// apps/server/src/features/accountant-workspace/accountant-workspace.service.ts
+// → getDashboard()). Add/remove/reorder a KPI tile by editing this array —
+// nothing else needs to change.
 function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], isLoading: boolean) {
   return [
     {
+      // Card 1: "Fees Collected Today" — sum of every payment recorded with
+      // today's date (server: feePaymentRepository.getTotalCollectedBetween).
+      // Clicking it opens the Reports page.
       key: 'fees-collected',
       label: 'Fees Collected Today',
       value: isLoading ? '—' : fmt(data?.feesCollectedToday ?? 0),
@@ -109,6 +120,14 @@ function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], 
       path: '/accountant/reports',
     },
     {
+      // Card 2: "Pending Fees" — total charged minus total collected across
+      // fee records whose due date has already arrived (server:
+      // feeRepository.getSummary(schoolId, { dueOnOrBefore: today }) called
+      // from accountant-workspace.service.ts). A fee due next month does NOT
+      // count here yet — see the dueOnOrBefore comment on that call for why.
+      // The sub-label counts fees whose status has flipped to "overdue"
+      // (past due date, still unpaid) — a subset of the total above.
+      // Clicking it opens the Pending Fees page.
       key: 'pending-fees',
       label: 'Pending Fees',
       value: isLoading ? '—' : fmt(data?.feeSummary.totalOutstanding ?? 0),
@@ -116,6 +135,8 @@ function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], 
       path: '/accountant/pending-fees',
     },
     {
+      // Card 3: "Pending Salary" — sum of salary records not yet marked paid
+      // (server: salaryRepository.getSummary). Clicking it opens Salary.
       key: 'pending-salary',
       label: 'Pending Salary',
       value: isLoading ? '—' : fmt(data?.salarySummary.totalPending ?? 0),
@@ -123,6 +144,8 @@ function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], 
       path: '/accountant/salary',
     },
     {
+      // Card 4: "Pending Expenses" — sum of expense claims awaiting approval
+      // (server: expenseRepository.getSummary). Clicking it opens Expenses.
       key: 'pending-expenses',
       label: 'Pending Expenses',
       value: isLoading ? '—' : fmt(data?.expenseSummary.totalPending ?? 0),
@@ -136,13 +159,30 @@ function buildKpiCards(data: ReturnType<typeof useAccountantDashboard>['data'], 
 
 export function AccountantDashboard() {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useAccountantDashboard();
+  // Single source of truth for every number on this page — one GET request,
+  // fanned out into the KPI cards, the defaulters list, etc. See
+  // useAccountantDashboard() in ../hooks/useAccountantWorkspace.ts.
+  const { data, isLoading, isError, refetch } = useAccountantDashboard();
 
+  // ── "Remind" button state machine (Fee Defaulters by Class card) ──────────
+  // The defaulters list itself (`data.defaulters`, used below for
+  // `topDefaulters`) is per-student and cheap — it's always fetched as part
+  // of the main dashboard call. But sending a reminder needs the *grouped*
+  // view (all defaulters bucketed by class+section, with contact info),
+  // which is a separate, heavier query (`useGroupedDefaulters`) that we don't
+  // want to fire on every dashboard load — only once the accountant actually
+  // clicks "Remind" on some row. `wantsGroups` is the flag that turns that
+  // query on; `pendingSend` remembers *which* class/section the accountant
+  // clicked while the grouped query is still in flight, so the reminder
+  // modal (`sendingGroup`) can open automatically the moment the data lands
+  // (see the effect below) instead of requiring a second click.
   const [wantsGroups, setWantsGroups] = useState(false);
   const [pendingSend, setPendingSend] = useState<{ class: string; section: string } | null>(null);
   const { data: groupedDefaulters, isFetching: groupsFetching } = useGroupedDefaulters(wantsGroups);
   const [sendingGroup, setSendingGroup] = useState<ClassDefaulterGroup | null>(null);
 
+  // Top 5 individual defaulters (any class), most-overdue first — feeds the
+  // "Fee Defaulters by Class" card's row list further down.
   const topDefaulters = useMemo(
     () => [...(data?.defaulters ?? [])].sort((a, b) => b.daysOverdue - a.daysOverdue).slice(0, 5),
     [data?.defaulters],
@@ -151,6 +191,10 @@ export function AccountantDashboard() {
   const groupFor = (classLabel: string, section: string) =>
     groupedDefaulters?.find((g) => g.class === classLabel && g.section === section) ?? null;
 
+  // Called by each row's "Remind" button. First click ever on this page:
+  // kicks off the grouped-defaulters fetch and remembers what to open once it
+  // resolves (handled by the effect below). Every click after that: the
+  // grouped data is already cached, so it opens the modal immediately.
   function requestSend(classLabel: string, section: string) {
     if (!wantsGroups) {
       setWantsGroups(true);
@@ -161,6 +205,9 @@ export function AccountantDashboard() {
     if (g) setSendingGroup(g);
   }
 
+  // Fires once `groupedDefaulters` finishes loading after the *first*
+  // "Remind" click — opens the SendDefaultersModal for whichever class/
+  // section the accountant originally clicked.
   useEffect(() => {
     if (!pendingSend || !groupedDefaulters) return;
     const g = groupFor(pendingSend.class, pendingSend.section);
@@ -168,17 +215,21 @@ export function AccountantDashboard() {
     setPendingSend(null);
   }, [groupedDefaulters, pendingSend]);
 
+  // The 4 top KPI tiles — see buildKpiCards() above for what each one means.
   const kpiCards = buildKpiCards(data, isLoading);
   const { user } = useAuth();
   const firstName = user?.firstName ?? 'Accountant';
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-white">
 
-      {/* ── Hero header — same gradient treatment as the Teacher & Principal dashboards ── */}
+      {/* ── Hero header — same gradient treatment as the Teacher & Principal dashboards.
+          Sits directly beneath Topbar's now-matching purple bar (see Topbar.tsx's
+          isAccountantDashboard branch) so the two read as one continuous block —
+          hence the trimmed top padding instead of the usual pt-8. ── */}
       <div
-        className="px-5 lg:px-8 pt-8 pb-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
+        className="px-5 lg:px-8 pt-3 pb-8 relative overflow-hidden"
+        style={ACCOUNTANT_HERO_GRADIENT_STYLE}
       >
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
@@ -192,11 +243,26 @@ export function AccountantDashboard() {
 
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
 
-        {/* ── KPI Cards ───────────────────────────────────────────────────── */}
+        {/* ── KPI Cards ───────────────────────────────────────────────────────
+            4 tiles, one per entry in buildKpiCards() above: Fees Collected
+            Today, Pending Fees, Pending Salary, Pending Expenses. Each is
+            just a number + a click target to the relevant page — no
+            calculation happens here, it's all pulled pre-computed from
+            `data` (see useAccountantDashboard() and the server's
+            accountant-workspace.service.ts → getDashboard()). ──────────── */}
         {isError ? (
           <div className="bg-red-50 border border-red-200 rounded-[18px] p-6 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm font-semibold text-red-700">Failed to load dashboard. Please refresh.</p>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-700">Failed to load dashboard.</p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="mt-2 h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -214,10 +280,15 @@ export function AccountantDashboard() {
           </div>
         )}
 
-        {/* ── Main content grid (Exactly 1.6x the KPI height: 288px) ───────── */}
+        {/* ── Main content grid (Exactly 1.6x the KPI height: 288px) ─────────
+            Two side-by-side cards on desktop: "Collect Fees" (a pure nav
+            shortcut, no data of its own) on the left, "Fee Defaulters by
+            Class" (the actual per-student pending-fee list) on the right. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Collect Fees Card */}
+          {/* Collect Fees Card — no data fetching here at all, it's just a
+              shortcut button to /accountant/collect-fee (the student search +
+              payment-collection flow lives entirely on that page). */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -240,7 +311,10 @@ export function AccountantDashboard() {
             </button>
           </motion.div>
 
-          {/* Fee Defaulters by Class Card */}
+          {/* Fee Defaulters by Class Card — lists the 5 most-overdue students
+              (`topDefaulters`, computed above from `data.defaulters`). The
+              "Remind" button per row triggers the grouped-defaulters fetch +
+              SendDefaultersModal flow explained above `requestSend()`. */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -306,7 +380,8 @@ export function AccountantDashboard() {
 
         </div>
 
-        {/* Teachers quick-link */}
+        {/* Teachers quick-link — same idea as "Collect Fees" above: a plain
+            nav shortcut to /accountant/teachers, no data of its own here. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -332,10 +407,15 @@ export function AccountantDashboard() {
           </button>
         </motion.div>
 
+        {/* School-wide calendar events (holidays, exams, etc.) — shared
+            component also used on the Principal/Reception dashboards; fetches
+            its own data independently of `useAccountantDashboard()` above. */}
         <UpcomingEventsWidget />
 
       </div>
 
+      {/* "Remind this class/section" modal — only rendered once a Remind
+          button's requestSend() flow (see above) has resolved a group to send to. */}
       {sendingGroup && (
         <SendDefaultersModal group={sendingGroup} onClose={() => setSendingGroup(null)} />
       )}

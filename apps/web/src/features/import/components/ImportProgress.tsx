@@ -18,8 +18,8 @@ export function ImportProgress({ session }: ImportProgressProps) {
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-800">Import Progress</h3>
-        {isRunning && <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />}
-        {isDone && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        {isRunning && <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />}
+        {isDone && <CheckCircle2 className="w-4 h-4 text-gray-700" />}
         {isFailed && <XCircle className="w-4 h-4 text-red-500" />}
       </div>
 
@@ -31,7 +31,7 @@ export function ImportProgress({ session }: ImportProgressProps) {
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-green-500' : isFailed ? 'bg-red-400' : 'bg-indigo-500'}`}
+            className={`h-full rounded-full transition-all duration-500 ${isFailed ? 'bg-red-400' : 'bg-[#5B21B6]'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -40,15 +40,15 @@ export function ImportProgress({ session }: ImportProgressProps) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 pt-1">
         <div className="text-center">
-          <p className="text-lg font-bold text-green-600">{validRows}</p>
+          <p className="text-lg font-bold text-gray-900">{validRows}</p>
           <p className="text-xs text-gray-500">Valid</p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-yellow-500">{warningRows}</p>
+          <p className="text-lg font-bold text-gray-900">{warningRows}</p>
           <p className="text-xs text-gray-500">Warnings</p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-bold text-red-500">{failedRows}</p>
+          <p className="text-lg font-bold text-red-600">{failedRows}</p>
           <p className="text-xs text-gray-500">Errors</p>
         </div>
       </div>

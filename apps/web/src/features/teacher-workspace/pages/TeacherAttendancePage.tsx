@@ -477,7 +477,9 @@ export function TeacherAttendancePage() {
   const [swipeMode,   setSwipeMode]   = useState(true);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lastAction, setLastAction]  = useState<{ studentId: string; prevStatus: RowStatus } | null>(null);
+  // A stack (not a single slot) so the teacher can undo several marks in a row
+  // instead of the Undo button disappearing after just one.
+  const [undoStack, setUndoStack] = useState<{ studentId: string; prevStatus: RowStatus }[]>([]);
   const markCounterRef = useRef(0);
   // Tracks swipes made since the page loaded / since the last successful save —
   // a teacher swiping through a class on their phone is exactly who's likely to
@@ -564,7 +566,7 @@ export function TeacherAttendancePage() {
 
   function markStatus(studentId: string, status: RowStatus) {
     const prevStatus = rows.find((r) => r.studentId === studentId)?.status ?? 'unmarked';
-    setLastAction({ studentId, prevStatus });
+    setUndoStack((prev) => [...prev, { studentId, prevStatus }]);
     setRows((prev) => prev.map((r) =>
       r.studentId === studentId ? { ...r, status, markedSeq: markCounterRef.current++ } : r,
     ));
@@ -572,7 +574,7 @@ export function TeacherAttendancePage() {
   }
 
   function undoStatus(studentId: string) {
-    setLastAction(null);
+    setUndoStack((prev) => prev.filter((a) => a.studentId !== studentId));
     setRows((prev) => prev.map((r) =>
       r.studentId === studentId ? { ...r, status: 'unmarked', markedSeq: undefined } : r,
     ));
@@ -580,14 +582,16 @@ export function TeacherAttendancePage() {
   }
 
   function undoLastAction() {
-    if (!lastAction) return;
-    const { studentId, prevStatus } = lastAction;
-    setLastAction(null);
-    setRows((prev) => prev.map((r) =>
-      r.studentId === studentId
-        ? { ...r, status: prevStatus, markedSeq: prevStatus === 'unmarked' ? undefined : r.markedSeq }
-        : r,
-    ));
+    setUndoStack((prev) => {
+      if (prev.length === 0) return prev;
+      const { studentId, prevStatus } = prev[prev.length - 1];
+      setRows((rs) => rs.map((r) =>
+        r.studentId === studentId
+          ? { ...r, status: prevStatus, markedSeq: prevStatus === 'unmarked' ? undefined : r.markedSeq }
+          : r,
+      ));
+      return prev.slice(0, -1);
+    });
   }
 
   function toggleMarkAllPresent() {
@@ -679,7 +683,7 @@ export function TeacherAttendancePage() {
           {!isLoading && !isDataError && rows.length > 0 && (
             <CompletionRing percent={completionPercent} />
           )}
-          {lastAction && editable && (
+          {undoStack.length > 0 && editable && (
             <button
               type="button"
               onClick={undoLastAction}
@@ -687,7 +691,7 @@ export function TeacherAttendancePage() {
               className="h-8 px-3 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/20 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5 transition-colors"
             >
               <Undo2 className="w-3.5 h-3.5" />
-              Undo
+              Undo{undoStack.length > 1 ? ` (${undoStack.length})` : ''}
             </button>
           )}
           {alreadySubmitted && (

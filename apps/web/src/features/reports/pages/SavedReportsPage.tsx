@@ -4,12 +4,12 @@ import type { ReportCategory, SavedReport } from '@schoolos/types';
 import { useSavedReports, useDeleteSavedReport } from '../hooks/useReports';
 
 const CATEGORY_COLORS: Record<ReportCategory, { bg: string; text: string }> = {
-  students:   { bg: 'bg-blue-50',   text: 'text-blue-600' },
-  attendance: { bg: 'bg-green-50',  text: 'text-green-600' },
-  fees:       { bg: 'bg-amber-50',  text: 'text-amber-600' },
-  admissions: { bg: 'bg-purple-50', text: 'text-purple-600' },
-  timetable:  { bg: 'bg-rose-50',   text: 'text-rose-600' },
-  calendar:   { bg: 'bg-indigo-50', text: 'text-indigo-600' },
+  students:   { bg: 'bg-gray-100',      text: 'text-gray-700' },
+  attendance: { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
+  fees:       { bg: 'bg-gray-100',      text: 'text-gray-700' },
+  admissions: { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
+  timetable:  { bg: 'bg-gray-100',      text: 'text-gray-700' },
+  calendar:   { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
 };
 
 const SavedReportCard = ({
@@ -118,7 +118,7 @@ export const SavedReportsPage = () => {
           </p>
           <button
             onClick={() => navigate('/reports')}
-            className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-[#5B21B6] border border-[#A855F7]/30 rounded-xl hover:bg-[#A855F7]/10 transition-colors"
           >
             Browse Reports
           </button>

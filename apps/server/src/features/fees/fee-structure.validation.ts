@@ -10,6 +10,16 @@ export const upsertFeeStructureSchema = z.object({
   amount: z.number({ required_error: 'amount is required' }).min(0),
 });
 
+// Same shape as upsert but scoped to the whole school instead of one class —
+// used by the "define once, apply to every class" fee structure builder.
+export const applyAllClassesFeeStructureSchema = z.object({
+  feeHead: z.enum(FEE_HEADS, { required_error: 'feeHead is required' }),
+  academicYear: z.string({ required_error: 'academicYear is required' })
+    .regex(/^\d{4}-\d{2,4}$/, 'academicYear must be like 2024-25'),
+  month: z.string().trim().min(1).nullable().optional(),
+  amount: z.number({ required_error: 'amount is required' }).min(0),
+});
+
 export const createDiscountRequestSchema = z.object({
   studentId: z.string({ required_error: 'studentId is required' }).min(1),
   requestedAmount: z.number({ required_error: 'requestedAmount is required' }).positive(),
@@ -21,5 +31,6 @@ export const reviewDiscountRequestSchema = z.object({
 });
 
 export type UpsertFeeStructureInput = z.infer<typeof upsertFeeStructureSchema>;
+export type ApplyAllClassesFeeStructureInput = z.infer<typeof applyAllClassesFeeStructureSchema>;
 export type CreateDiscountRequestInput = z.infer<typeof createDiscountRequestSchema>;
 export type ReviewDiscountRequestInput = z.infer<typeof reviewDiscountRequestSchema>;

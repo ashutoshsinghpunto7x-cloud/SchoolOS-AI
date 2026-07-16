@@ -89,8 +89,8 @@ export function FeeCollectionPage() {
   }, [filtered, focusedIndex]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <div className="bg-white border-b border-gray-100 px-4 py-4">
+    <div className="min-h-screen bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-4">
         <h1 className="text-base font-bold text-slate-900">Collect Fee</h1>
         <p className="text-xs text-slate-400 mt-0.5">Find a student to open their ledger and collect payment.</p>
       </div>
@@ -149,7 +149,7 @@ export function FeeCollectionPage() {
           <div className="space-y-1.5">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-14 bg-white rounded-xl border border-gray-100 animate-pulse" />
+                <div key={i} className="h-14 bg-white rounded-xl border border-gray-200 animate-pulse" />
               ))
             ) : !filtered.length ? (
               <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">

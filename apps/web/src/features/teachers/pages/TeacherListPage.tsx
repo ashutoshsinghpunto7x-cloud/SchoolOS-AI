@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Users, ChevronLeft, ChevronRight, Loader2, MessageSquare, X, History } from 'lucide-react';
+import { Users, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useTeachersPaginated } from '../hooks/useTeachers';
 import { TeacherCard } from '../components/TeacherCard';
 import { TeacherFilters } from '../components/TeacherFilters';
@@ -66,20 +66,18 @@ export const TeacherListPage = () => {
                 <button
                   onClick={exitSelectMode}
                   className="h-12 px-5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200
-                             flex items-center gap-2 text-sm font-bold text-gray-600 transition-colors duration-150"
+                             flex items-center text-sm font-bold text-gray-600 transition-colors duration-150"
                   type="button"
                 >
-                  <X className="w-4 h-4" />
                   Cancel
                 </button>
               ) : (
                 <button
                   onClick={() => setIsSelecting(true)}
                   className="h-12 px-5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200
-                             flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors duration-150"
+                             flex items-center text-sm font-bold text-gray-700 transition-colors duration-150"
                   type="button"
                 >
-                  <MessageSquare className="w-4 h-4" />
                   Message Teachers
                 </button>
               )
@@ -88,20 +86,18 @@ export const TeacherListPage = () => {
               <button
                 onClick={() => setHistoryOpen(true)}
                 className="h-12 px-5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200
-                           flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors duration-150"
+                           flex items-center text-sm font-bold text-gray-700 transition-colors duration-150"
                 type="button"
               >
-                <History className="w-4 h-4" />
                 Activity Log
               </button>
             )}
             <button
               onClick={() => navigate('/teachers/new')}
               className="h-12 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800
-                         flex items-center gap-2 text-sm font-bold text-white transition-colors duration-150"
+                         flex items-center text-sm font-bold text-white transition-colors duration-150"
               type="button"
             >
-              <UserPlus className="w-5 h-5" />
               Add Teacher
             </button>
           </div>
@@ -220,10 +216,9 @@ export const TeacherListPage = () => {
           <span className="text-sm font-semibold">{selected.size} teacher{selected.size !== 1 ? 's' : ''} selected</span>
           <button
             onClick={() => setShowMessageModal(true)}
-            className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center gap-2 text-sm font-bold transition-colors"
+            className="h-9 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center text-sm font-bold transition-colors"
             type="button"
           >
-            <MessageSquare className="w-4 h-4" />
             Send Message
           </button>
         </div>

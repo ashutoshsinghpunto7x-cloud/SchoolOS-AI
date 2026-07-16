@@ -1,64 +1,69 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
 import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSearchBar';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/gradient';
 
 // ── Premium theme toggle pill ─────────────────────────────────────────────────
 // A pill-shaped track with a sliding thumb + sparkle burst on switch.
+// Commented out for now per request — re-enable by uncommenting this whole
+// block plus its usage further down (search "Theme toggle — teacher
+// workspace"), and restore `toggleTheme` to the destructure below and
+// `Sun, Moon` / `useCallback` to the imports at the top of this file.
 
-function ThemeTogglePill({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
-  const [sparkling, setSparkling] = useState(false);
-  const [sparkDir, setSparkDir] = useState<'to-dark' | 'to-light'>('to-dark');
-  const sparkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleClick = useCallback(() => {
-    if (sparkTimer.current) clearTimeout(sparkTimer.current);
-    setSparkDir(theme === 'light' ? 'to-dark' : 'to-light');
-    setSparkling(false);
-    // Force a reflow so the CSS animation restarts
-    requestAnimationFrame(() => {
-      setSparkling(true);
-      sparkTimer.current = setTimeout(() => setSparkling(false), 600);
-    });
-    onToggle();
-  }, [theme, onToggle]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="relative flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 rounded-full"
-    >
-      {/* Sparkle burst */}
-      <span
-        className={cn(
-          'theme-toggle-sparkle',
-          sparkDir,
-          sparkling && 'animate-sparkle'
-        )}
-      />
-
-      {/* Pill track */}
-      <span className="theme-toggle-pill" data-theme={theme}>
-        {/* Thumb */}
-        <span className="theme-toggle-thumb">
-          {theme === 'dark' ? (
-            <Moon className="w-3 h-3 text-white" strokeWidth={2} />
-          ) : (
-            <Sun className="w-3 h-3 text-amber-500" strokeWidth={2} />
-          )}
-        </span>
-      </span>
-    </button>
-  );
-}
+// function ThemeTogglePill({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
+//   const [sparkling, setSparkling] = useState(false);
+//   const [sparkDir, setSparkDir] = useState<'to-dark' | 'to-light'>('to-dark');
+//   const sparkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+//
+//   const handleClick = useCallback(() => {
+//     if (sparkTimer.current) clearTimeout(sparkTimer.current);
+//     setSparkDir(theme === 'light' ? 'to-dark' : 'to-light');
+//     setSparkling(false);
+//     // Force a reflow so the CSS animation restarts
+//     requestAnimationFrame(() => {
+//       setSparkling(true);
+//       sparkTimer.current = setTimeout(() => setSparkling(false), 600);
+//     });
+//     onToggle();
+//   }, [theme, onToggle]);
+//
+//   return (
+//     <button
+//       type="button"
+//       onClick={handleClick}
+//       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+//       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+//       className="relative flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 rounded-full"
+//     >
+//       {/* Sparkle burst */}
+//       <span
+//         className={cn(
+//           'theme-toggle-sparkle',
+//           sparkDir,
+//           sparkling && 'animate-sparkle'
+//         )}
+//       />
+//
+//       {/* Pill track */}
+//       <span className="theme-toggle-pill" data-theme={theme}>
+//         {/* Thumb */}
+//         <span className="theme-toggle-thumb">
+//           {theme === 'dark' ? (
+//             <Moon className="w-3 h-3 text-white" strokeWidth={2} />
+//           ) : (
+//             <Sun className="w-3 h-3 text-amber-500" strokeWidth={2} />
+//           )}
+//         </span>
+//       </span>
+//     </button>
+//   );
+// }
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -82,13 +87,6 @@ const getSubLabel = (pathname: string): string | null => {
   if (/\/students\/[^/]+$/.test(pathname)) return 'Profile';
   if (pathname === '/students/new') return 'New Admission';
   return null;
-};
-
-const greeting = (): string => {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
 };
 
 const formatDate = (d: Date): string =>
@@ -265,11 +263,12 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
   const usePillTopbar = isAccountant || isTeacher || isPrincipal;
   const isAccountantDashboard = isAccountant && location.pathname === '/accountant';
   // Principal dashboard folds its date/greeting into the Daily Command Centre
-  // card instead — the topbar breadcrumb would just repeat it.
+  // card instead — the topbar breadcrumb would just repeat it. The accountant
+  // dashboard's own purple hero shows the same greeting, so its breadcrumb is
+  // skipped the same way (previously it duplicated "Good morning, Name" here
+  // AND in the hero below it).
   const isPrincipalDashboard = isPrincipal && location.pathname === '/principal';
-  const section = isAccountantDashboard
-    ? `${greeting()}, ${user?.firstName ?? 'Accountant'}`
-    : getLabel(location.pathname);
+  const section = getLabel(location.pathname);
   const subLabel = isAccountantDashboard ? null : getSubLabel(location.pathname);
 
   const now = useNow();
@@ -278,7 +277,9 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
-  const { theme, toggleTheme } = useTeacherTheme();
+  // `toggleTheme` is unused while the theme-toggle pill is commented out below —
+  // restore it here too when re-enabling.
+  const { theme } = useTeacherTheme();
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -290,7 +291,14 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
     <header
       className={cn(
         'sticky top-0 z-10 flex h-[60px] items-center',
-        usePillTopbar
+        // On its own dashboard, the accountant's topbar merges seamlessly into
+        // the purple hero card rendered right below it (same gradient, no
+        // border) instead of being a separate white strip — the hero already
+        // carries the greeting, so this row exists purely for the menu/
+        // collapse/notification/avatar controls.
+        isAccountantDashboard
+          ? 'px-8'
+          : usePillTopbar
           ? cn(
               'border-b px-8',
               isTeacherDark
@@ -299,6 +307,7 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             )
           : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] px-6',
       )}
+      style={isAccountantDashboard ? ACCOUNTANT_HERO_GRADIENT_STYLE : undefined}
     >
       <div className={cn("flex items-center w-full gap-4", usePillTopbar && "max-w-7xl mx-auto")}>
         {/* Menu toggle — teacher portal has no sidebar; principal's sidebar is an
@@ -309,7 +318,9 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             className={cn(
               "p-2 -ml-1 rounded-xl transition-colors",
               !isPrincipal && "lg:hidden",
-              usePillTopbar
+              isAccountantDashboard
+                ? "text-white/70 hover:bg-white/10 hover:text-white"
+                : usePillTopbar
                 ? "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
                 : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             )}
@@ -323,7 +334,12 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
         {showDesktopCollapseToggle && (
           <button
             onClick={onToggleDesktopCollapse}
-            className="hidden lg:flex p-2 -ml-1 rounded-xl text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6] transition-colors"
+            className={cn(
+              "hidden lg:flex p-2 -ml-1 rounded-xl transition-colors",
+              isAccountantDashboard
+                ? "text-white/70 hover:bg-white/10 hover:text-white"
+                : "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
+            )}
             aria-label={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
             title={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
           >
@@ -331,9 +347,10 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
           </button>
         )}
 
-        {/* Breadcrumb — folded away on the principal's own dashboard, where the
-            Daily Command Centre card already carries the page's identity */}
-        {!isPrincipalDashboard && !isPrincipal && (
+        {/* Breadcrumb — folded away on the principal's own dashboard (and the
+            accountant's own dashboard) where the hero card already carries
+            the page's identity, so this would otherwise just repeat it */}
+        {!isPrincipalDashboard && !isPrincipal && !isAccountantDashboard && (
           <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
             <span className="text-sm font-semibold text-gray-900 dark:text-white">{section}</span>
             {subLabel && (
@@ -365,8 +382,43 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             </div>
           )}
 
-          {/* Live clock — tap to open reminders (teacher/accountant only) */}
-          {usePillTopbar && !isPrincipal && (
+          {/* Accountant dashboard: same idea as the principal's pill (time on
+              top, date below) but sized down a notch — the accountant has a
+              denser page to work with than the principal's spacious command
+              centre. Two independent click targets in one pill: the time
+              half opens reminders, the date half opens the mini calendar. */}
+          {isAccountantDashboard && (
+            <div className="hidden sm:flex items-stretch h-10 rounded-xl bg-white/10 border border-white/15 overflow-hidden select-none tabular-nums">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setReminderOpen((v) => !v)}
+                  className="h-10 px-3 flex flex-col items-start justify-center hover:bg-white/10 transition-colors"
+                  title="Reminders"
+                >
+                  <span className="text-[12px] font-bold text-white leading-none">{time}</span>
+                  <span className="text-[9px] text-white/60 mt-0.5 leading-none">IST</span>
+                </button>
+                {reminderOpen && <ReminderPanel onClose={() => setReminderOpen(false)} />}
+              </div>
+              <div className="w-px bg-white/15 my-1.5" />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCalendarOpen((v) => !v)}
+                  className="h-10 px-3 flex flex-col items-start justify-center hover:bg-white/10 transition-colors"
+                  title="Open calendar"
+                >
+                  <span className="text-[12px] font-bold text-white leading-none">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</span>
+                  <span className="text-[9px] text-white/60 mt-0.5 leading-none">{new Date().getFullYear()}</span>
+                </button>
+                {calendarOpen && <MiniCalendar today={now} onClose={() => setCalendarOpen(false)} />}
+              </div>
+            </div>
+          )}
+
+          {/* Live clock — tap to open reminders (teacher/accountant, non-dashboard pages) */}
+          {usePillTopbar && !isPrincipal && !isAccountantDashboard && (
             <div className="relative">
               <button
                 type="button"
@@ -380,13 +432,14 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             </div>
           )}
 
-          {/* Theme toggle — teacher workspace only, applies across every teacher page */}
-          {isTeacher && (
+          {/* Theme toggle — teacher workspace only, applies across every teacher page.
+              Commented out for now per request — re-enable by uncommenting below. */}
+          {/* {isTeacher && (
             <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
-          )}
+          )} */}
 
-          {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date */}
-          {!isPrincipalDashboard && !isPrincipal && (
+          {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date, and with the accountant dashboard's combined pill above */}
+          {!isPrincipalDashboard && !isPrincipal && !isAccountantDashboard && (
           <div className="relative">
             {usePillTopbar ? (
               <button

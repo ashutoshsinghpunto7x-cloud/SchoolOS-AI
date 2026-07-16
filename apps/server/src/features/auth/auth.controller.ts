@@ -69,7 +69,15 @@ export const authController = {
         return;
       }
       const { schoolId } = req.body as { schoolId?: string };
-      const result = await authService.seedFirstAdmin(schoolId ?? 'DEMO_SCHOOL');
+      // No implicit fallback here on purpose — a silent 'DEMO_SCHOOL' default
+      // previously caused an admin account to be seeded on a different tenant
+      // than the school's real data, making every dashboard query it made
+      // return empty results. Require the caller to say which school explicitly.
+      if (!schoolId) {
+        next(new ValidationError('schoolId is required in the request body — there is no default school.'));
+        return;
+      }
+      const result = await authService.seedFirstAdmin(schoolId);
       sendCreated(res, result, 'Admin user seeded. Change the password after first login.');
     } catch (err) {
       next(err);

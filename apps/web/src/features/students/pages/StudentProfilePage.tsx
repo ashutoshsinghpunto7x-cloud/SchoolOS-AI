@@ -14,9 +14,11 @@ import {
   Tag,
   Loader2,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStudent } from '../hooks/useStudents';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useStudent, useDeleteStudent } from '../hooks/useStudents';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { InfoCard } from '../components/InfoCard';
 import { StudentNotesPanel } from '../components/StudentNotesPanel';
@@ -26,6 +28,7 @@ import { PageContainer } from '@/components/workspace/PageContainer';
 import { useStudentAttendanceHistory, useAttendanceSummary } from '@/features/attendance/hooks/useAttendance';
 import { AttendanceCalendar } from '@/features/attendance/components/AttendanceCalendar';
 import { AttendanceSummaryCard } from '@/features/attendance/components/AttendanceSummaryCard';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
@@ -52,9 +55,19 @@ export const StudentProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const { user } = useAuth();
 
   const { data: student, isLoading, isError } = useStudent(id!);
   const { data: comms = [] } = useCommunicationList(activeTab === 'communications' ? id! : null);
+  const { mutateAsync: deleteStudent, isPending: deleting } = useDeleteStudent();
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const canDelete = user?.role === 'admin';
+
+  async function handleDelete() {
+    if (!id) return;
+    await deleteStudent(id);
+    navigate('/students');
+  }
 
   const isAttendanceTab = activeTab === 'attendance';
 
@@ -176,6 +189,16 @@ export const StudentProfilePage = () => {
           <MessageSquare className="w-4 h-4" />
           Communications
         </button>
+        {canDelete && (
+          <button
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="h-12 px-6 rounded-xl bg-red-50 hover:bg-red-100 flex items-center gap-2.5 text-sm font-bold text-red-600 border border-red-200 transition-colors ml-auto"
+            type="button"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Student
+          </button>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -299,6 +322,18 @@ export const StudentProfilePage = () => {
             loading={attendanceLoading}
           />
         </div>
+      )}
+
+      {confirmDeleteOpen && (
+        <ConfirmDialog
+          title={`Remove ${student.fullName} from active records?`}
+          description="This removes them from student lists, search, and dashboards. Their fee and attendance history is kept for record-keeping, not deleted outright."
+          confirmLabel="Remove Student"
+          variant="danger"
+          isLoading={deleting}
+          onConfirm={() => void handleDelete()}
+          onCancel={() => setConfirmDeleteOpen(false)}
+        />
       )}
     </PageContainer>
   );

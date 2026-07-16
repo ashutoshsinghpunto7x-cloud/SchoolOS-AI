@@ -30,4 +30,20 @@ export const schoolSettingsController = {
       sendSuccess(res, settings, 'Logo removed');
     } catch (err) { next(err); }
   },
+
+  async updateAttendanceRules(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateAttendanceRules(req.body, ctx);
+      sendSuccess(res, settings, 'Attendance rules updated');
+    } catch (err) { next(err); }
+  },
+
+  async updatePayrollConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updatePayrollConfig(req.body, ctx);
+      sendSuccess(res, settings, 'Payroll settings updated');
+    } catch (err) { next(err); }
+  },
 };

@@ -48,6 +48,9 @@ coverage/
 # Generated load-test credentials — plaintext passwords, never commit
 performance-testing/*.csv
 
+# One-off maintenance scripts with hardcoded accounts/temp passwords — local only
+apps/server/src/scripts/reset-passwords.ts
+
 # Vite
 .vite/
 

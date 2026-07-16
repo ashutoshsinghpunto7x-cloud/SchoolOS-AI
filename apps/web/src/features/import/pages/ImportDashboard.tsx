@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Upload, History, FileSpreadsheet, ArrowRight, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Upload, ArrowRight } from 'lucide-react';
 import { useImportSessions } from '../hooks/useImport';
 import { ImportStatusBadge } from '../components/ImportStatusBadge';
 
@@ -30,43 +30,32 @@ export function ImportDashboard() {
         <div className="flex gap-3">
           <Link
             to="/import/history"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <History className="w-4 h-4" />
             History
           </Link>
           <Link
             to="/import/templates"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
-            <FileSpreadsheet className="w-4 h-4" />
             Templates
           </Link>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats — neutral, no color coding */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-          <CheckCircle2 className="w-8 h-8 text-green-500" />
-          <div>
-            <p className="text-xl font-bold text-gray-900">{completed}</p>
-            <p className="text-xs text-gray-500">Completed</p>
-          </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xl font-bold text-gray-900">{completed}</p>
+          <p className="text-xs text-gray-500">Completed</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-          <Clock className="w-8 h-8 text-orange-400" />
-          <div>
-            <p className="text-xl font-bold text-gray-900">{processing}</p>
-            <p className="text-xs text-gray-500">Processing</p>
-          </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xl font-bold text-gray-900">{processing}</p>
+          <p className="text-xs text-gray-500">Processing</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-          <XCircle className="w-8 h-8 text-red-400" />
-          <div>
-            <p className="text-xl font-bold text-gray-900">{failed}</p>
-            <p className="text-xs text-gray-500">Failed</p>
-          </div>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <p className="text-xl font-bold text-gray-900">{failed}</p>
+          <p className="text-xs text-gray-500">Failed</p>
         </div>
       </div>
 

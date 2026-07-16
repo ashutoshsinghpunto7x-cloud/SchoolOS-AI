@@ -287,6 +287,15 @@ export const rollbackImport = async (
  * Process every row of a given status for a session, fully paginated.
  * Kept as its own loop per status so an empty/short page of one status can
  * never short-circuit processing of the other.
+ *
+ * Always re-queries page 1 (rather than incrementing an offset) because each
+ * processed row flips out of `status` (to imported/error/skipped) as it's
+ * handled. With an incrementing offset, that shrinks the matching set out
+ * from under the query mid-loop — e.g. batch 1 processes rows 1-50 out of
+ * the 'valid' status, so by the time page 2 queries with skip=50 there are
+ * only 4 rows left matching 'valid' total, and the offset skips past all of
+ * them, silently dropping the remainder. Re-querying page 1 each time always
+ * lands on the next unprocessed chunk instead.
  */
 const processRowsByStatus = async (
   sessionId: string,
@@ -295,20 +304,14 @@ const processRowsByStatus = async (
   status: ImportRowStatus,
   ctx: AuthContext
 ): Promise<void> => {
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data: rows, meta } = await importRowRepository.findBySession(sessionId, {
-      page,
+  while (true) {
+    const { data: rows } = await importRowRepository.findBySession(sessionId, {
+      page: 1,
       limit: BATCH_SIZE,
       status,
     });
 
-    if (rows.length === 0) {
-      hasMore = false;
-      break;
-    }
+    if (rows.length === 0) break;
 
     await Promise.all(
       rows.map(async (row) => {
@@ -334,10 +337,7 @@ const processRowsByStatus = async (
       })
     );
 
-    hasMore = meta.page * meta.limit < meta.total;
-    page++;
-
-    if (hasMore) await sleep(BATCH_DELAY_MS);
+    await sleep(BATCH_DELAY_MS);
   }
 };
 

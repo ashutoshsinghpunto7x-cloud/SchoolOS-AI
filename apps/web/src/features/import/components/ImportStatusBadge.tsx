@@ -1,13 +1,13 @@
 import type { ImportStatus } from '@schoolos/types';
 
 const CONFIG: Record<ImportStatus, { label: string; className: string }> = {
-  uploading:   { label: 'Uploading',   className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  parsing:     { label: 'Parsing',     className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  validating:  { label: 'Validating',  className: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  preview:     { label: 'Preview',     className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  confirmed:   { label: 'Confirmed',   className: 'bg-purple-50 text-purple-700 border-purple-200' },
-  processing:  { label: 'Processing',  className: 'bg-orange-50 text-orange-700 border-orange-200' },
-  completed:   { label: 'Completed',   className: 'bg-green-50 text-green-700 border-green-200' },
+  uploading:   { label: 'Uploading',   className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  parsing:     { label: 'Parsing',     className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  validating:  { label: 'Validating',  className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  preview:     { label: 'Preview',     className: 'bg-[#A855F7]/10 text-[#5B21B6] border-[#A855F7]/20' },
+  confirmed:   { label: 'Confirmed',   className: 'bg-[#A855F7]/10 text-[#5B21B6] border-[#A855F7]/20' },
+  processing:  { label: 'Processing',  className: 'bg-gray-100 text-gray-600 border-gray-200' },
+  completed:   { label: 'Completed',   className: 'bg-[#A855F7]/10 text-[#5B21B6] border-[#A855F7]/20' },
   failed:      { label: 'Failed',      className: 'bg-red-50 text-red-700 border-red-200' },
   cancelled:   { label: 'Cancelled',   className: 'bg-gray-100 text-gray-600 border-gray-200' },
   rolled_back: { label: 'Rolled Back', className: 'bg-gray-100 text-gray-600 border-gray-200' },

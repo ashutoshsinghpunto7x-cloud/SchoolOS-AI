@@ -1,10 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { feeStructureApi } from '../api/fee-structure.api';
-import type { UpsertFeeStructurePayload, CreateDiscountRequestPayload, ReviewDiscountRequestPayload } from '@schoolos/types';
+import type {
+  UpsertFeeStructurePayload, ApplyAllClassesFeeStructurePayload,
+  CreateDiscountRequestPayload, ReviewDiscountRequestPayload,
+} from '@schoolos/types';
 
 export const feeStructureKeys = {
   all: ['fee-structure'] as const,
   list: (year?: string) => [...feeStructureKeys.all, 'list', year ?? ''] as const,
+  template: (year: string) => [...feeStructureKeys.all, 'template', year] as const,
   pendingDiscounts: () => [...feeStructureKeys.all, 'discounts-pending'] as const,
   studentDiscounts: (studentId: string) => [...feeStructureKeys.all, 'discounts-student', studentId] as const,
 };
@@ -15,10 +19,27 @@ export const useFeeStructure = (academicYear?: string) =>
     queryFn: () => feeStructureApi.list(academicYear),
   });
 
+/** The school-wide fee structure template — one amount per (feeHead, month),
+ *  used by the "define once, apply to every class" builder. */
+export const useFeeStructureTemplate = (academicYear: string) =>
+  useQuery({
+    queryKey: feeStructureKeys.template(academicYear),
+    queryFn: () => feeStructureApi.getTemplate(academicYear),
+    enabled: !!academicYear,
+  });
+
 export const useUpsertFeeStructure = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpsertFeeStructurePayload) => feeStructureApi.upsert(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: feeStructureKeys.all }),
+  });
+};
+
+export const useApplyFeeStructureToAllClasses = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ApplyAllClassesFeeStructurePayload) => feeStructureApi.applyToAllClasses(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: feeStructureKeys.all }),
   });
 };

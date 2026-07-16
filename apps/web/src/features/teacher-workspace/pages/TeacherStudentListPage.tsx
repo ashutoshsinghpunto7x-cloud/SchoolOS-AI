@@ -13,6 +13,7 @@ import {
   X,
   Loader2,
   Camera,
+  ChevronDown,
 } from 'lucide-react';
 import {
   useStudentsPaginated,
@@ -82,6 +83,7 @@ function StudentCard({
   onDelete: (id: string) => void;
   onEdit: (student: Student) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: uploadPhoto, isPending: uploadingPhoto } = useUploadStudentPhoto(student._id);
@@ -102,98 +104,119 @@ function StudentCard({
   }
 
   return (
-    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 flex items-center gap-3">
-      {/* Rank */}
-      <span className="text-xs text-gray-400 w-6 text-right shrink-0">{index + 1}</span>
-
-      {/* Avatar — tap to upload/change photo */}
+    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
+      {/* Collapsed row — roll number + name only. Tap to reveal the rest. */}
       <button
         type="button"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploadingPhoto}
-        className={cn('relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden group', color.bg)}
-        title="Upload photo"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full p-4 flex items-center gap-3 text-left"
       >
-        {student.photoUrl ? (
-          <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
-        ) : (
-          <span className={cn('text-xs font-bold', color.text)}>{initials}</span>
-        )}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-          {uploadingPhoto ? (
-            <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+        <span className="text-xs font-semibold text-gray-400 w-7 text-right shrink-0">
+          {student.rollNumber || index + 1}
+        </span>
+        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden', color.bg)}>
+          {student.photoUrl ? (
+            <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
           ) : (
-            <Camera className="w-3.5 h-3.5 text-white" />
+            <span className={cn('text-xs font-bold', color.text)}>{initials}</span>
           )}
         </div>
+        <p className="flex-1 min-w-0 text-sm font-semibold text-gray-900 dark:text-white truncate">{student.fullName}</p>
+        <ChevronDown className={cn('w-4 h-4 text-gray-300 shrink-0 transition-transform', expanded && 'rotate-180')} />
       </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => void handlePhotoChange(e)}
-      />
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{student.fullName}</p>
-        <p className="text-xs text-gray-400 dark:text-white/30">Adm: {student.admissionNumber}</p>
-        {student.gender && (
-          <p className="text-xs text-gray-400 dark:text-white/30 capitalize">{student.gender}</p>
-        )}
-      </div>
-
-      <RollNumberEditor student={student} />
-
-      {/* Status badge */}
-      <span
-        className={cn(
-          'text-xs font-semibold px-2 py-0.5 rounded-full shrink-0',
-          student.admissionStatus === 'active'
-            ? 'bg-emerald-100 text-emerald-700'
-            : 'bg-gray-100 text-gray-500',
-        )}
-      >
-        {student.admissionStatus}
-      </span>
-
-      {/* Edit + Delete */}
-      {confirmDelete ? (
-        <div className="flex gap-1.5 shrink-0">
+      {/* Expanded details */}
+      {expanded && (
+        <div className="px-4 pb-4 flex items-center gap-3 border-t border-gray-50 dark:border-white/5 pt-3">
+          {/* Avatar — tap to upload/change photo */}
           <button
             type="button"
-            onClick={() => { onDelete(student._id); setConfirmDelete(false); }}
-            className="h-8 px-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            className={cn('relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden group', color.bg)}
+            title="Upload photo"
           >
-            Yes
+            {student.photoUrl ? (
+              <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
+            ) : (
+              <span className={cn('text-xs font-bold', color.text)}>{initials}</span>
+            )}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              {uploadingPhoto ? (
+                <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+              ) : (
+                <Camera className="w-3.5 h-3.5 text-white" />
+              )}
+            </div>
           </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(false)}
-            className="h-8 px-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => void handlePhotoChange(e)}
+          />
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400 dark:text-white/30">Adm: {student.admissionNumber}</p>
+            {student.gender && (
+              <p className="text-xs text-gray-400 dark:text-white/30 capitalize">{student.gender}</p>
+            )}
+          </div>
+
+          <RollNumberEditor student={student} />
+
+          {/* Status badge */}
+          <span
+            className={cn(
+              'text-xs font-semibold px-2 py-0.5 rounded-full shrink-0',
+              student.admissionStatus === 'active'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-gray-100 text-gray-500',
+            )}
           >
-            No
-          </button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={() => onEdit(student)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#A855F7]/10 hover:text-[#5B21B6] transition-colors"
-            title="Request an edit"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
-            title="Remove student"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+            {student.admissionStatus}
+          </span>
+
+          {/* Edit + Delete */}
+          {confirmDelete ? (
+            <div className="flex gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => { onDelete(student._id); setConfirmDelete(false); }}
+                className="h-8 px-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition-colors"
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="h-8 px-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
+              >
+                No
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => onEdit(student)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#A855F7]/10 hover:text-[#5B21B6] transition-colors"
+                title="Request an edit"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                title="Remove student"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -234,6 +257,13 @@ export function TeacherStudentListPage() {
 
   const students: Student[] = data?.data ?? [];
 
+  // Roll number order — numeric where possible, students without one pushed to
+  // the end (sorted by name among themselves) rather than sorting alphabetically.
+  function rollSortKey(s: Student): number {
+    const n = parseInt(s.rollNumber ?? '', 10);
+    return isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+  }
+
   const filtered = students
     .filter((s) => {
       if (!search.trim()) return true;
@@ -243,7 +273,7 @@ export function TeacherStudentListPage() {
         s.admissionNumber.toLowerCase().includes(q)
       );
     })
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    .sort((a, b) => rollSortKey(a) - rollSortKey(b) || a.fullName.localeCompare(b.fullName));
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">

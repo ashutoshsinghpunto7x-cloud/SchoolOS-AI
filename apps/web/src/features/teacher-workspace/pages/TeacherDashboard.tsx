@@ -175,14 +175,11 @@ function TodayClassCard({
       onClick={onPress}
       className="w-full text-left bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
     >
-      {/* Subject icon */}
-      <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', bg)}>
-        <SubjectIcon className={cn('w-5 h-5', text)} />
-      </div>
+      
 
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-20">
           <p className="text-xs text-gray-400 dark:text-white/35 font-medium">
             {cls.startTime} - {cls.endTime}
           </p>
@@ -452,7 +449,7 @@ function TodaysClassesCarousel({
 export function TeacherDashboard() {
   const navigate = useNavigate();
   const { user }  = useAuth();
-  const { data, isLoading, isError, error } = useTeacherWorkspace();
+  const { data, isLoading, isError, error, refetch } = useTeacherWorkspace();
   const [showApplyLeave, setShowApplyLeave] = useState(false);
   const [infoClass, setInfoClass] = useState<TodayClass | null>(null);
 
@@ -574,9 +571,16 @@ export function TeacherDashboard() {
           ) : isError ? (
             <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-semibold text-red-700">Failed to load workspace</p>
                 <p className="text-xs text-red-500 mt-0.5">{(error as Error)?.message}</p>
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  className="mt-2 h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
+                >
+                  Retry
+                </button>
               </div>
             </div>
           ) : !currentPeriod ? (

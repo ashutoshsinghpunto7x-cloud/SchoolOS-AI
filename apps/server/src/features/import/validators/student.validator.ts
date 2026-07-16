@@ -86,8 +86,12 @@ export const studentValidator: IValidator = {
     const result = createStudentSchema.safeParse(processed);
 
     if (result.success) {
+      // Section-inferred-from-class is purely informational (the row's data is
+      // complete and correct, just derived rather than in its own column) — it
+      // must not count as a "needs attention" row. Surface it in `warnings` for
+      // visibility, but the row's status is 'valid' either way.
       return {
-        status: sectionInferred ? 'warning' : 'valid',
+        status: 'valid',
         errors: [],
         warnings: sectionInferred
           ? [{ field: 'section', message: `Section "${result.data.section}" inferred from class value`, code: 'inferred' }]

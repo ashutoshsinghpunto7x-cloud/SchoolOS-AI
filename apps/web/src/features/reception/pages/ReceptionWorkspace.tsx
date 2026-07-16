@@ -9,6 +9,10 @@ import { SearchBar } from '@/components/ui/SearchBar';
 import { SectionHeader } from '@/components/workspace/SectionHeader';
 import { WorkspaceSection } from '@/components/workspace/WorkspaceSection';
 import { PageContainer } from '@/components/workspace/PageContainer';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAttendanceSummary } from '@/features/attendance/hooks/useAttendance';
+import { AttendanceSummaryCard } from '@/features/attendance/components/AttendanceSummaryCard';
+import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 
 // ── Static data ──────────────────────────────────────────────────────────────
 
@@ -98,13 +102,26 @@ const ACTION_ROUTES: Record<string, string> = {
 
 export const ReceptionWorkspace = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  // Today's attendance, as submitted by teachers across every class — admin
+  // needs visibility into this without having to open the separate
+  // Attendance workspace. Reception's own GET access to this endpoint isn't
+  // role-restricted server-side either, so this renders for both roles.
+  const { data: attendanceSummary } = useAttendanceSummary({
+    dateFrom: new Date().toISOString().slice(0, 10),
+    dateTo: new Date().toISOString().slice(0, 10),
+  });
 
   return (
     <PageContainer>
     <div className="flex flex-col gap-6">
 
-      {/* Daily command-centre header — same as Principal/Teacher */}
-      <PrincipalHeaderWidget />
+      {/* Daily command-centre header — same as Principal/Teacher. Weather is
+          hidden here (admin/reception has no use for it, per feedback) —
+          the principal dashboard still shows it via its own default. */}
+      <PrincipalHeaderWidget showWeather={false} />
 
       {/* 2-column layout */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -148,6 +165,19 @@ export const ReceptionWorkspace = () => {
             />
           </WorkspaceSection>
 
+          {/* Admin-only: today's attendance across every class, as submitted
+              by teachers — same summary shown on the Attendance workspace,
+              surfaced here too so admin doesn't have to leave the dashboard. */}
+          {isAdmin && attendanceSummary && (
+            <WorkspaceSection>
+              <SectionHeader
+                title="Today's Attendance"
+                subtitle="Submitted by teachers across every class"
+              />
+              <AttendanceSummaryCard summary={attendanceSummary} />
+            </WorkspaceSection>
+          )}
+
           {/* Activity timeline */}
           <WorkspaceSection>
             <SectionHeader
@@ -161,6 +191,8 @@ export const ReceptionWorkspace = () => {
         {/* ── Right column ── */}
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
           <AISidePanel />
+          {/* School-wide upcoming events (holidays, exams, etc.) */}
+          <UpcomingEventsWidget />
           <TaskCard tasks={TASKS} />
         </div>
       </div>

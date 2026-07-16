@@ -10,6 +10,11 @@ export type AuditAction =
   | 'auth.temp_password_generated'
   | 'auth.pin_reset'
   | 'school_settings.logo_updated'
+  | 'school_settings.attendance_rules_updated'
+  | 'school_settings.payroll_config_updated'
+  | 'payroll.generated'
+  | 'payroll.generate_all'
+  | 'payroll.marked_paid'
   | 'user.created'
   | 'user.updated'
   | 'user.status_changed'
@@ -148,7 +153,15 @@ export type AuditAction =
   | 'internal_message.sent'
   | 'internal_message.acknowledged'
   | 'internal_message.template_created'
-  | 'internal_message.template_deleted';
+  | 'internal_message.template_deleted'
+  | 'employee.created'
+  | 'employee.updated'
+  | 'employee.deleted'
+  | 'employee.login_created'
+  | 'employee.qr_regenerated'
+  | 'employee.qr_disabled'
+  | 'staff_attendance.checked_in'
+  | 'staff_attendance.checked_out';
 
 export interface IAuditLog extends Document {
   userId: string;

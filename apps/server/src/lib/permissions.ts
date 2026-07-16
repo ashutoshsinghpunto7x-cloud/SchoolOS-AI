@@ -10,6 +10,12 @@ export const PERMISSIONS = {
   COMMUNICATIONS_VIEW: 'communications.view',
   COMMUNICATIONS_CREATE: 'communications.create',
   ADMINISTRATION_MANAGE: 'administration.manage',
+  EMPLOYEE_MANAGE: 'employee.manage',
+  EMPLOYEE_VIEW: 'employee.view',
+  ATTENDANCE_QR_SCAN: 'attendance-qr.scan',
+  ATTENDANCE_QR_VIEW: 'attendance-qr.view',
+  PAYROLL_GENERATE: 'payroll.generate',
+  PAYROLL_VIEW: 'payroll.view',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -25,7 +31,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'communications.create',
   ],
   teacher: ['students.view', 'communications.view'],
-  accountant: ['students.view'],
+  accountant: ['students.view', 'payroll.view'],
 };
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
@@ -46,6 +52,12 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'communications.view': { label: 'View Communications', category: 'Communications' },
   'communications.create': { label: 'Create Communications', category: 'Communications' },
   'administration.manage': { label: 'Manage Administration', category: 'Administration' },
+  'employee.manage': { label: 'Manage Employees', category: 'Employees' },
+  'employee.view': { label: 'View Employees', category: 'Employees' },
+  'attendance-qr.scan': { label: 'Scan Staff Attendance QR', category: 'Staff Attendance' },
+  'attendance-qr.view': { label: 'View Staff Attendance', category: 'Staff Attendance' },
+  'payroll.generate': { label: 'Generate Payroll', category: 'Payroll' },
+  'payroll.view': { label: 'View Payroll', category: 'Payroll' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

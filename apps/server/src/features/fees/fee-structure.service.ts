@@ -2,15 +2,17 @@ import { feeStructureRepository } from './fee-structure.repository';
 import { feeDiscountRequestRepository } from './fee-discount-request.repository';
 import { feeRepository } from './fee.repository';
 import { studentRepository } from '../students/student.repository';
+import { schoolClassRepository } from '../school-classes/school-class.repository';
 import { ACADEMIC_MONTH_ORDER, calendarMonthIndex } from './fee.service';
 import {
-  upsertFeeStructureSchema, createDiscountRequestSchema, reviewDiscountRequestSchema,
+  upsertFeeStructureSchema, applyAllClassesFeeStructureSchema, createDiscountRequestSchema, reviewDiscountRequestSchema,
 } from './fee-structure.validation';
 import { IFeeStructure } from './fee-structure.model';
 import { IFeeDiscountRequest } from './fee-discount-request.model';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import type { FeeHead } from './fee.model';
 
 /** A given academic month + "2024-25" → the actual calendar due date (10th of
  *  that month) — April..December fall in the year the academic year starts,
@@ -22,6 +24,80 @@ function resolveDueDate(month: string | null, academicYear: string): Date {
   const idx = ACADEMIC_MONTH_ORDER.indexOf(month);
   const calendarYear = idx <= 8 ? startYear : startYear + 1;
   return new Date(calendarYear, calendarMonthIndex(month), 10);
+}
+
+/**
+ * Saving an amount here isn't just a pricing-catalog edit — it immediately
+ * creates or updates the actual billing record for every active student in
+ * the class, so the Student Fee Ledger shows the new category right away
+ * instead of the accountant having to separately "generate" anything.
+ * Settled (paid/waived) records are never touched. Shared by both the
+ * single-class upsert and the "apply to every class" builder.
+ */
+async function upsertForClass(
+  cls: string, feeHead: FeeHead, academicYear: string, month: string | null, amount: number, ctx: AuthContext,
+): Promise<IFeeStructure> {
+  const structure = await feeStructureRepository.upsert(
+    ctx.schoolId, cls, feeHead, academicYear, month, amount, ctx.displayName,
+  );
+
+  const [students, existingRecords] = await Promise.all([
+    studentRepository.findActiveByClass(ctx.schoolId, cls),
+    feeRepository.findByClassFeeHead(ctx.schoolId, cls, feeHead, academicYear, month),
+  ]);
+  const existingByStudent = new Map(existingRecords.map((r) => [r.studentId, r]));
+  const dueDate = resolveDueDate(month, academicYear);
+
+  let created = 0;
+  let updated = 0;
+
+  for (const student of students) {
+    const studentId = String(student._id);
+    const existing = existingByStudent.get(studentId);
+
+    if (existing) {
+      if (existing.status === 'paid' || existing.status === 'waived') continue;
+      const newBalance = Math.max(0, amount + existing.fineAmount - existing.discountAmount - existing.waivedAmount - existing.paidAmount);
+      await feeRepository.update(String((existing as unknown as { _id: { toString(): string } })._id), ctx.schoolId, {
+        totalAmount: amount,
+        balance: newBalance,
+        status: newBalance === 0 ? 'paid' : existing.status,
+        updatedBy: ctx.displayName,
+      });
+      updated++;
+    } else {
+      await feeRepository.create({
+        studentId,
+        studentName: student.fullName,
+        admissionNumber: student.admissionNumber ?? '',
+        class: student.class,
+        section: student.section,
+        schoolId: ctx.schoolId,
+        feeHead,
+        academicYear,
+        month: month ?? undefined,
+        dueDate,
+        totalAmount: amount,
+        discountAmount: 0,
+        waivedAmount: 0,
+        fineAmount: 0,
+        paidAmount: 0,
+        balance: amount,
+        status: 'pending',
+        createdBy: ctx.displayName,
+      });
+      created++;
+    }
+  }
+
+  auditService.log({
+    userId: ctx.userId, userDisplayName: ctx.displayName,
+    action: 'fee.updated', resource: 'fee_structure', resourceId: `${cls}-${feeHead}-${academicYear}`,
+    details: { class: cls, feeHead, amount, month, recordsCreated: created, recordsUpdated: updated },
+    ip: ctx.ip, schoolId: ctx.schoolId,
+  });
+
+  return structure;
 }
 
 export const feeStructureService = {
@@ -40,68 +116,53 @@ export const feeStructureService = {
    */
   async upsert(rawInput: unknown, ctx: AuthContext): Promise<IFeeStructure> {
     const data = upsertFeeStructureSchema.parse(rawInput);
+    return upsertForClass(data.class, data.feeHead, data.academicYear, data.month ?? null, data.amount, ctx);
+  },
+
+  /**
+   * The "define once, apply to every class" fee structure builder — same
+   * per-class billing logic as `upsert`, just looped over every class in the
+   * school instead of requiring the accountant to repeat the same amount on
+   * each class's page individually.
+   */
+  async applyToAllClasses(rawInput: unknown, ctx: AuthContext): Promise<{ classesUpdated: number }> {
+    const data = applyAllClassesFeeStructureSchema.parse(rawInput);
     const month = data.month ?? null;
-    const structure = await feeStructureRepository.upsert(
-      ctx.schoolId, data.class, data.feeHead, data.academicYear, month, data.amount, ctx.displayName,
-    );
+    const classes = await schoolClassRepository.findAll(ctx.schoolId);
 
-    const [students, existingRecords] = await Promise.all([
-      studentRepository.findActiveByClass(ctx.schoolId, data.class),
-      feeRepository.findByClassFeeHead(ctx.schoolId, data.class, data.feeHead, data.academicYear, month),
-    ]);
-    const existingByStudent = new Map(existingRecords.map((r) => [r.studentId, r]));
-    const dueDate = resolveDueDate(month, data.academicYear);
-
-    let created = 0;
-    let updated = 0;
-
-    for (const student of students) {
-      const studentId = String(student._id);
-      const existing = existingByStudent.get(studentId);
-
-      if (existing) {
-        if (existing.status === 'paid' || existing.status === 'waived') continue;
-        const newBalance = Math.max(0, data.amount + existing.fineAmount - existing.discountAmount - existing.waivedAmount - existing.paidAmount);
-        await feeRepository.update(String((existing as unknown as { _id: { toString(): string } })._id), ctx.schoolId, {
-          totalAmount: data.amount,
-          balance: newBalance,
-          status: newBalance === 0 ? 'paid' : existing.status,
-          updatedBy: ctx.displayName,
-        });
-        updated++;
-      } else {
-        await feeRepository.create({
-          studentId,
-          studentName: student.fullName,
-          admissionNumber: student.admissionNumber ?? '',
-          class: student.class,
-          section: student.section,
-          schoolId: ctx.schoolId,
-          feeHead: data.feeHead,
-          academicYear: data.academicYear,
-          month: month ?? undefined,
-          dueDate,
-          totalAmount: data.amount,
-          discountAmount: 0,
-          waivedAmount: 0,
-          fineAmount: 0,
-          paidAmount: 0,
-          balance: data.amount,
-          status: 'pending',
-          createdBy: ctx.displayName,
-        });
-        created++;
-      }
+    for (const cls of classes) {
+      await upsertForClass(cls.name, data.feeHead, data.academicYear, month, data.amount, ctx);
     }
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
-      action: 'fee.updated', resource: 'fee_structure', resourceId: `${data.class}-${data.feeHead}-${data.academicYear}`,
-      details: { class: data.class, feeHead: data.feeHead, amount: data.amount, month, recordsCreated: created, recordsUpdated: updated },
+      action: 'fee.updated', resource: 'fee_structure', resourceId: `ALL-${data.feeHead}-${data.academicYear}`,
+      details: { feeHead: data.feeHead, amount: data.amount, month, classesUpdated: classes.length },
       ip: ctx.ip, schoolId: ctx.schoolId,
     });
 
-    return structure;
+    return { classesUpdated: classes.length };
+  },
+
+  /**
+   * The current school-wide "template" — one amount per (feeHead, month),
+   * read back from whichever class's records were most recently saved.
+   * Classes normally converge to identical amounts via `applyToAllClasses`,
+   * but if a single class was ever edited individually on the legacy
+   * per-class page, its more recent value wins so the builder reflects the
+   * true current state rather than silently overwriting it.
+   */
+  async getTemplate(schoolId: string, academicYear: string): Promise<IFeeStructure[]> {
+    const all = await feeStructureRepository.findAll(schoolId, academicYear);
+    const latestByKey = new Map<string, IFeeStructure>();
+    for (const entry of all) {
+      const key = `${entry.feeHead}::${entry.month ?? ''}`;
+      const current = latestByKey.get(key);
+      if (!current || new Date(entry.updatedAt) > new Date(current.updatedAt)) {
+        latestByKey.set(key, entry);
+      }
+    }
+    return [...latestByKey.values()];
   },
 
   async remove(id: string, ctx: AuthContext): Promise<void> {

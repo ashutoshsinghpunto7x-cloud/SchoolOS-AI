@@ -30,9 +30,13 @@ import leaveRequestRouter from '../features/leave-requests/leave-request.routes'
 import schoolSettingsRouter from '../features/school-settings/school-settings.routes';
 import schoolClassRouter from '../features/school-classes/school-class.routes';
 import feeStructureRouter from '../features/fees/fee-structure.routes';
+import collectionScheduleRouter from '../features/fees/collection-schedule.routes';
 import internalMessageRouter from '../features/internal-messages/internal-message.routes';
 import deviceTokenRouter from '../features/device-tokens/device-token.routes';
 import auditRouter from '../features/audit/audit.routes';
+import employeeRouter from '../features/employees/employee.routes';
+import staffAttendanceRouter from '../features/staff-attendance/staff-attendance.routes';
+import payrollRouter from '../features/payroll/payroll.routes';
 
 const router = Router();
 
@@ -67,8 +71,12 @@ router.use('/leave-requests', leaveRequestRouter);
 router.use('/school-settings', schoolSettingsRouter);
 router.use('/school-classes', schoolClassRouter);
 router.use('/fee-structure', feeStructureRouter);
+router.use('/collection-schedule', collectionScheduleRouter);
 router.use('/internal-messages', internalMessageRouter);
 router.use('/users/me/device-tokens', deviceTokenRouter);
 router.use('/audit', auditRouter);
+router.use('/employees', employeeRouter);
+router.use('/attendance-qr', staffAttendanceRouter);
+router.use('/payroll', payrollRouter);
 
 export default router;

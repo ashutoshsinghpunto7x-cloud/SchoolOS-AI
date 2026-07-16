@@ -21,6 +21,23 @@ export const feeStructureController = {
     } catch (err) { next(err); }
   },
 
+  async applyToAllClasses(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const result = await feeStructureService.applyToAllClasses(req.body, ctx);
+      sendCreated(res, result, `Applied to ${result.classesUpdated} class(es)`);
+    } catch (err) { next(err); }
+  },
+
+  async getTemplate(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const academicYear = typeof req.query.academicYear === 'string' ? req.query.academicYear : '';
+      const template = await feeStructureService.getTemplate(ctx.schoolId, academicYear);
+      sendSuccess(res, template);
+    } catch (err) { next(err); }
+  },
+
   async remove(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

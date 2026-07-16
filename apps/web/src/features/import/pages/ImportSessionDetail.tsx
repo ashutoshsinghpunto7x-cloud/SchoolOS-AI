@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Loader2, CheckCircle2, RotateCcw, XCircle, RefreshCw, AlertTriangle, Download, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useImportSession, useConfirmImport, useCancelImport, useRollbackImport, useUpdateMapping, useSetDuplicateStrategy, useAIMap, useMappingTemplates, useSaveMappingTemplate } from '../hooks/useImport';
 import { ImportStatusBadge } from '../components/ImportStatusBadge';
@@ -167,7 +167,7 @@ export function ImportSessionDetail() {
               disabled={downloadingErrors}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
-              {downloadingErrors ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {downloadingErrors && <Loader2 className="w-4 h-4 animate-spin" />}
               Download Error Report
             </button>
           )}
@@ -175,9 +175,8 @@ export function ImportSessionDetail() {
             <button
               onClick={() => cancel.mutate()}
               disabled={cancel.isPending}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              className="flex items-center px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
             >
-              <XCircle className="w-4 h-4" />
               Cancel
             </button>
           )}
@@ -191,19 +190,31 @@ export function ImportSessionDetail() {
               disabled={rollback.isPending}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
             >
-              {rollback.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              {rollback.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               Rollback
             </button>
           )}
           {isPreview && (
-            <button
-              onClick={() => confirm.mutate()}
-              disabled={confirm.isPending || session.validRows + session.warningRows === 0}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors"
-            >
-              {confirm.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-              Confirm Import
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                onClick={() => {
+                  if (session.failedRows > 0 && !window.confirm(
+                    `${session.failedRows} row${session.failedRows === 1 ? '' : 's'} still ${session.failedRows === 1 ? 'has' : 'have'} errors and will be skipped. Import the remaining ${session.validRows + session.warningRows} row(s) anyway?`
+                  )) return;
+                  confirm.mutate();
+                }}
+                disabled={confirm.isPending || session.validRows + session.warningRows === 0}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+              >
+                {confirm.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Confirm Import
+              </button>
+              {session.failedRows > 0 && (
+                <span className="text-[11px] text-red-500 font-medium">
+                  {session.failedRows} error{session.failedRows === 1 ? '' : 's'} will be skipped
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -211,6 +222,24 @@ export function ImportSessionDetail() {
       {/* Progress (visible during processing and after) */}
       {(isRunning || isCompleted || session.status === 'failed') && (
         <ImportProgress session={session} />
+      )}
+
+      {/* Live summary — updates as rows are edited/added/removed in preview */}
+      {isPreview && session.totalRows > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          {[
+            { label: 'Total Rows', value: session.totalRows, cls: 'text-gray-900' },
+            { label: 'Valid Rows', value: session.validRows, cls: 'text-gray-900' },
+            { label: 'Warnings', value: session.warningRows, cls: 'text-amber-700' },
+            { label: 'Rows With Errors', value: session.failedRows, cls: 'text-red-600' },
+            { label: 'Duplicate Records', value: session.duplicateRows, cls: 'text-gray-900' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+              <p className={cn('text-xl font-bold', stat.cls)}>{stat.value}</p>
+              <p className="text-xs text-gray-400 font-medium mt-0.5">{stat.label}</p>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* New classes detected — surfaced before confirming so typos can be caught,
@@ -306,7 +335,7 @@ export function ImportSessionDetail() {
                   disabled={aiMap.isPending}
                   className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
                 >
-                  {aiMap.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  {aiMap.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                   AI Auto Map
                 </button>
                 <button onClick={startMappingEdit} className="text-xs text-indigo-600 hover:underline">Edit</button>
@@ -326,7 +355,7 @@ export function ImportSessionDetail() {
                   disabled={aiMap.isPending}
                   className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
                 >
-                  {aiMap.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  {aiMap.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                   AI Auto Map
                 </button>
                 <button onClick={() => { setMappingEditing(false); setAiSuggestions({}); }} className="text-xs text-gray-500 hover:underline">Cancel</button>
@@ -361,7 +390,7 @@ export function ImportSessionDetail() {
                       title={suggestion.requiresConfirmation ? 'Low confidence — please confirm' : 'AI suggestion'}
                       className={cn(
                         'shrink-0 text-[10px] font-bold rounded-full px-1.5 py-0.5',
-                        suggestion.confidence >= 0.8 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700',
+                        suggestion.confidence >= 0.8 ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'bg-amber-50 text-amber-700',
                       )}
                     >
                       {Math.round(suggestion.confidence * 100)}%

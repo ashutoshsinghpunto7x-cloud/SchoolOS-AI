@@ -11,7 +11,7 @@ import { buildColumnMapping, buildAIColumnMapping, validateRows, runImport, roll
 import { ColumnMappingSuggestion } from './ai-mapper/ai-mapper.interface';
 import {
   listSessionsSchema, listRowsSchema, uploadSessionSchema, confirmMappingSchema, setDuplicateStrategySchema,
-  saveMappingTemplateSchema, listMappingTemplatesSchema, updateRowSchema,
+  saveMappingTemplateSchema, listMappingTemplatesSchema, updateRowSchema, addRowSchema,
 } from './import.validation';
 import { listTemplates, generateTemplateBuffer } from './templates/template.registry';
 import { schoolClassRepository } from '../school-classes/school-class.repository';
@@ -453,6 +453,85 @@ export const importService = {
     });
 
     return { session: updatedSession!, row: await importRowRepository.findByRowNumber(id, rowNumber) };
+  },
+
+  /**
+   * Manually append a row that wasn't in the uploaded file — e.g. a student
+   * missed in the export. Starts out validated against whatever fields were
+   * given (typically empty, so it lands as 'error' until filled in via the
+   * normal inline-edit flow, same as any other row).
+   */
+  async addRow(id: string, rawBody: unknown, ctx: AuthContext) {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+    if (session.status !== 'preview') {
+      throw new ValidationError('Rows can only be added in preview state.');
+    }
+
+    const { mappedData } = addRowSchema.parse(rawBody);
+    const rowNumber = (await importRowRepository.maxRowNumber(id)) + 1;
+
+    const validator = getValidator(session.importType);
+    const result = validator.validate(mappedData);
+    const persistedData = result.status === 'error' ? mappedData : result.cleanData;
+
+    let duplicateOf: string | undefined;
+    const processor = getProcessor(session.importType);
+    if (result.status !== 'error' && processor.findDuplicate) {
+      duplicateOf = await processor.findDuplicate(persistedData, ctx.schoolId);
+    }
+
+    const row = await importRowRepository.insertRow({
+      sessionId: id,
+      schoolId: ctx.schoolId,
+      rowNumber,
+      rawData: mappedData,
+      mappedData: persistedData,
+      status: result.status as 'valid' | 'warning' | 'error',
+      errors: result.errors,
+      warnings: result.warnings,
+    });
+    if (duplicateOf) await importRowRepository.replaceRow(id, rowNumber, { ...row, duplicateOf });
+
+    const updatedSession = await this.recomputeSessionCounts(id, ctx.schoolId, { totalRowsDelta: 1 });
+    return { session: updatedSession, row };
+  },
+
+  /** Removes a manually-unwanted row from the preview (e.g. a stray blank line
+   *  the header-detection didn't filter) — never touches already-imported records. */
+  async deleteRow(id: string, rowNumber: number, ctx: AuthContext) {
+    const session = await importSessionRepository.findById(id, ctx.schoolId);
+    if (!session) throw new NotFoundError('Import session');
+    if (session.status !== 'preview') {
+      throw new ValidationError('Rows can only be deleted in preview state.');
+    }
+
+    const deleted = await importRowRepository.deleteRow(id, rowNumber);
+    if (!deleted) throw new NotFoundError('Row');
+
+    return this.recomputeSessionCounts(id, ctx.schoolId, { totalRowsDelta: -1 });
+  },
+
+  /** Recomputes every row-status aggregate from the current rows and writes it
+   *  back to the session — shared by add/delete so the live summary counts
+   *  (and totalRows, which those two actions actually change) never drift. */
+  async recomputeSessionCounts(id: string, schoolId: string, opts: { totalRowsDelta?: number } = {}): Promise<IImportSession> {
+    const session = await importSessionRepository.findById(id, schoolId);
+    if (!session) throw new NotFoundError('Import session');
+
+    const [counts, duplicateRows] = await Promise.all([
+      importRowRepository.countByStatus(id),
+      importRowRepository.countDuplicates(id),
+    ]);
+
+    const updated = await importSessionRepository.updateStatus(id, schoolId, 'preview', {
+      validRows: counts['valid'] ?? 0,
+      warningRows: counts['warning'] ?? 0,
+      failedRows: counts['error'] ?? 0,
+      duplicateRows,
+      totalRows: session.totalRows + (opts.totalRowsDelta ?? 0),
+    });
+    return updated!;
   },
 
   // ── Error report ───────────────────────────────────────────────────────────

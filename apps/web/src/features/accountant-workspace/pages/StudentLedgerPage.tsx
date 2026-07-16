@@ -161,7 +161,7 @@ function StudentProfileCard({ ledger }: { ledger: ReturnType<typeof useStudentLe
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Gradient header strip */}
       <div className="h-2 bg-gradient-to-r from-[#5B21B6] via-[#7C3AED] to-[#DB2777]" />
       <div className="px-5 py-4">
@@ -251,7 +251,7 @@ function MonthTabs({ feeRecords, selected, onSelect }: {
   }, [feeRecords]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Select Fee Period</p>
       <div className="flex gap-2 flex-wrap">
         <button
@@ -280,7 +280,7 @@ function MonthTabs({ feeRecords, selected, onSelect }: {
                   ? 'bg-[#5B21B6] text-white shadow-sm'
                   : hasRecords
                   ? 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-100'
-                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 border border-gray-100'
+                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 border border-gray-200'
               )}
             >
               {month.slice(0, 3)}
@@ -335,9 +335,9 @@ function FeeStructureDetailCard({ feeRecords, payments, month, onCollect }: {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Card header */}
-      <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between gap-3">
+      <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-gray-900">
             {month ? `${month} — Fee Structure` : 'All Fee Records'}
@@ -419,7 +419,7 @@ function FeeStructureDetailCard({ feeRecords, payments, month, onCollect }: {
       )}
 
       {sorted.length > 0 && (
-        <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-5 py-3 bg-gray-50/50 border-t border-gray-200 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-4">
             <div>
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">Total Assessed</p>
@@ -504,7 +504,7 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
       </div>
 
       {/* Summary strip */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-2.5">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Summary</p>
         {[
           { label: 'Total Fees', value: fmt(summary.totalFees) },
@@ -518,7 +518,7 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
             <span className={cn('text-xs font-semibold text-gray-800', color)}>{value}</span>
           </div>
         ))}
-        <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+        <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
           <span className="text-xs font-bold text-gray-700">Remaining</span>
           <span className={cn('text-sm font-black', summary.remainingBalance > 0 ? 'text-amber-600' : 'text-emerald-600')}>
             {fmt(summary.remainingBalance)}
@@ -527,7 +527,7 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
       </div>
 
       {/* Actions */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2 print:hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-2 print:hidden">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Actions</p>
         <button
           onClick={() => window.print()}
@@ -566,10 +566,10 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
       </div>
 
       {/* Editable tuition fee */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Fee Settings</p>
         <EditableTuitionFeeRow studentId={student._id} currentFee={student.monthlyTuitionFee} />
-        <div className="mt-3 pt-3 border-t border-gray-50 space-y-2">
+        <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
           <div className="flex items-start gap-2.5">
             <CalendarDays className="w-3.5 h-3.5 text-gray-300 mt-0.5 shrink-0" />
             <div><p className="text-[11px] text-gray-400">Last Payment</p><p className="text-sm font-semibold text-gray-800">{fmtDate(summary.lastPaymentDate)}</p></div>
@@ -620,7 +620,7 @@ function PaymentHistorySection({ payments }: { payments: FeePayment[] }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -636,13 +636,13 @@ function PaymentHistorySection({ payments }: { payments: FeePayment[] }) {
       {open && (
         <>
           {!payments.length ? (
-            <div className="p-8 text-center border-t border-gray-50">
+            <div className="p-8 text-center border-t border-gray-200">
               <Receipt className="w-8 h-8 text-gray-200 mx-auto mb-2" />
               <p className="text-sm font-semibold text-gray-500">No payments recorded yet.</p>
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto border-t border-gray-50">
+              <div className="overflow-x-auto border-t border-gray-200">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-[11px] text-gray-400 uppercase tracking-wide">
@@ -679,7 +679,7 @@ function PaymentHistorySection({ payments }: { payments: FeePayment[] }) {
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
+                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
                   <button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}
                     className="h-8 px-3 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 disabled:opacity-40 flex items-center gap-1">
                     <ChevronLeft className="w-3.5 h-3.5" /> Prev
@@ -728,7 +728,7 @@ function RequestDiscountModal({ studentId, onClose }: { studentId: string; onClo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-200">
           <h2 className="text-lg font-bold text-gray-900">Request Discount</h2>
           <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
         </div>
@@ -781,7 +781,7 @@ export function StudentLedgerPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center py-24">
+      <div className="min-h-screen bg-white flex items-center justify-center py-24">
         <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
       </div>
     );
@@ -789,7 +789,7 @@ export function StudentLedgerPage() {
 
   if (isError || !ledger) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center py-24 gap-4 text-center">
         <AlertCircle className="w-10 h-10 text-red-400" />
         <p className="text-gray-600">Could not load this student's fee ledger.</p>
         <button
@@ -808,6 +808,7 @@ export function StudentLedgerPage() {
         student={ledger.student}
         feeRecords={ledger.feeRecords}
         lastPaymentDate={ledger.summary.lastPaymentDate}
+        initialMonth={selectedMonth}
         onBack={() => { setShowProcessPayment(false); invalidateLedger(); }}
         onPaid={invalidateLedger}
       />
@@ -815,9 +816,9 @@ export function StudentLedgerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F4FF]">
+    <div className="min-h-screen bg-white">
       {/* Top nav bar */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3.5 flex items-center justify-between gap-3 print:hidden sticky top-0 z-10">
+      <div className="bg-white border-b border-gray-200 px-4 py-3.5 flex items-center justify-between gap-3 print:hidden sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/accountant/student-ledger')}
