@@ -22,15 +22,21 @@ connectDatabase().catch((error) => {
 });
 
 // ── Security ──────────────────────────────────────────────────────────────────
+// Production allows a comma-separated list in FRONTEND_URL (e.g. the old Vercel
+// URL + a custom domain during a DNS/SSL cutover) rather than a single origin —
+// trim each entry so accidental whitespace around commas doesn't cause a silent
+// mismatch against the browser's Origin header.
+const allowedProductionOrigins = env.FRONTEND_URL.split(',').map((origin) => origin.trim()).filter(Boolean);
+
 app.use(helmet());
 app.use(
   cors({
     // In development, Vite may fall back to another port (5174, 5175, ...) if 5173
     // is already taken by another running dev server — allow any localhost port
-    // rather than hardcoding one. Production stays locked to a single origin.
+    // rather than hardcoding one.
     origin: env.NODE_ENV === 'development'
       ? /^http:\/\/localhost:\d+$/
-      : env.FRONTEND_URL,
+      : allowedProductionOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
