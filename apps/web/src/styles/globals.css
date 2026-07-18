@@ -8,6 +8,21 @@
   --topbar-height: 64px;
 }
 
+/* ── Brand palette (command-center gradient + purple accents) ───────────────
+   Single source of truth for the purple/pink theme shared by the Reception,
+   Principal, Teacher and Administration dashboards. Keep in sync with the
+   JS-side copy in apps/web/src/theme/brand.ts (kept separate because CSS
+   can't import TS constants). */
+:root {
+  --brand-purple-darkest: #4C1D95;
+  --brand-purple-dark: #5B21B6;
+  --brand-purple-hover: #4C1D95;
+  --brand-purple-active: #3f1a94;
+  --brand-purple-default: #7C3AED;
+  --brand-purple-light: #A855F7;
+  --brand-pink: #DB2777;
+}
+
 /* ── Design tokens (HSL channel values for Tailwind utilities) ──────────────── */
 @layer base {
   :root {

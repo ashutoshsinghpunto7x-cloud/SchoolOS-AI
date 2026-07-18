@@ -161,7 +161,19 @@ export type AuditAction =
   | 'employee.qr_regenerated'
   | 'employee.qr_disabled'
   | 'staff_attendance.checked_in'
-  | 'staff_attendance.checked_out';
+  | 'staff_attendance.checked_out'
+  | 'exam.created'
+  | 'exam.updated'
+  | 'exam.status_changed'
+  | 'exam.deleted'
+  | 'marks.saved'
+  | 'marks.bulk_saved'
+  | 'marks.submitted'
+  | 'marks.approved'
+  | 'marks.correction_requested'
+  | 'marks.published'
+  | 'marks.locked'
+  | 'marks.reopened';
 
 export interface IAuditLog extends Document {
   userId: string;

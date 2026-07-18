@@ -88,6 +88,7 @@ const NAV_ITEMS_ACCOUNTANT = [
 const NAV_ITEMS_ADMIN = [
   { label: 'Reports',            icon: FileBarChart2,  path: '/reports' },
   { label: 'Classes & Sections', icon: GraduationCap,  path: '/classes' },
+  { label: 'Exams',              icon: ClipboardCheck, path: '/exams' },
   { label: 'Teacher Logins',     icon: KeyRound,       path: '/teacher-logins' },
   { label: 'Automation',         icon: Zap,            path: '/automation' },
   { label: 'Data Import',        icon: Database,       path: '/import' },
@@ -115,6 +116,7 @@ const NAV_ITEMS_PRINCIPAL = [
   { label: 'Timetable',           icon: LayoutGrid,      path: '/timetable',                       end: false },
   { label: 'Teacher Timetable',   icon: UserCog,         path: '/timetable/teacher-builder',       end: false },
   { label: 'Class Teachers',      icon: GraduationCap,   path: '/principal/class-teachers',        end: false },
+  { label: 'Exams',               icon: ClipboardList,   path: '/exams',                            end: false },
   { label: 'Calendar',            icon: CalendarDays,    path: '/calendar',                         end: false },
   { label: 'Messages',            icon: Mail,             path: '/messages',                        end: false },
   { label: 'Change Password',     icon: ShieldCheck,      path: '/principal/change-password',       end: false },

@@ -309,7 +309,13 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
       )}
       style={isAccountantDashboard ? ACCOUNTANT_HERO_GRADIENT_STYLE : undefined}
     >
-      <div className={cn("flex items-center w-full gap-4", usePillTopbar && "max-w-7xl mx-auto")}>
+      <div className={cn(
+        "flex items-center w-full gap-4",
+        // Teacher's page content is centered in a phone-width column above
+        // `sm:` (see TeacherLayout), so its topbar matches that width instead
+        // of the wider accountant/principal max-w-7xl.
+        isTeacher ? "sm:max-w-md sm:mx-auto" : usePillTopbar && "max-w-7xl mx-auto",
+      )}>
         {/* Menu toggle — teacher portal has no sidebar; principal's sidebar is an
             overlay at every breakpoint, so it stays visible past lg too */}
         {!isTeacher && (

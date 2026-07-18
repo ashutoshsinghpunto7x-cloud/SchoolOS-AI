@@ -12,16 +12,19 @@ import {
   GraduationCap,
   Briefcase,
   BadgeCheck,
-  UserPlus,
   Settings,
   LogOut,
   KeyRound,
   CreditCard,
   ScanLine,
   Wallet,
+  Headphones,
+  MessageCircle,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+
+const SUPPORT_PHONE = '9936860026';
 
 const STATUS_LABEL: Record<string, string> = {
   active:      'Active',
@@ -262,11 +265,38 @@ export function TeacherProfilePage() {
 
           {/* Other options moved here from the old sidebar */}
           <div className="space-y-2">
-            <MenuRow icon={UserPlus} label="Add Students"     onClick={() => navigate('/teacher/add-student')} />
             <MenuRow icon={CreditCard} label="My ID Card"     onClick={() => navigate('/teacher/id-card')} />
             <MenuRow icon={ScanLine} label="My Attendance"    onClick={() => navigate('/teacher/my-attendance')} />
             <MenuRow icon={Wallet} label="My Payslips"        onClick={() => navigate('/teacher/my-payslips')} />
             <MenuRow icon={KeyRound} label="Change Password"  onClick={() => navigate('/teacher/change-password')} />
+
+            {/* Contact support — tapping the row calls the school office;
+                the WhatsApp icon opens a chat with the same number directly. */}
+            <div className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white dark:teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => { window.location.href = `tel:${SUPPORT_PHONE}`; }}
+                className="flex-1 min-w-0 flex items-center gap-3 text-left"
+              >
+                <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center shrink-0">
+                  <Headphones className="w-4.5 h-4.5 text-gray-500 dark:text-white/40" />
+                </div>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-gray-800 dark:text-white">Contact Support</span>
+                  <span className="block text-xs text-gray-400 dark:text-white/30">{SUPPORT_PHONE}</span>
+                </span>
+              </button>
+              <a
+                href={`https://wa.me/91${SUPPORT_PHONE}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Chat on WhatsApp"
+                className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
+              >
+                <MessageCircle className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
+              </a>
+            </div>
+
             <MenuRow icon={Settings} label="Settings"         onClick={() => navigate('/settings')} />
             <MenuRow icon={LogOut}   label="Log Out"          onClick={() => void logout()} danger />
           </div>

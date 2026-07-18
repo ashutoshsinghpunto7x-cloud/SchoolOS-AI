@@ -1,12 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Users, ShieldCheck, Zap, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldCheck, Zap, GraduationCap, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
-  { label: 'Users', path: '/administration/users', icon: Users },
-  { label: 'Roles & Permissions', path: '/administration/roles', icon: ShieldCheck },
-  { label: 'Classes', path: '/administration/classes', icon: GraduationCap },
-  { label: 'Automation', path: '/administration/automation', icon: Zap },
+  { label: 'Dashboard', path: '/administration', icon: LayoutDashboard, end: true },
+  { label: 'Users', path: '/administration/users', icon: Users, end: false },
+  { label: 'Roles & Permissions', path: '/administration/roles', icon: ShieldCheck, end: false },
+  { label: 'Classes', path: '/administration/classes', icon: GraduationCap, end: false },
+  { label: 'Automation', path: '/administration/automation', icon: Zap, end: false },
+  { label: 'Recovery Requests', path: '/administration/recovery-requests', icon: KeyRound, end: false },
 ] as const;
 
 export const AdministrationWorkspace = () => {
@@ -15,15 +17,16 @@ export const AdministrationWorkspace = () => {
       {/* Tab bar */}
       <div className="border-b border-gray-100 bg-white px-8">
         <nav className="flex gap-1" aria-label="Administration sections">
-          {TABS.map(({ label, path, icon: Icon }) => (
+          {TABS.map(({ label, path, icon: Icon, end }) => (
             <NavLink
               key={path}
               to={path}
+              end={end}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-2 px-4 py-4 text-sm font-semibold border-b-2 transition-colors',
                   isActive
-                    ? 'border-blue-600 text-[#5B21B6]'
+                    ? 'border-[var(--brand-purple-dark)] text-[var(--brand-purple-dark)]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
                 )
               }

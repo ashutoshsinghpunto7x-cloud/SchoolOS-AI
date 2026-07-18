@@ -29,8 +29,8 @@ export const AssistantPanel = () => {
           <Sparkles className="w-[18px] h-[18px]" strokeWidth={1.5} />
         </div>
         <div>
-          <div className="text-sm font-bold text-gray-900">AI Attendance Assistant</div>
-          <div className="text-xs text-gray-400">Ask about today's attendance</div>
+          <div className="text-sm font-bold text-gray-900">AI Assistant</div>
+          <div className="text-xs text-gray-400">Ask about attendance or fees</div>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export const AssistantPanel = () => {
               <Sparkles className="w-7 h-7 text-gray-300" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-900">Good day! Ask me about today's attendance.</p>
+              <p className="text-sm font-semibold text-gray-900">Good day! Ask me about attendance or fees.</p>
               <p className="text-xs text-gray-400 mt-1">Try one of the prompts below to get started.</p>
             </div>
             <SuggestedPrompts onSelect={sendMessage} disabled={isLoading} />
@@ -89,7 +89,7 @@ export const AssistantPanel = () => {
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSend();
             }}
-            placeholder="Ask about today's attendance…"
+            placeholder="Ask about attendance or fees…"
             disabled={isLoading}
             className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 disabled:bg-gray-50"
           />

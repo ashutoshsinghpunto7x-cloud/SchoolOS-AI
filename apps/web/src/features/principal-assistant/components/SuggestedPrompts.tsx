@@ -1,8 +1,10 @@
 const PROMPTS = [
   "Today's attendance",
   'Attendance summary',
+  'Fee collection summary',
+  'Outstanding fees',
   'Highest attendance class',
-  'Lowest attendance class',
+  'Lowest fee collection class',
 ];
 
 interface SuggestedPromptsProps {

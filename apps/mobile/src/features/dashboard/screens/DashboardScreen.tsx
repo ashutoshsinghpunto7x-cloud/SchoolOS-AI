@@ -7,8 +7,9 @@ import { ErrorState } from '@/components/ErrorState';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Skeleton } from '@/components/Skeleton';
 import { StatTile } from '@/components/StatTile';
-import { ROLE_LABELS } from '@/constants/roles';
+import { ROLE_LABELS, canManageAdmissions } from '@/constants/roles';
 import { useAttendanceSummary } from '@/features/attendance/hooks';
+import { AdmissionsSummaryCard } from '@/features/enquiries/components/AdmissionsSummaryCard';
 import { useFeeSummary } from '@/features/fees/hooks';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/theme';
@@ -54,6 +55,8 @@ export function DashboardScreen() {
           </Card>
         </Pressable>
       ) : null}
+
+      {user && canManageAdmissions(user.role) ? <AdmissionsSummaryCard /> : null}
 
       {loading ? (
         <View style={styles.grid}>

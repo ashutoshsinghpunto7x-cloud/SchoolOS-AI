@@ -1,4 +1,3 @@
-import { UserPlus, Phone, MessageCircle, UserCog, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -15,34 +14,11 @@ export interface TimelineEntry {
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
-const EVENT_CONFIG: Record<
-  TimelineEventType,
-  { icon: LucideIcon; dotBg: string; iconBg: string; iconColor: string }
-> = {
-  admission: {
-    icon: UserPlus,
-    dotBg: 'bg-blue-500',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-  },
-  call: {
-    icon: Phone,
-    dotBg: 'bg-green-500',
-    iconBg: 'bg-green-50',
-    iconColor: 'text-green-600',
-  },
-  whatsapp: {
-    icon: MessageCircle,
-    dotBg: 'bg-emerald-500',
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-  },
-  update: {
-    icon: UserCog,
-    dotBg: 'bg-indigo-500',
-    iconBg: 'bg-indigo-50',
-    iconColor: 'text-indigo-600',
-  },
+const EVENT_CONFIG: Record<TimelineEventType, { dotBg: string }> = {
+  admission: { dotBg: 'bg-blue-500' },
+  call: { dotBg: 'bg-green-500' },
+  whatsapp: { dotBg: 'bg-emerald-500' },
+  update: { dotBg: 'bg-indigo-500' },
 };
 
 // ── TimelineItem ─────────────────────────────────────────────────────────────
@@ -54,20 +30,12 @@ interface TimelineItemProps {
 
 const TimelineItem = ({ entry, isLast }: TimelineItemProps) => {
   const config = EVENT_CONFIG[entry.type];
-  const Icon = config.icon;
 
   return (
     <div className="flex gap-4">
       {/* Left: dot + vertical line */}
-      <div className="flex flex-col items-center flex-shrink-0">
-        <div
-          className={cn(
-            'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 z-10',
-            config.iconBg
-          )}
-        >
-          <Icon className={cn('w-5 h-5', config.iconColor)} strokeWidth={1.75} />
-        </div>
+      <div className="flex flex-col items-center flex-shrink-0 w-10">
+        <div className={cn('w-2.5 h-2.5 rounded-full mt-1.5 z-10', config.dotBg)} />
         {!isLast && (
           <div className="w-px flex-1 bg-gray-100 mt-2 mb-1 min-h-[24px]" />
         )}

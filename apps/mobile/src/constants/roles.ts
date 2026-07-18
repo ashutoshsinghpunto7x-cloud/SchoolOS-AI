@@ -31,3 +31,11 @@ export const canManageTeacherPhoto = (role: UserRole): boolean => TEACHER_PHOTO_
 // Any staff role can browse the read-only Teacher Directory; only `teacher`
 // gets "My Workspace" instead (they view their own record, not the roster).
 export const canViewTeacherDirectory = (role: UserRole): boolean => role !== 'teacher';
+
+// Roles that see the Admissions (Enquiries) entry point on the dashboard.
+// The backend leaves /enquiries open to any authenticated role (only delete
+// is admin-gated), but the web app's sidebar only surfaces "Admissions" to
+// back-office staff — mirroring that scope rather than the wider backend grant.
+export const ADMISSIONS_ROLES: readonly UserRole[] = ['admin', 'principal', 'reception'];
+
+export const canManageAdmissions = (role: UserRole): boolean => ADMISSIONS_ROLES.includes(role);

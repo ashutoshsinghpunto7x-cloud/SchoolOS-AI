@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {Clock,ChevronRight,AlertCircle,CalendarCheck,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -174,8 +174,6 @@ function TodayClassCard({
       onClick={onPress}
       className="w-full text-left bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
     >
-      
-
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
         <div className="flex items-center gap-20">
@@ -529,6 +527,16 @@ export function TeacherDashboard() {
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
 
+        {/* School calendar shortcut */}
+        <button
+          type="button"
+          onClick={() => navigate('/calendar')}
+          aria-label="School calendar"
+          className="absolute top-5 right-5 w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
+        >
+          <Calendar className="w-[18px] h-[18px] text-white" />
+        </button>
+
         <p className="text-white/70 text-sm font-medium">{greeting()},</p>
         <h1 className="text-3xl font-bold text-white mt-0.5 tracking-tight">{firstName}</h1>
         <p className="text-white/60 text-sm mt-0.5">{todayDateStr()}</p>
@@ -600,6 +608,22 @@ export function TeacherDashboard() {
             />
           )}
         </section>
+
+        {/* ── Marks & Report Cards ─────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/marks')}
+          className="w-full text-left flex items-center gap-3 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
+            <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Marks & Report Cards</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Enter marks for your classes</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
 
         <UpcomingEventsWidget />
 

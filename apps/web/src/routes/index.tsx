@@ -85,6 +85,10 @@ const AdministrationWorkspace = lazyPage(
   () => import('@/features/administration/pages/AdministrationWorkspace'),
   'AdministrationWorkspace',
 );
+const AdminDashboardPage = lazyPage(
+  () => import('@/features/administration/pages/AdminDashboardPage'),
+  'AdminDashboardPage',
+);
 const UserManagementPage = lazyPage(
   () => import('@/features/users/pages/UserManagementPage'),
   'UserManagementPage',
@@ -136,6 +140,18 @@ const TeacherProfilePage = lazyPage(
 const EditTeacherPage = lazyPage(
   () => import('@/features/teachers/pages/EditTeacherPage'),
   'EditTeacherPage',
+);
+const ExamListPage = lazyPage(
+  () => import('@/features/marks/pages/ExamListPage'),
+  'ExamListPage',
+);
+const NewExamPage = lazyPage(
+  () => import('@/features/marks/pages/NewExamPage'),
+  'NewExamPage',
+);
+const EditExamPage = lazyPage(
+  () => import('@/features/marks/pages/EditExamPage'),
+  'EditExamPage',
 );
 const AttendanceWorkspace = lazyPage(
   () => import('@/features/attendance/pages/AttendanceWorkspace'),
@@ -377,6 +393,14 @@ const TeacherHistoryPage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherHistoryPage'),
   'TeacherHistoryPage',
 );
+const MarksHubPage = lazyPage(
+  () => import('@/features/marks/pages/MarksHubPage'),
+  'MarksHubPage',
+);
+const MarksEntryPage = lazyPage(
+  () => import('@/features/marks/pages/MarksEntryPage'),
+  'MarksEntryPage',
+);
 const TeacherWorkspaceTimetablePage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherTimetablePage'),
   'TeacherTimetablePage',
@@ -588,6 +612,8 @@ export const router = createBrowserRouter([
                       { path: 'teacher/add-student',                                      element: <TeacherAddStudentPage /> },
                       { path: 'teacher/classes/:cls/:section/add-student',            element: <TeacherAddStudentPage /> },
                       { path: 'teacher/attendance/:cls/:section',                     element: <TeacherAttendancePage /> },
+                      { path: 'teacher/marks',                                        element: <MarksHubPage /> },
+                      { path: 'teacher/marks/:cls/:section/:subjectName/:examId',      element: <MarksEntryPage /> },
                       { path: 'teacher/history',                                      element: <TeacherHistoryPage /> },
                       { path: 'teacher/timetable',                                    element: <TeacherWorkspaceTimetablePage /> },
                       { path: 'teacher/profile',                                      element: <TeacherWorkspaceProfilePage /> },
@@ -732,6 +758,17 @@ export const router = createBrowserRouter([
                 ],
               },
 
+              // Exam Configuration — admin/principal only, matching the server-side
+              // route restriction on exam mutations (static /new before /:id).
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                children: [
+                  { path: 'exams', element: <ExamListPage /> },
+                  { path: 'exams/new', element: <NewExamPage /> },
+                  { path: 'exams/:id/edit', element: <EditExamPage /> },
+                ],
+              },
+
               // Communication
               { path: 'communication', element: <CommunicationWorkspace /> },
 
@@ -764,7 +801,7 @@ export const router = createBrowserRouter([
                     path: 'administration',
                     element: <AdministrationWorkspace />,
                     children: [
-                      { index: true, element: <Navigate to="/administration/users" replace /> },
+                      { index: true, element: <AdminDashboardPage /> },
                       { path: 'users', element: <UserManagementPage /> },
                       { path: 'users/new', element: <CreateUserPage /> },
                       { path: 'users/:id', element: <UserDetailPage /> },

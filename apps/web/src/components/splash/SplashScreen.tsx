@@ -1,13 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, GraduationCap, Briefcase, BarChart3 } from 'lucide-react';
-import { SchoolOSMark } from './SchoolOSMark';
-
-const NAV_ITEMS = [
-  { label: 'Students', Icon: Users },
-  { label: 'Teachers', Icon: GraduationCap },
-  { label: 'Admin', Icon: Briefcase },
-  { label: 'Insights', Icon: BarChart3 },
-];
+import splashBackground from '../../assets/illustrations/Splash-Screen-bg.png';
 
 interface SplashScreenProps {
   onFinish: () => void;
@@ -16,13 +8,29 @@ interface SplashScreenProps {
 const VISIBLE_MS = 2000;
 const FADE_MS = 400;
 
+/**
+ * Splash-Screen-bg.png is a cropped copy of the designer-provided
+ * Splash-Screen.png — the logo, "FNIC" wordmark, tagline, and building are
+ * all baked into that image already, so this component just shows it
+ * full-bleed instead of redrawing the same content a second time in HTML.
+ * The crop removes the bottom strip that in the original held a *static*
+ * loading line + "Initializing System..." label — those were placeholder
+ * pixels, not a real indicator, so that strip is rebuilt below as an
+ * actual animated glow traveling along the line instead of being left as
+ * inert decoration.
+ */
 export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const [isExiting, setIsExiting] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
+    const raf1 = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true));
+    });
     const exitTimer = setTimeout(() => setIsExiting(true), VISIBLE_MS);
     const finishTimer = setTimeout(onFinish, VISIBLE_MS + FADE_MS);
     return () => {
+      cancelAnimationFrame(raf1);
       clearTimeout(exitTimer);
       clearTimeout(finishTimer);
     };
@@ -30,95 +38,41 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] overflow-hidden bg-[#070C18] transition-opacity duration-500 ease-out ${
-        isExiting ? 'opacity-0' : 'animate-fade-in opacity-100'
+      className={`fixed inset-0 z-[9999] overflow-hidden bg-[#03050A] transition-opacity duration-500 ease-out ${
+        isExiting ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif' }}
     >
-      {/* Background: dark cityscape suggestion + slow zoom */}
-      <div className="absolute inset-0 animate-splash-zoom">
-        <div
-          className="absolute inset-0 opacity-70"
-          style={{
-            backgroundImage: `
-              linear-gradient(180deg, rgba(7,12,24,0.65) 0%, rgba(7,12,24,0.85) 55%, rgba(7,12,24,0.98) 100%),
-              repeating-linear-gradient(90deg, rgba(148,163,184,0.05) 0px, rgba(148,163,184,0.05) 2px, transparent 2px, transparent 72px),
-              repeating-linear-gradient(0deg, rgba(148,163,184,0.04) 0px, rgba(148,163,184,0.04) 2px, transparent 2px, transparent 54px)
-            `,
-          }}
-        />
-        {/* vignette */}
-        <div className="absolute inset-0 [background:radial-gradient(ellipse_at_center,transparent_30%,rgba(7,12,24,0.92)_100%)]" />
-        {/* fog near bottom */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#070C18] via-[#070C18]/60 to-transparent" />
-      </div>
+      {/* object-contain, no zoom transform: object-cover was cropping/scaling
+          the photo differently depending on screen shape, which is what let
+          the baked-in tagline drift down into the loading bar's fixed
+          position on some screens. Showing the photo at its own proportions,
+          uncropped, keeps its content in the same place every time so nothing
+          below can ever collide with it. */}
+      <img
+        src={splashBackground}
+        alt="FNIC — Empowering Education, Building Futures"
+        className="absolute inset-0 h-full w-full object-contain transition-opacity ease-out"
+        style={{ transitionDuration: `${VISIBLE_MS + FADE_MS}ms` }}
+      />
 
-      {/* Radial spotlight + pulsing glow behind logo */}
-      <div className="pointer-events-none absolute left-1/2 top-[40%] h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/30 blur-[110px] animate-splash-glow" />
-
-      {/* Top-left brand */}
-      <div className="absolute left-6 top-6 flex items-center gap-3 sm:left-12 sm:top-10">
-        <div className="h-11 w-px bg-blue-500/70" />
-        <div className="space-y-1 text-[11px] font-medium uppercase leading-tight tracking-[0.3em] text-slate-300">
-          <p>Learn.</p>
-          <p>Grow.</p>
-          <p>Succeed.</p>
-        </div>
-      </div>
-
-      {/* Top-right dot grid */}
-      <div className="absolute right-6 top-8 grid grid-cols-5 gap-2.5 sm:right-12 sm:top-10">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <span key={i} className="h-[3px] w-[3px] rounded-full bg-blue-500/60" />
-        ))}
-      </div>
-
-      {/* Right vertical menu */}
-      <div className="absolute right-8 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-9 sm:right-12 md:flex">
-        {NAV_ITEMS.map(({ label, Icon }) => (
-          <div key={label} className="flex flex-col items-center gap-2 text-slate-400">
-            <Icon className="h-5 w-5" strokeWidth={1.5} />
-            <span className="text-[9px] font-medium uppercase tracking-[0.15em]">{label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Bottom-left concentric circles */}
-      <div className="pointer-events-none absolute -bottom-32 -left-32 h-[420px] w-[420px]">
-        {[0, 1, 2, 3, 4].map((i) => (
+      {/* Loading indicator — a glow traveling along a line, replacing the
+          source design's static placeholder with a real animation. Anchored
+          near the very bottom of the viewport (not the photo's internal
+          layout, which shifts as object-cover crops differently per screen
+          size) so it never collides with the tagline baked into the photo
+          above it. */}
+      <div
+        className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-3 transition-opacity ease-out sm:bottom-10"
+        style={{ transitionDuration: '900ms', opacity: entered ? 1 : 0 }}
+      >
+        <div className="relative h-px w-64 overflow-visible bg-white/15 sm:w-80">
           <div
-            key={i}
-            className="absolute rounded-full border border-blue-400/[0.06]"
-            style={{ inset: `${i * 40}px` }}
+            className="absolute top-1/2 h-1.5 w-16 -translate-x-1/2 -translate-y-1/2 animate-travel rounded-full bg-[#F97316] blur-[3px]"
+            style={{ boxShadow: '0 0 16px 4px rgba(249,115,22,0.7)' }}
           />
-        ))}
-        <span className="absolute bottom-8 left-8 h-1.5 w-1.5 rounded-full bg-blue-400/70" />
-      </div>
-
-      {/* Center content */}
-      <div className="relative flex h-full flex-col items-center justify-center px-6 text-center">
-        <div className="animate-splash-float">
-          <SchoolOSMark />
         </div>
-
-        <h1 className="mt-6 text-5xl font-extrabold tracking-tight sm:text-6xl">
-          <span className="text-white">FN</span>
-          <span className="bg-gradient-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">IC</span>
-        </h1>
-
-        <p className="mt-4 text-xs font-semibold uppercase tracking-[0.4em] text-slate-400">
-          Smart School Management System
-        </p>
-
-        <div className="mt-6 h-px w-16 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-
-        <p className="mt-6 text-sm text-slate-300">
-          One Platform. Every Connection.{' '}
-          <span className="font-medium text-blue-400">Better Education.</span>
-        </p>
-
-        <div className="mt-12 h-9 w-9 animate-spin rounded-full border-2 border-blue-500/20 border-t-blue-500" />
-        <p className="mt-4 text-sm text-slate-400">Loading, please wait&hellip;</p>
+        <p className="text-xs font-medium tracking-[0.2em] text-white/60">Initializing System...</p>
       </div>
     </div>
   );

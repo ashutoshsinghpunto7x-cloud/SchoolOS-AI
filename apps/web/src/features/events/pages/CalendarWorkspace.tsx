@@ -130,7 +130,7 @@ export const CalendarWorkspace = () => {
       {/* Loading / Error */}
       {isLoading && (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
         </div>
       )}
 

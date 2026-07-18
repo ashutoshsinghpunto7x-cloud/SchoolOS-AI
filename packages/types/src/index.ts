@@ -2718,6 +2718,205 @@ export interface PayrollListOptions {
   status?: PayrollStatus;
 }
 
+// ── Exams ─────────────────────────────────────────────────────────────────────
+
+export type ExamType =
+  | 'unit_test'
+  | 'monthly_test'
+  | 'half_yearly'
+  | 'annual'
+  | 'practical'
+  | 'internal_assessment'
+  | 'other';
+
+export type ExamStatus = 'draft' | 'configured' | 'locked';
+
+export interface ExamComponent {
+  name: string;
+  maxMarks: number;
+  passMarks?: number;
+  weight?: number;
+}
+
+export interface GradeBand {
+  label: string;
+  minPercent: number;
+  maxPercent: number;
+}
+
+export interface Exam extends BaseEntity {
+  name: string;
+  examType: ExamType;
+  termLabel?: string;
+  classesApplicable: string[];
+  subjects: string[];
+  components: ExamComponent[];
+  gradingBands: GradeBand[];
+  passPercent: number;
+  subjectWiseMinPercent?: number;
+  status: ExamStatus;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface CreateExamPayload {
+  name: string;
+  examType: ExamType;
+  termLabel?: string;
+  classesApplicable: string[];
+  subjects: string[];
+  components: ExamComponent[];
+  gradingBands?: GradeBand[];
+  passPercent?: number;
+  subjectWiseMinPercent?: number;
+}
+
+export type UpdateExamPayload = Partial<CreateExamPayload>;
+
+export interface ExamListOptions {
+  page?: number;
+  limit?: number;
+  class?: string;
+  examType?: ExamType;
+  status?: ExamStatus;
+  search?: string;
+}
+
+// ── Marks ─────────────────────────────────────────────────────────────────────
+
+export type ComponentStatus = 'present' | 'absent' | 'exempt' | 'medical' | 'not_assessed';
+
+export type MarksWorkflowStatus =
+  | 'draft'
+  | 'submitted'
+  | 'needs_correction'
+  | 'approved'
+  | 'published'
+  | 'locked'
+  | 'reopened';
+
+export type MarksResultStatus = 'pass' | 'fail' | 'na';
+
+export interface ComponentScore {
+  componentName: string;
+  score?: number;
+  status: ComponentStatus;
+}
+
+export interface MarksAuditEntry {
+  action: string;
+  byUserId: string;
+  byName: string;
+  reason?: string;
+  fromValue?: string;
+  toValue?: string;
+  at: string;
+}
+
+export interface Marks extends BaseEntity {
+  examId: string;
+  studentId: string;
+  class: string;
+  section: string;
+  subjectName: string;
+  componentScores: ComponentScore[];
+  total?: number;
+  percentage?: number;
+  grade?: string;
+  result: MarksResultStatus;
+  remark?: string;
+  workflowStatus: MarksWorkflowStatus;
+  enteredById: string;
+  enteredByName: string;
+  enteredAt: string;
+  lastEditedById?: string;
+  lastEditedByName?: string;
+  lastEditedAt?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  publishedById?: string;
+  publishedByName?: string;
+  publishedAt?: string;
+  auditTrail: MarksAuditEntry[];
+}
+
+export interface UpsertMarksPayload {
+  examId: string;
+  studentId: string;
+  class: string;
+  section: string;
+  subjectName: string;
+  componentScores: ComponentScore[];
+  remark?: string;
+}
+
+export interface BulkUpsertMarksRecord {
+  studentId: string;
+  componentScores: ComponentScore[];
+  remark?: string;
+}
+
+export interface BulkUpsertMarksPayload {
+  examId: string;
+  class: string;
+  section: string;
+  subjectName: string;
+  records: BulkUpsertMarksRecord[];
+}
+
+export interface MarksBatchTarget {
+  examId: string;
+  class: string;
+  section: string;
+  subjectName: string;
+}
+
+export interface MarksReviewActionPayload extends MarksBatchTarget {
+  studentIds?: string[];
+  reason?: string;
+}
+
+export interface MarksReopenPayload extends MarksBatchTarget {
+  reason: string;
+}
+
+export interface MarksEntryRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  marks: Marks | null;
+}
+
+export interface MarksEntryTable {
+  exam: Exam;
+  rows: MarksEntryRow[];
+}
+
+export interface MarksSummary {
+  totalStudents: number;
+  completed: number;
+  pending: number;
+  draft: number;
+  submitted: number;
+  needsCorrection: number;
+  approved: number;
+  published: number;
+  locked: number;
+}
+
+export interface MarksListOptions {
+  examId?: string;
+  class?: string;
+  section?: string;
+  subjectName?: string;
+  studentId?: string;
+  workflowStatus?: MarksWorkflowStatus;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface PayrollSummary {
   totalGross: number;
   totalDeductions: number;

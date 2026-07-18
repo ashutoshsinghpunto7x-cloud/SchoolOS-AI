@@ -10,7 +10,8 @@ interface AuthState {
   isAuthenticated: boolean;
   /** True only during the initial session-restore on app launch. */
   isBootstrapping: boolean;
-  login: (email: string, password: string) => Promise<AuthUser>;
+  /** `identifier` is an email or a staff-issued username — the backend accepts either. */
+  login: (identifier: string, password: string) => Promise<AuthUser>;
   loginWithPin: (deviceId: string, pin: string) => Promise<AuthUser>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -22,8 +23,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isBootstrapping: true,
 
-  login: async (email, password) => {
-    const result = await authApi.login({ email, password });
+  login: async (identifier, password) => {
+    const result = await authApi.login({ identifier, password });
     await secureStorage.setTokens(result.accessToken, result.refreshToken);
     set({ user: result.user, isAuthenticated: true });
     return result.user;

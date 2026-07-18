@@ -56,8 +56,8 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <GraduationCap className="w-4 h-4 text-blue-600" />
+          <div className="w-9 h-9 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-4 h-4 text-[#5B21B6]" />
           </div>
           {editingName ? (
             <div className="flex items-center gap-1.5 min-w-0">
@@ -67,7 +67,7 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
                 onChange={(e) => setNameInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') void saveName(); if (e.key === 'Escape') setEditingName(false); }}
                 maxLength={30}
-                className="h-8 w-32 px-2 rounded-lg border border-gray-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
+                className="h-8 w-32 px-2 rounded-lg border border-gray-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]"
               />
               <button
                 type="button"
@@ -85,7 +85,7 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
                 type="button"
                 onClick={startEditName}
                 title="Rename class"
-                className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
+                className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-300 hover:text-[#5B21B6] hover:bg-[#A855F7]/10 transition-colors shrink-0"
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -136,7 +136,7 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
           onChange={(e) => setNewSection(e.target.value)}
           placeholder="e.g. A"
           maxLength={10}
-          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
+          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]"
         />
         <button
           type="submit"
@@ -201,7 +201,7 @@ export function ClassSectionManagementPage() {
             value={newClassName}
             onChange={(e) => setNewClassName(e.target.value)}
             placeholder="e.g. 10 or Nursery"
-            className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-[#A855F7]"
+            className="flex-1 h-10 px-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]"
           />
           <button
             type="submit"

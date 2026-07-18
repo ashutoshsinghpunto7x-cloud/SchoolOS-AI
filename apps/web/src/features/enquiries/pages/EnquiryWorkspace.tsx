@@ -92,7 +92,7 @@ export const EnquiryWorkspace = () => {
       {/* Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-7 h-7 text-blue-600 animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
         </div>
       ) : enquiries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">

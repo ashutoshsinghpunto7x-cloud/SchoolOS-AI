@@ -1,4 +1,3 @@
-import { Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -33,8 +32,7 @@ const TaskRow = ({ task }: { task: Task }) => (
     )}
   >
     {/* Time */}
-    <div className="flex items-center gap-1.5 flex-shrink-0 w-[72px]">
-      <Clock className="w-3.5 h-3.5 text-gray-400" />
+    <div className="flex-shrink-0 w-[72px]">
       <span className="text-xs font-medium text-gray-500">{task.time}</span>
     </div>
 

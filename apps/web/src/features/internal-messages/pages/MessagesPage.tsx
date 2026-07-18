@@ -57,7 +57,7 @@ export const MessagesPage = () => {
         </button>
       )}
       <div className="flex items-center gap-3 mb-1">
-        <Mail className="w-6 h-6 text-blue-600" />
+        <Mail className="w-6 h-6 text-[#5B21B6]" />
         <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
       </div>
       <p className="text-sm text-gray-500 mb-6">
@@ -69,7 +69,7 @@ export const MessagesPage = () => {
           <button
             onClick={() => setTab('inbox')}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
-              tab === 'inbox' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              tab === 'inbox' ? 'bg-[#5B21B6] text-white border-[#5B21B6]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
             <Inbox className="w-3.5 h-3.5" /> Inbox
@@ -77,7 +77,7 @@ export const MessagesPage = () => {
           <button
             onClick={() => setTab('compose')}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors flex items-center gap-1.5 ${
-              tab === 'compose' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              tab === 'compose' ? 'bg-[#5B21B6] text-white border-[#5B21B6]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
             <PenSquare className="w-3.5 h-3.5" /> Compose
@@ -243,14 +243,14 @@ function ComposePanel() {
             <button
               type="button"
               onClick={() => setRecipientMode('individual')}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'individual' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'individual' ? 'bg-[#5B21B6] text-white border-[#5B21B6]' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               Select Staff
             </button>
             <button
               type="button"
               onClick={() => setRecipientMode('role')}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'role' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border ${recipientMode === 'role' ? 'bg-[#5B21B6] text-white border-[#5B21B6]' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               By Role
             </button>
@@ -258,7 +258,7 @@ function ComposePanel() {
               <button
                 type="button"
                 onClick={() => setStaffSearchOpen((v) => !v)}
-                className={`ml-auto p-1.5 rounded-full border transition-colors ${staffSearchOpen ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'}`}
+                className={`ml-auto p-1.5 rounded-full border transition-colors ${staffSearchOpen ? 'bg-[#A855F7]/10 border-[#A855F7]/25 text-[#5B21B6]' : 'bg-white border-gray-200 text-gray-400 hover:text-gray-600'}`}
                 title="Search recipients"
                 aria-label="Search recipients"
               >
@@ -354,7 +354,7 @@ function ComposePanel() {
             <button
               type="button"
               onClick={() => setPriority('normal')}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border ${priority === 'normal' ? 'bg-[#5B21B6] text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border ${priority === 'normal' ? 'bg-[#5B21B6] text-white border-[#5B21B6]' : 'bg-white text-gray-600 border-gray-200'}`}
             >
               Normal
             </button>

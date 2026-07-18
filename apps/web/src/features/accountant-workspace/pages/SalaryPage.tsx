@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil } from 'lucide-react';
 import {
   useSalaryList, useSalarySummary, useCreateSalaryRecord, useMarkSalaryPaid, useForcePendingSalary,
   useUpdateSalaryRecord,
@@ -110,6 +110,87 @@ function AddSalaryModal({ onClose }: { onClose: () => void }) {
           )}
           <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Add Record
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Salary Modal ──────────────────────────────────────────────────────────
+
+function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: () => void }) {
+  const { mutateAsync, isPending, error } = useUpdateSalaryRecord(record._id);
+  const [employeeName, setEmployeeName] = useState(record.employeeName);
+  const [designation, setDesignation] = useState(record.designation);
+  const [month, setMonth] = useState(record.month);
+  const [year, setYear] = useState(record.year);
+  const [amount, setAmount] = useState(String(record.amount));
+  const [dueDate, setDueDate] = useState(safeDateInputValue(record.dueDate));
+  const [localErr, setLocalErr] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLocalErr('');
+    const amt = parseFloat(amount);
+    if (!employeeName.trim()) return setLocalErr('Employee name is required.');
+    if (!designation.trim()) return setLocalErr('Role/designation is required.');
+    if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
+    if (!dueDate) return setLocalErr('Set a due date.');
+
+    await mutateAsync({
+      employeeName: employeeName.trim(), designation: designation.trim(), month, year,
+      amount: Math.round(amt * 100) / 100, dueDate,
+    });
+    onClose();
+  }
+
+  const displayErr = localErr || (error instanceof Error ? error.message : null);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900">Edit Salary Record</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className={labelCls}>Employee Name</label>
+            <input type="text" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Role / Designation</label>
+            <input type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} className={inputCls} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Month</label>
+              <select value={month} onChange={(e) => setMonth(e.target.value)} className={inputCls}>
+                {MONTHS.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Year</label>
+              <input type="number" value={year} onChange={(e) => setYear(Number(e.target.value))} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Amount (₹)</label>
+            <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} step={0.01} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Due Date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+          </div>
+          {displayErr && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
+            </div>
+          )}
+          <p className="text-xs text-gray-400">Changes are saved to this record's history and visible in "History".</p>
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save Changes
           </button>
         </form>
       </div>
@@ -249,6 +330,7 @@ export function SalaryPage() {
   const [bulkAddOpen, setBulkAddOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [payingRecord, setPayingRecord] = useState<SalaryRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<SalaryRecord | null>(null);
   const { mutate: forcePending, isPending: forcingId } = useForcePendingSalary();
 
   const { data, isLoading } = useSalaryList({ status: status === 'all' ? undefined : status, limit: 100 });
@@ -367,6 +449,15 @@ export function SalaryPage() {
                     <StatusLabel status={rec.status} />
                   </div>
                   <div className="flex gap-1.5 mt-1.5 justify-end">
+                    {rec.status !== 'paid' && (
+                      <button
+                        onClick={() => setEditingRecord(rec)}
+                        title="Edit details"
+                        className="h-8 px-2.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                    )}
                     {rec.status === 'scheduled' && (
                       <button
                         onClick={() => forcePending(rec._id)}
@@ -397,6 +488,7 @@ export function SalaryPage() {
       {bulkAddOpen && <BulkAddSalaryModal onClose={() => setBulkAddOpen(false)} />}
       {historyOpen && <AuditLogPanel resource="salary" title="Salary Change History" onClose={() => setHistoryOpen(false)} />}
       {payingRecord && <MarkPaidModal record={payingRecord} onClose={() => setPayingRecord(null)} />}
+      {editingRecord && <EditSalaryModal record={editingRecord} onClose={() => setEditingRecord(null)} />}
     </div>
   );
 }

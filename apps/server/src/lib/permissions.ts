@@ -16,6 +16,12 @@ export const PERMISSIONS = {
   ATTENDANCE_QR_VIEW: 'attendance-qr.view',
   PAYROLL_GENERATE: 'payroll.generate',
   PAYROLL_VIEW: 'payroll.view',
+  EXAMS_VIEW: 'exams.view',
+  EXAMS_CONFIGURE: 'exams.configure',
+  MARKS_ENTER: 'marks.enter',
+  MARKS_SUBMIT: 'marks.submit',
+  MARKS_APPROVE: 'marks.approve',
+  MARKS_PUBLISH: 'marks.publish',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -30,7 +36,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'communications.view',
     'communications.create',
   ],
-  teacher: ['students.view', 'communications.view'],
+  teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
 };
 
@@ -58,6 +64,12 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'attendance-qr.view': { label: 'View Staff Attendance', category: 'Staff Attendance' },
   'payroll.generate': { label: 'Generate Payroll', category: 'Payroll' },
   'payroll.view': { label: 'View Payroll', category: 'Payroll' },
+  'exams.view': { label: 'View Exams', category: 'Marks & Report Cards' },
+  'exams.configure': { label: 'Configure Exams', category: 'Marks & Report Cards' },
+  'marks.enter': { label: 'Enter Marks', category: 'Marks & Report Cards' },
+  'marks.submit': { label: 'Submit Marks for Review', category: 'Marks & Report Cards' },
+  'marks.approve': { label: 'Approve / Publish Marks', category: 'Marks & Report Cards' },
+  'marks.publish': { label: 'Publish Report Cards', category: 'Marks & Report Cards' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

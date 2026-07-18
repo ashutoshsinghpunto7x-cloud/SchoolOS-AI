@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MeetingNotesWidget } from './MeetingNotesWidget';
+import { brandPurple, heroGradient } from '@/theme/brand';
 import type { PrincipalUpcomingEvent } from '@schoolos/types';
 
 // Kanpur coordinates — Open-Meteo needs no API key, so this stays self-contained.
@@ -70,9 +71,9 @@ function AnalogClock({ now, size = 132 }: { now: Date; size?: number }) {
         x1={c} y1={c}
         x2={c + (size * 0.34) * Math.cos((secondDeg - 90) * (Math.PI / 180))}
         y2={c + (size * 0.34) * Math.sin((secondDeg - 90) * (Math.PI / 180))}
-        stroke="#7C3AED" strokeWidth={1.5} strokeLinecap="round"
+        stroke={brandPurple.DEFAULT} strokeWidth={1.5} strokeLinecap="round"
       />
-      <circle cx={c} cy={c} r={4} fill="#7C3AED" />
+      <circle cx={c} cy={c} r={4} fill={brandPurple.DEFAULT} />
     </svg>
   );
 }
@@ -163,7 +164,7 @@ export function PrincipalHeaderWidget({ showWeather = true }: { upcomingEvents?:
   return (
     <div
       className="relative overflow-hidden rounded-2xl shadow-lg shadow-black/10 p-6"
-      style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
+      style={{ background: heroGradient }}
     >
       {/* Decorative blobs — same treatment as the teacher dashboard's hero header */}
       <div className="absolute top-0 right-0 w-52 h-52 rounded-full bg-white/5 -translate-y-10 translate-x-10 pointer-events-none" />

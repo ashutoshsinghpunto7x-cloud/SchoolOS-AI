@@ -1,4 +1,3 @@
-import { UserPlus, ClipboardList, Phone, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PrincipalHeaderWidget } from '@/features/principal/components/PrincipalHeaderWidget';
 import { ReceptionActionCard } from '../components/ReceptionActionCard';
@@ -19,7 +18,6 @@ import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEvent
 const ACTION_CARDS = [
   {
     id: 'admission',
-    icon: UserPlus,
     title: 'New Admission',
     description: 'Register a new student and create their complete school profile.',
     buttonLabel: 'Start Admission',
@@ -27,7 +25,6 @@ const ACTION_CARDS = [
   },
   {
     id: 'followups',
-    icon: ClipboardList,
     title: "Today's Follow-ups",
     description: 'View and act on all pending follow-up tasks assigned for today.',
     buttonLabel: 'View Follow-ups',
@@ -36,7 +33,6 @@ const ACTION_CARDS = [
   },
   {
     id: 'call',
-    icon: Phone,
     title: 'AI Call Parent',
     description: 'Let AI make a voice call to a parent on your behalf instantly.',
     buttonLabel: 'Call Parent',
@@ -44,7 +40,6 @@ const ACTION_CARDS = [
   },
   {
     id: 'whatsapp',
-    icon: MessageCircle,
     title: 'Send WhatsApp',
     description: 'Send bulk or individual WhatsApp messages to parents right now.',
     buttonLabel: 'Open Messages',
@@ -139,7 +134,6 @@ export const ReceptionWorkspace = () => {
               {ACTION_CARDS.map((card) => (
                 <ReceptionActionCard
                   key={card.id}
-                  icon={card.icon}
                   title={card.title}
                   description={card.description}
                   buttonLabel={card.buttonLabel}

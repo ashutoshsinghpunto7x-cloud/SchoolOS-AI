@@ -37,6 +37,8 @@ import auditRouter from '../features/audit/audit.routes';
 import employeeRouter from '../features/employees/employee.routes';
 import staffAttendanceRouter from '../features/staff-attendance/staff-attendance.routes';
 import payrollRouter from '../features/payroll/payroll.routes';
+import examRouter from '../features/exams/exam.routes';
+import marksRouter from '../features/marks/marks.routes';
 
 const router = Router();
 
@@ -78,5 +80,7 @@ router.use('/audit', auditRouter);
 router.use('/employees', employeeRouter);
 router.use('/attendance-qr', staffAttendanceRouter);
 router.use('/payroll', payrollRouter);
+router.use('/exams', examRouter);
+router.use('/marks', marksRouter);
 
 export default router;

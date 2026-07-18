@@ -97,6 +97,14 @@ const config: Config = {
           '0%, 100%': { opacity: '0.25', transform: 'translate(-50%, -50%) scale(1)' },
           '50%': { opacity: '0.45', transform: 'translate(-50%, -50%) scale(1.08)' },
         },
+        shimmer: {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(100%)' },
+        },
+        travel: {
+          '0%': { left: '-8%' },
+          '100%': { left: '108%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -107,6 +115,8 @@ const config: Config = {
         'splash-float': 'splash-float 4s ease-in-out infinite',
         'splash-zoom': 'splash-zoom 20s ease-out forwards',
         'splash-glow': 'splash-glow 3s ease-in-out infinite',
+        shimmer: 'shimmer 1.4s ease-in-out infinite',
+        travel: 'travel 1.8s ease-in-out infinite',
       },
       fontFamily: {
         sans: [

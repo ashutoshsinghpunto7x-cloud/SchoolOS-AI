@@ -12,7 +12,7 @@
       "name": "server",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "apps/server"],
-      "port": 5000,
+      "port": 5050,
       "autoPort": true
     },
     {

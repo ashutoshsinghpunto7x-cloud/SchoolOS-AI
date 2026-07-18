@@ -42,7 +42,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
   const approve = useApproveChangeRequest();
   const reject = useRejectChangeRequest();
 
-  const fields = Object.keys(request.changes);
+  const fields = Object.keys(request.changes ?? {});
   const isPending = approve.isPending || reject.isPending;
 
   async function handleApprove() {
@@ -82,9 +82,9 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
             <span className="w-36 shrink-0 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               {FIELD_LABELS[field] ?? field}
             </span>
-            <span className="text-gray-400 line-through truncate">{formatValue(request.previousValues[field])}</span>
+            <span className="text-gray-400 line-through truncate">{formatValue(request.previousValues?.[field])}</span>
             <ArrowRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
-            <span className="font-semibold text-gray-900 truncate">{formatValue(request.changes[field])}</span>
+            <span className="font-semibold text-gray-900 truncate">{formatValue(request.changes?.[field])}</span>
           </div>
         ))}
       </div>

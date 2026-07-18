@@ -15,6 +15,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { attendanceApi } from '@/features/attendance/api/attendance.api';
+import { studentsApi } from '@/features/students/api/students.api';
 import type { Attendance } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 import attendanceTopIllustration from '@/assets/illustrations/teacher/Attendance-Top.png';
@@ -101,7 +102,7 @@ function DateBadge({ date }: { date: string }) {
 
 // ── DayCard — one row per calendar day: either a marked session or "No attendance taken" ──
 
-function DayCard({ date, session }: { date: string; session?: SessionGroup }) {
+function DayCard({ date, session, studentNames }: { date: string; session?: SessionGroup; studentNames: Map<string, string> }) {
   const [expanded, setExpanded] = useState(false);
 
   if (!session) {
@@ -154,7 +155,7 @@ function DayCard({ date, session }: { date: string; session?: SessionGroup }) {
               <div key={r._id} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
                 <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
                 <p className="flex-1 text-sm text-gray-700 truncate">
-                  {(r as unknown as { studentName?: string }).studentName ?? r.studentId}
+                  {studentNames.get(r.studentId) ?? r.studentId}
                 </p>
                 <span className={cn('text-xs font-bold px-2 py-0.5 rounded-lg', s.cls)}>{s.label}</span>
               </div>
@@ -201,6 +202,23 @@ export function TeacherHistoryPage() {
         targets.map((p) => attendanceApi.list({ class: p.cls, section: p.section, dateFrom, dateTo, limit: 500 })),
       );
       return results.flatMap((r) => r.data);
+    },
+    enabled: classPairs.length > 0,
+  });
+
+  // Attendance records only carry studentId — look up each roster once to
+  // resolve names for the expanded per-student rows (matches how the
+  // marking page shows names via the same students API).
+  const { data: studentNames } = useQuery({
+    queryKey: ['teacher-history-student-names', classPairs.map((p) => `${p.cls}|${p.section}`), selectedClass],
+    queryFn: async (): Promise<Map<string, string>> => {
+      const targets = selectedPair ? [selectedPair] : classPairs;
+      const results = await Promise.all(
+        targets.map((p) => studentsApi.listPaginated({ class: p.cls, section: p.section, limit: 300 })),
+      );
+      const map = new Map<string, string>();
+      for (const r of results) for (const s of r.data) map.set(s._id, s.fullName);
+      return map;
     },
     enabled: classPairs.length > 0,
   });
@@ -362,8 +380,8 @@ export function TeacherHistoryPage() {
       )}
 
       {/* Day list — pb-40 clears both fixed elements stacked at the bottom
-          (the Filter by Date button at bottom-24 plus its own height, and
-          the teacher portal's persistent nav pill below that). */}
+          (the Filter by Date button at bottom-16 plus its own height, and
+          the teacher portal's persistent nav bar below that). */}
       <div className="px-4 pt-4 pb-40 space-y-3">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -384,16 +402,22 @@ export function TeacherHistoryPage() {
           </div>
         ) : (
           dayEntries.map((entry, i) => (
-            <DayCard key={`${entry.date}|${entry.session?.cls ?? ''}|${entry.session?.section ?? ''}|${i}`} date={entry.date} session={entry.session} />
+            <DayCard
+              key={`${entry.date}|${entry.session?.cls ?? ''}|${entry.session?.section ?? ''}|${i}`}
+              date={entry.date}
+              session={entry.session}
+              studentNames={studentNames ?? new Map()}
+            />
           ))
         )}
       </div>
 
       {/* Fixed "Filter by Date" button — same toggle as the Calendar pill above.
-          Sits just above the teacher portal's own persistent floating bottom
-          nav (TeacherLayout.tsx, fixed bottom-3 with a ~64px-tall pill) —
-          bottom-24 clears it instead of overlapping it. */}
-      <div className="fixed bottom-24 inset-x-3 z-30">
+          Sits flush on top of the teacher portal's persistent bottom nav
+          (TeacherLayout.tsx, fixed bottom-0 with a 64px-tall / h-16 bar) —
+          bottom-16 butts it directly against the nav instead of leaving a
+          gap that reads as the button floating detached above everything. */}
+      <div className="fixed bottom-16 inset-x-3 z-30">
         <button
           type="button"
           onClick={() => setFilterOpen((v) => !v)}

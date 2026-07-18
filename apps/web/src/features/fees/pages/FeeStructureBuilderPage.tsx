@@ -1,16 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Loader2, IndianRupee, CalendarRange, Layers, Plus, X, RefreshCw, Info,
+  ArrowLeft, Loader2, IndianRupee, CalendarRange, Layers, Plus, X, RefreshCw, Info, School,
 } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import {
-  useFeeStructureTemplate, useApplyFeeStructureToAllClasses,
+  useFeeStructure, useFeeStructureTemplate, useApplyFeeStructureToAllClasses, useUpsertFeeStructure,
 } from '../hooks/useFeeStructure';
 import {
   useCollectionSchedule, useUpsertCollectionSchedule, useDeleteCollectionScheduleEntry, useUseDefaultSchedule,
 } from '../hooks/useCollectionSchedule';
+import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
 import type { FeeHead, CollectionScheduleItem } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -53,7 +54,7 @@ export function FeeStructureBuilderPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">Fee Structure · {academicYear}</h1>
-            <p className="text-sm text-gray-400">Define amounts once — they apply to every class in the school.</p>
+            <p className="text-sm text-gray-400">Set one amount for every class, or customize amounts per class where they differ.</p>
           </div>
         </div>
 
@@ -91,14 +92,37 @@ export function FeeStructureBuilderPage() {
 // ── Tab 1 — Fee Components (By Academic Month) ─────────────────────────────────
 
 function FeeComponentsTab({ academicYear }: { academicYear: string }) {
-  const { data: template, isLoading } = useFeeStructureTemplate(academicYear);
-  const { mutateAsync: applyAll, isPending: saving } = useApplyFeeStructureToAllClasses();
+  const [scope, setScope] = useState<'all' | 'perClass'>('all');
+  const { data: template, isLoading: templateLoading } = useFeeStructureTemplate(academicYear);
+  const { data: allEntries, isLoading: entriesLoading } = useFeeStructure(academicYear);
+  const { data: classes } = useSchoolClasses();
+  const { mutateAsync: applyAll, isPending: applyingAll } = useApplyFeeStructureToAllClasses();
+  const { mutateAsync: upsertOne, isPending: savingOne } = useUpsertFeeStructure();
+  const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedMonth, setSelectedMonth] = useState(ACADEMIC_MONTHS[0]);
   const [values, setValues] = useState<ValuesByMonth>({});
   const [dirty, setDirty] = useState<Set<string>>(new Set()); // "month::feeHead"
 
+  const isLoading = scope === 'all' ? templateLoading : entriesLoading;
+  const saving = scope === 'all' ? applyingAll : savingOne;
+
+  useEffect(() => {
+    if (!selectedClass && classes && classes.length > 0) setSelectedClass(classes[0].name);
+  }, [classes, selectedClass]);
+
+  // Editing scope changed — discard unsaved local edits, they belonged to the previous scope.
+  useEffect(() => {
+    setValues({});
+    setDirty(new Set());
+  }, [scope, selectedClass]);
+
   function amountFor(month: string, feeHead: FeeHead): number | undefined {
-    return template?.find((t) => t.feeHead === feeHead && (t.month ?? null) === month)?.amount;
+    if (scope === 'all') {
+      return template?.find((t) => t.feeHead === feeHead && (t.month ?? null) === month)?.amount;
+    }
+    return allEntries?.find(
+      (t) => t.class === selectedClass && t.feeHead === feeHead && (t.month ?? null) === month,
+    )?.amount;
   }
 
   function valueFor(month: string, feeHead: FeeHead): string {
@@ -122,7 +146,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
       return sum + (isNaN(n) ? 0 : n);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, 0);
-  }, [selectedMonth, values, template]);
+  }, [selectedMonth, values, template, allEntries, scope, selectedClass]);
 
   async function saveAll() {
     let savedCount = 0;
@@ -133,12 +157,23 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
         if (raw === undefined) continue;
         const amount = parseFloat(raw);
         if (isNaN(amount) || amount < 0) continue;
-        await applyAll({ feeHead, academicYear, month, amount: Math.round(amount * 100) / 100 });
+        const rounded = Math.round(amount * 100) / 100;
+        if (scope === 'all') {
+          await applyAll({ feeHead, academicYear, month, amount: rounded });
+        } else {
+          await upsertOne({ class: selectedClass, feeHead, academicYear, month, amount: rounded });
+        }
         savedCount++;
       }
       setValues({});
       setDirty(new Set());
-      toast.success(savedCount > 0 ? `Saved ${savedCount} amount${savedCount === 1 ? '' : 's'} — applied to every class.` : 'Nothing to save.');
+      toast.success(
+        savedCount === 0
+          ? 'Nothing to save.'
+          : scope === 'all'
+            ? `Saved ${savedCount} amount${savedCount === 1 ? '' : 's'} — applied to every class.`
+            : `Saved ${savedCount} amount${savedCount === 1 ? '' : 's'} for ${selectedClass}.`,
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save fee structure');
     }
@@ -160,6 +195,54 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
           Save All Changes
         </button>
       </div>
+
+      <div className="inline-flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-4">
+        <button
+          onClick={() => setScope('all')}
+          className={cn(
+            'h-8 px-3 rounded-lg text-xs font-semibold transition-colors',
+            scope === 'all' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+          )}
+        >
+          Same for all classes
+        </button>
+        <button
+          onClick={() => setScope('perClass')}
+          className={cn(
+            'h-8 px-3 rounded-lg text-xs font-semibold transition-colors',
+            scope === 'perClass' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+          )}
+        >
+          Different per class
+        </button>
+      </div>
+
+      {scope === 'perClass' && (
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex items-center gap-1.5">
+            <School className="w-3.5 h-3.5 text-gray-400" /> Class
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {(classes ?? []).map((c) => (
+              <button
+                key={c._id}
+                onClick={() => setSelectedClass(c.name)}
+                className={cn(
+                  'h-9 px-3.5 rounded-xl text-sm font-semibold border transition-colors',
+                  selectedClass === c.name
+                    ? 'bg-[#5B21B6] border-[#5B21B6] text-white'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Amounts saved here apply only to <span className="font-semibold text-gray-600">{selectedClass || '…'}</span> and update its students&apos; fee records immediately.
+          </p>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 text-sm">

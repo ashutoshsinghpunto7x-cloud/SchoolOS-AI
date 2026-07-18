@@ -25,12 +25,12 @@ export interface IntentClassification {
 function buildRouterSystemPrompt(domainName: string, intents: IntentDefinition<unknown, unknown>[]): string {
   const intentList = intents.map((i) => `- ${i.id}: ${i.description}`).join('\n');
   return `
-You are an intent classifier for the ${domainName} domain of a school ERP assistant.
+You are an intent classifier for the ${domainName} domain(s) of a school ERP assistant.
 Given the Principal's question, choose exactly ONE of the following intents:
 
 ${intentList}
 - ${UNSUPPORTED_INTENT}: the question does not match any intent above (including questions about
-  other topics entirely, e.g. fees, students, exams).
+  other topics entirely, e.g. students, exams, timetables, HR).
 
 Respond ONLY with a JSON object of the form {"intent": "<INTENT_ID>"}. Do not explain your choice,
 do not invent an intent id that isn't in the list above.

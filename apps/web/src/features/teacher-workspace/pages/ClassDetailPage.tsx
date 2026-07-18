@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CalendarCheck, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarCheck, ClipboardList, Loader2, AlertCircle } from 'lucide-react';
 import { useTimetables, usePeriodSlots } from '@/features/timetable/hooks/useTimetable';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
@@ -58,15 +58,26 @@ export function ClassDetailPage() {
           <h1 className="text-base font-bold text-gray-900 dark:text-white">Class {cls}{section ? ` – ${section}` : ''}</h1>
           <p className="text-xs text-gray-500 dark:text-white/40">Subjects & timetable</p>
         </div>
-        {isClassTeacher && (
-          <button
-            onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
-            className="h-9 px-3.5 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
-          >
-            <CalendarCheck className="w-3.5 h-3.5" />
-            Mark Attendance
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {subjectsTaught.length > 0 && (
+            <button
+              onClick={() => navigate('/teacher/marks')}
+              className="h-9 px-3.5 bg-white dark:bg-white/5 border border-[#5B21B6]/20 dark:border-violet-400/20 text-[#5B21B6] dark:text-violet-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#F3EEFF] dark:hover:bg-white/10 transition-colors"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              Enter Marks
+            </button>
+          )}
+          {isClassTeacher && (
+            <button
+              onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
+              className="h-9 px-3.5 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
+            >
+              <CalendarCheck className="w-3.5 h-3.5" />
+              Mark Attendance
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
