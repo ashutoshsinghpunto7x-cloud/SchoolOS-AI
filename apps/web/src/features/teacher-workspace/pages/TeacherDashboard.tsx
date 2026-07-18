@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
+import { useTeacherTheme } from '../context/TeacherThemeContext';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
@@ -172,7 +173,7 @@ function TodayClassCard({
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
+      className="w-full text-left bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
     >
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
@@ -257,7 +258,7 @@ function TodayClassCard({
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden animate-pulse">
+    <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden animate-pulse">
       <div className="px-4 pt-4 pb-3 border-b border-gray-50 dark:border-white/5">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
@@ -318,9 +319,9 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
       </div>
 
       {isLoading ? (
-        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 animate-pulse h-16" />
+        <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 animate-pulse h-16" />
       ) : recent.length === 0 ? (
-        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 text-sm text-gray-400 dark:text-white/30">
+        <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 text-sm text-gray-400 dark:text-white/30">
           No leave requests yet.
         </div>
       ) : (
@@ -333,7 +334,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
             {recent.map((req) => (
               <div
                 key={req._id}
-                className="w-full shrink-0 snap-center bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3 pr-10 flex items-center justify-between gap-3"
+                className="w-full shrink-0 snap-center bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3 pr-10 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
@@ -446,6 +447,8 @@ function TodaysClassesCarousel({
 export function TeacherDashboard() {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const { theme } = useTeacherTheme();
+  const isDark = theme === 'dark';
   const { data, isLoading, isError, error, refetch } = useTeacherWorkspace();
   const [showApplyLeave, setShowApplyLeave] = useState(false);
   const [infoClass, setInfoClass] = useState<TodayClass | null>(null);
@@ -519,33 +522,55 @@ export function TeacherDashboard() {
       </div>
 
       {/* ── Hero header ────────────────────────────────────────────────────── */}
+      {/* Dark mode swaps the solid gradient for a frosted glass panel — translucent
+          gradient fill + backdrop blur + hairline border — so the aurora page
+          background shows through instead of a flat, saturated block. */}
       <div
-        className="px-5 pt-8 pb-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
+        className={cn(
+          'mx-4 mt-4 px-5 pt-8 pb-8 relative overflow-hidden rounded-[28px]',
+          isDark && 'backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]',
+        )}
+        style={{
+          background: isDark
+            ? 'linear-gradient(160deg, rgba(76,29,149,0.55) 0%, rgba(124,58,237,0.35) 45%, rgba(219,39,119,0.20) 100%)'
+            : 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)',
+        }}
       >
         {/* Decorative blobs */}
         <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
         <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
+
+        {/* Liquid-glass sheen — diagonal highlight, dark mode only */}
+        {isDark && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 22%, transparent 45%)' }}
+          />
+        )}
 
         {/* School calendar shortcut */}
         <button
           type="button"
           onClick={() => navigate('/calendar')}
           aria-label="School calendar"
-          className="absolute top-5 right-5 w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center transition-colors"
+          className="absolute top-5 right-5 w-9 h-9 rounded-xl bg-white/15 dark:bg-white/10 dark:border dark:border-white/10 hover:bg-white/25 dark:hover:bg-white/15 flex items-center justify-center transition-colors backdrop-blur-md"
         >
           <Calendar className="w-[18px] h-[18px] text-white" />
         </button>
 
         <p className="text-white/70 text-sm font-medium">{greeting()},</p>
-        <h1 className="text-3xl font-bold text-white mt-0.5 tracking-tight">{firstName}</h1>
+        <h1 className="text-3xl font-bold mt-0.5 tracking-tight text-white dark:bg-gradient-to-r dark:from-white dark:via-violet-200 dark:to-violet-400 dark:bg-clip-text dark:text-transparent">
+          {firstName}
+        </h1>
         <p className="text-white/60 text-sm mt-0.5">{todayDateStr()}</p>
 
         {/* Mark Attendance CTA */}
         <button
           type="button"
           onClick={handleMarkAttendance}
-          className="mt-5 w-full h-12 bg-white text-[#5B21B6] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-black/10 hover:bg-white/90 active:scale-[0.99] transition-all"
+          className="mt-5 w-full h-12 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition-all
+                     bg-white text-[#5B21B6] shadow-lg shadow-black/10 hover:bg-white/90
+                     dark:bg-white/10 dark:text-violet-200 dark:border dark:border-white/10 dark:backdrop-blur-md dark:shadow-none dark:hover:bg-white/15"
         >
           <CalendarCheck className="w-[18px] h-[18px]" />
           Mark Attendance
@@ -591,7 +616,7 @@ export function TeacherDashboard() {
               </div>
             </div>
           ) : !currentPeriod ? (
-            <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-8 text-center">
+            <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-8 text-center">
               <div className="w-14 h-14 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <CalendarCheck className="w-7 h-7 text-[#5B21B6] dark:text-violet-300" />
               </div>
@@ -613,7 +638,7 @@ export function TeacherDashboard() {
         <button
           type="button"
           onClick={() => navigate('/teacher/marks')}
-          className="w-full text-left flex items-center gap-3 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
         >
           <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
             <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />

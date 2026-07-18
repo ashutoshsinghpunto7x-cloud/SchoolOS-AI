@@ -32,7 +32,7 @@ export function TeacherMyAttendancePage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/teacher/profile')} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>
@@ -58,7 +58,7 @@ export function TeacherMyAttendancePage() {
           </div>
         ) : (
           records.map((r) => (
-            <div key={r._id} className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-4">
+            <div key={r._id} className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-bold text-gray-900 dark:text-white">{dateLabel(r.date)}</p>
                 <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${STATUS_STYLE[r.status] ?? STATUS_STYLE.present}`}>

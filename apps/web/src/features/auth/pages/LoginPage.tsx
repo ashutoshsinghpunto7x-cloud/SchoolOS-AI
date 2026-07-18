@@ -6,7 +6,6 @@ import { getHomePathForRole } from '../utils/roleHome';
 import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
 import { PinSetupPrompt } from '../components/PinSetupPrompt';
-import schoolPhoto from '../../../assets/illustrations/School-Photo.png';
 import fnicLogo from '../../../assets/illustrations/fnic-logo.jpg';
 
 function useChromaKeyedLogo(src: string) {
@@ -148,22 +147,36 @@ export const LoginPage = () => {
       <DotGrid className="absolute bottom-40 right-10 z-10 opacity-40 hidden lg:grid" />
 
       {/* ── Left brand panel — desktop/tablet only ─────────────────────────── */}
-      {/* The source photo already has the logo, "FNIC" wordmark, tagline, and
-          description baked directly into it — so this panel just shows the
-          photo as-is instead of re-drawing the same text a second time in
-          HTML on top of it. Both object-cover (crops content off to fill a
-          mismatched box) and object-contain (leaves flat-color letterbox
-          bars that visibly seam against the photo's own varying edge
-          colors) fought the fact that a fixed-width panel's shape doesn't
-          match the photo's own ratio. Sizing the panel to the photo's exact
-          ratio (1536×1024 = 3:2) instead means object-cover fills it exactly
-          — nothing cropped, no letterbox, no seam. */}
+      {/* Previously rendered a 2MB designer photo full-bleed here, which was
+          a major contributor to slow first load. Rebuilt as a lightweight
+          CSS gradient panel with the same logo/wordmark/tagline content. */}
       <div className="relative hidden overflow-hidden bg-[#050b15] lg:flex lg:h-screen lg:aspect-[3/2] z-10">
-        <img
-          src={schoolPhoto}
-          alt="FNIC — Education is Trust, We Build Futures"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0a1220] via-[#050b15] to-[#050505]" />
+        <div className="pointer-events-none absolute -top-32 -right-16 h-[28rem] w-[28rem] rounded-full bg-orange-600/10 blur-[120px]" />
+        <div className="pointer-events-none absolute bottom-0 -left-16 h-[24rem] w-[24rem] rounded-full bg-blue-600/10 blur-[120px]" />
+        <DotGrid className="absolute left-10 top-10 opacity-70" />
+        <DotGrid className="absolute bottom-10 right-10 opacity-40" />
+
+        <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-6 px-10 text-center">
+          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white ring-2 ring-orange-500/70 shadow-[0_0_60px_rgba(249,115,22,0.35)]">
+            <img src={fnicLogo} alt="FNIC Logo" className="h-20 w-20 object-contain" />
+          </div>
+          <div>
+            <h1 className="text-5xl font-black tracking-tight">
+              <span className="text-white">FNI</span>
+              <span className="text-orange-500">C</span>
+            </h1>
+            <p className="mt-2 text-sm font-medium tracking-[0.35em] text-white/60">
+              SCHOOL MANAGEMENT SYSTEM
+            </p>
+          </div>
+          <div className="h-px w-16 bg-orange-500" />
+          <p className="max-w-sm text-base text-white/80">
+            Empowering Education.
+            <br />
+            <span className="text-orange-500">Building Futures.</span>
+          </p>
+        </div>
       </div>
 
       {/* ── Right panel — login form ────────────────────────────────────────── */}

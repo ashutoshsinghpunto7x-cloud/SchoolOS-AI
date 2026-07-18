@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -11,59 +11,55 @@ import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/
 
 // ── Premium theme toggle pill ─────────────────────────────────────────────────
 // A pill-shaped track with a sliding thumb + sparkle burst on switch.
-// Commented out for now per request — re-enable by uncommenting this whole
-// block plus its usage further down (search "Theme toggle — teacher
-// workspace"), and restore `toggleTheme` to the destructure below and
-// `Sun, Moon` / `useCallback` to the imports at the top of this file.
 
-// function ThemeTogglePill({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
-//   const [sparkling, setSparkling] = useState(false);
-//   const [sparkDir, setSparkDir] = useState<'to-dark' | 'to-light'>('to-dark');
-//   const sparkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-//
-//   const handleClick = useCallback(() => {
-//     if (sparkTimer.current) clearTimeout(sparkTimer.current);
-//     setSparkDir(theme === 'light' ? 'to-dark' : 'to-light');
-//     setSparkling(false);
-//     // Force a reflow so the CSS animation restarts
-//     requestAnimationFrame(() => {
-//       setSparkling(true);
-//       sparkTimer.current = setTimeout(() => setSparkling(false), 600);
-//     });
-//     onToggle();
-//   }, [theme, onToggle]);
-//
-//   return (
-//     <button
-//       type="button"
-//       onClick={handleClick}
-//       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-//       title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-//       className="relative flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 rounded-full"
-//     >
-//       {/* Sparkle burst */}
-//       <span
-//         className={cn(
-//           'theme-toggle-sparkle',
-//           sparkDir,
-//           sparkling && 'animate-sparkle'
-//         )}
-//       />
-//
-//       {/* Pill track */}
-//       <span className="theme-toggle-pill" data-theme={theme}>
-//         {/* Thumb */}
-//         <span className="theme-toggle-thumb">
-//           {theme === 'dark' ? (
-//             <Moon className="w-3 h-3 text-white" strokeWidth={2} />
-//           ) : (
-//             <Sun className="w-3 h-3 text-amber-500" strokeWidth={2} />
-//           )}
-//         </span>
-//       </span>
-//     </button>
-//   );
-// }
+function ThemeTogglePill({ theme, onToggle }: { theme: 'light' | 'dark'; onToggle: () => void }) {
+  const [sparkling, setSparkling] = useState(false);
+  const [sparkDir, setSparkDir] = useState<'to-dark' | 'to-light'>('to-dark');
+  const sparkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = useCallback(() => {
+    if (sparkTimer.current) clearTimeout(sparkTimer.current);
+    setSparkDir(theme === 'light' ? 'to-dark' : 'to-light');
+    setSparkling(false);
+    // Force a reflow so the CSS animation restarts
+    requestAnimationFrame(() => {
+      setSparkling(true);
+      sparkTimer.current = setTimeout(() => setSparkling(false), 600);
+    });
+    onToggle();
+  }, [theme, onToggle]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="relative flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 rounded-full"
+    >
+      {/* Sparkle burst */}
+      <span
+        className={cn(
+          'theme-toggle-sparkle',
+          sparkDir,
+          sparkling && 'animate-sparkle'
+        )}
+      />
+
+      {/* Pill track */}
+      <span className="theme-toggle-pill" data-theme={theme}>
+        {/* Thumb */}
+        <span className="theme-toggle-thumb">
+          {theme === 'dark' ? (
+            <Moon className="w-3 h-3 text-white" strokeWidth={2} />
+          ) : (
+            <Sun className="w-3 h-3 text-amber-500" strokeWidth={2} />
+          )}
+        </span>
+      </span>
+    </button>
+  );
+}
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -277,9 +273,7 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
-  // `toggleTheme` is unused while the theme-toggle pill is commented out below —
-  // restore it here too when re-enabling.
-  const { theme } = useTeacherTheme();
+  const { theme, toggleTheme } = useTeacherTheme();
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
@@ -438,11 +432,10 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             </div>
           )}
 
-          {/* Theme toggle — teacher workspace only, applies across every teacher page.
-              Commented out for now per request — re-enable by uncommenting below. */}
-          {/* {isTeacher && (
+          {/* Theme toggle — teacher workspace only, applies across every teacher page. */}
+          {isTeacher && (
             <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
-          )} */}
+          )}
 
           {/* Date chip / calendar trigger — redundant with the principal dashboard's own Command Centre date, and with the accountant dashboard's combined pill above */}
           {!isPrincipalDashboard && !isPrincipal && !isAccountantDashboard && (

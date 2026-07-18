@@ -74,7 +74,7 @@ function MenuRow({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white dark:teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm transition-colors ${
+      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm transition-colors ${
         danger ? 'hover:bg-red-50 dark:hover:bg-red-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
       }`}
     >
@@ -107,7 +107,7 @@ export function TeacherProfilePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
       {/* Header */}
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate('/teacher')}
           className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
@@ -157,7 +157,7 @@ export function TeacherProfilePage() {
               { label: 'Marked Today',    value: String(markedToday) },
               { label: 'Subjects',        value: String(teacher.subjects.length) },
             ].map((s) => (
-              <div key={s.label} className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 p-3 text-center">
+              <div key={s.label} className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 p-3 text-center">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
                 <p className="text-xs text-gray-400 dark:text-white/30 mt-0.5">{s.label}</p>
               </div>
@@ -165,7 +165,7 @@ export function TeacherProfilePage() {
           </div>
 
           {/* Personal Info — collapsed by default; tap the row to open it */}
-          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
+          <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
             <button
               type="button"
               onClick={() => setInfoOpen((v) => !v)}
@@ -272,7 +272,7 @@ export function TeacherProfilePage() {
 
             {/* Contact support — tapping the row calls the school office;
                 the WhatsApp icon opens a chat with the same number directly. */}
-            <div className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white dark:teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm">
+            <div className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm">
               <button
                 type="button"
                 onClick={() => { window.location.href = `tel:${SUPPORT_PHONE}`; }}

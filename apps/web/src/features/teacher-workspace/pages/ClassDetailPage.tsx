@@ -50,7 +50,7 @@ export function ClassDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/teacher/classes')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>
@@ -82,7 +82,7 @@ export function ClassDetailPage() {
 
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
         {/* Subjects taught */}
-        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4">
+        <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4">
           <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest mb-3 flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-gray-400 dark:text-white/30" /> Subject Taught
           </h2>
@@ -98,7 +98,7 @@ export function ClassDetailPage() {
         </div>
 
         {/* Timetable */}
-        <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
+        <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
           <div className="px-4 pt-4">
             <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest mb-3">Class Timetable</h2>
             <div className="flex gap-1.5 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

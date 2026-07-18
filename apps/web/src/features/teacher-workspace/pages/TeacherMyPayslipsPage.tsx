@@ -20,7 +20,7 @@ export function TeacherMyPayslipsPage() {
   if (selected) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent print:bg-white">
-        <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3 print:hidden">
+        <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3 print:hidden">
           <button onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
           </button>
@@ -35,7 +35,7 @@ export function TeacherMyPayslipsPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/teacher/profile')} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>
@@ -70,7 +70,7 @@ export function TeacherMyPayslipsPage() {
               <button
                 key={p._id}
                 onClick={() => setSelected(p)}
-                className="w-full bg-white dark:teacher-glass-card rounded-2xl border border-gray-200 dark:border-white/5 shadow-sm p-4 flex items-center gap-3 text-left hover:border-[#A855F7]/40 transition-colors"
+                className="w-full bg-white teacher-glass-card rounded-2xl border border-gray-200 dark:border-white/5 shadow-sm p-4 flex items-center gap-3 text-left hover:border-[#A855F7]/40 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">{MONTHS[p.month - 1]} {p.year}</p>

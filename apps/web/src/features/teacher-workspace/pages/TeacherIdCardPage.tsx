@@ -11,7 +11,7 @@ export function TeacherIdCardPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent print:bg-white">
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3 print:hidden">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3 print:hidden">
         <button onClick={() => navigate('/teacher/profile')} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
         </button>

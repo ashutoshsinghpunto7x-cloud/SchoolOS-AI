@@ -85,7 +85,7 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
     : tone === 'ok' ? 'text-emerald-600 dark:text-emerald-400'
     : 'text-gray-900 dark:text-white';
   return (
-    <div className="flex-1 min-w-[84px] bg-white dark:teacher-glass-card rounded-xl border border-gray-100 dark:border-transparent px-3 py-2.5 text-center shrink-0">
+    <div className="flex-1 min-w-[84px] bg-white teacher-glass-card rounded-xl border border-gray-100 dark:border-transparent px-3 py-2.5 text-center shrink-0">
       <p className={cn('text-lg font-bold tabular-nums', toneClass)}>{value}</p>
       <p className="text-[10px] font-semibold text-gray-400 dark:text-white/30 uppercase tracking-wide mt-0.5">{label}</p>
     </div>
@@ -350,7 +350,7 @@ export function MarksEntryPage() {
       </div>
 
       {isLoadingAny ? (
-        <div className="mx-4 mt-4 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent overflow-hidden">
+        <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent overflow-hidden">
           {Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}
         </div>
       ) : isError || !table ? (
@@ -378,7 +378,7 @@ export function MarksEntryPage() {
             </div>
           )}
 
-          <div className="mx-4 mt-4 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
+          <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
             {rows.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-sm font-medium text-gray-500 dark:text-white/50">No active students in this class</p>

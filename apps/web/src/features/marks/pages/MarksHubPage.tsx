@@ -30,7 +30,7 @@ const EXAM_TYPE_LABELS: Record<Exam['examType'], string> = {
 };
 
 function SkeletonCard() {
-  return <div className="h-20 rounded-2xl bg-white dark:teacher-glass-card shadow-sm animate-pulse" />;
+  return <div className="h-20 rounded-2xl bg-white teacher-glass-card shadow-sm animate-pulse" />;
 }
 
 // ── Exam picker for a chosen class + subject ──────────────────────────────────
@@ -67,7 +67,7 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
             <p className="text-sm font-semibold text-red-700">Failed to load exams for this class</p>
           </div>
         ) : applicable.length === 0 ? (
-          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-8 text-center">
+          <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-8 text-center">
             <ClipboardList className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700 dark:text-white/80">No exams configured yet</p>
             <p className="text-xs text-gray-400 dark:text-white/30 mt-1">
@@ -80,7 +80,7 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
               key={exam._id}
               type="button"
               onClick={() => onPickExam(exam)}
-              className="w-full text-left flex items-center gap-4 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
+              className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
             >
               <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
                 <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
@@ -169,7 +169,7 @@ export function MarksHubPage() {
               <p className="text-sm font-semibold text-red-700">Failed to load your classes</p>
             </div>
           ) : entries.length === 0 ? (
-            <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
+            <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
               <BookOpen className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
               <p className="text-base font-semibold text-gray-700 dark:text-white/80">No subjects assigned</p>
               <p className="text-sm text-gray-400 dark:text-white/30 mt-1">
@@ -184,7 +184,7 @@ export function MarksHubPage() {
                   key={`${entry.cls}||${entry.section}||${entry.subjectName}`}
                   type="button"
                   onClick={() => setSelected(entry)}
-                  className="w-full text-left flex items-center gap-4 bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
+                  className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
                 >
                   <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0', accent.bg)}>
                     <BookOpen className={cn('w-5 h-5', accent.text)} />

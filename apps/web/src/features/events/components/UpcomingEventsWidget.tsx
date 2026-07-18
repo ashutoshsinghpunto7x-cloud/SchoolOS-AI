@@ -44,31 +44,31 @@ export function UpcomingEventsWidget({
   return (
     <section>
       <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+        <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">
           Upcoming Events
         </h2>
         <button
           type="button"
           onClick={() => navigate('/calendar')}
-          className={`text-xs font-semibold flex items-center gap-0.5 hover:underline ${accentClassName}`}
+          className={`text-xs font-semibold flex items-center gap-0.5 hover:underline dark:text-violet-400 ${accentClassName}`}
         >
           View all
           <ChevronRight className="w-3 h-3" />
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
+      <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-2">
         {isLoading ? (
           <div className="space-y-2 p-2 animate-pulse">
-            {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-gray-100 rounded-xl" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 bg-gray-100 dark:bg-white/10 rounded-xl" />)}
           </div>
         ) : !events || events.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
-            <CalendarDays className="w-8 h-8 text-gray-300 mb-2" strokeWidth={1.5} />
-            <p className="text-sm text-gray-400">No events in the next {days} days.</p>
+            <CalendarDays className="w-8 h-8 text-gray-300 dark:text-white/20 mb-2" strokeWidth={1.5} />
+            <p className="text-sm text-gray-400 dark:text-white/30">No events in the next {days} days.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-white/5">
             {events.map((ev) => {
               const today = isToday(ev.startDate);
               const colorClass = EVENT_TYPE_COLOR[ev.eventType] ?? EVENT_TYPE_COLOR.general;
@@ -79,19 +79,19 @@ export function UpcomingEventsWidget({
                   key={ev._id}
                   type="button"
                   onClick={() => navigate(`/calendar/${ev._id}`)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left"
                 >
                   <div className="flex-shrink-0 text-center w-9">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase leading-none">
+                    <p className="text-[11px] font-bold text-gray-400 dark:text-white/35 uppercase leading-none">
                       {new Date(ev.startDate.split('T')[0] + 'T00:00:00').toLocaleDateString('en-IN', { month: 'short' })}
                     </p>
-                    <p className="text-base font-bold text-gray-900 leading-tight">
+                    <p className="text-base font-bold text-gray-900 dark:text-white leading-tight">
                       {new Date(ev.startDate.split('T')[0] + 'T00:00:00').getDate()}
                     </p>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
-                    {today && <p className="text-[11px] text-emerald-600 font-medium">Today</p>}
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{ev.title}</p>
+                    {today && <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Today</p>}
                   </div>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${colorClass}`}>
                     {typeLabel}

@@ -104,7 +104,7 @@ function StudentCard({
   }
 
   return (
-    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
+    <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
       {/* Collapsed row — roll number + name only. Tap to reveal the rest. */}
       <button
         type="button"
@@ -227,7 +227,7 @@ function StudentCard({
 
 function SkeletonRow() {
   return (
-    <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 flex items-center gap-3 animate-pulse">
+    <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4 flex items-center gap-3 animate-pulse">
       <div className="w-6 h-4 bg-gray-100 dark:bg-white/10 rounded" />
       <div className="w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-xl shrink-0" />
       <div className="flex-1 space-y-1.5">
@@ -278,7 +278,7 @@ export function TeacherStudentListPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
       {/* Header */}
-      <div className="bg-white dark:teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 pt-4 pb-4">
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 pt-4 pb-4">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => navigate('/teacher/classes')}
@@ -326,7 +326,7 @@ export function TeacherStudentListPage() {
             <p className="text-sm font-semibold text-red-700">Failed to load students</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white dark:teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
+          <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
             <div className="w-14 h-14 bg-gray-100 dark:bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
               {search ? (
                 <Search className="w-7 h-7 text-gray-400 dark:text-white/30" />
