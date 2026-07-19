@@ -2,9 +2,9 @@ import { cn } from '@/lib/utils';
 import type { TimetableStatus } from '@schoolos/types';
 
 const CONFIG: Record<TimetableStatus, { label: string; className: string }> = {
-  draft:     { label: 'Draft',     className: 'bg-gray-100 text-gray-600 border border-gray-200' },
-  published: { label: 'Published', className: 'bg-green-50 text-green-700 border border-green-200' },
-  archived:  { label: 'Archived',  className: 'bg-amber-50 text-amber-700 border border-amber-200' },
+  draft:     { label: 'Draft',     className: 'bg-white/[0.06] text-[#A8AFBF] border border-white/[0.08]' },
+  published: { label: 'Published', className: 'bg-[#2ED47A]/10 text-[#2ED47A] border border-[#2ED47A]/25' },
+  archived:  { label: 'Archived',  className: 'bg-[#F5A524]/10 text-[#F5A524] border border-[#F5A524]/25' },
 };
 
 interface TimetableStatusBadgeProps {

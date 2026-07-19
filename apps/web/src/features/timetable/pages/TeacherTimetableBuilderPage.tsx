@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Search, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, ChevronDown, LayoutGrid } from 'lucide-react';
 import { usePeriodSlots } from '../hooks/useTimetable';
 import {
   useTeacherTimetableFor, useGetOrCreateTeacherTimetable, useUpdateTeacherTimetableStatus,
 } from '../hooks/useTeacherTimetable';
 import { TimetableGrid } from '../components/TimetableGrid';
 import { TeacherEntryEditDrawer } from '../components/TeacherEntryEditDrawer';
+import { TeacherBulkAddDrawer } from '../components/TeacherBulkAddDrawer';
 import { TimetableStatusBadge, STATUS_LABEL } from '../components/TimetableStatusBadge';
 import { useTeacherList } from '@/features/teachers/hooks/useTeachers';
 import type { PeriodSlot, TeacherTimetableEntry, TeacherTimetableStatus, Timetable } from '@schoolos/types';
@@ -30,6 +31,7 @@ export const TeacherTimetableBuilderPage = () => {
   const { mutate: getOrCreate, isPending: creating } = useGetOrCreateTeacherTimetable();
 
   const [drawer, setDrawer] = useState<{ dayOfWeek: number; slot: PeriodSlot; entry?: TeacherTimetableEntry } | null>(null);
+  const [bulkAddOpen, setBulkAddOpen] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
   const activeTt = tt ?? null;
@@ -62,45 +64,45 @@ export const TeacherTimetableBuilderPage = () => {
     activeTt?.status === 'draft' ? ['published'] : activeTt?.status === 'published' ? ['draft'] : [];
 
   return (
-    <div className="flex flex-col gap-5 px-6 py-6 max-w-screen-xl mx-auto">
+    <div className="min-h-screen bg-[#0B0C12] flex flex-col gap-5 px-6 py-6 max-w-screen-xl mx-auto">
       <button
         type="button"
         onClick={() => navigate('/principal')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors w-fit"
+        className="flex items-center gap-1.5 text-sm text-[#6D7485] hover:text-white transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Teacher Timetable</h1>
-        <p className="text-sm text-gray-500 mt-1">Build or update an individual teacher's weekly schedule.</p>
+        <h1 className="text-2xl font-bold text-white">Teacher Timetable</h1>
+        <p className="text-sm text-[#A8AFBF] mt-1">Build or update an individual teacher's weekly schedule.</p>
       </div>
 
       {/* Teacher picker */}
       <div className="relative max-w-md">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6D7485]" />
           <input
             value={selectedTeacher ? selectedTeacher.name : teacherSearch}
             onChange={(e) => { setTeacherSearch(e.target.value); setSelectedTeacher(null); setPickerOpen(true); }}
             onFocus={() => setPickerOpen(true)}
             placeholder="Search teacher by name…"
-            className="w-full h-12 pl-10 pr-4 rounded-xl border border-gray-200 text-sm
-                       focus:outline-none focus:border-[#7C3AED] focus:ring-2 focus:ring-[#7C3AED]/20 bg-white"
+            className="w-full h-12 pl-10 pr-4 rounded-xl border border-white/[0.08] text-sm bg-[#181B26] text-white placeholder:text-[#6D7485]
+                       focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25"
           />
         </div>
         {pickerOpen && teacherOptions.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white rounded-xl border border-gray-200 shadow-lg max-h-72 overflow-y-auto">
+          <div className="absolute z-10 mt-1 w-full bg-[#181B26] rounded-xl border border-white/[0.08] shadow-lg max-h-72 overflow-y-auto">
             {teacherOptions.map((t) => (
               <button
                 key={t._id}
                 type="button"
                 onClick={() => selectTeacher(t._id, t.fullName)}
-                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-b-0"
+                className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/[0.06] border-b border-white/[0.06] last:border-b-0"
               >
                 <p className="font-semibold">{t.fullName}</p>
-                {t.department && <p className="text-xs text-gray-400">{t.department}</p>}
+                {t.department && <p className="text-xs text-[#6D7485]">{t.department}</p>}
               </button>
             ))}
           </div>
@@ -109,50 +111,61 @@ export const TeacherTimetableBuilderPage = () => {
 
       {!selectedTeacher && (
         <div className="flex items-center justify-center py-20">
-          <p className="text-gray-400 text-sm">Search and select a teacher to build their timetable.</p>
+          <p className="text-[#6D7485] text-sm">Search and select a teacher to build their timetable.</p>
         </div>
       )}
 
       {selectedTeacher && (creating || ttLoading) && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#7C5CFF] animate-spin" />
         </div>
       )}
 
       {selectedTeacher && activeTt && gridTimetable && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+        <div className="bg-[#181B26] rounded-2xl border border-white/[0.08] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between flex-wrap gap-2">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-bold text-gray-800">{selectedTeacher.name}</h2>
+                <h2 className="text-base font-bold text-white">{selectedTeacher.name}</h2>
                 <TimetableStatusBadge status={activeTt.status} />
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{activeTt.academicYear}</p>
+              <p className="text-xs text-[#6D7485] mt-0.5">{activeTt.academicYear}</p>
             </div>
 
             <div className="flex items-center gap-2">
-              <p className="text-xs text-amber-600 font-medium">Click any cell to add or edit an entry</p>
+              {activeTt.status === 'draft' && slots.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setBulkAddOpen(true)}
+                  className="h-9 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  Bulk Add
+                </button>
+              )}
+              <p className="text-xs text-[#F5A524] font-medium">Click any cell to add or edit an entry</p>
               {availableTransitions.length > 0 && (
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setShowStatusMenu((v) => !v)}
                     disabled={statusPending}
-                    className="h-9 px-4 rounded-xl bg-[#A855F7]/10 hover:bg-[#A855F7]/20 border border-[#A855F7]/20
-                               flex items-center gap-1.5 text-sm font-semibold text-[#5B21B6] transition-colors
+                    className="h-9 px-4 rounded-xl bg-[#7C5CFF]/10 hover:bg-[#7C5CFF]/20 border border-[#7C5CFF]/25
+                               flex items-center gap-1.5 text-sm font-semibold text-[#B9A9FF] transition-colors
                                disabled:opacity-50"
                   >
                     {statusPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
                     Change Status
                   </button>
                   {showStatusMenu && (
-                    <div className="absolute right-0 top-10 z-20 w-44 bg-white rounded-xl border border-gray-200 shadow-lg py-1">
+                    <div className="absolute right-0 top-10 z-20 w-44 bg-[#181B26] rounded-xl border border-white/[0.08] shadow-lg py-1">
                       {availableTransitions.map((s) => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => { updateStatus({ status: s }); setShowStatusMenu(false); }}
-                          className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          className="w-full text-left px-3 py-2 text-sm font-medium text-white hover:bg-white/[0.06]"
                         >
                           → {STATUS_LABEL[s]}
                         </button>
@@ -167,11 +180,11 @@ export const TeacherTimetableBuilderPage = () => {
           <div className="p-4">
             {slots.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
-                <p className="text-gray-500 text-sm">No period slots configured.</p>
+                <p className="text-[#A8AFBF] text-sm">No period slots configured.</p>
                 <button
                   type="button"
                   onClick={() => navigate('/timetable/periods')}
-                  className="text-sm text-[#5B21B6] hover:underline font-semibold"
+                  className="text-sm text-[#7C5CFF] hover:underline font-semibold"
                 >
                   Set up periods →
                 </button>
@@ -199,6 +212,14 @@ export const TeacherTimetableBuilderPage = () => {
           slot={drawer.slot}
           entry={drawer.entry}
           onClose={() => setDrawer(null)}
+        />
+      )}
+
+      {bulkAddOpen && activeTt && (
+        <TeacherBulkAddDrawer
+          timetable={activeTt}
+          slots={slots}
+          onClose={() => setBulkAddOpen(false)}
         />
       )}
     </div>

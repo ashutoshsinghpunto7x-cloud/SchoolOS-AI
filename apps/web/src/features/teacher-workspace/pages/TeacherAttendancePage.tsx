@@ -16,7 +16,7 @@ import {
   Check,
   Undo2,
 } from 'lucide-react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
@@ -27,6 +27,125 @@ import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 import { avatarColorFor } from '../utils/avatarColor';
+
+// ── Numeric counter tween — animates a number smoothly instead of snapping ────
+
+function useAnimatedCounter(target: number) {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef(target);
+
+  useEffect(() => {
+    const from = prevRef.current;
+    if (from === target) return;
+    prevRef.current = target;
+    const controls = animate(from, target, {
+      duration: 0.4,
+      ease: [0.33, 1, 0.68, 1], // easeOutCubic
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [target]);
+
+  return display;
+}
+
+// ── Present/Absent summary cards — premium "3D" badge + animated count + burst ─
+
+function SummaryCard({
+  type,
+  count,
+  burstToken,
+  cardRef,
+}: {
+  type: 'present' | 'absent';
+  count: number;
+  /** Increments each time this status is marked — a change re-fires the particle burst. */
+  burstToken: number;
+  cardRef: React.RefObject<HTMLDivElement>;
+}) {
+  const displayCount = useAnimatedCounter(count);
+  const controls = useAnimationControls();
+  const [particles, setParticles] = useState<{ id: number; angle: number; dist: number }[]>([]);
+  const particleIdRef = useRef(0);
+  const isPresent = type === 'present';
+
+  useEffect(() => {
+    if (burstToken === 0) return;
+    void controls.start({ scale: [1, 1.05, 1] }, { duration: 0.4, ease: [0.33, 1, 0.68, 1] });
+    const next = Array.from({ length: 6 }, () => ({
+      id: particleIdRef.current++,
+      angle: Math.random() * 360,
+      dist: 18 + Math.random() * 14,
+    }));
+    setParticles(next);
+    const t = setTimeout(() => setParticles([]), 320);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [burstToken]);
+
+  return (
+    <motion.div
+      ref={cardRef}
+      animate={controls}
+      className={cn(
+        'relative flex-1 rounded-[22px] p-4 flex items-center gap-3 border overflow-hidden bg-white teacher-glass-card shadow-sm',
+        isPresent ? 'border-emerald-100 dark:border-emerald-500/20' : 'border-red-100 dark:border-red-500/20',
+      )}
+    >
+      {/* Particle burst */}
+      <AnimatePresence>
+        {particles.map((p) => (
+          <motion.span
+            key={p.id}
+            className={cn(
+              'absolute left-9 top-1/2 w-1.5 h-1.5 rounded-full pointer-events-none',
+              isPresent ? 'bg-emerald-400' : 'bg-red-400',
+            )}
+            initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+            animate={{
+              x: Math.cos((p.angle * Math.PI) / 180) * p.dist,
+              y: Math.sin((p.angle * Math.PI) / 180) * p.dist,
+              opacity: 0,
+              scale: 0.4,
+            }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          />
+        ))}
+      </AnimatePresence>
+
+      {/* "3D" icon badge — gradient sphere + inner highlight to fake dimensionality */}
+      <div
+        className={cn(
+          'relative w-11 h-11 rounded-2xl flex items-center justify-center shrink-0',
+          isPresent ? 'bg-gradient-to-br from-emerald-300 to-emerald-600' : 'bg-gradient-to-br from-red-300 to-red-600',
+        )}
+        style={{
+          boxShadow: isPresent
+            ? '0 4px 14px rgba(16,185,129,0.4), inset 0 1px 2px rgba(255,255,255,0.55), inset 0 -2px 4px rgba(0,0,0,0.15)'
+            : '0 4px 14px rgba(239,68,68,0.4), inset 0 1px 2px rgba(255,255,255,0.55), inset 0 -2px 4px rgba(0,0,0,0.15)',
+        }}
+      >
+        {isPresent ? (
+          <Check className="w-6 h-6 text-white drop-shadow" strokeWidth={3} />
+        ) : (
+          <X className="w-6 h-6 text-white drop-shadow" strokeWidth={3} />
+        )}
+      </div>
+
+      <div>
+        <p className={cn(
+          'text-2xl font-extrabold tabular-nums leading-none',
+          isPresent ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
+        )}>
+          {displayCount}
+        </p>
+        <p className="text-xs font-semibold text-gray-400 dark:text-white/40 mt-1">
+          {isPresent ? 'Present' : 'Absent'}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -47,34 +166,6 @@ function addDays(dateStr: string, n: number) {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + n);
   return toDateStr(d);
-}
-
-// ── Completion ring (replaces the old Present/Absent/Remaining stat row) ───────
-
-function CompletionRing({ percent, size = 40 }: { percent: number; size?: number }) {
-  const stroke = 4;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.min(100, Math.max(0, percent)) / 100) * circumference;
-
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} className="stroke-[#E5E7EB] dark:stroke-white/10" strokeWidth={stroke} fill="none" />
-        <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          stroke="#A855F7" strokeWidth={stroke} fill="none"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.4s ease' }}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-700 dark:text-white/80">
-        {Math.round(percent)}%
-      </span>
-    </div>
-  );
 }
 
 // ── Row types ─────────────────────────────────────────────────────────────────
@@ -126,9 +217,10 @@ function ActiveCard({
   onMark,
 }: {
   row:     Row;
-  onMark:  (id: string, status: RowStatus) => void;
+  onMark:  (id: string, status: RowStatus, originRect?: DOMRect) => void;
 }) {
   const x = useMotionValue(0);
+  const cardRef = useRef<HTMLDivElement>(null);
   // Colored reveal panels behind the draggable card — green/PRESENT peeks in
   // from the left as the card is dragged right, red/ABSENT peeks in from the
   // right as it's dragged left.
@@ -136,8 +228,9 @@ function ActiveCard({
   const absentOpacity  = useTransform(x, [-90, -40, 0], [1, 0.7, 0], { clamp: true });
 
   function handleDragEnd(_e: unknown, info: { offset: { x: number } }) {
-    if (info.offset.x > 90) onMark(row.studentId, 'present');
-    else if (info.offset.x < -90) onMark(row.studentId, 'absent');
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (info.offset.x > 90) onMark(row.studentId, 'present', rect);
+    else if (info.offset.x < -90) onMark(row.studentId, 'absent', rect);
   }
 
   return (
@@ -160,6 +253,7 @@ function ActiveCard({
 
       {/* Draggable foreground card */}
       <motion.div
+        ref={cardRef}
         className="relative flex items-center gap-3 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-200 dark:border-white/10 px-4 py-4 cursor-grab active:cursor-grabbing touch-pan-y"
         style={{ x }}
         drag="x"
@@ -191,21 +285,26 @@ function CompactRow({
   editable,
   onUndo,
   onMark,
+  glowStatus,
 }: {
   row:      Row;
   index:    number;
   editable: boolean;
   onUndo:   (id: string) => void;
   /** When provided (swipe mode is off, or the list is being searched), unmarked rows get tap-to-mark buttons instead of just a placeholder dot. */
-  onMark?:  (id: string, status: RowStatus) => void;
+  onMark?:  (id: string, status: RowStatus, originRect?: DOMRect) => void;
+  /** Set for ~350ms right after this row gets marked — briefly glows green/red. */
+  glowStatus?: 'present' | 'absent' | null;
 }) {
   const marked = row.status !== 'unmarked';
 
   return (
     <div
       className={cn(
-        'w-full flex items-center px-4 py-3 gap-3 transition-colors',
+        'w-full flex items-center px-4 py-3 gap-3 transition-colors duration-300',
         marked && 'bg-gray-50/60 dark:bg-white/[0.03]',
+        glowStatus === 'present' && 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-inset ring-emerald-300 dark:ring-emerald-400/40',
+        glowStatus === 'absent' && 'bg-red-50 dark:bg-red-500/10 ring-1 ring-inset ring-red-300 dark:ring-red-400/40',
       )}
     >
       <button
@@ -234,7 +333,7 @@ function CompactRow({
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
-            onClick={() => onMark(row.studentId, 'present')}
+            onClick={(e) => onMark(row.studentId, 'present', e.currentTarget.getBoundingClientRect())}
             className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
             title="Mark present"
           >
@@ -242,7 +341,7 @@ function CompactRow({
           </button>
           <button
             type="button"
-            onClick={() => onMark(row.studentId, 'absent')}
+            onClick={(e) => onMark(row.studentId, 'absent', e.currentTarget.getBoundingClientRect())}
             className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 transition-colors"
             title="Mark absent"
           >
@@ -486,6 +585,38 @@ export function TeacherAttendancePage() {
   // hit an accidental back-gesture and lose everything with no warning.
   const [dirty,     setDirty]     = useState(false);
 
+  // ── Mark-attendance micro-interactions ────────────────────────────────────
+  // Row glow: briefly highlights the just-marked row green/red as it settles
+  // into the compact list.
+  const [glowId, setGlowId] = useState<string | null>(null);
+  const [glowStatus, setGlowStatus] = useState<'present' | 'absent' | null>(null);
+  const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Floating "+1" that flies from the marked row toward the Present/Absent card.
+  interface Flyer { id: number; status: 'present' | 'absent'; fromX: number; fromY: number; toX: number; toY: number; }
+  const [flyers, setFlyers] = useState<Flyer[]>([]);
+  const flyerIdRef = useRef(0);
+  const presentCardRef = useRef<HTMLDivElement>(null);
+  const absentCardRef  = useRef<HTMLDivElement>(null);
+  // Incrementing tokens re-trigger each summary card's scale-pulse + particle burst.
+  const [presentBurst, setPresentBurst] = useState(0);
+  const [absentBurst,  setAbsentBurst]  = useState(0);
+
+  function spawnFlyer(status: 'present' | 'absent', originRect?: DOMRect) {
+    const targetEl = status === 'present' ? presentCardRef.current : absentCardRef.current;
+    if (!originRect || !targetEl) return;
+    const targetRect = targetEl.getBoundingClientRect();
+    const id = ++flyerIdRef.current;
+    setFlyers((prev) => [...prev, {
+      id, status,
+      fromX: originRect.left + originRect.width / 2,
+      fromY: originRect.top + originRect.height / 2,
+      toX: targetRect.left + targetRect.width / 2,
+      toY: targetRect.top + targetRect.height / 2,
+    }]);
+    setTimeout(() => setFlyers((prev) => prev.filter((f) => f.id !== id)), 450);
+  }
+
   // Warn before closing/refreshing the tab with unsaved swipes.
   useEffect(() => {
     if (!dirty) return;
@@ -564,13 +695,25 @@ export function TeacherAttendancePage() {
     : rows;
   const useSwipeFlow = swipeMode && !isSearching;
 
-  function markStatus(studentId: string, status: RowStatus) {
+  function markStatus(studentId: string, status: RowStatus, originRect?: DOMRect) {
     const prevStatus = rows.find((r) => r.studentId === studentId)?.status ?? 'unmarked';
     setUndoStack((prev) => [...prev, { studentId, prevStatus }]);
     setRows((prev) => prev.map((r) =>
       r.studentId === studentId ? { ...r, status, markedSeq: markCounterRef.current++ } : r,
     ));
     setDirty(true);
+
+    if (status === 'present' || status === 'absent') {
+      setGlowId(studentId);
+      setGlowStatus(status);
+      if (glowTimerRef.current) clearTimeout(glowTimerRef.current);
+      glowTimerRef.current = setTimeout(() => { setGlowId(null); setGlowStatus(null); }, 350);
+
+      spawnFlyer(status, originRect);
+
+      if (status === 'present') setPresentBurst((n) => n + 1);
+      else setAbsentBurst((n) => n + 1);
+    }
   }
 
   function undoStatus(studentId: string) {
@@ -601,6 +744,7 @@ export function TeacherAttendancePage() {
         : { ...r, status: 'present', markedSeq: markCounterRef.current++ }
     )));
     setDirty(true);
+    if (!isAllPresent) setPresentBurst((n) => n + 1);
   }
 
   async function handleSave() {
@@ -667,47 +811,37 @@ export function TeacherAttendancePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
 
-      {/* Header */}
+      {/* Floating "+1" flyers — travel from the marked row to the Present/Absent card */}
+      <AnimatePresence>
+        {flyers.map((f) => (
+          <motion.span
+            key={f.id}
+            className={cn(
+              'pointer-events-none fixed z-[60] left-0 top-0 font-extrabold text-lg',
+              f.status === 'present' ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
+            )}
+            style={{ x: f.fromX, y: f.fromY, translateX: '-50%', translateY: '-50%' }}
+            initial={{ opacity: 1, scale: 1 }}
+            animate={{ x: f.toX, y: f.toY, opacity: 0, scale: 0.6 }}
+            transition={{ duration: 0.42, ease: [0.33, 1, 0.68, 1] }}
+          >
+            +1
+          </motion.span>
+        ))}
+      </AnimatePresence>
+
+      {/* Header — date top-left (no title, no progress ring), Undo/Edit right-aligned */}
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            aria-label="Back"
+            className="w-8 h-8 -ml-1 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/70" />
+            <ArrowLeft className="w-4.5 h-4.5 text-gray-400 dark:text-white/40" />
           </button>
-          <h1 className="flex-1 text-base font-bold text-gray-900 dark:text-white">
-            Class {cls} Attendance
-          </h1>
-          {!isLoading && !isDataError && rows.length > 0 && (
-            <CompletionRing percent={completionPercent} />
-          )}
-          {undoStack.length > 0 && editable && (
-            <button
-              type="button"
-              onClick={undoLastAction}
-              title="Undo last mark"
-              className="h-8 px-3 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/20 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5 transition-colors"
-            >
-              <Undo2 className="w-3.5 h-3.5" />
-              Undo{undoStack.length > 1 ? ` (${undoStack.length})` : ''}
-            </button>
-          )}
-          {alreadySubmitted && (
-            <button
-              type="button"
-              onClick={() => setEditMode(true)}
-              className="h-8 px-3 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 flex items-center gap-1.5 transition-colors"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              Edit
-            </button>
-          )}
-        </div>
 
-        {/* Date navigation / search */}
-        <div className="flex items-center gap-2 mt-4">
           {searchOpen ? (
             <>
               <div className="relative flex-1">
@@ -731,40 +865,64 @@ export function TeacherAttendancePage() {
               </button>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => setDate((d) => addDays(d, -1))}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-500 dark:text-white/50" />
-              </button>
-              <div className="flex items-center gap-1.5">
-                <CalendarDays className="w-4 h-4 text-[#5B21B6] dark:text-violet-300" />
-                <span className="text-sm font-semibold text-gray-800 dark:text-white/80">
-                  {formatDisplayDate(date)}
-                </span>
+            <>
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setDate((d) => addDays(d, -1))}
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-400 dark:text-white/40" />
+                </button>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <CalendarDays className="w-4 h-4 text-[#5B21B6] dark:text-violet-300 shrink-0" />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">
+                    {formatDisplayDate(date)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDate((d) => addDays(d, 1))}
+                  disabled={date >= today}
+                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/40" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setDate((d) => addDays(d, 1))}
-                disabled={date >= today}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-500 dark:text-white/50" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
-                title="Search students"
-              >
-                <Search className="w-4 h-4 text-gray-500 dark:text-white/50" />
-              </button>
-            </div>
+
+              {undoStack.length > 0 && editable && (
+                <button
+                  type="button"
+                  onClick={undoLastAction}
+                  title="Undo last mark"
+                  className="h-8 px-2.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 border border-amber-200 dark:border-amber-500/20 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1 transition-colors shrink-0"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  {undoStack.length > 1 ? undoStack.length : ''}
+                </button>
+              )}
+              {alreadySubmitted && (
+                <button
+                  type="button"
+                  onClick={() => setEditMode(true)}
+                  className="h-8 px-2.5 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 flex items-center gap-1 transition-colors shrink-0"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {/* Present / Absent summary cards */}
+      {!isLoading && !isDataError && rows.length > 0 && (
+        <div className="px-4 mt-4 flex items-center gap-3">
+          <SummaryCard type="present" count={presentCount} burstToken={presentBurst} cardRef={presentCardRef} />
+          <SummaryCard type="absent" count={absentCount} burstToken={absentBurst} cardRef={absentCardRef} />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex-1">
@@ -837,6 +995,14 @@ export function TeacherAttendancePage() {
                   />
                 </span>
               </button>
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                className="w-11 h-11 flex items-center justify-center bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                title="Search students"
+              >
+                <Search className="w-4 h-4 text-gray-500 dark:text-white/50" />
+              </button>
             </div>
           )}
 
@@ -888,6 +1054,7 @@ export function TeacherAttendancePage() {
                     editable={editable}
                     onUndo={undoStatus}
                     onMark={useSwipeFlow ? undefined : markStatus}
+                    glowStatus={glowId === row.studentId ? glowStatus : null}
                   />
                 ))
             )}
@@ -926,7 +1093,7 @@ export function TeacherAttendancePage() {
             <div className="h-[168px] lg:h-[140px]" aria-hidden="true" />
             <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-4 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5">
               {/* Save button — fills up like a liquid progress bar as students get marked */}
-              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 shadow-lg shadow-violet-500/10">
+              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 shadow-sm dark:shadow-none dark:border dark:border-white/10">
                 {/* Liquid fill */}
                 <motion.div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-600 to-pink-500"

@@ -10,6 +10,7 @@ import {
 import { ForbiddenError, NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { logger } from '../../lib/logger';
 
 // Resolve User → Teacher via email, same convention as teacherWorkspaceService.resolveTeacher.
 async function resolveTeacherId(ctx: AuthContext): Promise<string> {
@@ -25,9 +26,74 @@ async function resolveTeacherId(ctx: AuthContext): Promise<string> {
 }
 
 /**
+ * Auto-sync into each affected CLASS timetable whenever a teacher's personal
+ * timetable entries change — the reverse of timetableService's class→teacher
+ * sync. Diffs old vs new entries by (dayOfWeek, slotId): a slot whose
+ * class/section was removed or changed pulls the entry from the old class's
+ * timetable; a slot with a class/section assigned (new or changed) pushes it
+ * to that class's timetable, creating the class timetable first if it
+ * doesn't exist yet for this academic year. Best-effort — sync failures are
+ * logged but never block the teacher timetable save itself.
+ */
+async function syncClassTimetables(
+  schoolId: string, teacherId: string, teacherName: string, academicYear: string,
+  oldEntries: ITeacherTimetableEntry[], newEntries: ITeacherTimetableEntry[], updatedBy: string,
+): Promise<void> {
+  const key = (e: { dayOfWeek: number; slotId: string }) => `${e.dayOfWeek}::${e.slotId}`;
+  const oldByKey = new Map(oldEntries.map((e) => [key(e), e]));
+  const newByKey = new Map(newEntries.map((e) => [key(e), e]));
+  const allKeys = new Set([...oldByKey.keys(), ...newByKey.keys()]);
+
+  for (const k of allKeys) {
+    const before = oldByKey.get(k);
+    const after = newByKey.get(k);
+    if (
+      before?.class === after?.class && before?.section === after?.section &&
+      before?.subjectName === after?.subjectName && before?.roomNumber === after?.roomNumber
+    ) continue;
+
+    try {
+      // Pull from the old class's timetable if this slot moved away or was removed —
+      // but only if it's still our own synced entry, so a reassignment made directly
+      // on the class timetable is never silently clobbered.
+      if (before?.class && before.section && (before.class !== after?.class || before.section !== after?.section)) {
+        const oldTt = await timetableRepository.findByClassSection(schoolId, before.class, before.section, academicYear);
+        if (oldTt) {
+          const oldEntry = oldTt.entries.find((e) => e.dayOfWeek === before.dayOfWeek && e.slotId === before.slotId);
+          if (oldEntry?.teacherId === teacherId) {
+            const oldTtId = String((oldTt as unknown as { _id: unknown })._id);
+            await timetableRepository.removeEntry(oldTtId, schoolId, before.dayOfWeek, before.slotId, updatedBy);
+          }
+        }
+      }
+      // Push to the new/current class's timetable.
+      if (after?.class && after.section) {
+        let classTt = await timetableRepository.findByClassSection(schoolId, after.class, after.section, academicYear);
+        if (!classTt) {
+          classTt = await timetableRepository.create({
+            schoolId, class: after.class, section: after.section, academicYear, createdBy: updatedBy,
+          });
+        }
+        const classTtId = String((classTt as unknown as { _id: unknown })._id);
+        await timetableRepository.upsertEntry(classTtId, schoolId, {
+          dayOfWeek: after.dayOfWeek, slotId: after.slotId, subjectName: after.subjectName,
+          teacherId, teacherName, roomNumber: after.roomNumber, updatedBy,
+        });
+      }
+    } catch (err) {
+      logger.error('[teacherTimetableService] Class timetable sync failed', { schoolId, teacherId, err });
+    }
+  }
+}
+
+/**
  * Warns (does not block) when this teacher is already booked for the same
- * day/slot on a CLASS timetable — the two systems are independent by design
- * (see [[architecture_teacher_timetable]] memory), so this is advisory only.
+ * day/slot on a DIFFERENT class's timetable — advisory only, since the class
+ * timetable is the source of truth for conflict blocking (see
+ * timetableService.upsertEntry). A match against the very class/section this
+ * entry itself names is the normal, expected steady state (that's exactly
+ * what syncClassTimetables just wrote), not a double-booking — only a match
+ * against some *other* class/section is a genuine conflict.
  */
 async function checkConflicts(schoolId: string, teacherId: string, entries: ITeacherTimetableEntry[]): Promise<string[]> {
   if (!entries.length) return [];
@@ -36,6 +102,7 @@ async function checkConflicts(schoolId: string, teacherId: string, entries: ITea
   const conflicts: string[] = [];
   for (const entry of entries) {
     for (const tt of classSchedules) {
+      if (tt.class === entry.class && tt.section === entry.section) continue;
       const clash = tt.entries.find(
         (e) => e.dayOfWeek === entry.dayOfWeek && e.slotId === entry.slotId && e.teacherId === teacherId,
       );
@@ -89,6 +156,11 @@ export const teacherTimetableService = {
       resourceId: id, ip: ctx.ip, schoolId: ctx.schoolId,
       details: { teacherId: existing.teacherId, entryCount: entries.length, conflictCount: conflicts.length },
     });
+
+    await syncClassTimetables(
+      ctx.schoolId, existing.teacherId, existing.teacherName, existing.academicYear,
+      existing.entries, tt.entries, ctx.displayName,
+    );
 
     return { timetable: tt, conflicts };
   },

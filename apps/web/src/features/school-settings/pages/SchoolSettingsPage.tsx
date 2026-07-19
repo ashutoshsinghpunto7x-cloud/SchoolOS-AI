@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Upload, X, Loader2, ShieldCheck, LogOut, ChevronRight } from 'lucide-react';
+import { Building2, Upload, X, Loader2, ShieldCheck, LogOut, ChevronRight, Palette } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../hooks/useSchoolSettings';
 import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
+import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
 
 export function SchoolSettingsPage() {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ export function SchoolSettingsPage() {
   const { data: settings, isLoading } = useSchoolSettings();
   const { mutateAsync: uploadLogo, isPending: uploading } = useUploadSchoolLogo();
   const { mutateAsync: removeLogo, isPending: removing } = useRemoveSchoolLogo();
+  const { theme, toggleTheme } = useTeacherTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
 
@@ -79,6 +82,22 @@ export function SchoolSettingsPage() {
         )}
 
         {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Palette className="w-4 h-4 text-gray-400" />
+          <h2 className="text-sm font-bold text-gray-900">Appearance</h2>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          Switch between light and dark mode. Your dashboard stays light by default until you toggle this.
+        </p>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-800">
+            {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+          </span>
+          <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
+        </div>
       </div>
 
       {user?.role === 'admin' && <AttendanceRulesPanel />}
