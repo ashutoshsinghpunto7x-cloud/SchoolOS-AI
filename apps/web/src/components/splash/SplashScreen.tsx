@@ -5,8 +5,7 @@ interface SplashScreenProps {
   onFinish: () => void;
 }
 
-const VISIBLE_MS = 2000;
-const FADE_MS = 400;
+const FADE_MS = 200;
 
 /**
  * Previously rendered a designer-provided 1.2MB baked photo
@@ -14,6 +13,11 @@ const FADE_MS = 400;
  * contributor to first-paint latency, so the same visual — logo, "FNIC"
  * wordmark, tagline — is rebuilt here as plain HTML/CSS using only the
  * 28KB logo photo, which loads instantly.
+ *
+ * No artificial hold: it used to force a fixed 2s+ display regardless of
+ * how fast the app was actually ready, purely for branding. It now fades
+ * out as soon as it has painted one frame — just long enough to avoid a
+ * blank flash, nothing more.
  */
 export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
   const [isExiting, setIsExiting] = useState(false);
@@ -21,13 +25,14 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
 
   useEffect(() => {
     const raf1 = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setEntered(true));
+      requestAnimationFrame(() => {
+        setEntered(true);
+        setIsExiting(true);
+      });
     });
-    const exitTimer = setTimeout(() => setIsExiting(true), VISIBLE_MS);
-    const finishTimer = setTimeout(onFinish, VISIBLE_MS + FADE_MS);
+    const finishTimer = setTimeout(onFinish, FADE_MS);
     return () => {
       cancelAnimationFrame(raf1);
-      clearTimeout(exitTimer);
       clearTimeout(finishTimer);
     };
   }, [onFinish]);
@@ -41,7 +46,7 @@ export const SplashScreen = ({ onFinish }: SplashScreenProps) => {
     >
       <div
         className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center transition-opacity ease-out"
-        style={{ transitionDuration: `${VISIBLE_MS + FADE_MS}ms`, opacity: entered ? 1 : 0.6 }}
+        style={{ transitionDuration: '300ms', opacity: entered ? 1 : 0.6 }}
       >
         <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white ring-2 ring-orange-500/70 shadow-[0_0_60px_rgba(249,115,22,0.35)] sm:h-36 sm:w-36">
           <img src={fnicLogo} alt="FNIC Logo" className="h-20 w-20 object-contain sm:h-28 sm:w-28" />
