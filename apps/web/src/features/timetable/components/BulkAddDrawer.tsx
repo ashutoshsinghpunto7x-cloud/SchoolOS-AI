@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Copy, Trash2, Loader2, AlertTriangle, Search, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -60,7 +60,7 @@ function TeacherCell({
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6D7485]" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--tt-text-muted)]" />
         <input
           value={query}
           onChange={(e) => {
@@ -71,16 +71,16 @@ function TeacherCell({
           onFocus={() => setOpen(true)}
           onBlur={() => setTimeout(() => setOpen(false), 150)}
           placeholder="Optional"
-          className="h-9 w-full rounded-lg border border-white/[0.08] bg-[#0B0C12] pl-8 pr-7 text-xs text-white placeholder:text-[#6D7485] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+          className="h-9 w-full rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] pl-8 pr-7 text-xs text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
         />
         {row.teacherId && <Check className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2ED47A]" />}
       </div>
       {open && query.trim().length >= 2 && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-[#12141D] border border-white/[0.08] rounded-lg shadow-xl max-h-40 overflow-y-auto min-w-[180px]">
+        <div className="absolute top-full left-0 right-0 mt-1 z-20 bg-[var(--tt-bg-secondary)] border border-[var(--tt-border)] rounded-lg shadow-xl max-h-40 overflow-y-auto min-w-[180px]">
           {isLoading ? (
-            <div className="p-2 text-center"><Loader2 className="w-3.5 h-3.5 animate-spin text-[#6D7485] mx-auto" /></div>
+            <div className="p-2 text-center"><Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--tt-text-muted)] mx-auto" /></div>
           ) : !results?.data.length ? (
-            <p className="p-2 text-[11px] text-[#6D7485] text-center">No teachers found</p>
+            <p className="p-2 text-[11px] text-[var(--tt-text-muted)] text-center">No teachers found</p>
           ) : (
             results.data.map((t) => (
               <button
@@ -92,7 +92,7 @@ function TeacherCell({
                   setQuery(t.fullName);
                   setOpen(false);
                 }}
-                className="w-full text-left px-2.5 py-1.5 text-xs text-white hover:bg-white/[0.06]"
+                className="w-full text-left px-2.5 py-1.5 text-xs text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)]"
               >
                 {t.fullName}
               </button>
@@ -231,20 +231,20 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
         transition={{ duration: 0.22, ease: [0.33, 1, 0.68, 1] }}
-        className="relative w-full max-w-4xl max-h-[85vh] bg-[#181B26] border border-white/[0.08] rounded-[22px] shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl max-h-[85vh] bg-[var(--tt-card)] border border-[var(--tt-border)] rounded-[22px] shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--tt-border)] shrink-0">
           <div>
-            <h2 className="text-base font-bold text-white">Bulk Add Timetable</h2>
-            <p className="text-xs text-[#A8AFBF] mt-0.5">
+            <h2 className="text-base font-bold text-[var(--tt-text-primary)]">Bulk Add Timetable</h2>
+            <p className="text-xs text-[var(--tt-text-secondary)] mt-0.5">
               Class {timetable.class}-{timetable.section} · add multiple periods at once
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-[#6D7485] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-2 rounded-xl text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -254,7 +254,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid grid-cols-[1.3fr_1.3fr_1.6fr_1.6fr_auto] gap-2 px-1 mb-2">
             {['Day', 'Period', 'Subject', 'Teacher', ''].map((h) => (
-              <span key={h} className="text-[11px] font-bold text-[#6D7485] uppercase tracking-wider">{h}</span>
+              <span key={h} className="text-[11px] font-bold text-[var(--tt-text-muted)] uppercase tracking-wider">{h}</span>
             ))}
           </div>
 
@@ -270,13 +270,13 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
                   exit={{ opacity: 0, height: 0 }}
                   className={cn(
                     'grid grid-cols-[1.3fr_1.3fr_1.6fr_1.6fr_auto] gap-2 items-start p-2 rounded-xl border',
-                    error ? 'border-[#FF5B6A]/40 bg-[#FF5B6A]/[0.06]' : 'border-white/[0.06] bg-[#12141D]',
+                    error ? 'border-[#FF5B6A]/40 bg-[#FF5B6A]/[0.06]' : 'border-[var(--tt-border)] bg-[var(--tt-bg-secondary)]',
                   )}
                 >
                   <select
                     value={row.dayOfWeek}
                     onChange={(e) => updateRow(row.id, { dayOfWeek: Number(e.target.value) })}
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2 text-xs text-white focus:outline-none focus:border-[#7C5CFF]"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2 text-xs text-[var(--tt-text-primary)] focus:outline-none focus:border-[#7C5CFF]"
                   >
                     {DAY_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                   </select>
@@ -284,7 +284,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
                   <select
                     value={row.slotId}
                     onChange={(e) => updateRow(row.id, { slotId: e.target.value })}
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2 text-xs text-white focus:outline-none focus:border-[#7C5CFF]"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2 text-xs text-[var(--tt-text-primary)] focus:outline-none focus:border-[#7C5CFF]"
                   >
                     {teachingSlots.map((s) => (
                       <option key={s._id} value={s._id}>{s.name} ({s.startTime}-{s.endTime})</option>
@@ -298,7 +298,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRow(row.id); } }}
                     placeholder="Subject"
                     list="bad-subject-options"
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2.5 text-xs text-white placeholder:text-[#6D7485] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2.5 text-xs text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
                   />
 
                   <TeacherCell row={row} currentTimetableId={timetable._id} onChange={(patch) => updateRow(row.id, patch)} />
@@ -308,7 +308,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
                       type="button"
                       onClick={() => duplicateRow(row.id)}
                       title="Duplicate row"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6D7485] hover:text-white hover:bg-white/[0.08] transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-border)] transition-colors"
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
@@ -317,7 +317,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
                       onClick={() => deleteRow(row.id)}
                       disabled={rows.length === 1}
                       title="Delete row"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6D7485] hover:text-[#FF5B6A] hover:bg-[#FF5B6A]/10 transition-colors disabled:opacity-30 disabled:hover:text-[#6D7485] disabled:hover:bg-transparent"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--tt-text-muted)] hover:text-[#FF5B6A] hover:bg-[#FF5B6A]/10 transition-colors disabled:opacity-30 disabled:hover:text-[var(--tt-text-muted)] disabled:hover:bg-transparent"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -343,21 +343,21 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
             <button
               type="button"
               onClick={() => addRow()}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-white transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Add Row
             </button>
             <button
               type="button"
               onClick={copyPrevious}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-white transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
             >
               <Copy className="w-3.5 h-3.5" /> Copy Previous
             </button>
             <button
               type="button"
               onClick={clearAll}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-[#A8AFBF] transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-secondary)] transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" /> Clear All
             </button>
@@ -365,8 +365,8 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
         </div>
 
         {/* Sticky Save All */}
-        <div className="px-6 py-4 border-t border-white/[0.08] shrink-0 flex items-center justify-between gap-4">
-          <p className="text-xs text-[#6D7485]">
+        <div className="px-6 py-4 border-t border-[var(--tt-border)] shrink-0 flex items-center justify-between gap-4">
+          <p className="text-xs text-[var(--tt-text-muted)]">
             {rowsWithSubject.length} period{rowsWithSubject.length !== 1 ? 's' : ''} ready to add
           </p>
           <button

@@ -428,7 +428,7 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             aria-label="Profile"
           >
             {usePillTopbar ? (
-              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-[#A855F7]/20 border border-[#A855F7]/20 dark:border-[#A855F7]/30 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-violet-300">
+              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-amber-400/10 border border-[#A855F7]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-amber-300">
                 {initials}
               </span>
             ) : (

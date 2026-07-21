@@ -6,6 +6,7 @@ import { getHomePathForRole } from '../utils/roleHome';
 import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
 import { PinSetupPrompt } from '../components/PinSetupPrompt';
+import { pingServerAwake } from '../../../services/api';
 import fnicLogo from '../../../assets/illustrations/fnic-logo.jpg';
 
 function useChromaKeyedLogo(src: string) {
@@ -65,6 +66,7 @@ export const LoginPage = () => {
   const [selectedDeviceEmail, setSelectedDeviceEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [slowLoading, setSlowLoading] = useState(false);
   const [pinPrompt, setPinPrompt] = useState<{ email: string } | null>(null);
 
   const rememberedDevices = getRememberedDevices();
@@ -75,6 +77,26 @@ export const LoginPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The backend runs on a free-tier host that spins down when idle, so the
+  // first request after inactivity can take 30-50s to wake it. Ping it the
+  // moment this page loads (before the user finishes typing credentials) so
+  // the real login request has a better chance of hitting an already-warm
+  // server instead of paying the cold-start cost itself.
+  useEffect(() => {
+    pingServerAwake();
+  }, []);
+
+  // Swap in a "waking up" explanation if sign-in is taking a while, so a
+  // cold start reads as expected behavior rather than a hang/failure.
+  useEffect(() => {
+    if (!isLoading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 4000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   const goHome = (role: UserRole) => {
     const from = (location.state as { from?: string })?.from ?? getHomePathForRole(role);
@@ -285,6 +307,15 @@ export const LoginPage = () => {
                   </div>
                 )}
 
+                {/* Slow cold-start notice */}
+                {slowLoading && (
+                  <div className="rounded-xl bg-orange-950/30 border border-orange-900/30 px-4 py-3">
+                    <p className="text-sm font-medium text-orange-400">
+                      Waking up the server — this can take up to a minute the first time today.
+                    </p>
+                  </div>
+                )}
+
                 {/* Submit */}
                 <button
                   type="submit"
@@ -299,7 +330,7 @@ export const LoginPage = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Signing in…
+                      {slowLoading ? 'Waking up server…' : 'Signing in…'}
                     </>
                   ) : (
                     <>
@@ -360,6 +391,14 @@ export const LoginPage = () => {
                 {error && (
                   <div className="rounded-xl bg-red-950/40 border border-red-900/30 px-4 py-3">
                     <p className="text-sm font-medium text-red-400">{error}</p>
+                  </div>
+                )}
+
+                {slowLoading && (
+                  <div className="rounded-xl bg-orange-950/30 border border-orange-900/30 px-4 py-3">
+                    <p className="text-sm font-medium text-orange-400">
+                      Waking up the server — this can take up to a minute the first time today.
+                    </p>
                   </div>
                 )}
 

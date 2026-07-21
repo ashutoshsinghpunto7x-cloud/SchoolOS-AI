@@ -1,8 +1,8 @@
-import { cn } from '@/lib/utils';
+﻿import { cn } from '@/lib/utils';
 import type { TimetableStatus } from '@schoolos/types';
 
 const CONFIG: Record<TimetableStatus, { label: string; className: string }> = {
-  draft:     { label: 'Draft',     className: 'bg-white/[0.06] text-[#A8AFBF] border border-white/[0.08]' },
+  draft:     { label: 'Draft',     className: 'bg-[var(--tt-hover)] text-[var(--tt-text-secondary)] border border-[var(--tt-border)]' },
   published: { label: 'Published', className: 'bg-[#2ED47A]/10 text-[#2ED47A] border border-[#2ED47A]/25' },
   archived:  { label: 'Archived',  className: 'bg-[#F5A524]/10 text-[#F5A524] border border-[#F5A524]/25' },
 };

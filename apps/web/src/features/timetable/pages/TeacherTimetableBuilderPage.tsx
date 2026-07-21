@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Search, ChevronDown, LayoutGrid } from 'lucide-react';
 import { usePeriodSlots } from '../hooks/useTimetable';
@@ -64,45 +64,45 @@ export const TeacherTimetableBuilderPage = () => {
     activeTt?.status === 'draft' ? ['published'] : activeTt?.status === 'published' ? ['draft'] : [];
 
   return (
-    <div className="min-h-screen bg-[#0B0C12] flex flex-col gap-5 px-6 py-6 max-w-screen-xl mx-auto">
+    <div className="min-h-screen w-full bg-[var(--tt-bg)] flex flex-col gap-5 px-6 py-6">
       <button
         type="button"
         onClick={() => navigate('/principal')}
-        className="flex items-center gap-1.5 text-sm text-[#6D7485] hover:text-white transition-colors w-fit"
+        className="flex items-center gap-1.5 text-sm text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
 
       <div>
-        <h1 className="text-2xl font-bold text-white">Teacher Timetable</h1>
-        <p className="text-sm text-[#A8AFBF] mt-1">Build or update an individual teacher's weekly schedule.</p>
+        <h1 className="text-2xl font-bold text-[var(--tt-text-primary)]">Teacher Timetable</h1>
+        <p className="text-sm text-[var(--tt-text-secondary)] mt-1">Build or update an individual teacher's weekly schedule.</p>
       </div>
 
       {/* Teacher picker */}
       <div className="relative max-w-md">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6D7485]" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--tt-text-muted)]" />
           <input
             value={selectedTeacher ? selectedTeacher.name : teacherSearch}
             onChange={(e) => { setTeacherSearch(e.target.value); setSelectedTeacher(null); setPickerOpen(true); }}
             onFocus={() => setPickerOpen(true)}
             placeholder="Search teacher by name…"
-            className="w-full h-12 pl-10 pr-4 rounded-xl border border-white/[0.08] text-sm bg-[#181B26] text-white placeholder:text-[#6D7485]
+            className="w-full h-12 pl-10 pr-4 rounded-xl border border-[var(--tt-border)] text-sm bg-[var(--tt-card)] text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)]
                        focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25"
           />
         </div>
         {pickerOpen && teacherOptions.length > 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-[#181B26] rounded-xl border border-white/[0.08] shadow-lg max-h-72 overflow-y-auto">
+          <div className="absolute z-10 mt-1 w-full bg-[var(--tt-card)] rounded-xl border border-[var(--tt-border)] shadow-lg max-h-72 overflow-y-auto">
             {teacherOptions.map((t) => (
               <button
                 key={t._id}
                 type="button"
                 onClick={() => selectTeacher(t._id, t.fullName)}
-                className="w-full text-left px-4 py-2.5 text-sm text-white hover:bg-white/[0.06] border-b border-white/[0.06] last:border-b-0"
+                className="w-full text-left px-4 py-2.5 text-sm text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] border-b border-[var(--tt-border)] last:border-b-0"
               >
                 <p className="font-semibold">{t.fullName}</p>
-                {t.department && <p className="text-xs text-[#6D7485]">{t.department}</p>}
+                {t.department && <p className="text-xs text-[var(--tt-text-muted)]">{t.department}</p>}
               </button>
             ))}
           </div>
@@ -111,7 +111,7 @@ export const TeacherTimetableBuilderPage = () => {
 
       {!selectedTeacher && (
         <div className="flex items-center justify-center py-20">
-          <p className="text-[#6D7485] text-sm">Search and select a teacher to build their timetable.</p>
+          <p className="text-[var(--tt-text-muted)] text-sm">Search and select a teacher to build their timetable.</p>
         </div>
       )}
 
@@ -122,14 +122,14 @@ export const TeacherTimetableBuilderPage = () => {
       )}
 
       {selectedTeacher && activeTt && gridTimetable && (
-        <div className="bg-[#181B26] rounded-2xl border border-white/[0.08] shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between flex-wrap gap-2">
+        <div className="shrink-0 bg-[var(--tt-card)] rounded-2xl border border-[var(--tt-border)] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[var(--tt-border)] flex items-center justify-between flex-wrap gap-2">
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-base font-bold text-white">{selectedTeacher.name}</h2>
+                <h2 className="text-base font-bold text-[var(--tt-text-primary)]">{selectedTeacher.name}</h2>
                 <TimetableStatusBadge status={activeTt.status} />
               </div>
-              <p className="text-xs text-[#6D7485] mt-0.5">{activeTt.academicYear}</p>
+              <p className="text-xs text-[var(--tt-text-muted)] mt-0.5">{activeTt.academicYear}</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -159,13 +159,13 @@ export const TeacherTimetableBuilderPage = () => {
                     Change Status
                   </button>
                   {showStatusMenu && (
-                    <div className="absolute right-0 top-10 z-20 w-44 bg-[#181B26] rounded-xl border border-white/[0.08] shadow-lg py-1">
+                    <div className="absolute right-0 top-10 z-20 w-44 bg-[var(--tt-card)] rounded-xl border border-[var(--tt-border)] shadow-lg py-1">
                       {availableTransitions.map((s) => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => { updateStatus({ status: s }); setShowStatusMenu(false); }}
-                          className="w-full text-left px-3 py-2 text-sm font-medium text-white hover:bg-white/[0.06]"
+                          className="w-full text-left px-3 py-2 text-sm font-medium text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)]"
                         >
                           → {STATUS_LABEL[s]}
                         </button>
@@ -180,7 +180,7 @@ export const TeacherTimetableBuilderPage = () => {
           <div className="p-4">
             {slots.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
-                <p className="text-[#A8AFBF] text-sm">No period slots configured.</p>
+                <p className="text-[var(--tt-text-secondary)] text-sm">No period slots configured.</p>
                 <button
                   type="button"
                   onClick={() => navigate('/timetable/periods')}

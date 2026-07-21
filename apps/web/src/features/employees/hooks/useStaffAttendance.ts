@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { staffAttendanceApi } from '../api/staff-attendance.api';
-import type { ScanQrPayload } from '@schoolos/types';
+import type { ScanQrPayload, ManualMarkPayload } from '@schoolos/types';
 
 export const staffAttendanceKeys = {
   all:      ['staff-attendance'] as const,
@@ -27,6 +27,14 @@ export const useScanQr = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: ScanQrPayload) => staffAttendanceApi.scan(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: staffAttendanceKeys.today() }),
+  });
+};
+
+export const useMarkAttendanceManual = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ManualMarkPayload) => staffAttendanceApi.markManual(payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: staffAttendanceKeys.today() }),
   });
 };

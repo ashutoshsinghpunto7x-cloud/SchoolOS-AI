@@ -1,11 +1,12 @@
 import { staffAttendanceRepository } from './staff-attendance.repository';
-import { scanQrSchema, employeeHistoryQuerySchema } from './staff-attendance.validation';
+import { scanQrSchema, employeeHistoryQuerySchema, manualMarkSchema } from './staff-attendance.validation';
 import { IStaffAttendanceRecord, StaffAttendanceStatus } from './staff-attendance.model';
 import { employeeService } from '../employees/employee.service';
+import { employeeRepository } from '../employees/employee.repository';
 import { IEmployee } from '../employees/employee.model';
 import { schoolSettingsService } from '../school-settings/school-settings.service';
 import { IAttendanceRules } from '../school-settings/school-settings.model';
-import { ValidationError } from '../../middlewares/errorHandler';
+import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 
@@ -104,6 +105,45 @@ export const staffAttendanceService = {
     // Both check-in and check-out already exist — idempotent response, not an
     // error, so a duplicate/accidental re-scan renders gracefully in the UI.
     return { action: 'already_marked', record, employee: toSummary(employee) };
+  },
+
+  /** Manual present/absent/late/half-day mark — the fallback for when a
+   *  staff member's QR isn't handy. Same one-record-per-employee-per-day
+   *  model as scanQr, just skipping the check-in/check-out punch clock. */
+  async markManual(rawInput: unknown, ctx: AuthContext): Promise<ScanResult> {
+    const { employeeId, status } = manualMarkSchema.parse(rawInput);
+
+    const employee = await employeeRepository.findByEmployeeId(employeeId, ctx.schoolId);
+    if (!employee) throw new NotFoundError('Employee');
+
+    const date = staffAttendanceRepository.todayString();
+    let record = await staffAttendanceRepository.findForEmployeeOnDate(ctx.schoolId, employee.employeeId, date);
+
+    if (!record) {
+      record = await staffAttendanceRepository.create({
+        employeeId: employee.employeeId,
+        employeeObjectId: employee._id.toString(),
+        schoolId: ctx.schoolId,
+        date,
+      });
+    }
+
+    const now = new Date();
+    record.status = status;
+    if (status !== 'absent' && !record.checkIn) {
+      record.checkIn = { time: now, recordedBy: ctx.userId, device: 'manual' };
+    }
+    await record.save();
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'staff_attendance.marked_manual', resource: 'staff_attendance',
+      resourceId: record._id.toString(),
+      details: { employeeId: employee.employeeId, status },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return { action: 'check_in', record, employee: toSummary(employee) };
   },
 
   async listToday(ctx: AuthContext): Promise<IStaffAttendanceRecord[]> {

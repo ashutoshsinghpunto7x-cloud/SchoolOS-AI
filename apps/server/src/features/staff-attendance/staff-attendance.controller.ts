@@ -14,6 +14,14 @@ export const staffAttendanceController = {
     } catch (err) { next(err); }
   },
 
+  async markManual(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await staffAttendanceService.markManual(req.body, ctx);
+      sendSuccess(res, result, 'Attendance marked');
+    } catch (err) { next(err); }
+  },
+
   async today(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx     = buildAuthContext(req.user!);

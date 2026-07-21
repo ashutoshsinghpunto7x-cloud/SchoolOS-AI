@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { X, Loader2, Trash2, Search, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PeriodSlot, TimetableEntry } from '@schoolos/types';
@@ -18,7 +18,7 @@ interface EntryEditDrawerProps {
   onClose: () => void;
 }
 
-const inputCls = `h-11 w-full rounded-xl border border-white/[0.08] px-3 text-sm bg-[#12141D] text-white placeholder:text-[#6D7485]
+const inputCls = `h-11 w-full rounded-xl border border-[var(--tt-border)] px-3 text-sm bg-[var(--tt-bg-secondary)] text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)]
   focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25`;
 
 export const EntryEditDrawer = ({
@@ -104,22 +104,22 @@ export const EntryEditDrawer = ({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ duration: 0.28, ease: [0.33, 1, 0.68, 1] }}
-        className="w-full max-w-sm bg-[#181B26] border-l border-white/[0.08] h-full shadow-2xl flex flex-col overflow-y-auto"
+        className="w-full max-w-sm bg-[var(--tt-card)] border-l border-[var(--tt-border)] h-full shadow-2xl flex flex-col overflow-y-auto"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--tt-border)]">
           <div>
-            <h2 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-[var(--tt-text-primary)]">
               {entry ? 'Edit Entry' : 'Add Entry'}
             </h2>
-            <p className="text-xs text-[#A8AFBF] mt-0.5">
+            <p className="text-xs text-[var(--tt-text-secondary)] mt-0.5">
               {DAY_NAMES[dayOfWeek]} · {slot.name} ({slot.startTime}–{slot.endTime})
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-[#6D7485] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-2 rounded-xl text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -128,7 +128,7 @@ export const EntryEditDrawer = ({
         {/* Form */}
         <form onSubmit={handleSave} className="flex-1 flex flex-col gap-4 px-5 py-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-[#A8AFBF]">
+            <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">
               Subject <span className="text-[#FF5B6A]">*</span>
             </label>
             <input
@@ -141,9 +141,9 @@ export const EntryEditDrawer = ({
           </div>
 
           <div className="flex flex-col gap-1.5 relative">
-            <label className="text-sm font-semibold text-[#A8AFBF]">Teacher</label>
+            <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">Teacher</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6D7485]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--tt-text-muted)]" />
               <input
                 value={teacherQuery}
                 onChange={(e) => { setTeacherQuery(e.target.value); setTeacherDropdownOpen(true); if (!e.target.value.trim()) clearTeacher(); }}
@@ -157,24 +157,24 @@ export const EntryEditDrawer = ({
                 <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2ED47A]" />
               )}
             </div>
-            <p className="text-xs text-[#6D7485]">Picked from existing teacher records — enables automatic conflict detection and syncs to their personal timetable.</p>
+            <p className="text-xs text-[var(--tt-text-muted)]">Picked from existing teacher records — enables automatic conflict detection and syncs to their personal timetable.</p>
 
             {teacherDropdownOpen && teacherQuery.trim().length >= 2 && (
-              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-[#12141D] border border-white/[0.08] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 z-10 bg-[var(--tt-bg-secondary)] border border-[var(--tt-border)] rounded-xl shadow-lg max-h-48 overflow-y-auto">
                 {teacherSearching ? (
-                  <div className="p-3 text-center"><Loader2 className="w-4 h-4 animate-spin text-[#6D7485] mx-auto" /></div>
+                  <div className="p-3 text-center"><Loader2 className="w-4 h-4 animate-spin text-[var(--tt-text-muted)] mx-auto" /></div>
                 ) : !teacherResults?.data.length ? (
-                  <p className="p-3 text-xs text-[#6D7485] text-center">No teachers found</p>
+                  <p className="p-3 text-xs text-[var(--tt-text-muted)] text-center">No teachers found</p>
                 ) : (
                   teacherResults.data.map((t) => (
                     <button
                       key={t._id}
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); selectTeacher(t); }}
-                      className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/[0.06] flex items-center justify-between"
+                      className="w-full text-left px-3 py-2 text-sm text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] flex items-center justify-between"
                     >
                       <span>{t.fullName}</span>
-                      {t.department && <span className="text-xs text-[#6D7485]">{t.department}</span>}
+                      {t.department && <span className="text-xs text-[var(--tt-text-muted)]">{t.department}</span>}
                     </button>
                   ))
                 )}
@@ -183,7 +183,7 @@ export const EntryEditDrawer = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-[#A8AFBF]">Room / Lab</label>
+            <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">Room / Lab</label>
             <input
               value={form.roomNumber}
               onChange={set('roomNumber')}
@@ -198,7 +198,7 @@ export const EntryEditDrawer = ({
             </div>
           )}
 
-          <div className="flex gap-3 mt-auto pt-4 border-t border-white/[0.08]">
+          <div className="flex gap-3 mt-auto pt-4 border-t border-[var(--tt-border)]">
             {entry && (
               <button
                 type="button"

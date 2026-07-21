@@ -19,6 +19,7 @@ import { LeaveRequest } from '../leave-requests/leave-request.model';
 import { TeacherTimetable } from '../teacher-timetable/teacher-timetable.model';
 import { Timetable } from '../timetable/timetable.model';
 import { Employee } from '../employees/employee.model';
+import { employeeRepository } from '../employees/employee.repository';
 import { employeeIdCounterKey, seedEmployeeIdSequence } from '../employees/employee-id.util';
 
 const LOGIN_SALT_ROUNDS = 12;
@@ -86,6 +87,44 @@ export const teacherService = {
       schoolId: ctx.schoolId,
       createdBy: ctx.displayName,
     });
+
+    // Mirror a linked Employee record so HR Management (payroll, HR-side
+    // attendance) — which is keyed on Employee, not Teacher — sees this
+    // teacher too. Mirrors the reverse direction already done in
+    // employee.service.ts's createEmployee for role: 'teacher'. Best-effort:
+    // a failure here shouldn't block teacher creation, since Employee is a
+    // secondary HR projection of the same person, not the source of truth.
+    try {
+      await employeeRepository.create({
+        fullName: data.fullName,
+        gender: data.gender,
+        dateOfBirth: data.dateOfBirth,
+        employeeId,
+        phone: data.phone,
+        alternatePhone: data.alternatePhone,
+        email: data.email,
+        address: data.address,
+        designation: 'Teacher',
+        department: data.department,
+        joiningDate: data.joiningDate,
+        role: 'teacher',
+        status: data.employmentStatus === 'active' ? 'active' : 'inactive',
+        teacherId: teacher._id.toString(),
+        schoolId: ctx.schoolId,
+        createdBy: ctx.displayName,
+      });
+    } catch (err) {
+      auditService.log({
+        userId: ctx.userId,
+        userDisplayName: ctx.displayName,
+        action: 'teacher.employee_mirror_failed',
+        resource: 'teachers',
+        resourceId: teacher._id.toString(),
+        details: { error: err instanceof Error ? err.message : 'unknown error' },
+        ip: ctx.ip,
+        schoolId: ctx.schoolId,
+      });
+    }
 
     auditService.log({
       userId: ctx.userId,

@@ -8,8 +8,9 @@ const router = Router();
 router.use(authenticate);
 
 // ── Static routes first (must precede /employee/:employeeId) ─────────────────
-router.post('/scan',  authorize('admin', 'principal'), staffAttendanceController.scan);
-router.get('/today',  authorize('admin', 'principal'), staffAttendanceController.today);
+router.post('/scan',   authorize('admin', 'principal'), staffAttendanceController.scan);
+router.post('/manual', authorize('admin', 'principal'), staffAttendanceController.markManual);
+router.get('/today',   authorize('admin', 'principal'), staffAttendanceController.today);
 
 // A teacher may fetch only their own history — enforced in the controller.
 router.get('/employee/:employeeId', authorize('admin', 'principal', 'teacher'), staffAttendanceController.forEmployee);

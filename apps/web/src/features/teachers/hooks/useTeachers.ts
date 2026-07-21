@@ -35,6 +35,9 @@ export const useTeachersPaginated = (opts: TeacherListOptions = {}) =>
     queryKey:        teacherKeys.paginated(opts),
     queryFn:         () => teachersApi.listPaginated(opts),
     placeholderData: (prev) => prev,
+    // Always refetch on mount — teachers are added/edited from several
+    // workspaces, so a cached list can otherwise look stale on revisit.
+    refetchOnMount: 'always',
   });
 
 export const useTeacher = (id: string) =>

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Copy, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -156,20 +156,20 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 16, scale: 0.98 }}
         transition={{ duration: 0.22, ease: [0.33, 1, 0.68, 1] }}
-        className="relative w-full max-w-4xl max-h-[85vh] bg-[#181B26] border border-white/[0.08] rounded-[22px] shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-4xl max-h-[85vh] bg-[var(--tt-card)] border border-[var(--tt-border)] rounded-[22px] shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--tt-border)] shrink-0">
           <div>
-            <h2 className="text-base font-bold text-white">Bulk Add Teacher Timetable</h2>
-            <p className="text-xs text-[#A8AFBF] mt-0.5">
+            <h2 className="text-base font-bold text-[var(--tt-text-primary)]">Bulk Add Teacher Timetable</h2>
+            <p className="text-xs text-[var(--tt-text-secondary)] mt-0.5">
               {timetable.teacherName} · assigning a class/section auto-updates that class's timetable
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-[#6D7485] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-2 rounded-xl text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -179,7 +179,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid grid-cols-[1.2fr_1.3fr_1.4fr_0.8fr_0.8fr_auto] gap-2 px-1 mb-2">
             {['Day', 'Period', 'Subject', 'Class', 'Section', ''].map((h) => (
-              <span key={h} className="text-[11px] font-bold text-[#6D7485] uppercase tracking-wider">{h}</span>
+              <span key={h} className="text-[11px] font-bold text-[var(--tt-text-muted)] uppercase tracking-wider">{h}</span>
             ))}
           </div>
 
@@ -195,13 +195,13 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                   exit={{ opacity: 0, height: 0 }}
                   className={cn(
                     'grid grid-cols-[1.2fr_1.3fr_1.4fr_0.8fr_0.8fr_auto] gap-2 items-start p-2 rounded-xl border',
-                    error ? 'border-[#FF5B6A]/40 bg-[#FF5B6A]/[0.06]' : 'border-white/[0.06] bg-[#12141D]',
+                    error ? 'border-[#FF5B6A]/40 bg-[#FF5B6A]/[0.06]' : 'border-[var(--tt-border)] bg-[var(--tt-bg-secondary)]',
                   )}
                 >
                   <select
                     value={row.dayOfWeek}
                     onChange={(e) => updateRow(row.id, { dayOfWeek: Number(e.target.value) })}
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2 text-xs text-white focus:outline-none focus:border-[#7C5CFF]"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2 text-xs text-[var(--tt-text-primary)] focus:outline-none focus:border-[#7C5CFF]"
                   >
                     {DAY_OPTIONS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                   </select>
@@ -209,7 +209,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                   <select
                     value={row.slotId}
                     onChange={(e) => updateRow(row.id, { slotId: e.target.value })}
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2 text-xs text-white focus:outline-none focus:border-[#7C5CFF]"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2 text-xs text-[var(--tt-text-primary)] focus:outline-none focus:border-[#7C5CFF]"
                   >
                     {teachingSlots.map((s) => (
                       <option key={s._id} value={s._id}>{s.name} ({s.startTime}-{s.endTime})</option>
@@ -223,7 +223,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addRow(row.id); } }}
                     placeholder="Subject"
                     list="tbad-subject-options"
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2.5 text-xs text-white placeholder:text-[#6D7485] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2.5 text-xs text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
                   />
 
                   <input
@@ -231,7 +231,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                     onChange={(e) => updateRow(row.id, { class: e.target.value })}
                     placeholder="e.g. 5"
                     list="tbad-class-options"
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2.5 text-xs text-white placeholder:text-[#6D7485] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2.5 text-xs text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
                   />
 
                   <input
@@ -239,7 +239,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                     onChange={(e) => updateRow(row.id, { section: e.target.value })}
                     placeholder="e.g. A"
                     list="tbad-section-options"
-                    className="h-9 rounded-lg border border-white/[0.08] bg-[#0B0C12] px-2.5 text-xs text-white placeholder:text-[#6D7485] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
+                    className="h-9 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-bg)] px-2.5 text-xs text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)] focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/20"
                   />
 
                   <div className="flex items-center gap-1 pt-0.5">
@@ -247,7 +247,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                       type="button"
                       onClick={() => duplicateRow(row.id)}
                       title="Duplicate row"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6D7485] hover:text-white hover:bg-white/[0.08] transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-border)] transition-colors"
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
@@ -256,7 +256,7 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
                       onClick={() => deleteRow(row.id)}
                       disabled={rows.length === 1}
                       title="Delete row"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[#6D7485] hover:text-[#FF5B6A] hover:bg-[#FF5B6A]/10 transition-colors disabled:opacity-30 disabled:hover:text-[#6D7485] disabled:hover:bg-transparent"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--tt-text-muted)] hover:text-[#FF5B6A] hover:bg-[#FF5B6A]/10 transition-colors disabled:opacity-30 disabled:hover:text-[var(--tt-text-muted)] disabled:hover:bg-transparent"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -288,21 +288,21 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
             <button
               type="button"
               onClick={() => addRow()}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-white transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Add Row
             </button>
             <button
               type="button"
               onClick={copyPrevious}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-white transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
             >
               <Copy className="w-3.5 h-3.5" /> Copy Previous
             </button>
             <button
               type="button"
               onClick={clearAll}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] text-xs font-semibold text-[#A8AFBF] transition-colors"
+              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-secondary)] transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" /> Clear All
             </button>
@@ -310,8 +310,8 @@ export const TeacherBulkAddDrawer = ({ timetable, slots, onClose }: TeacherBulkA
         </div>
 
         {/* Sticky Save All */}
-        <div className="px-6 py-4 border-t border-white/[0.08] shrink-0 flex items-center justify-between gap-4">
-          <p className="text-xs text-[#6D7485]">
+        <div className="px-6 py-4 border-t border-[var(--tt-border)] shrink-0 flex items-center justify-between gap-4">
+          <p className="text-xs text-[var(--tt-text-muted)]">
             {rowsWithSubject.length} period{rowsWithSubject.length !== 1 ? 's' : ''} ready to add
           </p>
           <button

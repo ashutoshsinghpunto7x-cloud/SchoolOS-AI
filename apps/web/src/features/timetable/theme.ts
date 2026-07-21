@@ -1,20 +1,23 @@
 // ── Timetable module design tokens ──────────────────────────────────────────
-// Single source for the module's dark palette so every page/component stays
-// visually consistent. Do not introduce new colors here — only reuse these.
+// Single source so every page/component stays visually consistent. bg/card/
+// border/text values are CSS variables (defined in styles/globals.css) that
+// flip automatically with the app's light/dark theme — do not replace them
+// with literal hex. Brand/status colors stay constant across themes.
 
 export const TT_COLORS = {
-  bg: '#0B0C12',
-  bgSecondary: '#12141D',
-  card: '#181B26',
-  border: 'rgba(255,255,255,0.08)',
+  bg: 'var(--tt-bg)',
+  bgSecondary: 'var(--tt-bg-secondary)',
+  card: 'var(--tt-card)',
+  border: 'var(--tt-border)',
+  hover: 'var(--tt-hover)',
   purple: '#7C5CFF',
   pink: '#E954B8',
   success: '#2ED47A',
   warning: '#F5A524',
   danger: '#FF5B6A',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A8AFBF',
-  textMuted: '#6D7485',
+  textPrimary: 'var(--tt-text-primary)',
+  textSecondary: 'var(--tt-text-secondary)',
+  textMuted: 'var(--tt-text-muted)',
 } as const;
 
 export const TT_GRADIENT = `linear-gradient(135deg, ${TT_COLORS.purple} 0%, ${TT_COLORS.pink} 100%)`;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Pencil, Trash2, ChevronDown, AlertTriangle, LayoutGrid,
@@ -45,7 +45,7 @@ export const TimetableGridPage = () => {
 
   if (ttLoading || slotsLoading) {
     return (
-      <div className="min-h-screen bg-[#0B0C12] flex items-center justify-center py-32">
+      <div className="min-h-screen bg-[var(--tt-bg)] flex items-center justify-center py-32">
         <Loader2 className="w-7 h-7 text-[#7C5CFF] animate-spin" />
       </div>
     );
@@ -53,8 +53,8 @@ export const TimetableGridPage = () => {
 
   if (!tt) {
     return (
-      <div className="min-h-screen bg-[#0B0C12] flex flex-col items-center justify-center py-32 gap-3">
-        <p className="text-[#A8AFBF]">Timetable not found.</p>
+      <div className="min-h-screen bg-[var(--tt-bg)] flex flex-col items-center justify-center py-32 gap-3">
+        <p className="text-[var(--tt-text-secondary)]">Timetable not found.</p>
         <button type="button" onClick={() => navigate('/timetable')} className="text-[#7C5CFF] text-sm hover:underline">
           Back to Timetable
         </button>
@@ -65,12 +65,12 @@ export const TimetableGridPage = () => {
   const availableTransitions = STATUS_TRANSITIONS[tt.status] ?? [];
 
   return (
-    <div className="min-h-screen bg-[#0B0C12] flex flex-col gap-5 px-6 py-6 max-w-screen-xl mx-auto">
+    <div className="min-h-screen w-full bg-[var(--tt-bg)] flex flex-col gap-5 px-6 py-6">
       {/* Back */}
       <button
         type="button"
         onClick={() => navigate('/timetable')}
-        className="flex items-center gap-1.5 text-sm text-[#6D7485] hover:text-white transition-colors w-fit"
+        className="flex items-center gap-1.5 text-sm text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] transition-colors w-fit"
       >
         <ArrowLeft className="w-4 h-4" />
         Timetable
@@ -80,14 +80,14 @@ export const TimetableGridPage = () => {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-[var(--tt-text-primary)]">
               Class {tt.class}-{tt.section}
             </h1>
             <TimetableStatusBadge status={tt.status} />
           </div>
-          <p className="text-sm text-[#A8AFBF] mt-1">
+          <p className="text-sm text-[var(--tt-text-secondary)] mt-1">
             {tt.academicYear}{tt.term ? ` · ${tt.term}` : ''}
-            {tt.notes && <span className="ml-2 text-[#6D7485]">· {tt.notes}</span>}
+            {tt.notes && <span className="ml-2 text-[var(--tt-text-muted)]">· {tt.notes}</span>}
           </p>
         </div>
 
@@ -108,8 +108,8 @@ export const TimetableGridPage = () => {
             <button
               type="button"
               onClick={() => navigate(`/timetable/${id}/edit`)}
-              className="h-9 px-4 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]
-                         flex items-center gap-1.5 text-sm font-semibold text-[#A8AFBF] transition-colors"
+              className="h-9 px-4 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)]
+                         flex items-center gap-1.5 text-sm font-semibold text-[var(--tt-text-secondary)] transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit Info
@@ -129,13 +129,13 @@ export const TimetableGridPage = () => {
                   Change Status
                 </button>
                 {showStatusMenu && (
-                  <div className="absolute right-0 top-10 z-20 w-44 bg-[#181B26] rounded-xl border border-white/[0.08] shadow-lg py-1">
+                  <div className="absolute right-0 top-10 z-20 w-44 bg-[var(--tt-card)] rounded-xl border border-[var(--tt-border)] shadow-lg py-1">
                     {availableTransitions.map((s) => (
                       <button
                         key={s}
                         type="button"
                         onClick={() => { updateStatus({ status: s }); setShowStatusMenu(false); }}
-                        className="w-full text-left px-3 py-2 text-sm font-medium text-white hover:bg-white/[0.06]"
+                        className="w-full text-left px-3 py-2 text-sm font-medium text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)]"
                       >
                         → {STATUS_LABEL[s]}
                       </button>
@@ -175,9 +175,9 @@ export const TimetableGridPage = () => {
       )}
 
       {/* Grid */}
-      <div className="bg-[#181B26] rounded-2xl border border-white/[0.08] shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/[0.08] flex items-center justify-between">
-          <p className="text-sm font-semibold text-white">
+      <div className="shrink-0 bg-[var(--tt-card)] rounded-2xl border border-[var(--tt-border)] shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-[var(--tt-border)] flex items-center justify-between">
+          <p className="text-sm font-semibold text-[var(--tt-text-primary)]">
             Weekly Schedule
           </p>
           {tt.status === 'draft' && isAdmin && (
@@ -189,7 +189,7 @@ export const TimetableGridPage = () => {
         <div className="p-4">
           {slots.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
-              <p className="text-[#A8AFBF] text-sm">No period slots configured.</p>
+              <p className="text-[var(--tt-text-secondary)] text-sm">No period slots configured.</p>
               {isAdmin && (
                 <button
                   type="button"
@@ -238,16 +238,16 @@ export const TimetableGridPage = () => {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setConfirmDelete(false)} />
-          <div className="relative bg-[#181B26] border border-white/[0.08] rounded-2xl shadow-2xl p-6 max-w-sm w-full">
-            <h3 className="text-lg font-bold text-white mb-2">Delete Timetable?</h3>
-            <p className="text-sm text-[#A8AFBF] mb-5">
+          <div className="relative bg-[var(--tt-card)] border border-[var(--tt-border)] rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold text-[var(--tt-text-primary)] mb-2">Delete Timetable?</h3>
+            <p className="text-sm text-[var(--tt-text-secondary)] mb-5">
               Timetable for Class {tt.class}-{tt.section} will be soft-deleted.
             </p>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmDelete(false)}
-                className="flex-1 h-10 rounded-xl border border-white/[0.08] text-sm font-semibold text-[#A8AFBF] hover:bg-white/[0.06]"
+                className="flex-1 h-10 rounded-xl border border-[var(--tt-border)] text-sm font-semibold text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)]"
               >
                 Cancel
               </button>

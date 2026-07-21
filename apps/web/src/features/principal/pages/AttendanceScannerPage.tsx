@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { ScanLine, Camera, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
+import { ScanLine, Camera, CheckCircle2, XCircle, Loader2, Clock, QrCode, ListChecks, Search, Check, X } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
-import { useScanQr, useTodayStaffAttendance } from '@/features/employees/hooks/useStaffAttendance';
-import type { StaffAttendanceScanResult, StaffAttendanceRecord } from '@schoolos/types';
+import { useScanQr, useTodayStaffAttendance, useMarkAttendanceManual } from '@/features/employees/hooks/useStaffAttendance';
+import { useTeacherList } from '@/features/teachers/hooks/useTeachers';
+import type { StaffAttendanceScanResult, StaffAttendanceRecord, StaffAttendanceStatus } from '@schoolos/types';
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
 
@@ -29,7 +30,100 @@ function timeLabel(iso?: string): string {
   return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 }
 
+// ── Manual mark panel — fallback for when a teacher's QR isn't handy ─────────
+
+function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanResult) => void }) {
+  const [search, setSearch] = useState('');
+  const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
+  const { data: teachers = [], isLoading } = useTeacherList(search);
+  const { data: todayRecords } = useTodayStaffAttendance();
+  const { mutate: markManual, isPending, variables } = useMarkAttendanceManual();
+
+  const statusByEmployeeId = useMemo(() => {
+    const map = new Map<string, StaffAttendanceStatus>();
+    for (const r of (todayRecords ?? []) as StaffAttendanceRecord[]) map.set(r.employeeId, r.status);
+    return map;
+  }, [todayRecords]);
+
+  function mark(employeeId: string, status: StaffAttendanceStatus) {
+    setRowError(null);
+    markManual({ employeeId, status }, {
+      onSuccess: (result) => onMarked(result),
+      onError: (err) => setRowError({ id: employeeId, message: err instanceof Error ? err.message : 'Could not mark attendance' }),
+    });
+  }
+
+  return (
+    <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col">
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search teacher by name…"
+          className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-colors"
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto max-h-[420px] -mx-1 px-1 space-y-1.5">
+        {isLoading ? (
+          Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)
+        ) : teachers.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-10">No teachers found.</p>
+        ) : (
+          teachers.map((t) => {
+            const status = t.employeeId ? statusByEmployeeId.get(t.employeeId) : undefined;
+            const pending = isPending && variables?.employeeId === t.employeeId;
+            const hasEmployeeId = Boolean(t.employeeId);
+            return (
+              <div key={t._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
+                  {initialsOf(t.fullName)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{t.fullName}</p>
+                  {status ? (
+                    <p className={`text-xs mt-0.5 font-medium ${status === 'absent' ? 'text-red-500' : 'text-emerald-600'}`}>
+                      {STATUS_LABEL[status] ?? (status === 'absent' ? 'Absent' : status)}
+                    </p>
+                  ) : rowError?.id === t.employeeId ? (
+                    <p className="text-xs mt-0.5 font-medium text-red-500 truncate">{rowError.message}</p>
+                  ) : (
+                    <p className="text-xs mt-0.5 text-gray-400">Not marked</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={!hasEmployeeId || pending}
+                  onClick={() => t.employeeId && mark(t.employeeId, 'present')}
+                  className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors disabled:opacity-40"
+                  aria-label={`Mark ${t.fullName} present`}
+                  title={hasEmployeeId ? 'Mark present' : 'No HR employee record for this teacher yet'}
+                >
+                  {pending && variables?.status === 'present' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasEmployeeId || pending}
+                  onClick={() => t.employeeId && mark(t.employeeId, 'absent')}
+                  className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors disabled:opacity-40"
+                  aria-label={`Mark ${t.fullName} absent`}
+                  title={hasEmployeeId ? 'Mark absent' : 'No HR employee record for this teacher yet'}
+                >
+                  {pending && variables?.status === 'absent' ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AttendanceScannerPage() {
+  const [mode, setMode] = useState<'scan' | 'manual'>('scan');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scannerRunning, setScannerRunning] = useState(false);
   const [scannerError, setScannerError] = useState('');
@@ -113,10 +207,32 @@ export function AttendanceScannerPage() {
     <PageContainer>
       <WorkspaceHeader
         title="Today's Attendance"
-        subtitle="Scan staff QR codes with your webcam to mark check-in / check-out"
+        subtitle="Scan staff QR codes, or mark attendance manually when a QR isn't handy"
         backTo="/principal"
         backLabel="Principal Dashboard"
       />
+
+      {/* Scan / Manual mode switch */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+        <button
+          type="button"
+          onClick={() => setMode('scan')}
+          className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors ${
+            mode === 'scan' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <QrCode className="w-4 h-4" /> Scan QR
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('manual')}
+          className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors ${
+            mode === 'manual' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ListChecks className="w-4 h-4" /> Mark Manually
+        </button>
+      </div>
 
       {/* Status banner */}
       {banner && (
@@ -158,30 +274,38 @@ export function AttendanceScannerPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Scanner */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center">
-          <div className="w-full max-w-sm aspect-square rounded-2xl bg-gray-50 border border-dashed border-gray-200 overflow-hidden flex items-center justify-center relative">
-            <div id={SCANNER_ELEMENT_ID} className="w-full h-full" />
-            {!scannerRunning && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
-                <ScanLine className="w-10 h-10 mb-2" />
-                <p className="text-xs font-medium">Camera is off</p>
-              </div>
-            )}
+        {mode === 'scan' ? (
+          /* Scanner */
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col items-center">
+            <div className="w-full max-w-sm aspect-square rounded-2xl bg-gray-50 border border-dashed border-gray-200 overflow-hidden flex items-center justify-center relative">
+              <div id={SCANNER_ELEMENT_ID} className="w-full h-full" />
+              {!scannerRunning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
+                  <ScanLine className="w-10 h-10 mb-2" />
+                  <p className="text-xs font-medium">Camera is off</p>
+                </div>
+              )}
+            </div>
+
+            {scannerError && <p className="text-xs text-red-500 mt-3 text-center">{scannerError}</p>}
+
+            <button
+              type="button"
+              onClick={() => (scannerRunning ? stopScanner() : startScanner())}
+              className={`mt-5 h-11 px-6 rounded-xl text-sm font-bold flex items-center gap-2 ${
+                scannerRunning ? 'bg-white border border-gray-200 text-gray-700' : 'bg-gradient-to-r from-violet-600 to-pink-500 text-white'
+              }`}
+            >
+              <Camera className="w-4 h-4" /> {scannerRunning ? 'Stop Scanner' : 'Start Scanner'}
+            </button>
           </div>
-
-          {scannerError && <p className="text-xs text-red-500 mt-3 text-center">{scannerError}</p>}
-
-          <button
-            type="button"
-            onClick={() => (scannerRunning ? stopScanner() : startScanner())}
-            className={`mt-5 h-11 px-6 rounded-xl text-sm font-bold flex items-center gap-2 ${
-              scannerRunning ? 'bg-white border border-gray-200 text-gray-700' : 'bg-gradient-to-r from-violet-600 to-pink-500 text-white'
-            }`}
-          >
-            <Camera className="w-4 h-4" /> {scannerRunning ? 'Stop Scanner' : 'Start Scanner'}
-          </button>
-        </div>
+        ) : (
+          <ManualMarkPanel onMarked={(result) => {
+            if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
+            setBanner({ type: 'success', result });
+            bannerTimeoutRef.current = setTimeout(() => setBanner(null), 5000);
+          }} />
+        )}
 
         {/* Today's attendance table */}
         <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

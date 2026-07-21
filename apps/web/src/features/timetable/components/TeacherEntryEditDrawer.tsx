@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { X, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { PeriodSlot, TeacherTimetableEntry } from '@schoolos/types';
@@ -19,7 +19,7 @@ interface TeacherEntryEditDrawerProps {
   onClose: () => void;
 }
 
-const inputCls = `h-11 w-full rounded-xl border border-white/[0.08] px-3 text-sm bg-[#12141D] text-white placeholder:text-[#6D7485]
+const inputCls = `h-11 w-full rounded-xl border border-[var(--tt-border)] px-3 text-sm bg-[var(--tt-bg-secondary)] text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)]
   focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25`;
 
 export const TeacherEntryEditDrawer = ({
@@ -88,21 +88,21 @@ export const TeacherEntryEditDrawer = ({
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ duration: 0.28, ease: [0.33, 1, 0.68, 1] }}
-        className="w-full max-w-sm bg-[#181B26] border-l border-white/[0.08] h-full shadow-2xl flex flex-col overflow-y-auto"
+        className="w-full max-w-sm bg-[var(--tt-card)] border-l border-[var(--tt-border)] h-full shadow-2xl flex flex-col overflow-y-auto"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--tt-border)]">
           <div>
-            <h2 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-[var(--tt-text-primary)]">
               {entry ? 'Edit Entry' : 'Add Entry'}
             </h2>
-            <p className="text-xs text-[#A8AFBF] mt-0.5">
+            <p className="text-xs text-[var(--tt-text-secondary)] mt-0.5">
               {DAY_NAMES[dayOfWeek]} · {slot.name} ({slot.startTime}–{slot.endTime})
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-[#6D7485] hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="p-2 rounded-xl text-[var(--tt-text-muted)] hover:text-[var(--tt-text-primary)] hover:bg-[var(--tt-hover)] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -110,7 +110,7 @@ export const TeacherEntryEditDrawer = ({
 
         <form onSubmit={handleSave} className="flex-1 flex flex-col gap-4 px-5 py-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-[#A8AFBF]">
+            <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">
               Subject <span className="text-[#FF5B6A]">*</span>
             </label>
             <input
@@ -124,18 +124,18 @@ export const TeacherEntryEditDrawer = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#A8AFBF]">Class</label>
+              <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">Class</label>
               <input value={form.class} onChange={set('class')} className={inputCls} placeholder="e.g. 5" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-semibold text-[#A8AFBF]">Section</label>
+              <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">Section</label>
               <input value={form.section} onChange={set('section')} className={inputCls} placeholder="e.g. A" />
             </div>
           </div>
-          <p className="text-xs text-[#6D7485] -mt-2">Setting Class + Section auto-updates that class's own timetable too.</p>
+          <p className="text-xs text-[var(--tt-text-muted)] -mt-2">Setting Class + Section auto-updates that class's own timetable too.</p>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-semibold text-[#A8AFBF]">Room / Lab</label>
+            <label className="text-sm font-semibold text-[var(--tt-text-secondary)]">Room / Lab</label>
             <input
               value={form.roomNumber}
               onChange={set('roomNumber')}
@@ -169,7 +169,7 @@ export const TeacherEntryEditDrawer = ({
             </div>
           )}
 
-          <div className="flex gap-3 mt-auto pt-4 border-t border-white/[0.08]">
+          <div className="flex gap-3 mt-auto pt-4 border-t border-[var(--tt-border)]">
             {entry && (
               <button
                 type="button"

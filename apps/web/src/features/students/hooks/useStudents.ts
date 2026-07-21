@@ -35,6 +35,10 @@ export const useStudentsPaginated = (opts: StudentListOptions = {}) => {
     queryKey: studentKeys.paginated(opts),
     queryFn: () => studentsApi.listPaginated(opts),
     placeholderData: (prev) => prev,
+    // Always refetch on mount — students are added/edited from several
+    // workspaces (principal, reception, admin), so a cached list from a
+    // previous visit can otherwise look stale until the 30s staleTime lapses.
+    refetchOnMount: 'always',
   });
 };
 

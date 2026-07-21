@@ -113,7 +113,7 @@ const NAV_ITEMS_PRINCIPAL = [
   { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
   { label: 'Teachers',            icon: Users,           path: '/principal/teachers',              end: false },
-  { label: 'Timetable',           icon: LayoutGrid,      path: '/timetable',                       end: false },
+  { label: 'Class Timetable',     icon: LayoutGrid,      path: '/timetable',                       end: true  },
   { label: 'Teacher Timetable',   icon: UserCog,         path: '/timetable/teacher-builder',       end: false },
   { label: 'Class Teachers',      icon: GraduationCap,   path: '/principal/class-teachers',        end: false },
   { label: 'Exams',               icon: ClipboardList,   path: '/exams',                            end: false },

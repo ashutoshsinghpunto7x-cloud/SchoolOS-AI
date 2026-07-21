@@ -2,13 +2,22 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api/v1';
 
+// 60s (not the usual 30s) because the free-tier host spins the server down
+// after inactivity — the first request after a cold start can take 30-50s.
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 30_000,
+  timeout: 60_000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Fire-and-forget ping to start waking a cold-started free-tier server the
+// moment the login page mounts, so the real login request (sent once the
+// user finishes typing) is more likely to hit an already-warm instance.
+export const pingServerAwake = () => {
+  axios.get(`${BASE_URL}/health`, { timeout: 60_000 }).catch(() => {});
+};
 
 // ── Request Interceptor ───────────────────────────────────────────────────────
 apiClient.interceptors.request.use(

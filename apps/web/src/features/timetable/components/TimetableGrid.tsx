@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+﻿import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { Timetable, PeriodSlot, ConflictInfo, TimetableEntry } from '@schoolos/types';
 import { subjectAccent } from '../theme';
@@ -37,38 +37,38 @@ export const TimetableGrid = ({
   const ordered = [...slots].sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
-    <div className="max-h-[70vh] overflow-y-auto overflow-x-auto rounded-[20px] border border-white/[0.08] bg-[#181B26]">
+    <div className="overflow-x-auto rounded-[20px] border border-[var(--tt-border)] bg-[var(--tt-card)]">
       <table className="w-full text-sm border-collapse min-w-[600px]">
         <thead className="sticky top-0 z-10">
           <tr>
-            <th className="w-28 px-3 py-3 text-left text-xs font-bold text-[#6D7485] uppercase tracking-wider bg-[#12141D] border-b border-white/[0.08]">
+            <th className="w-28 px-3 py-3 text-left text-xs font-bold text-[var(--tt-text-muted)] uppercase tracking-wider bg-[var(--tt-bg-secondary)] border-b border-[var(--tt-border)]">
               Period
             </th>
             {days.map((d) => (
-              <th key={d} className="px-3 py-3 text-center text-xs font-bold text-[#A8AFBF] uppercase tracking-wider bg-[#12141D] border-b border-white/[0.08]">
+              <th key={d} className="px-3 py-3 text-center text-xs font-bold text-[var(--tt-text-secondary)] uppercase tracking-wider bg-[var(--tt-bg-secondary)] border-b border-[var(--tt-border)]">
                 <span className="hidden sm:inline">{DAY_FULL[d]}</span>
                 <span className="sm:hidden">{DAY_NAMES[d]}</span>
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.06]">
+        <tbody className="divide-y divide-[var(--tt-border)]">
           {ordered.map((slot) => (
-            <tr key={slot._id} className={cn(slot.isBreak ? 'bg-[#F5A524]/[0.06]' : 'hover:bg-white/[0.02] transition-colors')}>
-              <td className="px-3 py-3 border-r border-white/[0.06]">
-                <p className="text-xs font-bold text-white leading-tight">{slot.name}</p>
-                <p className="text-[11px] text-[#6D7485] mt-0.5">{slot.startTime} – {slot.endTime}</p>
+            <tr key={slot._id} className={cn(slot.isBreak ? 'bg-[#F5A524]/[0.06]' : 'hover:bg-[var(--tt-hover)] transition-colors')}>
+              <td className="px-3 py-3 border-r border-[var(--tt-border)]">
+                <p className="text-xs font-bold text-[var(--tt-text-primary)] leading-tight">{slot.name}</p>
+                <p className="text-[11px] text-[var(--tt-text-muted)] mt-0.5">{slot.startTime} – {slot.endTime}</p>
                 {slot.isBreak && (
                   <span className="text-[10px] font-semibold text-[#F5A524] uppercase tracking-wider">Break</span>
                 )}
               </td>
               {days.map((day) => {
                 if (!slot.daysApplicable.includes(day)) {
-                  return <td key={day} className="px-2 py-2 bg-[#12141D]/60 border-r border-white/[0.06] last:border-r-0" />;
+                  return <td key={day} className="px-2 py-2 bg-[var(--tt-bg-secondary)]/60 border-r border-[var(--tt-border)] last:border-r-0" />;
                 }
                 if (slot.isBreak) {
                   return (
-                    <td key={day} className="px-2 py-2 border-r border-white/[0.06] last:border-r-0">
+                    <td key={day} className="px-2 py-2 border-r border-[var(--tt-border)] last:border-r-0">
                       <div className="flex items-center justify-center h-12 text-xs text-[#F5A524] font-medium">
                         Break
                       </div>
@@ -86,7 +86,7 @@ export const TimetableGrid = ({
                     key={day}
                     onClick={!readonly ? () => onCellClick?.(day, slot, entry) : undefined}
                     className={cn(
-                      'px-2 py-2 border-r border-white/[0.06] last:border-r-0 align-top',
+                      'px-2 py-2 border-r border-[var(--tt-border)] last:border-r-0 align-top',
                       !readonly && 'cursor-pointer',
                       conflict && 'bg-[#FF5B6A]/[0.08] ring-1 ring-inset ring-[#FF5B6A]/40',
                     )}
@@ -94,11 +94,11 @@ export const TimetableGrid = ({
                     {empty ? (
                       <div className={cn(
                         'flex items-center justify-center h-14 rounded-xl border-2 border-dashed transition-colors',
-                        readonly ? 'border-white/[0.06]' : 'border-white/10 hover:border-[#7C5CFF]/50 hover:bg-[#7C5CFF]/5',
+                        readonly ? 'border-[var(--tt-border)]' : 'border-[var(--tt-border)] hover:border-[#7C5CFF]/50 hover:bg-[#7C5CFF]/5',
                       )}>
-                        {!readonly && (
-                          <span className="text-[11px] text-[#6D7485] font-medium">+ Add</span>
-                        )}
+                        <span className="text-[11px] text-[var(--tt-text-muted)] font-medium">
+                          {readonly ? 'Free Period' : '+ Add'}
+                        </span>
                       </div>
                     ) : (
                       <motion.div
@@ -121,13 +121,13 @@ export const TimetableGrid = ({
                         {entry?.teacherName && (
                           <p className={cn(
                             'text-[11px] leading-tight truncate',
-                            conflict ? 'text-[#FF5B6A]/80' : 'text-[#A8AFBF]',
+                            conflict ? 'text-[#FF5B6A]/80' : 'text-[var(--tt-text-secondary)]',
                           )}>
                             {entry.teacherName}
                           </p>
                         )}
                         {entry?.roomNumber && (
-                          <p className="text-[10px] text-[#6D7485] leading-tight truncate">
+                          <p className="text-[10px] text-[var(--tt-text-muted)] leading-tight truncate">
                             Room {entry.roomNumber}
                           </p>
                         )}

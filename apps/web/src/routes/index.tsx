@@ -621,6 +621,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/id-card',                                      element: <TeacherIdCardPage /> },
                       { path: 'teacher/my-attendance',                                element: <TeacherMyAttendancePage /> },
                       { path: 'teacher/my-payslips',                                  element: <TeacherMyPayslipsPage /> },
+                      { path: 'teacher/messages',                                     element: <MessagesPage /> },
                     ],
                   },
                 ],

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   ClipboardList,
   ChevronRight,
-  CalendarDays,
   Filter,
   AlertCircle,
   Search,
@@ -85,17 +84,29 @@ function groupBySession(records: Attendance[]): SessionGroup[] {
 }
 
 // ── Date badge — weekday / day number / month, matching the reference design ──
+// Rotates through a few accent hues by weekday so the list reads with the
+// same colorful-left-bar language as the dark theme reference design.
+const DAY_ACCENTS = [
+  { bar: 'bg-[#DB2777]', tint: 'bg-[#DB2777]/10 dark:bg-[#DB2777]/15' }, // Sun
+  { bar: 'bg-[#6D4AFF]', tint: 'bg-[#6D4AFF]/10 dark:bg-[#6D4AFF]/15' }, // Mon
+  { bar: 'bg-[#4A90FF]', tint: 'bg-[#4A90FF]/10 dark:bg-[#4A90FF]/15' }, // Tue
+  { bar: 'bg-[#20C997]', tint: 'bg-[#20C997]/10 dark:bg-[#20C997]/15' }, // Wed
+  { bar: 'bg-[#4A90FF]', tint: 'bg-[#4A90FF]/10 dark:bg-[#4A90FF]/15' }, // Thu
+  { bar: 'bg-[#20C997]', tint: 'bg-[#20C997]/10 dark:bg-[#20C997]/15' }, // Fri
+  { bar: 'bg-[#FFB547]', tint: 'bg-[#FFB547]/10 dark:bg-[#FFB547]/15' }, // Sat
+];
 
 function DateBadge({ date }: { date: string }) {
   const d = new Date(date + 'T00:00:00');
   const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase();
   const day = d.getDate();
   const month = d.toLocaleDateString('en-IN', { month: 'short' });
+  const accent = DAY_ACCENTS[d.getDay()];
   return (
-    <div className="w-16 shrink-0 bg-[#A855F7]/10 rounded-xl px-1 py-2.5 text-center">
-      <p className="text-[10px] font-semibold text-gray-500 tracking-wide">{weekday}</p>
-      <p className="text-xl font-bold text-gray-900 leading-tight">{day}</p>
-      <p className="text-[10px] font-semibold text-gray-500">{month}</p>
+    <div className={cn('w-16 shrink-0 rounded-xl px-1 py-2.5 text-center', accent.tint)}>
+      <p className="text-[10px] font-semibold text-gray-500 dark:text-white/50 tracking-wide">{weekday}</p>
+      <p className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{day}</p>
+      <p className="text-[10px] font-semibold text-gray-500 dark:text-white/50">{month}</p>
     </div>
   );
 }
@@ -104,13 +115,15 @@ function DateBadge({ date }: { date: string }) {
 
 function DayCard({ date, session, studentNames }: { date: string; session?: SessionGroup; studentNames: Map<string, string> }) {
   const [expanded, setExpanded] = useState(false);
+  const accent = DAY_ACCENTS[new Date(date + 'T00:00:00').getDay()];
 
   if (!session) {
     return (
-      <div className="flex items-center gap-3 bg-white rounded-2xl border border-gray-100 shadow-sm px-3 py-3">
+      <div className={cn('relative flex items-center gap-3 bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm dark:shadow-none px-3 py-3 overflow-hidden')}>
+        <span className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl', accent.bar)} />
         <DateBadge date={date} />
-        <p className="flex-1 text-sm text-gray-400">No attendance taken</p>
-        <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+        <p className="flex-1 text-sm text-gray-400 dark:text-white/40">No attendance taken</p>
+        <ChevronRight className="w-4 h-4 text-gray-300 dark:text-white/20 shrink-0" />
       </div>
     );
   }
@@ -118,43 +131,44 @@ function DayCard({ date, session, studentNames }: { date: string; session?: Sess
   const time = fmtTime(session.markedAt);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="relative bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm dark:shadow-none overflow-hidden">
+      <span className={cn('absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl z-10', accent.bar)} />
       <button type="button" onClick={() => setExpanded((p) => !p)} className="w-full text-left flex items-center gap-3 px-3 py-3">
         <DateBadge date={date} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-gray-900 truncate">Class {session.cls} – {session.section}</p>
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">Class {session.cls} – {session.section}</p>
           {time && (
-            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-white/50 flex items-center gap-1 mt-0.5">
               <Clock className="w-3 h-3 text-[#A855F7]" /> {time}
             </p>
           )}
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" /> {session.presentCount} Present
             </span>
-            <span className="text-xs font-semibold text-red-500 flex items-center gap-1">
+            <span className="text-xs font-semibold text-red-500 dark:text-red-400 flex items-center gap-1">
               <XCircle className="w-3.5 h-3.5" /> {session.absentCount} Absent
             </span>
           </div>
         </div>
-        <ChevronRight className={cn('w-4 h-4 text-gray-300 shrink-0 transition-transform', expanded && 'rotate-90')} />
+        <ChevronRight className={cn('w-4 h-4 text-gray-300 dark:text-white/20 shrink-0 transition-transform', expanded && 'rotate-90')} />
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-100">
+        <div className="border-t border-gray-100 dark:border-white/10">
           {session.records.map((r, i) => {
             const statusMap: Record<string, { label: string; cls: string }> = {
-              present:        { label: 'P',  cls: 'bg-emerald-100 text-emerald-700' },
-              absent:         { label: 'A',  cls: 'bg-red-100 text-red-600'        },
-              late:           { label: 'L',  cls: 'bg-amber-100 text-amber-700'    },
-              half_day:       { label: 'H',  cls: 'bg-orange-100 text-orange-700'  },
-              leave_approved: { label: 'LV', cls: 'bg-blue-100 text-blue-700'      },
+              present:        { label: 'P',  cls: 'bg-emerald-100 dark:bg-emerald-400/15 text-emerald-700 dark:text-emerald-300' },
+              absent:         { label: 'A',  cls: 'bg-red-100 dark:bg-red-400/15 text-red-600 dark:text-red-300'        },
+              late:           { label: 'L',  cls: 'bg-amber-100 dark:bg-amber-400/15 text-amber-700 dark:text-amber-300'    },
+              half_day:       { label: 'H',  cls: 'bg-orange-100 dark:bg-orange-400/15 text-orange-700 dark:text-orange-300'  },
+              leave_approved: { label: 'LV', cls: 'bg-blue-100 dark:bg-blue-400/15 text-blue-700 dark:text-blue-300'      },
             };
-            const s = statusMap[r.status] ?? { label: r.status, cls: 'bg-gray-100 text-gray-600' };
+            const s = statusMap[r.status] ?? { label: r.status, cls: 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60' };
             return (
-              <div key={r._id} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0">
-                <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
-                <p className="flex-1 text-sm text-gray-700 truncate">
+              <div key={r._id} className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 dark:border-white/5 last:border-0">
+                <span className="text-xs text-gray-400 dark:text-white/30 w-5 text-right shrink-0">{i + 1}</span>
+                <p className="flex-1 text-sm text-gray-700 dark:text-white/80 truncate">
                   {studentNames.get(r.studentId) ?? r.studentId}
                 </p>
                 <span className={cn('text-xs font-bold px-2 py-0.5 rounded-lg', s.cls)}>{s.label}</span>
@@ -275,12 +289,12 @@ export function TeacherHistoryPage() {
     : `${new Date(dateFrom + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} – ${new Date(dateTo + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0C12]">
       {/* Header — unchanged */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-6 pb-4">
+      <div className="bg-white dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/10 px-4 pt-6 pb-4">
         <button
           onClick={() => navigate('/teacher')}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-3 -ml-1 p-1"
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors mb-3 -ml-1 p-1"
           type="button"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -288,8 +302,8 @@ export function TeacherHistoryPage() {
         </button>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Attendance History</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Review past attendance sessions</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Attendance History</h1>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-0.5">Review past attendance sessions</p>
           </div>
           {/* The source PNG is a transparent canvas where the clipboard+clock
               glyph only fills roughly the middle third of the square (large
@@ -310,19 +324,19 @@ export function TeacherHistoryPage() {
         </div>
       </div>
 
-      {/* "Last 7 Days" / Calendar row — replaces the old Sessions/Records stat
-          cards. Tapping either the "Calendar" pill or the funnel icon opens
-          the same filter panel (search / class / date range) that used to
-          sit inline here; it's tucked behind a toggle now to match the
-          reference design's clean, uncluttered look. */}
+      {/* "Last 7 Days" / Filter row — the standalone "Filter by Date" button
+          that used to float above the bottom nav was redundant with this
+          toggle (both opened the same panel), so it's gone; this icon is now
+          the only way in, in the same spot the "Calendar" pill used to be. */}
       <div className="px-4 pt-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-gray-900">{rangeLabel}</h2>
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">{rangeLabel}</h2>
         <button
           type="button"
           onClick={() => setFilterOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm font-bold text-[#5B21B6]"
+          aria-label="Filter by date"
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 transition-colors"
         >
-          <CalendarDays className="w-4 h-4" /> Calendar
+          <Filter className="w-4 h-4" />
         </button>
       </div>
 
@@ -330,27 +344,27 @@ export function TeacherHistoryPage() {
         <div className="px-4 pt-3 space-y-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-white/30 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by class or date…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="w-full h-11 pl-10 pr-4 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
             />
           </div>
 
           {/* Class filter */}
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-white/30 pointer-events-none" />
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full h-11 pl-9 pr-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] appearance-none transition-colors"
+              className="w-full h-11 pl-9 pr-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] appearance-none transition-colors"
             >
-              <option value="">All My Classes</option>
+              <option value="" className="dark:bg-[#181B26]">All My Classes</option>
               {classPairs.map((p) => (
-                <option key={`${p.cls}||${p.section}`} value={`${p.cls}||${p.section}`}>
+                <option key={`${p.cls}||${p.section}`} value={`${p.cls}||${p.section}`} className="dark:bg-[#181B26]">
                   {p.label}
                 </option>
               ))}
@@ -364,41 +378,39 @@ export function TeacherHistoryPage() {
               value={dateFrom}
               max={dateTo}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
             />
-            <span className="text-gray-400 text-sm shrink-0">to</span>
+            <span className="text-gray-400 dark:text-white/30 text-sm shrink-0">to</span>
             <input
               type="date"
               value={dateTo}
               min={dateFrom}
               max={todayStr()}
               onChange={(e) => setDateTo(e.target.value)}
-              className="flex-1 h-11 px-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
             />
           </div>
         </div>
       )}
 
-      {/* Day list — pb-40 clears both fixed elements stacked at the bottom
-          (the Filter by Date button at bottom-16 plus its own height, and
-          the teacher portal's persistent nav bar below that). */}
-      <div className="px-4 pt-4 pb-40 space-y-3">
+      {/* Day list — pb-24 clears the teacher portal's persistent bottom nav. */}
+      <div className="px-4 pt-4 pb-24 space-y-3">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 h-20 animate-pulse" />
+            <div key={i} className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/10 h-20 animate-pulse" />
           ))
         ) : isError ? (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm font-semibold text-red-700">Failed to load history</p>
+          <div className="bg-red-50 dark:bg-red-400/10 border border-red-100 dark:border-red-400/20 rounded-2xl p-5 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+            <p className="text-sm font-semibold text-red-700 dark:text-red-300">Failed to load history</p>
           </div>
         ) : dayEntries.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <ClipboardList className="w-7 h-7 text-gray-400" />
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-gray-100 dark:border-white/10 p-10 text-center">
+            <div className="w-14 h-14 bg-gray-100 dark:bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ClipboardList className="w-7 h-7 text-gray-400 dark:text-white/40" />
             </div>
-            <p className="text-base font-semibold text-gray-700">No attendance records found</p>
-            <p className="text-sm text-gray-400 mt-1">Try adjusting the date range or class filter.</p>
+            <p className="text-base font-semibold text-gray-700 dark:text-white/80">No attendance records found</p>
+            <p className="text-sm text-gray-400 dark:text-white/40 mt-1">Try adjusting the date range or class filter.</p>
           </div>
         ) : (
           dayEntries.map((entry, i) => (
@@ -412,20 +424,6 @@ export function TeacherHistoryPage() {
         )}
       </div>
 
-      {/* Fixed "Filter by Date" button — same toggle as the Calendar pill above.
-          Sits flush on top of the teacher portal's persistent bottom nav
-          (TeacherLayout.tsx, fixed bottom-0 with a 64px-tall / h-16 bar) —
-          bottom-16 butts it directly against the nav instead of leaving a
-          gap that reads as the button floating detached above everything. */}
-      <div className="fixed bottom-16 inset-x-3 z-30">
-        <button
-          type="button"
-          onClick={() => setFilterOpen((v) => !v)}
-          className="w-full h-12 rounded-2xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold flex items-center justify-center gap-2 shadow-[0_8px_24px_rgba(91,33,182,0.35)] transition-colors"
-        >
-          <CalendarDays className="w-4 h-4" /> Filter by Date
-        </button>
-      </div>
     </div>
   );
 }

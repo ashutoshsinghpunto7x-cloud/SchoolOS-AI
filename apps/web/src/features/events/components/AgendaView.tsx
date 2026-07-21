@@ -48,9 +48,9 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
   if (!events.length) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
-        <CalendarDays className="w-12 h-12 text-gray-200" />
-        <p className="text-gray-400 text-sm font-medium">No events found</p>
-        <p className="text-gray-300 text-xs">Try adjusting your filters or adding a new event</p>
+        <CalendarDays className="w-12 h-12 text-gray-200 dark:text-white/15" />
+        <p className="text-gray-400 dark:text-white/40 text-sm font-medium">No events found</p>
+        <p className="text-gray-300 dark:text-white/25 text-xs">Try adjusting your filters or adding a new event</p>
       </div>
     );
   }
@@ -66,8 +66,8 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
         <div key={dateStr}>
           {/* Day header */}
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-sm font-bold text-gray-700">{getDayLabel(dateStr)}</span>
-            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-sm font-bold text-gray-700 dark:text-white/70">{getDayLabel(dateStr)}</span>
+            <div className="flex-1 h-px bg-gray-100 dark:bg-white/10" />
           </div>
 
           {/* Events for this day */}
@@ -80,7 +80,7 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
                 <div
                   key={event._id}
                   onClick={() => navigate(`/calendar/${event._id}`)}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm
+                  className="bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm
                              hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
                              p-4 cursor-pointer flex gap-4"
                 >
@@ -88,7 +88,7 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <h3 className="text-sm font-bold text-gray-900">{event.title}</h3>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">{event.title}</h3>
                       <div className="flex gap-2 flex-wrap">
                         <EventTypeBadge type={event.eventType} />
                         <EventStatusBadge status={event.status} />
@@ -96,7 +96,7 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
                     </div>
 
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
+                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-white/50">
                         <Clock className="w-3.5 h-3.5" />
                         {isMultiDay
                           ? `${fmtDate(event.startDate)} – ${fmtDate(event.endDate)}`
@@ -107,7 +107,7 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
                           : 'All day'}
                       </span>
                       {event.location && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500">
+                        <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-white/50">
                           <MapPin className="w-3.5 h-3.5" />
                           {event.location}
                         </span>
@@ -115,7 +115,7 @@ export const AgendaView = ({ events }: AgendaViewProps) => {
                     </div>
 
                     {event.description && (
-                      <p className="text-xs text-gray-400 mt-1.5 line-clamp-2">{event.description}</p>
+                      <p className="text-xs text-gray-400 dark:text-white/40 mt-1.5 line-clamp-2">{event.description}</p>
                     )}
                   </div>
                 </div>

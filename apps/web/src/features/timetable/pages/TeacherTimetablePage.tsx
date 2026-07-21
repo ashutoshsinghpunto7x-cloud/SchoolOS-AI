@@ -23,7 +23,7 @@ export const TeacherTimetablePage = () => {
   }
 
   return (
-    <div className="px-6 py-6 max-w-screen-xl mx-auto flex flex-col gap-5">
+    <div className="px-6 py-6 w-full flex flex-col gap-5">
       <button
         type="button"
         onClick={() => navigate(-1)}
@@ -66,7 +66,7 @@ export const TeacherTimetablePage = () => {
           )}
 
           {selected && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="shrink-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold text-gray-800">

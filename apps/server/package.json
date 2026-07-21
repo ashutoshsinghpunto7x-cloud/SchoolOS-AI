@@ -10,7 +10,8 @@
     "seed:teachers": "tsx src/scripts/seed-teachers.ts",
     "seed:reset-students": "tsx src/scripts/reset-and-seed-students.ts",
     "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",
-    "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts"
+    "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts",
+    "migrate:backfill-teacher-employees": "tsx src/scripts/backfill-teacher-employees.ts"
   },
   "dependencies": {
     "@schoolos/types": "*",

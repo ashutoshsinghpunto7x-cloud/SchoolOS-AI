@@ -51,28 +51,28 @@ export const WeekView = ({ weekStart, events, onWeekChange, onEventClick }: Week
   })();
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
         <button
           type="button"
           onClick={() => onWeekChange(-1)}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-base font-bold text-gray-900">{weekLabel}</h2>
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">{weekLabel}</h2>
         <button
           type="button"
           onClick={() => onWeekChange(1)}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 dark:text-white/50 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
       {/* Columns */}
-      <div className="grid grid-cols-7 divide-x divide-gray-100">
+      <div className="grid grid-cols-7 divide-x divide-gray-100 dark:divide-white/10">
         {days.map((day) => {
           const dateStr   = toDateStr(day);
           const dayEvents = getEventsForDay(events, dateStr);
@@ -80,17 +80,17 @@ export const WeekView = ({ weekStart, events, onWeekChange, onEventClick }: Week
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
           return (
-            <div key={dateStr} className={cn('flex flex-col min-h-[240px]', isWeekend && 'bg-gray-50/50')}>
+            <div key={dateStr} className={cn('flex flex-col min-h-[240px]', isWeekend && 'bg-gray-50/50 dark:bg-white/[0.02]')}>
               {/* Day header */}
-              <div className="py-2 text-center border-b border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+              <div className="py-2 text-center border-b border-gray-100 dark:border-white/10">
+                <p className="text-xs font-bold text-gray-400 dark:text-white/40 uppercase tracking-wide">
                   {DAY_NAMES[day.getDay()]}
                 </p>
                 <div
                   className={cn(
                     'w-7 h-7 mx-auto mt-1 flex items-center justify-center rounded-full',
                     'text-sm font-bold',
-                    isToday ? 'bg-[#5B21B6] text-white' : (isWeekend ? 'text-gray-400' : 'text-gray-800'),
+                    isToday ? 'bg-[#5B21B6] text-white' : (isWeekend ? 'text-gray-400 dark:text-white/30' : 'text-gray-800 dark:text-white/80'),
                   )}
                 >
                   {day.getDate()}
@@ -100,7 +100,7 @@ export const WeekView = ({ weekStart, events, onWeekChange, onEventClick }: Week
               {/* Events */}
               <div className="flex flex-col gap-1 p-1.5 flex-1">
                 {dayEvents.length === 0 && (
-                  <p className="text-[10px] text-gray-300 text-center mt-4">—</p>
+                  <p className="text-[10px] text-gray-300 dark:text-white/20 text-center mt-4">—</p>
                 )}
                 {dayEvents.map((e) => (
                   <button

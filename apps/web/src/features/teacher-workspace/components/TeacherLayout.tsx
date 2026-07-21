@@ -33,7 +33,7 @@ const NAV: NavEntry[] = [
   { to: '/teacher/classes',   image: classesIcon,   crop: { w: 43, h: 65, left: -10, top: -17 }, label: 'Classes',   end: false },
   { to: '/teacher/history',   image: historyIcon,   crop: { w: 51, h: 76, left: -13, top: -24 }, label: 'History',   end: false },
   { to: '/teacher/timetable', image: timetableIcon, crop: { w: 36, h: 36, left: -5, top: -4 },    label: 'Timetable', end: false },
-  { to: '/messages',          image: messagesIcon,  crop: { w: 48, h: 48, left: -12, top: -10 }, label: 'Messages',  end: false },
+  { to: '/teacher/messages',  image: messagesIcon,  crop: { w: 48, h: 48, left: -12, top: -10 }, label: 'Messages',  end: false },
 ];
 
 export function TeacherLayout() {

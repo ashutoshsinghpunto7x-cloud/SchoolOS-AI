@@ -23,6 +23,33 @@
   --brand-pink: #DB2777;
 }
 
+/* ── Timetable module tokens ──────────────────────────────────────────────────
+   Flips with the shared app theme (`.dark` on the teacher-theme-root wrapper —
+   see TeacherThemeContext.tsx). Every timetable component reads these instead
+   of hardcoding hex, so the module now follows light/dark like the rest of
+   the app. Brand/status colors (purple/pink/success/warning/danger) are not
+   themed here — they already work at low alpha on either background. */
+:root {
+  --tt-bg: #F5F5F7;
+  --tt-bg-secondary: #FFFFFF;
+  --tt-card: #FFFFFF;
+  --tt-border: rgba(15, 23, 42, 0.10);
+  --tt-hover: rgba(15, 23, 42, 0.04);
+  --tt-text-primary: #14161F;
+  --tt-text-secondary: #5B6072;
+  --tt-text-muted: #9296A6;
+}
+.dark {
+  --tt-bg: #0B0C12;
+  --tt-bg-secondary: #12141D;
+  --tt-card: #181B26;
+  --tt-border: rgba(255, 255, 255, 0.08);
+  --tt-hover: rgba(255, 255, 255, 0.06);
+  --tt-text-primary: #FFFFFF;
+  --tt-text-secondary: #A8AFBF;
+  --tt-text-muted: #6D7485;
+}
+
 /* ── Design tokens (HSL channel values for Tailwind utilities) ──────────────── */
 @layer base {
   :root {

@@ -2646,6 +2646,11 @@ export interface ScanQrPayload {
   device?: string;
 }
 
+export interface ManualMarkPayload {
+  employeeId: string;
+  status: StaffAttendanceStatus;
+}
+
 // ── Payroll (Smart QR Attendance & Payroll — Phase 2) ───────────────────────────
 
 export type PayrollStatus = 'draft' | 'generated' | 'paid';

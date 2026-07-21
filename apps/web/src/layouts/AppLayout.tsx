@@ -21,13 +21,13 @@ function AppLayoutInner() {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
-  const isPrincipal = user?.role === 'principal';
 
-  // Read teacher theme — safe because this component is always wrapped in
-  // TeacherThemeProvider (see AppLayout below), but useTeacherTheme returns a
-  // safe default for non-teacher roles so it never throws.
-  const { theme: teacherTheme } = useTeacherTheme();
-  const isTeacherDark = isTeacher && teacherTheme === 'dark';
+  // Read the shared theme — safe because this component is always wrapped in
+  // TeacherThemeProvider (see AppLayout below); it applies the `.dark` class
+  // app-wide (not just to teacher pages) so Principal's own theme toggle in
+  // Settings also flips it here.
+  const { theme } = useTeacherTheme();
+  const isDark = theme === 'dark';
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -46,11 +46,11 @@ function AppLayoutInner() {
   return (
     <div className={cn(
       "flex h-screen overflow-hidden",
-      isAccountant || isPrincipal ? "bg-white" : (
-        isTeacherDark
-          ? "teacher-aurora-bg"
-          : "bg-[#F5F5F7]"
-      )
+      isAccountant
+        ? "bg-white"
+        : isDark
+          ? (isTeacher ? "teacher-aurora-bg" : "bg-[#0B0C12]")
+          : (isTeacher ? "bg-[#F5F5F7]" : "bg-white")
     )}>
       <NotificationNudge />
       <ReminderWatcher />

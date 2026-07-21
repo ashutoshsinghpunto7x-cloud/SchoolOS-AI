@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, BookOpen, ArrowUpRight, AlertCircle, CalendarCheck2 } from 'lucide-react';
+import { ArrowLeft, BookOpen, ArrowUpRight, AlertCircle, CalendarCheck2 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
-import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
+import { useTeacherTheme } from '../context/TeacherThemeContext';
 import { cn } from '@/lib/utils';
 import bagIllustration from '@/assets/illustrations/teacher/bag.png';
 
@@ -29,9 +29,6 @@ function ClassCard({ entry, accent, index, onPress }: {
   index: number;
   onPress: () => void;
 }) {
-  const { data } = useStudentsPaginated({ class: entry.cls, section: entry.section, status: 'active', limit: 1 });
-  const studentCount = data?.meta?.total ?? 0;
-
   return (
     <motion.button
       type="button"
@@ -41,7 +38,7 @@ function ClassCard({ entry, accent, index, onPress }: {
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full text-left relative flex items-center gap-4 bg-white rounded-[24px] shadow-[0_8px_24px_rgba(17,12,46,0.06)] hover:shadow-[0_16px_36px_rgba(17,12,46,0.1)] transition-shadow duration-300 overflow-hidden pl-5 pr-4 py-5"
+      className="w-full text-left relative flex items-center gap-4 bg-white dark:bg-[#150C29] rounded-[24px] shadow-[0_8px_24px_rgba(17,12,46,0.06)] dark:shadow-none dark:border dark:border-white/10 hover:shadow-[0_16px_36px_rgba(17,12,46,0.1)] dark:hover:border-[#A855F7]/30 transition-shadow duration-300 overflow-hidden pl-5 pr-4 py-5"
     >
       {/* Left accent strip */}
       <span className={cn('absolute left-0 top-0 bottom-0 w-1.5 rounded-l-[24px]', accent.bar)} />
@@ -51,34 +48,23 @@ function ClassCard({ entry, accent, index, onPress }: {
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="text-[19px] font-bold text-gray-900 tracking-tight truncate">
+        <h3 className="text-[19px] font-bold text-gray-900 dark:text-white tracking-tight truncate">
           Class {entry.cls} – {entry.section}
         </h3>
-        <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
-          <span className="flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" /> {studentCount} Students
-          </span>
-          <span className="flex items-center gap-1">
-            <BookOpen className="w-3.5 h-3.5" /> {entry.subjectCount} Subject{entry.subjectCount === 1 ? '' : 's'}
-          </span>
-        </div>
-        <span className={cn('inline-block mt-2 text-[11px] font-bold px-2.5 py-1 rounded-full', accent.badge)}>
-          {entry.isClassTeacher ? 'Class Teacher' : `Section ${entry.section}`}
-        </span>
       </div>
 
       <motion.span
         whileHover={{ rotate: -45 }}
-        className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0"
+        className="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/10 flex items-center justify-center shrink-0"
       >
-        <ArrowUpRight className="w-4 h-4 text-gray-500" />
+        <ArrowUpRight className="w-4 h-4 text-gray-500 dark:text-white/50" />
       </motion.span>
     </motion.button>
   );
 }
 
 function SkeletonCard() {
-  return <div className="h-28 rounded-[24px] bg-white shadow-sm animate-pulse" />;
+  return <div className="h-28 rounded-[24px] bg-white dark:bg-[#150C29] shadow-sm dark:shadow-none animate-pulse" />;
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -86,6 +72,8 @@ function SkeletonCard() {
 export function TeacherClassesPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useTeacherWorkspace();
+  const { theme } = useTeacherTheme();
+  const isDark = theme === 'dark';
 
   const classes = useMemo<ClassEntry[]>(() => {
     if (!data) return [];
@@ -126,12 +114,12 @@ export function TeacherClassesPage() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF]">
+    <div className="min-h-screen bg-[#FAFBFF] dark:bg-[#0B0518]">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         {/* Back + title */}
         <button
           onClick={() => navigate('/teacher')}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-4 -ml-1 p-1"
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors mb-4 -ml-1 p-1"
           type="button"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -146,24 +134,31 @@ export function TeacherClassesPage() {
 
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-[32px] sm:text-[44px] font-bold text-gray-900 tracking-tight leading-none">My Classes</h1>
-              <p className="text-base sm:text-lg text-gray-500 mt-2">
+              <h1 className="text-[32px] sm:text-[44px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">My Classes</h1>
+              <p className="text-base sm:text-lg text-gray-500 dark:text-white/50 mt-2">
                 {classes.length} class{classes.length !== 1 ? 'es' : ''} assigned to you
               </p>
             </div>
             {/* mix-blend-multiply erases the illustration's faint square
                 background (near-white) against this section's light page
                 background, so it reads as a floating icon instead of a
-                tile with a visible edge. */}
-            <motion.img
+                tile with a visible edge. That trick only works against a
+                light backdrop — against the dark page background it's wrapped
+                in an actual light rounded tile instead, since "lighten" blend
+                modes just force the white backdrop back through. */}
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, rotate: -4 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              src={bagIllustration}
-              alt=""
-              className="w-32 sm:w-44 h-auto shrink-0 select-none pointer-events-none mix-blend-multiply"
-              draggable={false}
-            />
+              className="shrink-0 dark:bg-white dark:rounded-[24px] dark:p-2 dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+            >
+              <img
+                src={bagIllustration}
+                alt=""
+                className="w-32 sm:w-44 h-auto select-none pointer-events-none mix-blend-multiply dark:mix-blend-normal"
+                draggable={false}
+              />
+            </motion.div>
           </div>
         </div>
 
@@ -176,20 +171,20 @@ export function TeacherClassesPage() {
               <SkeletonCard />
             </>
           ) : isError ? (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div className="bg-red-50 dark:bg-red-400/10 border border-red-100 dark:border-red-400/20 rounded-2xl p-5 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-red-700">Failed to load classes</p>
-                <p className="text-xs text-red-500 mt-0.5">Please refresh the page and try again.</p>
+                <p className="text-sm font-semibold text-red-700 dark:text-red-300">Failed to load classes</p>
+                <p className="text-xs text-red-500 dark:text-red-400/80 mt-0.5">Please refresh the page and try again.</p>
               </div>
             </div>
           ) : classes.length === 0 ? (
-            <div className="bg-white rounded-[24px] border border-gray-100 p-10 text-center">
-              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="w-7 h-7 text-gray-400" />
+            <div className="bg-white dark:bg-[#150C29] rounded-[24px] border border-gray-100 dark:border-white/10 p-10 text-center">
+              <div className="w-14 h-14 bg-gray-100 dark:bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="w-7 h-7 text-gray-400 dark:text-white/40" />
               </div>
-              <p className="text-base font-semibold text-gray-700">No classes assigned</p>
-              <p className="text-sm text-gray-400 mt-1">Your principal hasn't assigned you to any classes yet.</p>
+              <p className="text-base font-semibold text-gray-700 dark:text-white/80">No classes assigned</p>
+              <p className="text-sm text-gray-400 dark:text-white/40 mt-1">Your principal hasn't assigned you to any classes yet.</p>
             </div>
           ) : (
             classes.map((entry, i) => (
@@ -209,18 +204,22 @@ export function TeacherClassesPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="relative mt-6 rounded-[24px] p-6 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #F3EEFF 0%, #EFE9FF 100%)' }}
+          className="relative mt-6 rounded-[24px] p-6 overflow-hidden dark:border dark:border-white/10"
+          style={{
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(109,74,255,0.16) 0%, rgba(76,29,149,0.20) 100%)'
+              : 'linear-gradient(135deg, #F3EEFF 0%, #EFE9FF 100%)',
+          }}
         >
-          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/40 blur-xl pointer-events-none" />
+          <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/40 dark:bg-white/5 blur-xl pointer-events-none" />
           <div className="absolute right-10 bottom-0 w-16 h-16 rounded-full bg-[#6D4AFF]/10 blur-lg pointer-events-none" />
           <div className="relative flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm">
-              <CalendarCheck2 className="w-6 h-6 text-[#6D4AFF]" />
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center shrink-0 shadow-sm dark:shadow-none">
+              <CalendarCheck2 className="w-6 h-6 text-[#6D4AFF] dark:text-violet-300" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Stay organized</h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Stay organized</h3>
+              <p className="text-sm text-gray-500 dark:text-white/50 mt-1">
                 View class details, manage students, take attendance and more.
               </p>
             </div>

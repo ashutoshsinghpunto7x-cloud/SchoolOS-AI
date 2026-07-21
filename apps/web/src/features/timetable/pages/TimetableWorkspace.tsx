@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Loader2, CalendarClock, AlertTriangle, Settings } from 'lucide-react';
@@ -11,7 +11,7 @@ import type { TimetableListOptions, TimetableStatus } from '@schoolos/types';
 const CLASSES = ['Nursery','LKG','UKG','1','2','3','4','5','6','7','8','9','10','11','12'];
 const STATUSES: TimetableStatus[] = ['draft', 'published', 'archived'];
 
-const selectCls = `h-10 pl-3 pr-8 rounded-xl border border-white/[0.08] bg-[#181B26] text-sm text-white
+const selectCls = `h-10 pl-3 pr-8 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-card)] text-sm text-[var(--tt-text-primary)]
   focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25 cursor-pointer`;
 
 export const TimetableWorkspace = () => {
@@ -32,21 +32,21 @@ export const TimetableWorkspace = () => {
   const totalPages = data?.meta?.totalPages ?? 1;
 
   return (
-    <div className="min-h-screen bg-[#0B0C12] flex flex-col gap-6 px-6 py-6 max-w-screen-xl mx-auto">
+    <div className="min-h-screen w-full bg-[var(--tt-bg)] flex flex-col gap-6 px-6 py-6">
       {isPrincipal && <BackLink to="/principal" label="Principal Dashboard" />}
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-white">Timetable</h1>
-          <p className="text-sm text-[#A8AFBF] mt-0.5">Manage class schedules and teacher assignments</p>
+          <h1 className="text-2xl font-bold text-[var(--tt-text-primary)]">Timetable</h1>
+          <p className="text-sm text-[var(--tt-text-secondary)] mt-0.5">Manage class schedules and teacher assignments</p>
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button
               type="button"
               onClick={() => navigate('/timetable/periods')}
-              className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-white/[0.08] bg-white/[0.03]
-                         text-sm font-semibold text-[#A8AFBF] hover:bg-white/[0.06] transition-colors"
+              className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-hover)]
+                         text-sm font-semibold text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] transition-colors"
             >
               <Settings className="w-4 h-4" />
               Period Setup
@@ -55,8 +55,8 @@ export const TimetableWorkspace = () => {
           <button
             type="button"
             onClick={() => navigate('/timetable/substitutes')}
-            className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-white/[0.08] bg-white/[0.03]
-                       text-sm font-semibold text-[#A8AFBF] hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-hover)]
+                       text-sm font-semibold text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] transition-colors"
           >
             <CalendarClock className="w-4 h-4" />
             Substitutes
@@ -114,7 +114,7 @@ export const TimetableWorkspace = () => {
           value={filters.academicYear ?? ''}
           onChange={(e) => { setFilters((f) => ({ ...f, academicYear: e.target.value || undefined })); setPage(1); }}
           placeholder="Academic Year (e.g. 2024-25)"
-          className="h-10 px-3 rounded-xl border border-white/[0.08] bg-[#181B26] text-sm text-white placeholder:text-[#6D7485]
+          className="h-10 px-3 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-card)] text-sm text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)]
                      focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25 w-52"
         />
       </div>
@@ -126,8 +126,8 @@ export const TimetableWorkspace = () => {
         </div>
       ) : timetables.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <CalendarClock className="w-12 h-12 text-[#6D7485]" />
-          <p className="text-base font-semibold text-[#A8AFBF]">No timetables found</p>
+          <CalendarClock className="w-12 h-12 text-[var(--tt-text-muted)]" />
+          <p className="text-base font-semibold text-[var(--tt-text-secondary)]">No timetables found</p>
           {isAdmin && (
             <button
               type="button"
@@ -149,20 +149,20 @@ export const TimetableWorkspace = () => {
                 onClick={() => navigate(`/timetable/${tt._id}`)}
                 whileHover={{ y: -3 }}
                 transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="text-left bg-[#181B26] rounded-[20px] border border-white/[0.08] shadow-sm
+                className="text-left bg-[var(--tt-card)] rounded-[20px] border border-[var(--tt-border)] shadow-sm
                            hover:border-[#7C5CFF]/30 transition-colors duration-200 p-5"
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div>
-                    <h3 className="text-lg font-bold text-white">
+                    <h3 className="text-lg font-bold text-[var(--tt-text-primary)]">
                       Class {tt.class}-{tt.section}
                     </h3>
-                    <p className="text-sm text-[#A8AFBF] mt-0.5">{tt.academicYear}{tt.term ? ` · ${tt.term}` : ''}</p>
+                    <p className="text-sm text-[var(--tt-text-secondary)] mt-0.5">{tt.academicYear}{tt.term ? ` · ${tt.term}` : ''}</p>
                   </div>
                   <TimetableStatusBadge status={tt.status} />
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-[#6D7485]">{tt.entries.length} entries</p>
+                  <p className="text-xs text-[var(--tt-text-muted)]">{tt.entries.length} entries</p>
                   {hasConflict && (
                     <div className="flex items-center gap-1 text-xs font-semibold text-[#FF5B6A]">
                       <AlertTriangle className="w-3.5 h-3.5" />
@@ -183,18 +183,18 @@ export const TimetableWorkspace = () => {
             type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="h-9 px-4 rounded-xl border border-white/[0.08] text-sm font-semibold
-                       text-[#A8AFBF] hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+            className="h-9 px-4 rounded-xl border border-[var(--tt-border)] text-sm font-semibold
+                       text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] disabled:opacity-40 transition-colors"
           >
             Previous
           </button>
-          <span className="text-sm text-[#6D7485]">Page {page} of {totalPages}</span>
+          <span className="text-sm text-[var(--tt-text-muted)]">Page {page} of {totalPages}</span>
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="h-9 px-4 rounded-xl border border-white/[0.08] text-sm font-semibold
-                       text-[#A8AFBF] hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+            className="h-9 px-4 rounded-xl border border-[var(--tt-border)] text-sm font-semibold
+                       text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] disabled:opacity-40 transition-colors"
           >
             Next
           </button>

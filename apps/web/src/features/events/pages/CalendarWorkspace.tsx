@@ -83,15 +83,15 @@ export const CalendarWorkspace = () => {
         <div className="flex items-start gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors shrink-0 mt-0.5"
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors shrink-0 mt-0.5"
             type="button"
             aria-label="Go back"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/70" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">School Calendar</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage events, holidays, and school activities</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">School Calendar</h1>
+            <p className="text-sm text-gray-500 dark:text-white/50 mt-1">Manage events, holidays, and school activities</p>
           </div>
         </div>
         {canCreate && (
@@ -108,7 +108,7 @@ export const CalendarWorkspace = () => {
       </div>
 
       {/* View switcher — Month / Week / Agenda. Year is navigable within the Month view itself. */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-5">
+      <div className="flex gap-1 bg-gray-100 dark:bg-white/5 p-1 rounded-xl w-fit mb-5">
         {VIEW_TABS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -117,8 +117,8 @@ export const CalendarWorkspace = () => {
             className={cn(
               'flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors',
               view === id
-                ? 'bg-white text-blue-700 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700',
+                ? 'bg-white dark:bg-white/10 text-blue-700 dark:text-violet-300 shadow-sm'
+                : 'text-gray-500 dark:text-white/50 hover:text-gray-700 dark:hover:text-white/80',
             )}
           >
             <Icon className="w-4 h-4" />
@@ -160,14 +160,14 @@ export const CalendarWorkspace = () => {
               {/* Day detail panel */}
               <div className="lg:w-72 flex-shrink-0">
                 {selectedDate ? (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                    <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  <div className="bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-4">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
                       {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
                         weekday: 'long', day: 'numeric', month: 'long',
                       })}
                     </h3>
                     {dayEvents.length === 0 ? (
-                      <p className="text-sm text-gray-400 italic">No events</p>
+                      <p className="text-sm text-gray-400 dark:text-white/40 italic">No events</p>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {dayEvents.map((e) => (
@@ -175,14 +175,14 @@ export const CalendarWorkspace = () => {
                             key={e._id}
                             type="button"
                             onClick={() => navigate(`/calendar/${e._id}`)}
-                            className="text-left w-full p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors"
+                            className="text-left w-full p-3 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-white/10 transition-colors"
                           >
-                            <p className="text-sm font-semibold text-gray-800">{e.title}</p>
+                            <p className="text-sm font-semibold text-gray-800 dark:text-white/90">{e.title}</p>
                             {e.location && (
-                              <p className="text-xs text-gray-500 mt-0.5">{e.location}</p>
+                              <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5">{e.location}</p>
                             )}
                             {!e.isAllDay && e.startTime && (
-                              <p className="text-xs text-gray-400 mt-0.5">
+                              <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">
                                 {e.startTime}{e.endTime ? ` – ${e.endTime}` : ''}
                               </p>
                             )}
@@ -192,8 +192,8 @@ export const CalendarWorkspace = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-center h-24">
-                    <p className="text-sm text-gray-400">Select a date to view events</p>
+                  <div className="bg-white dark:bg-white/[0.04] dark:backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-4 flex items-center justify-center h-24">
+                    <p className="text-sm text-gray-400 dark:text-white/40">Select a date to view events</p>
                   </div>
                 )}
               </div>

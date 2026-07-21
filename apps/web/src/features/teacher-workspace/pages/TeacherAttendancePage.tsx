@@ -27,6 +27,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 import { avatarColorFor } from '../utils/avatarColor';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 // ── Numeric counter tween — animates a number smoothly instead of snapping ────
 
@@ -68,27 +69,57 @@ function SummaryCard({
   const [particles, setParticles] = useState<{ id: number; angle: number; dist: number }[]>([]);
   const particleIdRef = useRef(0);
   const isPresent = type === 'present';
+  // Briefly rings the card when a "+1" flyer lands on it — mirrors the
+  // "counter box highlights" beat from the reference design.
+  const [highlighted, setHighlighted] = useState(false);
 
   useEffect(() => {
     if (burstToken === 0) return;
-    void controls.start({ scale: [1, 1.05, 1] }, { duration: 0.4, ease: [0.33, 1, 0.68, 1] });
+    // Kept small on purpose — the dark-theme glass card has a backdrop-blur
+    // that resamples on every scale change, so the same pulse reads as a much
+    // bigger "zoom" there than on the flat white card in light mode.
+    void controls.start({ scale: [1, 1.02, 1] }, { duration: 0.4, ease: [0.33, 1, 0.68, 1] });
     const next = Array.from({ length: 6 }, () => ({
       id: particleIdRef.current++,
       angle: Math.random() * 360,
       dist: 18 + Math.random() * 14,
     }));
     setParticles(next);
+    setHighlighted(true);
     const t = setTimeout(() => setParticles([]), 320);
-    return () => clearTimeout(t);
+    const ht = setTimeout(() => setHighlighted(false), 600);
+    return () => { clearTimeout(t); clearTimeout(ht); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [burstToken]);
+
+  // Applied as an inline style rather than Tailwind ring/shadow utilities —
+  // `.dark .teacher-glass-card` in globals.css sets its own fixed box-shadow
+  // via a compound selector that outranks any single-class utility, so a
+  // class-based glow silently loses the cascade in dark mode. An inline
+  // style always wins regardless of theme.
+  //
+  // Inset, not outset: the dark card's own background is a translucent,
+  // backdrop-blurred gradient (not opaque white like light mode), so an
+  // outward glow reads as a halo floating outside the barely-visible card
+  // edge instead of a ring hugging it. Drawing the ring inset keeps it flush
+  // with the card's actual border regardless of what shows through behind it.
+  const highlightShadow = highlighted
+    ? isPresent
+      ? '0 0 0 2px rgba(52,211,153,0.9), 0 0 18px rgba(16,185,129,0.45)'
+      : '0 0 0 2px rgba(248,113,113,0.9), 0 0 18px rgba(239,68,68,0.45)'
+    : undefined;
 
   return (
     <motion.div
       ref={cardRef}
       animate={controls}
+      style={{ boxShadow: highlightShadow, transition: 'box-shadow 300ms ease' }}
       className={cn(
-        'relative flex-1 rounded-[22px] p-4 flex items-center gap-3 border overflow-hidden bg-white teacher-glass-card shadow-sm',
+        // Deliberately not `teacher-glass-card` here — its translucent,
+        // backdrop-blurred fill made the highlight ring look detached from
+        // the card edge in dark mode. A solid dark background keeps this
+        // card's look identical to light mode, just recolored.
+        'relative flex-1 rounded-[22px] p-4 flex items-center gap-3 border overflow-hidden bg-white dark:bg-[#150C29] shadow-sm',
         isPresent ? 'border-emerald-100 dark:border-emerald-500/20' : 'border-red-100 dark:border-red-500/20',
       )}
     >
@@ -303,8 +334,8 @@ function CompactRow({
       className={cn(
         'w-full flex items-center px-4 py-3 gap-3 transition-colors duration-300',
         marked && 'bg-gray-50/60 dark:bg-white/[0.03]',
-        glowStatus === 'present' && 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-inset ring-emerald-300 dark:ring-emerald-400/40',
-        glowStatus === 'absent' && 'bg-red-50 dark:bg-red-500/10 ring-1 ring-inset ring-red-300 dark:ring-red-400/40',
+        glowStatus === 'present' && 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-inset ring-emerald-300 dark:ring-emerald-400/40 shadow-[0_0_16px_rgba(16,185,129,0.35)]',
+        glowStatus === 'absent' && 'bg-red-50 dark:bg-red-500/10 ring-1 ring-inset ring-red-300 dark:ring-red-400/40 shadow-[0_0_16px_rgba(239,68,68,0.35)]',
       )}
     >
       <button
@@ -584,6 +615,7 @@ export function TeacherAttendancePage() {
   // a teacher swiping through a class on their phone is exactly who's likely to
   // hit an accidental back-gesture and lose everything with no warning.
   const [dirty,     setDirty]     = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   // ── Mark-attendance micro-interactions ────────────────────────────────────
   // Row glow: briefly highlights the just-marked row green/red as it settles
@@ -711,8 +743,13 @@ export function TeacherAttendancePage() {
 
       spawnFlyer(status, originRect);
 
-      if (status === 'present') setPresentBurst((n) => n + 1);
-      else setAbsentBurst((n) => n + 1);
+      // Fire the counter's highlight/burst once the "+1" actually lands,
+      // matching the fly-then-glow beat from the reference design instead of
+      // pulsing the card before the flyer has even left the row.
+      setTimeout(() => {
+        if (status === 'present') setPresentBurst((n) => n + 1);
+        else setAbsentBurst((n) => n + 1);
+      }, originRect ? 420 : 0);
     }
   }
 
@@ -770,6 +807,8 @@ export function TeacherAttendancePage() {
       toast.error('Could not save attendance', {
         description: err instanceof Error ? err.message : 'Check your connection and try again.',
       });
+    } finally {
+      setShowSaveConfirm(false);
     }
   }
 
@@ -983,14 +1022,14 @@ export function TeacherAttendancePage() {
                 <span className="text-xs font-semibold text-gray-500 dark:text-white/50">Swipe</span>
                 <span
                   className={cn(
-                    'relative w-9 h-5 rounded-full transition-colors',
+                    'relative w-9 h-5 rounded-full transition-colors shrink-0',
                     swipeMode ? 'bg-[#A855F7]' : 'bg-gray-200 dark:bg-white/10',
                   )}
                 >
                   <span
                     className={cn(
-                      'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
-                      swipeMode ? 'translate-x-[18px]' : 'translate-x-0.5',
+                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform',
+                      swipeMode ? 'translate-x-4' : 'translate-x-0',
                     )}
                   />
                 </span>
@@ -1093,26 +1132,19 @@ export function TeacherAttendancePage() {
             <div className="h-[168px] lg:h-[140px]" aria-hidden="true" />
             <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-4 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5">
               {/* Save button — fills up like a liquid progress bar as students get marked */}
-              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 shadow-sm dark:shadow-none dark:border dark:border-white/10">
+              <div className="relative w-full h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-white/5 shadow-none dark:border dark:border-white/10">
                 {/* Liquid fill */}
                 <motion.div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-600 to-pink-500"
                   initial={false}
                   animate={{ width: `${completionPercent}%` }}
                   transition={{ type: 'spring', stiffness: 140, damping: 22 }}
-                >
-                  {/* Shimmering wave riding the leading edge of the fill */}
-                  <motion.div
-                    className="absolute inset-y-0 -right-8 w-16 bg-white/30 blur-md"
-                    animate={{ x: [0, 8, 0] }}
-                    transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                </motion.div>
+                />
 
                 {/* Clickable surface + base (unfilled) label */}
                 <button
                   type="button"
-                  onClick={handleSave}
+                  onClick={() => setShowSaveConfirm(true)}
                   disabled={isPending}
                   className="absolute inset-0 w-full h-full flex items-center justify-center gap-2 text-base font-bold text-gray-400 dark:text-white/30 disabled:opacity-60"
                 >
@@ -1147,6 +1179,23 @@ export function TeacherAttendancePage() {
               </div>
             </div>
             </>
+          )}
+
+          {showSaveConfirm && (
+            <ConfirmDialog
+              title="Submit Attendance?"
+              description={
+                unmarkedCount > 0
+                  ? `${unmarkedCount} student${unmarkedCount === 1 ? '' : 's'} ${unmarkedCount === 1 ? 'is' : 'are'} still unmarked. Would you like to submit the attendance now?`
+                  : 'Would you like to submit the attendance for this class?'
+              }
+              variant="warning"
+              confirmLabel="Yes, Submit"
+              cancelLabel="Cancel"
+              isLoading={isPending}
+              onConfirm={handleSave}
+              onCancel={() => setShowSaveConfirm(false)}
+            />
           )}
         </>
       )}

@@ -90,14 +90,14 @@ export const NotificationBell = () => {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-x-4 top-[68px] z-30 mx-auto flex max-h-[70vh] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#E8E8E8] bg-white shadow-[0_10px_30px_rgba(0,0,0,0.12)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[28rem] sm:w-80 sm:max-w-none sm:shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-bold text-gray-900">Notifications</p>
+        <div className="fixed inset-x-4 top-[68px] z-30 mx-auto flex max-h-[70vh] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-white dark:bg-[#150C29] shadow-[0_10px_30px_rgba(0,0,0,0.12)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[28rem] sm:w-80 sm:max-w-none sm:shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Notifications</p>
             {unreadCount > 0 && (
               <button
                 onClick={() => markAllRead.mutate()}
                 disabled={markAllRead.isPending}
-                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50"
                 type="button"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -109,12 +109,12 @@ export const NotificationBell = () => {
           <div className="overflow-y-auto flex-1">
             {isLoading ? (
               <div className="py-10 flex justify-center">
-                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400 dark:text-white/30" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-10 text-center px-4">
-                <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No notifications yet</p>
+                <Bell className="w-8 h-8 text-gray-200 dark:text-white/15 mx-auto mb-2" />
+                <p className="text-sm text-gray-400 dark:text-white/40">No notifications yet</p>
               </div>
             ) : (
               notifications.map((n) => (
@@ -122,26 +122,26 @@ export const NotificationBell = () => {
                   key={n._id}
                   onClick={() => handleNotificationClick(n)}
                   className={cn(
-                    'w-full text-left px-4 py-3 border-b border-gray-50 last:border-0 flex gap-3 transition-colors hover:bg-gray-50',
-                    !n.isRead && 'bg-blue-50/40',
+                    'w-full text-left px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0 flex gap-3 transition-colors hover:bg-gray-50 dark:hover:bg-white/5',
+                    !n.isRead && 'bg-blue-50/40 dark:bg-blue-400/10',
                   )}
                   type="button"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <NotificationIcon type={n.type} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-gray-900 leading-snug">{n.title}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{n.title}</p>
                       {!n.isRead && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />}
                     </div>
                     {n.priority === 'high' && (
-                      <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-wide">
+                      <span className="inline-flex items-center mt-1 px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-400/10 text-red-600 dark:text-red-300 text-[10px] font-bold uppercase tracking-wide">
                         Urgent
                       </span>
                     )}
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.body}</p>
-                    <p className="text-[11px] text-gray-400 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-white/50 mt-0.5 line-clamp-2">{n.body}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-white/30 mt-1">
                       {n.senderName} · {relativeTime(n.createdAt)}
                     </p>
                   </div>
@@ -155,7 +155,10 @@ export const NotificationBell = () => {
       {openLeaveRequestId && (
         <LeaveRequestReviewModal
           leaveRequestId={openLeaveRequestId}
-          onClose={() => setOpenLeaveRequestId(null)}
+          // Reopen the notification panel on close instead of dropping the
+          // teacher back on the bare page — closing this detail view should
+          // feel like going "back" to the list it was opened from.
+          onClose={() => { setOpenLeaveRequestId(null); setIsOpen(true); }}
         />
       )}
     </div>

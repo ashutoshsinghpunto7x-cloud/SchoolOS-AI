@@ -182,7 +182,7 @@ function TodayClassCard({
             {cls.startTime} - {cls.endTime}
           </p>
           {isNow && (
-            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 px-1.5 py-0.5 rounded-full uppercase tracking-wide">
               Now
             </span>
           )}
@@ -229,26 +229,20 @@ function TodayClassCard({
           it can't lead anywhere the teacher is authorized to save. */}
       <div className="flex items-center gap-2 shrink-0">
         {isMarked ? (
-          <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 px-2.5 py-1 rounded-full">
             {pct}%
           </span>
         ) : isNow && cls.canMarkAttendance ? (
-          <span className="flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/15 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Pending
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-xs font-bold text-[#5B21B6] bg-[#A855F7]/10 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Starts {cls.startTime}
           </span>
         )}
-        <ChevronRight
-          className={cn(
-            'w-4 h-4 shrink-0 transition-transform group-hover:translate-x-0.5',
-            isMarked ? 'text-emerald-400' : 'text-[#5B21B6]',
-          )}
-        />
       </div>
     </button>
   );
@@ -532,7 +526,7 @@ export function TeacherDashboard() {
         )}
         style={{
           background: isDark
-            ? 'linear-gradient(160deg, rgba(76,29,149,0.55) 0%, rgba(124,58,237,0.35) 45%, rgba(219,39,119,0.20) 100%)'
+            ? 'linear-gradient(160deg, rgba(5,5,9,0.98) 0%, rgba(30,14,54,0.55) 55%, rgba(90,20,60,0.22) 100%)'
             : 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)',
         }}
       >
