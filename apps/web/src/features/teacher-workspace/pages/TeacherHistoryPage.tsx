@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   ClipboardList,
   ChevronRight,
   Filter,
@@ -290,38 +289,28 @@ export function TeacherHistoryPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0C12]">
-      {/* Header — unchanged */}
-      <div className="bg-white dark:bg-white/[0.03] border-b border-gray-100 dark:border-white/10 px-4 pt-6 pb-4">
+      {/* Header — the source image is now a single pre-composed banner (Back
+          arrow, title, subtitle, and the clipboard+clock glyph all baked into
+          one 1863x844 graphic), so it's rendered edge-to-edge as the whole
+          header instead of being cropped down to just the icon. The visible
+          "Back" in the graphic is static pixels, so a real transparent
+          button is overlaid on top of it (sized to that region) to keep
+          navigation working, with an sr-only label for accessibility since
+          the baked-in text isn't readable by screen readers. */}
+      <div className="relative w-full overflow-hidden border-b border-white/10">
+        <img
+          src={attendanceTopIllustration}
+          alt="Attendance History — review past attendance sessions"
+          className="block w-full h-auto select-none"
+          draggable={false}
+        />
         <button
           onClick={() => navigate('/teacher')}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-gray-900 dark:hover:text-white transition-colors mb-3 -ml-1 p-1"
           type="button"
+          className="absolute left-0 top-0 h-[26%] w-[40%] sm:w-[28%]"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back
+          <span className="sr-only">Back</span>
         </button>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Attendance History</h1>
-            <p className="text-sm text-gray-500 dark:text-white/50 mt-0.5">Review past attendance sessions</p>
-          </div>
-          {/* The source PNG is a transparent canvas where the clipboard+clock
-              glyph only fills roughly the middle third of the square (large
-              invisible padding on every side) — so a plain resize looked
-              tiny no matter the display size. Fix: crop/zoom into the
-              glyph's actual bounding box (measured pixel-for-pixel from the
-              source file) via an oversized, absolutely-positioned <img>
-              inside a clipped wrapper, instead of shrinking the whole
-              canvas. Sized up a step further on sm+ screens. */}
-          <div className="relative w-16 h-16 sm:w-20 sm:h-20 overflow-hidden shrink-0">
-            <img
-              src={attendanceTopIllustration}
-              alt=""
-              className="absolute max-w-none w-[96px] h-[143px] left-[-22px] top-[-31px] sm:w-[120px] sm:h-[179px] sm:left-[-27px] sm:top-[-39px] select-none pointer-events-none"
-              draggable={false}
-            />
-          </div>
-        </div>
       </div>
 
       {/* "Last 7 Days" / Filter row — the standalone "Filter by Date" button
