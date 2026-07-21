@@ -24,7 +24,7 @@ function EmployeeQrRow({ employee }: { employee: Employee }) {
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
       <div className="w-10 h-10 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
         {employee.photoUrl ? (
-          <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" />
+          <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           initialsOf(employee.fullName)
         )}

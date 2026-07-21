@@ -108,7 +108,7 @@ export function AccountantTeacherSearchPage() {
               >
                 <div className="w-9 h-9 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
                   {t.photoUrl ? (
-                    <img src={t.photoUrl} alt={t.fullName} className="w-full h-full object-cover" />
+                    <img src={t.photoUrl} alt={t.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     t.fullName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
                   )}

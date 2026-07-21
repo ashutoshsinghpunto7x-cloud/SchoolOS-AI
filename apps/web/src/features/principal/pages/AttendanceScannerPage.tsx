@@ -245,7 +245,7 @@ export function AttendanceScannerPage() {
             <>
               <div className="w-14 h-14 rounded-full bg-white border border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
                 {banner.result.employee.photoUrl ? (
-                  <img src={banner.result.employee.photoUrl} alt={banner.result.employee.fullName} className="w-full h-full object-cover" />
+                  <img src={banner.result.employee.photoUrl} alt={banner.result.employee.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <span className="text-emerald-700 font-bold text-sm">{initialsOf(banner.result.employee.fullName)}</span>
                 )}

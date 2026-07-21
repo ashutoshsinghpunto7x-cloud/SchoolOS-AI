@@ -50,7 +50,7 @@ function TeacherRow({ teacher, onSelect }: { teacher: Teacher; onSelect: () => v
     >
       <div className={cn('w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden', color)}>
         {teacher.photoUrl ? (
-          <img src={teacher.photoUrl} alt={teacher.fullName} className="w-full h-full object-cover" />
+          <img src={teacher.photoUrl} alt={teacher.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <span className="text-sm font-bold text-white">{initials(teacher.fullName)}</span>
         )}

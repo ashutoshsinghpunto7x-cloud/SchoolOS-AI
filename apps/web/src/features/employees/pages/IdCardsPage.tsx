@@ -15,7 +15,7 @@ function CardThumbnail({ employee, onPrint }: { employee: Employee; onPrint: () 
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center">
       <div className="w-16 h-16 rounded-full bg-[#A855F7]/10 border-2 border-[#5B21B6]/40 overflow-hidden flex items-center justify-center mb-2">
         {employee.photoUrl ? (
-          <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" />
+          <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <span className="text-[#5B21B6] font-bold text-sm">{initialsOf(employee.fullName)}</span>
         )}

@@ -116,7 +116,7 @@ function StudentCard({
         </span>
         <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden', color.bg)}>
           {student.photoUrl ? (
-            <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
+            <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <span className={cn('text-xs font-bold', color.text)}>{initials}</span>
           )}
@@ -137,7 +137,7 @@ function StudentCard({
             title="Upload photo"
           >
             {student.photoUrl ? (
-              <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
+              <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
               <span className={cn('text-xs font-bold', color.text)}>{initials}</span>
             )}

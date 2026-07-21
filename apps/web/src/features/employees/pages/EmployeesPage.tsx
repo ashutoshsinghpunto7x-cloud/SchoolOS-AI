@@ -145,7 +145,7 @@ export function EmployeesPage() {
                 >
                   <div className="w-11 h-11 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
                     {e.photoUrl ? (
-                      <img src={e.photoUrl} alt={e.fullName} className="w-full h-full object-cover" />
+                      <img src={e.photoUrl} alt={e.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
                       initialsOf(e.fullName)
                     )}

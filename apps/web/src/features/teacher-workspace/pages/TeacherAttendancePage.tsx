@@ -235,7 +235,7 @@ function StudentAvatar({ studentId, fullName, photoUrl, size = 'md' }: { student
   return (
     <div className={cn(dim, color.bg, 'rounded-full flex items-center justify-center shrink-0 overflow-hidden')}>
       {photoUrl ? (
-        <img src={photoUrl} alt={fullName} className="w-full h-full object-cover" />
+        <img src={photoUrl} alt={fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
       ) : (
         <span className={cn('font-bold', color.text, size === 'sm' ? 'text-[10px]' : 'text-xs')}>{initials}</span>
       )}

@@ -309,7 +309,7 @@ export const EventDetailPage = () => {
         {event.attachmentUrl ? (
           <div className="flex items-center gap-4">
             {event.attachmentUrl.startsWith('data:image/') ? (
-              <img src={event.attachmentUrl} alt={event.attachmentName ?? 'Attachment'} className="w-24 h-24 rounded-xl object-cover border border-gray-100 shrink-0" />
+              <img src={event.attachmentUrl} alt={event.attachmentName ?? 'Attachment'} className="w-24 h-24 rounded-xl object-cover border border-gray-100 shrink-0" loading="lazy" decoding="async" />
             ) : (
               <div className="w-24 h-24 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
                 <Paperclip className="w-8 h-8 text-gray-300" />
