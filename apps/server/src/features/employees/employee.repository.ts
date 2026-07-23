@@ -99,6 +99,18 @@ export const employeeRepository = {
     return Employee.findOne({ userId, schoolId, isDeleted: false }).lean<IEmployee>();
   },
 
+  /** Which of these employeeId strings have a live (non-deleted) Employee doc —
+   *  used to flag teachers whose HR mirror is missing before they hit a
+   *  "Employee not found" error at attendance-mark time. */
+  async findExistingEmployeeIds(employeeIds: string[], schoolId: string): Promise<Set<string>> {
+    if (!employeeIds.length) return new Set();
+    const docs = await Employee.find(
+      { employeeId: { $in: employeeIds }, schoolId, isDeleted: false },
+      { employeeId: 1 }
+    ).lean<{ employeeId: string }[]>();
+    return new Set(docs.map((d) => d.employeeId));
+  },
+
   /** Full (non-lean) document — needed when the service must call .save() directly,
    *  e.g. mutating the qr sub-document. */
   async findDocById(id: string, schoolId: string): Promise<IEmployee | null> {

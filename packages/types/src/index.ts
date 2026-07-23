@@ -608,6 +608,9 @@ export interface TeacherQualification {
 export interface Teacher extends BaseEntity {
   fullName: string;
   employeeId: string;
+  /** Only present on /teachers/search results — whether a live HR Employee
+   *  record exists for this employeeId (attendance-marking requires one). */
+  hasEmployeeRecord?: boolean;
   photoUrl?: string;
   gender: Gender;
   dateOfBirth?: string;

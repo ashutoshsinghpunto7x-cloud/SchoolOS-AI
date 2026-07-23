@@ -28,6 +28,12 @@ import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 import { avatarColorFor } from '../utils/avatarColor';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useSmartDraft } from '@/hooks/useSmartDraft';
+import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
+import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
+import { OfflineBanner } from '@/components/drafts/OfflineBanner';
+import { DraftStatusIndicator } from '@/components/drafts/DraftStatusIndicator';
 
 // ── Numeric counter tween — animates a number smoothly instead of snapping ────
 
@@ -617,6 +623,29 @@ export function TeacherAttendancePage() {
   const [dirty,     setDirty]     = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
+  // ── Smart draft (client-side autosave + crash recovery) ───────────────────
+  const { user } = useAuth();
+  const draftKey = user && cls && section
+    ? buildDraftKey({ schoolId: user.schoolId, teacherId: user.userId, module: 'attendance', classId: cls, section, date })
+    : null;
+  const draft = useSmartDraft(draftKey, rows, { enabled: !!draftKey && rows.length > 0 });
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+
+  useEffect(() => {
+    if (draft.hasRecoverableDraft) setShowRecoveryBanner(true);
+  }, [draft.hasRecoverableDraft]);
+
+  function handleRestoreDraft() {
+    const restored = draft.restore();
+    if (restored) { setRows(restored); setDirty(true); }
+    setShowRecoveryBanner(false);
+  }
+
+  function handleDiscardDraft() {
+    draft.discard();
+    setShowRecoveryBanner(false);
+  }
+
   // ── Mark-attendance micro-interactions ────────────────────────────────────
   // Row glow: briefly highlights the just-marked row green/red as it settles
   // into the compact list.
@@ -799,6 +828,7 @@ export function TeacherAttendancePage() {
       setSubmitted(true);
       setEditMode(false);
       setDirty(false);
+      draft.markSubmitted();
     } catch (err) {
       // Without this, a dropped connection or a 403/500 would fail silently —
       // the teacher would see the button reset and could walk away believing
@@ -929,6 +959,8 @@ export function TeacherAttendancePage() {
                 </button>
               </div>
 
+              <DraftStatusIndicator status={draft.status} lastSavedAt={draft.lastSavedAt} />
+
               {undoStack.length > 0 && editable && (
                 <button
                   type="button"
@@ -988,6 +1020,12 @@ export function TeacherAttendancePage() {
         </div>
       ) : (
         <>
+          {/* Recovered/offline draft banners */}
+          {showRecoveryBanner && (
+            <RecoveryBanner savedAt={draft.lastSavedAt} onRestore={handleRestoreDraft} onDiscard={handleDiscardDraft} />
+          )}
+          {draft.isOffline && <OfflineBanner />}
+
           {/* Already submitted banner */}
           {alreadySubmitted && (
             <div className="mx-4 mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">

@@ -94,33 +94,46 @@ export const teacherService = {
     // employee.service.ts's createEmployee for role: 'teacher'. Best-effort:
     // a failure here shouldn't block teacher creation, since Employee is a
     // secondary HR projection of the same person, not the source of truth.
-    try {
-      await employeeRepository.create({
-        fullName: data.fullName,
-        gender: data.gender,
-        dateOfBirth: data.dateOfBirth,
-        employeeId,
-        phone: data.phone,
-        alternatePhone: data.alternatePhone,
-        email: data.email,
-        address: data.address,
-        designation: 'Teacher',
-        department: data.department,
-        joiningDate: data.joiningDate,
-        role: 'teacher',
-        status: data.employmentStatus === 'active' ? 'active' : 'inactive',
-        teacherId: teacher._id.toString(),
-        schoolId: ctx.schoolId,
-        createdBy: ctx.displayName,
-      });
-    } catch (err) {
+    // One retry absorbs transient write errors — a prior version of this
+    // mirror had no retry and silently left ~30 teachers without an Employee
+    // record until a manual backfill script was run (see
+    // scripts/backfill-teacher-employees.ts).
+    const employeePayload = {
+      fullName: data.fullName,
+      gender: data.gender,
+      dateOfBirth: data.dateOfBirth,
+      employeeId,
+      phone: data.phone,
+      alternatePhone: data.alternatePhone,
+      email: data.email,
+      address: data.address,
+      designation: 'Teacher',
+      department: data.department,
+      joiningDate: data.joiningDate,
+      role: 'teacher' as const,
+      status: data.employmentStatus === 'active' ? 'active' as const : 'inactive' as const,
+      teacherId: teacher._id.toString(),
+      schoolId: ctx.schoolId,
+      createdBy: ctx.displayName,
+    };
+    let mirrorError: unknown;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        await employeeRepository.create(employeePayload);
+        mirrorError = undefined;
+        break;
+      } catch (err) {
+        mirrorError = err;
+      }
+    }
+    if (mirrorError) {
       auditService.log({
         userId: ctx.userId,
         userDisplayName: ctx.displayName,
         action: 'teacher.employee_mirror_failed',
         resource: 'teachers',
         resourceId: teacher._id.toString(),
-        details: { error: err instanceof Error ? err.message : 'unknown error' },
+        details: { error: mirrorError instanceof Error ? mirrorError.message : 'unknown error' },
         ip: ctx.ip,
         schoolId: ctx.schoolId,
       });
@@ -156,8 +169,13 @@ export const teacherService = {
     return teacherRepository.findAll(ctx.schoolId, options);
   },
 
-  async searchTeachers(ctx: AuthContext, search?: string): Promise<ITeacher[]> {
-    return teacherRepository.findForSearch(ctx.schoolId, search);
+  async searchTeachers(ctx: AuthContext, search?: string): Promise<(ITeacher & { hasEmployeeRecord: boolean })[]> {
+    const teachers = await teacherRepository.findForSearch(ctx.schoolId, search);
+    const existing = await employeeRepository.findExistingEmployeeIds(
+      teachers.map((t) => t.employeeId),
+      ctx.schoolId
+    );
+    return teachers.map((t) => ({ ...t, hasEmployeeRecord: existing.has(t.employeeId) })) as (ITeacher & { hasEmployeeRecord: boolean })[];
   },
 
   async getTeacher(id: string, ctx: AuthContext): Promise<ITeacher> {

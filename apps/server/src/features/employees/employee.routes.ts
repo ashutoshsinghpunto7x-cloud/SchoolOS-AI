@@ -14,8 +14,8 @@ router.get('/me/qr', employeeController.getMyQr);
 
 // ── Employee CRUD ─────────────────────────────────────────────────────────────
 router.post('/',   authorize('admin'), employeeController.create);
-router.get('/',    authorize('admin', 'principal'), employeeController.list);
-router.get('/:id', authorize('admin', 'principal'), employeeController.getById);
+router.get('/',    authorize('admin', 'principal', 'accountant'), employeeController.list);
+router.get('/:id', authorize('admin', 'principal', 'accountant'), employeeController.getById);
 router.patch('/:id', authorize('admin'), employeeController.update);
 router.delete('/:id', authorize('admin'), employeeController.deleteEmployee);
 

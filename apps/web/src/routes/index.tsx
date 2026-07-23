@@ -16,6 +16,13 @@ function RoleBasedRedirect() {
 
 // ── Lazy page imports (code-split by route) ───────────────────────────────────
 
+// After a redeploy, a tab that's been open since before it can still be holding
+// an old index.html referencing chunk hashes that no longer exist on the CDN —
+// any lazy import then throws "Failed to fetch dynamically imported module".
+// One silent full reload picks up the fresh index.html/manifest and clears it;
+// the sessionStorage guard stops a genuinely broken chunk from reload-looping.
+const CHUNK_RELOAD_KEY = 'schoolos-chunk-reload-attempted';
+
 // `keyof T` alone collapses every export's props to `{}` once passed through
 // React.lazy, silently dropping prop types (e.g. ClassTeachersPage's optional
 // backTo/backLabel). Binding K lets the returned LazyExoticComponent keep the
@@ -25,8 +32,19 @@ const lazyPage = <T extends Record<string, React.ComponentType<any>>, K extends 
   name: K,
 ): React.LazyExoticComponent<T[K]> =>
   lazy(async () => {
-    const mod = await factory();
-    return { default: mod[name] };
+    try {
+      const mod = await factory();
+      sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      return { default: mod[name] };
+    } catch (err) {
+      if (!sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, '1');
+        window.location.reload();
+        // Suspend forever — the reload takes over before this would resolve.
+        return new Promise<never>(() => {});
+      }
+      throw err;
+    }
   }) as React.LazyExoticComponent<T[K]>;
 
 const LoginPage = lazyPage(
@@ -479,6 +497,10 @@ const EmployeeProfilePage = lazyPage(
   () => import('@/features/employees/pages/EmployeeProfilePage'),
   'EmployeeProfilePage',
 );
+const EmployeeDirectoryProfilePage = lazyPage(
+  () => import('@/features/employees/pages/EmployeeDirectoryProfilePage'),
+  'EmployeeDirectoryProfilePage',
+);
 const IdCardsPage = lazyPage(
   () => import('@/features/employees/pages/IdCardsPage'),
   'IdCardsPage',
@@ -645,6 +667,8 @@ export const router = createBrowserRouter([
                       { path: 'accountant/teacher-directory', element: <TeacherDirectoryPage /> },
                       { path: 'accountant/teachers',       element: <AccountantTeacherSearchPage /> },
                       { path: 'accountant/teachers/:teacherId', element: <AccountantTeacherProfilePage /> },
+                      { path: 'accountant/employees',      element: <EmployeesPage basePath="/accountant/employees" readOnly /> },
+                      { path: 'accountant/employees/:id',  element: <EmployeeDirectoryProfilePage basePath="/accountant/employees" /> },
                       { path: 'accountant/salary',        element: <SalaryPage /> },
                       { path: 'accountant/expenses',      element: <ExpensesPage /> },
                       { path: 'accountant/reports',       element: <AccountantReportsPage /> },
@@ -667,6 +691,8 @@ export const router = createBrowserRouter([
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
                   { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
+                  { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
+                  { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
                 ],
               },
 

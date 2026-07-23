@@ -75,7 +75,7 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
           teachers.map((t) => {
             const status = t.employeeId ? statusByEmployeeId.get(t.employeeId) : undefined;
             const pending = isPending && variables?.employeeId === t.employeeId;
-            const hasEmployeeId = Boolean(t.employeeId);
+            const hasEmployeeId = t.hasEmployeeRecord ?? true;
             return (
               <div key={t._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                 <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
@@ -89,6 +89,8 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
                     </p>
                   ) : rowError?.id === t.employeeId ? (
                     <p className="text-xs mt-0.5 font-medium text-red-500 truncate">{rowError.message}</p>
+                  ) : !hasEmployeeId ? (
+                    <p className="text-xs mt-0.5 font-medium text-amber-600 truncate">No HR employee record — add in Admin &gt; Employees</p>
                   ) : (
                     <p className="text-xs mt-0.5 text-gray-400">Not marked</p>
                   )}

@@ -24,7 +24,16 @@ function initialsOf(name: string): string {
   return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
 }
 
-export function EmployeesPage() {
+interface EmployeesPageProps {
+  /** Route prefix used for row/edit navigation — lets this page be mounted
+   *  under principal/accountant workspaces, not just /admin. */
+  basePath?: string;
+  /** Hides Add/Edit/Delete controls for roles that only have read access
+   *  to the employee directory (backend also enforces this server-side). */
+  readOnly?: boolean;
+}
+
+export function EmployeesPage({ basePath = '/admin/employees', readOnly = false }: EmployeesPageProps = {}) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<EmployeeListOptions>({ page: 1, limit: PAGE_SIZE, status: 'active' });
   const [searchInput, setSearchInput] = useState('');
@@ -61,14 +70,16 @@ export function EmployeesPage() {
         </button>
         <div className="flex-1">
           <h1 className="text-base font-bold text-gray-900">Employees</h1>
-          <p className="text-xs text-gray-500">Manage staff records, QR attendance IDs, and ID cards</p>
+          <p className="text-xs text-gray-500">{readOnly ? 'Every teacher and staff member across the school' : 'Manage staff records, QR attendance IDs, and ID cards'}</p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
-        >
-          <Plus className="w-3.5 h-3.5" /> Add Employee
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Employee
+          </button>
+        )}
       </div>
 
       <div className="px-4 py-4 max-w-5xl mx-auto space-y-4">
@@ -140,7 +151,7 @@ export function EmployeesPage() {
             {rows.map((e) => (
               <div key={e._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
                 <button
-                  onClick={() => navigate(`/admin/employees/${e._id}`)}
+                  onClick={() => navigate(`${basePath}/${e._id}`)}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
                   <div className="w-11 h-11 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
@@ -168,21 +179,25 @@ export function EmployeesPage() {
                     </p>
                   </div>
                 </button>
-                <button
-                  onClick={() => navigate(`/admin/employees/${e._id}`)}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#5B21B6] hover:bg-[#A855F7]/10 shrink-0"
-                  title="Edit"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(e._id, e.fullName)}
-                  disabled={deletingId === e._id}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 shrink-0 disabled:opacity-50"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {!readOnly && (
+                  <>
+                    <button
+                      onClick={() => navigate(`${basePath}/${e._id}`)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#5B21B6] hover:bg-[#A855F7]/10 shrink-0"
+                      title="Edit"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(e._id, e.fullName)}
+                      disabled={deletingId === e._id}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 shrink-0 disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>
