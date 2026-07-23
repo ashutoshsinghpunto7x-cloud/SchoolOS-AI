@@ -251,7 +251,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
         </div>
 
         {/* Rows */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4">
           <div className="grid grid-cols-[1.3fr_1.3fr_1.6fr_1.6fr_auto] gap-2 px-1 mb-2">
             {['Day', 'Period', 'Subject', 'Teacher', ''].map((h) => (
               <span key={h} className="text-[11px] font-bold text-[var(--tt-text-muted)] uppercase tracking-wider">{h}</span>
@@ -337,31 +337,31 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
           <datalist id="bad-subject-options">
             {subjectOptions.map((v) => <option key={v} value={v} />)}
           </datalist>
+        </div>
 
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => addRow()}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Row
-            </button>
-            <button
-              type="button"
-              onClick={copyPrevious}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
-            >
-              <Copy className="w-3.5 h-3.5" /> Copy Previous
-            </button>
-            <button
-              type="button"
-              onClick={clearAll}
-              className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-secondary)] transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear All
-            </button>
-          </div>
+        {/* Toolbar — outside the scroll area so it stays put as rows are added */}
+        <div className="px-6 py-3 border-t border-[var(--tt-border)] shrink-0 flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => addRow()}
+            className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Row
+          </button>
+          <button
+            type="button"
+            onClick={copyPrevious}
+            className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-primary)] transition-colors"
+          >
+            <Copy className="w-3.5 h-3.5" /> Copy Previous
+          </button>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="h-9 px-3 flex items-center gap-1.5 rounded-lg border border-[var(--tt-border)] bg-[var(--tt-hover)] hover:bg-[var(--tt-hover)] text-xs font-semibold text-[var(--tt-text-secondary)] transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Clear All
+          </button>
         </div>
 
         {/* Sticky Save All */}

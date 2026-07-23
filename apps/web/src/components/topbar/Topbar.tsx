@@ -300,7 +300,18 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             the page's identity, so this would otherwise just repeat it */}
         {!isPrincipalDashboard && !isPrincipal && !isAccountantDashboard && (
           <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">{section}</span>
+            {isTeacher ? (
+              <button
+                type="button"
+                onClick={() => navigate('/teacher')}
+                className="text-sm font-semibold text-gray-900 dark:text-white hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
+                title="Go to dashboard"
+              >
+                {section}
+              </button>
+            ) : (
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">{section}</span>
+            )}
             {subLabel && (
               <>
                 <ChevronRight className="w-3.5 h-3.5 text-gray-300 dark:text-white/30 flex-shrink-0" strokeWidth={2.5} />

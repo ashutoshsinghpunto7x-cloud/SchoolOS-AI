@@ -1,31 +1,32 @@
-import { useNavigate } from 'react-router-dom';
 import { PageContainer } from '@/components/workspace/PageContainer';
-import { PrincipalHeaderWidget } from '../components/PrincipalHeaderWidget';
-import { KPICard, KPICardSkeleton } from '../components/KPICard';
-import { LeaveApprovalsWidget } from '../components/LeaveApprovalsWidget';
-import { SubstitutionsTodayWidget } from '../components/SubstitutionsTodayWidget';
+import { AiHeroSection } from '../components/AiHeroSection';
+import { PriorityCenter } from '../components/PriorityCenter';
+import { SchoolHealthCard } from '../components/SchoolHealthCard';
+import { TodaysScheduleCard } from '../components/TodaysScheduleCard';
+import { FinancialSnapshotCard } from '../components/FinancialSnapshotCard';
+import { StaffManagementCard } from '../components/StaffManagementCard';
+import { LiveActivityCard } from '../components/LiveActivityCard';
+import { DashboardQuickActions } from '../components/DashboardQuickActions';
 import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal';
-import { AssistantPanel } from '@/features/principal-assistant/components/AssistantPanel';
 
-// ── PrincipalWorkspace ────────────────────────────────────────────────────────
-// Deliberately just a fast daily glance: the Command Centre, a scrollable row
-// of the numbers that matter every day, and the four things a principal is
-// most likely to act on right now. Deeper breakdowns live one tap away on the
-// "More Insights" sidebar page instead of crowding this view.
+// ── PrincipalWorkspace — the Principal's Daily Command Center ────────────────
+// AI Assistant is the hero (row 1, 70/30 with Priority Center — the single
+// merged source of truth for pending decisions, replacing what used to be
+// four overlapping cards). Everything below answers "is the school running
+// smoothly" and "what should I do next" in as few clicks as possible.
+// Anything the original brief asked for with no backing feature yet (Parent
+// Complaints, Visitors, Buses, Power/CCTV, Purchase/Transport approvals,
+// Reports, Circulars) was left out rather than faked — see each component's
+// own comment for specifics. Deeper breakdowns still live on "More Insights".
 
 export const PrincipalWorkspace = () => {
-  const navigate = useNavigate();
   const { data, isLoading, error, refetch } = usePrincipalDashboard();
   const { data: teachersSummary } = useTeachersSummary();
 
   return (
     <PageContainer>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
 
-        {/* Header — clock, greeting, weather, scheduled events */}
-        <PrincipalHeaderWidget upcomingEvents={data?.upcomingEvents} />
-
-        {/* Error */}
         {error && (
           <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-red-600">{error.message}</p>
@@ -39,73 +40,27 @@ export const PrincipalWorkspace = () => {
           </div>
         )}
 
-        {/* ── KPI cards — horizontal scroll, no page-dot indicators ──────────── */}
-        <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => <KPICardSkeleton key={i} compact />)
-          ) : data ? (
-            <>
-              <KPICard
-                compact
-                title="Total Students"
-                value={data.students.total}
-                subtitle={`${data.students.active} active`}
-                onClick={() => navigate('/students')}
-                delay={0}
-              />
-              <KPICard
-                compact
-                title="Fee Collection"
-                value={data.fees.totalCharged > 0 ? `${Math.round((data.fees.totalCollected / data.fees.totalCharged) * 100)}%` : '—'}
-                subtitle={data.fees.overdueCount > 0 ? `${data.fees.overdueCount} overdue` : 'All current'}
-                onClick={() => navigate('/fees')}
-                delay={0.05}
-              />
-              <KPICard
-                compact
-                title="Admissions"
-                value={data.admissions.total}
-                subtitle={`${data.admissions.newThisMonth} new this month`}
-                onClick={() => navigate('/enquiries')}
-                delay={0.1}
-              />
-              <KPICard
-                compact
-                title="This Month's Events"
-                value={data.upcomingEvents.length}
-                subtitle="On the school calendar"
-                onClick={() => navigate('/calendar')}
-                delay={0.15}
-              />
-              <KPICard
-                compact
-                title="Teachers Present"
-                value={teachersSummary?.presentCount ?? data.teachers.active}
-                subtitle={`of ${teachersSummary?.total ?? data.teachers.total} teachers`}
-                onClick={() => navigate('/principal/teachers-summary')}
-                delay={0.2}
-              />
-              <KPICard
-                compact
-                title="Attendance Today"
-                value={data.attendance.today.total > 0 ? `${data.attendance.today.attendanceRate}%` : '—'}
-                subtitle={`${data.attendance.today.present} present`}
-                onClick={() => navigate('/attendance')}
-                delay={0.25}
-              />
-            </>
-          ) : null}
+        {/* Row 1 — AI Assistant hero + Today's Schedule */}
+        <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-stretch">
+          <AiHeroSection />
+          <TodaysScheduleCard upcomingEvents={data?.upcomingEvents} />
         </div>
 
-        {/* ── Daily Substitutions, Leave Approvals ── */}
-        {/* School Timetable and Discount Approvals moved to the sidebar. */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <SubstitutionsTodayWidget />
-          <LeaveApprovalsWidget />
+        {/* Row 2 — School Health, Priority Center, Financial Snapshot */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <SchoolHealthCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
+          <PriorityCenter alerts={data?.alerts} overdueFeeCount={data?.fees.overdueCount} isLoading={isLoading} />
+          <FinancialSnapshotCard data={data?.fees} isLoading={isLoading} />
         </div>
 
-        {/* ── AI Attendance Assistant (Milestone 1) ── */}
-        <AssistantPanel />
+        {/* Row 3 — Staff Management, Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
+          <StaffManagementCard />
+          <LiveActivityCard />
+        </div>
+
+        {/* Row 4 — Quick Actions */}
+        <DashboardQuickActions />
       </div>
     </PageContainer>
   );

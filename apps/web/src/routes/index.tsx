@@ -71,6 +71,10 @@ const NotificationDetailPage = lazyPage(
   () => import('@/features/notifications/pages/NotificationDetailPage'),
   'NotificationDetailPage',
 );
+const PushNotificationDesignPage = lazyPage(
+  () => import('@/features/notifications/push-preview/pages/PushNotificationDesignPage'),
+  'PushNotificationDesignPage',
+);
 const ReceptionWorkspace = lazyPage(
   () => import('@/features/reception/pages/ReceptionWorkspace'),
   'ReceptionWorkspace',
@@ -693,6 +697,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
+                  { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },
                 ],
               },
 

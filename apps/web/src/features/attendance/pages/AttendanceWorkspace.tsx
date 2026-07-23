@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Users, ChevronRight, ChevronLeft, RefreshCw } from 'lucide-react';
+import { CalendarDays, Users, ChevronRight, ChevronLeft, RefreshCw, Download } from 'lucide-react';
 import { useAttendanceSummary, useClassAttendance } from '../hooks/useAttendance';
 import { AttendanceSummaryCard } from '../components/AttendanceSummaryCard';
 import { AttendanceStatusBadge } from '../components/AttendanceStatusBadge';
+import { studentsApi } from '@/features/students/api/students.api';
+import { downloadCsv } from '@/lib/csv';
+
+const STATUS_LABEL: Record<string, string> = {
+  present: 'Present',
+  absent: 'Absent',
+  late: 'Late',
+  half_day: 'Half Day',
+  leave_approved: 'Leave Approved',
+};
 
 const CLASSES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 const SECTIONS = ['A', 'B', 'C', 'D'];
@@ -37,9 +47,35 @@ export function AttendanceWorkspace() {
   const canLoadClass = !!selectedClass && !!selectedSection;
   const { data: classRecords, isLoading: classLoading, refetch: refetchClass } =
     useClassAttendance(selectedClass, selectedSection, date);
+  const [downloading, setDownloading] = useState(false);
 
   const hasRecords = classRecords && classRecords.length > 0;
   const isToday = date === today;
+
+  async function handleDownloadAttendance() {
+    if (!classRecords || downloading) return;
+    setDownloading(true);
+    try {
+      const roster = await studentsApi.listPaginated({
+        class: selectedClass,
+        section: selectedSection,
+        limit: 200,
+        status: 'active',
+      });
+      const statusByStudent = new Map(classRecords.map((r) => [r.studentId, r.status]));
+      downloadCsv(
+        `Attendance_Class${selectedClass}-${selectedSection}_${date}.csv`,
+        ['Roll No', 'Name', 'Status'],
+        roster.data.map((s) => [
+          s.rollNumber ?? '',
+          s.fullName,
+          STATUS_LABEL[statusByStudent.get(s._id) ?? ''] ?? 'Unmarked',
+        ]),
+      );
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] p-6">
@@ -176,8 +212,16 @@ export function AttendanceWorkspace() {
                     })}
                   </div>
                   <button
+                    onClick={handleDownloadAttendance}
+                    disabled={downloading}
+                    className="ml-auto p-1.5 rounded hover:bg-gray-100 disabled:opacity-50"
+                    title="Download attendance (CSV)"
+                  >
+                    <Download className="w-3.5 h-3.5 text-gray-400" />
+                  </button>
+                  <button
                     onClick={() => refetchClass()}
-                    className="ml-auto p-1.5 rounded hover:bg-gray-100"
+                    className="p-1.5 rounded hover:bg-gray-100"
                     title="Refresh"
                   >
                     <RefreshCw className="w-3.5 h-3.5 text-gray-400" />

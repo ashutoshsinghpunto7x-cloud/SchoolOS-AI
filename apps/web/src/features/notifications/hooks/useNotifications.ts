@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '../api/notifications.api';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { playNotificationSound } from '../lib/notificationSound';
 import type { SendMessageToTeachersPayload } from '@schoolos/types';
 
 export const notificationKeys = {
@@ -12,14 +14,34 @@ const POLL_INTERVAL_MS = 30_000;
 
 export const useNotifications = () => {
   const { isAuthenticated } = useAuth();
+  const seenIds = useRef<Set<string> | null>(null);
 
-  return useQuery({
+  const query = useQuery({
     queryKey: notificationKeys.list,
     queryFn: notificationsApi.list,
     enabled: isAuthenticated,
     refetchInterval: POLL_INTERVAL_MS,
     staleTime: POLL_INTERVAL_MS,
   });
+
+  useEffect(() => {
+    const notifications = query.data?.notifications;
+    if (!notifications) return;
+
+    // First successful fetch just establishes the baseline — nothing "new"
+    // yet, so no sound on initial load or on a page refresh.
+    if (seenIds.current === null) {
+      seenIds.current = new Set(notifications.map((n) => n._id));
+      return;
+    }
+
+    const unseenUnread = notifications.filter((n) => !n.isRead && !seenIds.current!.has(n._id));
+    for (const n of notifications) seenIds.current.add(n._id);
+
+    if (unseenUnread.length > 0) playNotificationSound('default');
+  }, [query.data]);
+
+  return query;
 };
 
 export const useMarkNotificationRead = () => {

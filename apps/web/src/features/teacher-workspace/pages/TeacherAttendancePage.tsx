@@ -15,6 +15,7 @@ import {
   X,
   Check,
   Undo2,
+  Download,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
 import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
 import { OfflineBanner } from '@/components/drafts/OfflineBanner';
 import { DraftStatusIndicator } from '@/components/drafts/DraftStatusIndicator';
+import { downloadCsv } from '@/lib/csv';
 
 // ── Numeric counter tween — animates a number smoothly instead of snapping ────
 
@@ -322,71 +324,121 @@ function CompactRow({
   editable,
   onUndo,
   onMark,
+  allowTapToMarkUnmarked,
   glowStatus,
+  expanded,
+  onToggleExpanded,
 }: {
   row:      Row;
   index:    number;
   editable: boolean;
   onUndo:   (id: string) => void;
-  /** When provided (swipe mode is off, or the list is being searched), unmarked rows get tap-to-mark buttons instead of just a placeholder dot. */
+  /** Always available so a marked row's expanded action picker can switch Present↔Absent. */
   onMark?:  (id: string, status: RowStatus, originRect?: DOMRect) => void;
+  /** When true (swipe mode is off, or the list is being searched), unmarked rows get tap-to-mark buttons instead of just a placeholder dot. */
+  allowTapToMarkUnmarked?: boolean;
   /** Set for ~350ms right after this row gets marked — briefly glows green/red. */
   glowStatus?: 'present' | 'absent' | null;
+  /** True while this marked row's action picker (Present/Absent/Undo) is open. */
+  expanded?: boolean;
+  /** Tapping a marked row's name opens/closes its action picker instead of instantly undoing — avoids the surprise re-sort-to-top from a single accidental tap. */
+  onToggleExpanded?: (id: string) => void;
 }) {
   const marked = row.status !== 'unmarked';
 
   return (
     <div
       className={cn(
-        'w-full flex items-center px-4 py-3 gap-3 transition-colors duration-300',
+        'w-full transition-colors duration-300',
         marked && 'bg-gray-50/60 dark:bg-white/[0.03]',
         glowStatus === 'present' && 'bg-emerald-50 dark:bg-emerald-500/10 ring-1 ring-inset ring-emerald-300 dark:ring-emerald-400/40 shadow-[0_0_16px_rgba(16,185,129,0.35)]',
         glowStatus === 'absent' && 'bg-red-50 dark:bg-red-500/10 ring-1 ring-inset ring-red-300 dark:ring-red-400/40 shadow-[0_0_16px_rgba(239,68,68,0.35)]',
       )}
     >
-      <button
-        type="button"
-        disabled={!marked || !editable}
-        onClick={() => onUndo(row.studentId)}
-        className={cn(
-          'flex-1 flex items-center gap-3 text-left min-w-0',
-          marked && editable && 'hover:brightness-[0.97]',
-          !marked && 'cursor-default',
-        )}
-      >
-        <span className="text-sm text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono">{index + 1}</span>
-        <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} size="sm" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{row.fullName}</p>
-          {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
-        </div>
-      </button>
+      <div className="w-full flex items-center px-4 py-3 gap-3">
+        <button
+          type="button"
+          disabled={!marked || !editable}
+          onClick={() => (marked ? onToggleExpanded?.(row.studentId) : undefined)}
+          className={cn(
+            'flex-1 flex items-center gap-3 text-left min-w-0',
+            marked && editable && 'hover:brightness-[0.97]',
+            !marked && 'cursor-default',
+          )}
+        >
+          <span className="text-sm text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono">{index + 1}</span>
+          <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} size="sm" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{row.fullName}</p>
+            {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
+          </div>
+        </button>
 
-      {marked ? (
-        <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
-          {row.status === 'present' ? 'Present' : 'Absent'}
-        </span>
-      ) : editable && onMark ? (
-        <div className="flex items-center gap-1.5 shrink-0">
+        {marked ? (
+          <span className={cn('text-xs font-bold shrink-0', row.status === 'present' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
+            {row.status === 'present' ? 'Present' : 'Absent'}
+          </span>
+        ) : editable && onMark && allowTapToMarkUnmarked ? (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={(e) => onMark(row.studentId, 'present', e.currentTarget.getBoundingClientRect())}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
+              title="Mark present"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => onMark(row.studentId, 'absent', e.currentTarget.getBoundingClientRect())}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 transition-colors"
+              title="Mark absent"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <span className="w-2 h-2 rounded-full bg-gray-200 dark:bg-white/10 shrink-0" aria-hidden="true" />
+        )}
+      </div>
+
+      {/* Action picker — appears in place under a marked row once tapped, so
+          switching Present↔Absent or undoing is a deliberate choice made
+          right here instead of an instant undo-on-tap. */}
+      {marked && editable && expanded && (
+        <div className="px-4 pb-3 pl-16 flex items-center gap-2">
           <button
             type="button"
-            onClick={(e) => onMark(row.studentId, 'present', e.currentTarget.getBoundingClientRect())}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 transition-colors"
-            title="Mark present"
+            onClick={(e) => onMark?.(row.studentId, 'present', e.currentTarget.getBoundingClientRect())}
+            className={cn(
+              'h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold transition-colors',
+              row.status === 'present'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20',
+            )}
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" /> Present
           </button>
           <button
             type="button"
-            onClick={(e) => onMark(row.studentId, 'absent', e.currentTarget.getBoundingClientRect())}
-            className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 transition-colors"
-            title="Mark absent"
+            onClick={(e) => onMark?.(row.studentId, 'absent', e.currentTarget.getBoundingClientRect())}
+            className={cn(
+              'h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold transition-colors',
+              row.status === 'absent'
+                ? 'bg-red-500 text-white'
+                : 'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20',
+            )}
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" /> Absent
+          </button>
+          <button
+            type="button"
+            onClick={() => onUndo(row.studentId)}
+            className="h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+          >
+            <Undo2 className="w-3.5 h-3.5" /> Unmark
           </button>
         </div>
-      ) : (
-        <span className="w-2 h-2 rounded-full bg-gray-200 dark:bg-white/10 shrink-0" aria-hidden="true" />
       )}
     </div>
   );
@@ -524,6 +576,7 @@ function SubmittedScreen({
   onEdit,
   onViewStudents,
   onDashboard,
+  onDownload,
 }: {
   cls:          string;
   section:      string;
@@ -534,6 +587,7 @@ function SubmittedScreen({
   onEdit:       () => void;
   onViewStudents: () => void;
   onDashboard:  () => void;
+  onDownload:   () => void;
 }) {
   const submitTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
@@ -579,6 +633,13 @@ function SubmittedScreen({
           className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
         >
           View Students
+        </button>
+        <button
+          onClick={onDownload}
+          className="h-12 bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 font-semibold rounded-xl text-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Download Attendance (CSV)
         </button>
         <button
           onClick={onEdit}
@@ -652,6 +713,15 @@ export function TeacherAttendancePage() {
   const [glowId, setGlowId] = useState<string | null>(null);
   const [glowStatus, setGlowStatus] = useState<'present' | 'absent' | null>(null);
   const glowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Which marked row's action picker (Present/Absent/Undo) is currently open —
+  // only one at a time. Tapping a marked row toggles this instead of undoing
+  // it outright, so finding a name via search/scroll and tapping it doesn't
+  // silently unmark them and send them back to the top of the queue.
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  function toggleExpandedRow(studentId: string) {
+    setExpandedRowId((prev) => (prev === studentId ? null : studentId));
+  }
 
   // Floating "+1" that flies from the marked row toward the Present/Absent card.
   interface Flyer { id: number; status: 'present' | 'absent'; fromX: number; fromY: number; toX: number; toY: number; }
@@ -763,6 +833,7 @@ export function TeacherAttendancePage() {
       r.studentId === studentId ? { ...r, status, markedSeq: markCounterRef.current++ } : r,
     ));
     setDirty(true);
+    setExpandedRowId((prev) => (prev === studentId ? null : prev));
 
     if (status === 'present' || status === 'absent') {
       setGlowId(studentId);
@@ -788,6 +859,7 @@ export function TeacherAttendancePage() {
       r.studentId === studentId ? { ...r, status: 'unmarked', markedSeq: undefined } : r,
     ));
     setDirty(true);
+    setExpandedRowId((prev) => (prev === studentId ? null : prev));
   }
 
   function undoLastAction() {
@@ -811,6 +883,18 @@ export function TeacherAttendancePage() {
     )));
     setDirty(true);
     if (!isAllPresent) setPresentBurst((n) => n + 1);
+  }
+
+  function handleDownloadAttendance() {
+    downloadCsv(
+      `Attendance_Class${cls}-${section}_${date}.csv`,
+      ['Roll No', 'Name', 'Status'],
+      rows.map((r) => [
+        r.rollNumber ?? '',
+        r.fullName,
+        r.status === 'present' ? 'Present' : r.status === 'absent' ? 'Absent' : 'Unmarked',
+      ]),
+    );
   }
 
   async function handleSave() {
@@ -871,6 +955,7 @@ export function TeacherAttendancePage() {
         onEdit={() => { setSubmitted(false); setEditMode(true); }}
         onViewStudents={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
         onDashboard={() => navigate('/teacher')}
+        onDownload={handleDownloadAttendance}
       />
     );
   }
@@ -1080,6 +1165,14 @@ export function TeacherAttendancePage() {
               >
                 <Search className="w-4 h-4 text-gray-500 dark:text-white/50" />
               </button>
+              <button
+                type="button"
+                onClick={handleDownloadAttendance}
+                className="w-11 h-11 flex items-center justify-center bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                title="Download attendance (CSV)"
+              >
+                <Download className="w-4 h-4 text-gray-500 dark:text-white/50" />
+              </button>
             </div>
           )}
 
@@ -1130,8 +1223,11 @@ export function TeacherAttendancePage() {
                     index={rows.findIndex((r) => r.studentId === row.studentId)}
                     editable={editable}
                     onUndo={undoStatus}
-                    onMark={useSwipeFlow ? undefined : markStatus}
+                    onMark={markStatus}
+                    allowTapToMarkUnmarked={!useSwipeFlow}
                     glowStatus={glowId === row.studentId ? glowStatus : null}
+                    expanded={expandedRowId === row.studentId}
+                    onToggleExpanded={toggleExpandedRow}
                   />
                 ))
             )}

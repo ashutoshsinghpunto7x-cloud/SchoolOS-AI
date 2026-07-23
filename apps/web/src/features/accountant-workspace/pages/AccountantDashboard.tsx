@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, ChevronRight, Loader2, UserRound
+  AlertCircle, ChevronRight, Loader2, UserRound, CalendarCheck2
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
@@ -403,6 +403,33 @@ export function AccountantDashboard() {
             className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200 shrink-0"
           >
             Go to Teachers
+            <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+          </button>
+        </motion.div>
+
+        {/* Attendance quick-link — lets the accountant view a class's daily
+            attendance and download it as CSV, same as the Teachers card above. */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.32 }}
+          className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6 flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
+              <CalendarCheck2 className="w-5 h-5 text-[#5B21B6]" strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Attendance</h2>
+              <p className="text-[12px] text-gray-400 font-medium mt-0.5">View and download a class's attendance record</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/attendance')}
+            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl bg-white border border-[#E8E8E8] text-[13px] font-medium text-gray-600 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200 shrink-0"
+          >
+            Go to Attendance
             <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>
         </motion.div>

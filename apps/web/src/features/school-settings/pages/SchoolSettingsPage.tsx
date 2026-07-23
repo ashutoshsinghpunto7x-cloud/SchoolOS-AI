@@ -7,6 +7,7 @@ import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../
 import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
+import { NotificationSoundToggle } from '@/features/notifications/components/NotificationSoundToggle';
 
 export function SchoolSettingsPage() {
   const navigate = useNavigate();
@@ -97,6 +98,14 @@ export function SchoolSettingsPage() {
             {theme === 'dark' ? 'Dark mode' : 'Light mode'}
           </span>
           <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
+        </div>
+
+        <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-50">
+          <div>
+            <span className="text-sm font-semibold text-gray-800 block">Notification Sounds</span>
+            <span className="text-xs text-gray-400">Play a short sound when a new notification arrives.</span>
+          </div>
+          <NotificationSoundToggle />
         </div>
       </div>
 

@@ -58,7 +58,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
   }
 
   return (
-    <div className="bg-white/10 border border-white/15 rounded-xl p-3 flex flex-col gap-2 w-full">
+    <div className="bg-white/10 rounded-xl p-3 flex flex-col gap-2 w-full">
       <div className="flex items-center justify-between px-1">
         <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide">Meetings & Reminders</p>
         <button
@@ -142,7 +142,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
 
           {/* Rest of the list */}
           {rest.length > 0 && (
-            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+            <div className="flex flex-col gap-1 max-h-32 overflow-y-auto overscroll-contain">
               {rest.map((n) => (
                 <div key={n.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/10">
                   <div className="min-w-0 flex-1">

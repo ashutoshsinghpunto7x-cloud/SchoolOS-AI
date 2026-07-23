@@ -2,11 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info,
+  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download,
 } from 'lucide-react';
 import { useMarksEntryTable, useMarksSummary, useBulkUpsertMarks, useSubmitMarksForReview } from '../hooks/useMarks';
 import { avatarColorFor } from '@/features/teacher-workspace/utils/avatarColor';
 import { cn } from '@/lib/utils';
+import { downloadCsv } from '@/lib/csv';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useSmartDraft } from '@/hooks/useSmartDraft';
+import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
+import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
+import { OfflineBanner } from '@/components/drafts/OfflineBanner';
+import { DraftStatusIndicator } from '@/components/drafts/DraftStatusIndicator';
 import type { ComponentScore, ComponentStatus, MarksBatchTarget, MarksWorkflowStatus } from '@schoolos/types';
 
 // ── Row state ─────────────────────────────────────────────────────────────────
@@ -22,13 +29,17 @@ interface RowState {
   percentage?: number;
 }
 
+// Teachers only get Present/Absent day-to-day — Exempt/Medical/Not Assessed
+// are edge cases an admin sets, not something to offer on every row. A row
+// that already carries one of those (set elsewhere) still displays correctly
+// via STATUS_OPTIONS_EXTRA below, it just isn't offered as a new choice.
 const STATUS_OPTIONS: { value: ComponentStatus; label: string }[] = [
   { value: 'present', label: 'Present' },
   { value: 'absent', label: 'Absent' },
-  { value: 'exempt', label: 'Exempt' },
-  { value: 'medical', label: 'Medical' },
-  { value: 'not_assessed', label: 'Not Assessed' },
 ];
+const STATUS_LABELS: Record<ComponentStatus, string> = {
+  present: 'Present', absent: 'Absent', exempt: 'Exempt', medical: 'Medical', not_assessed: 'Not Assessed',
+};
 
 const WORKFLOW_BADGE: Record<MarksWorkflowStatus, { label: string; className: string }> = {
   draft:             { label: 'Draft',            className: 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-white/40' },
@@ -95,7 +106,7 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
 // ── Student row ───────────────────────────────────────────────────────────────
 
 function StudentRow({
-  row, index, maxByComponent, editable, onChangeScore, onChangeStatus, onChangeRemark,
+  row, index, maxByComponent, editable, onChangeScore, onChangeStatus,
 }: {
   row: RowState;
   index: number;
@@ -103,13 +114,17 @@ function StudentRow({
   editable: boolean;
   onChangeScore: (studentId: string, componentName: string, score: number | undefined) => void;
   onChangeStatus: (studentId: string, status: ComponentStatus) => void;
-  onChangeRemark: (studentId: string, remark: string) => void;
 }) {
   const color = avatarColorFor(row.studentId);
   const initials = row.fullName.split(' ').slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase();
   const rowStatus = row.componentScores[0]?.status ?? 'present';
   const isPresent = rowStatus === 'present';
   const canEdit = editable;
+  // Keeps an already-set Exempt/Medical/Not Assessed status visible & selected
+  // even though it's not one of the two options teachers can newly pick.
+  const statusOptions = STATUS_OPTIONS.some((o) => o.value === rowStatus)
+    ? STATUS_OPTIONS
+    : [{ value: rowStatus, label: STATUS_LABELS[rowStatus] }, ...STATUS_OPTIONS];
 
   return (
     <div className="px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0">
@@ -133,7 +148,7 @@ function StudentRow({
           onChange={(e) => onChangeStatus(row.studentId, e.target.value as ComponentStatus)}
           className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-white/70 px-2 py-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
         >
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
 
@@ -175,17 +190,6 @@ function StudentRow({
           )}
         </div>
       )}
-
-      {canEdit && (
-        <input
-          type="text"
-          value={row.remark}
-          onChange={(e) => onChangeRemark(row.studentId, e.target.value)}
-          placeholder="Remark (optional)"
-          maxLength={500}
-          className="mt-2 ml-9 w-[calc(100%-2.25rem)] h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-700 dark:text-white/70 placeholder:text-gray-300 dark:placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
-        />
-      )}
     </div>
   );
 }
@@ -207,6 +211,29 @@ export function MarksEntryPage() {
 
   const [rows, setRows] = useState<RowState[]>([]);
   const [dirty, setDirty] = useState(false);
+
+  // ── Smart draft (client-side autosave + crash recovery) ───────────────────
+  const { user } = useAuth();
+  const draftKey = user && cls && section && subjectName && examId
+    ? buildDraftKey({ schoolId: user.schoolId, teacherId: user.userId, module: 'marks', examId, class: cls, section, subjectName })
+    : null;
+  const draft = useSmartDraft(draftKey, rows, { enabled: !!draftKey && rows.length > 0 });
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+
+  useEffect(() => {
+    if (draft.hasRecoverableDraft) setShowRecoveryBanner(true);
+  }, [draft.hasRecoverableDraft]);
+
+  function handleRestoreDraft() {
+    const restored = draft.restore();
+    if (restored) { setRows(restored); setDirty(true); }
+    setShowRecoveryBanner(false);
+  }
+
+  function handleDiscardDraft() {
+    draft.discard();
+    setShowRecoveryBanner(false);
+  }
 
   useEffect(() => {
     if (!table) return;
@@ -244,11 +271,6 @@ export function MarksEntryPage() {
     if (leave) blocker.proceed(); else blocker.reset();
   }, [blocker]);
 
-  function updateRow(studentId: string, patch: Partial<RowState>) {
-    setRows((prev) => prev.map((r) => (r.studentId === studentId ? { ...r, ...patch } : r)));
-    setDirty(true);
-  }
-
   function handleChangeScore(studentId: string, componentName: string, score: number | undefined) {
     setRows((prev) => prev.map((r) => {
       if (r.studentId !== studentId) return r;
@@ -265,10 +287,6 @@ export function MarksEntryPage() {
       r.studentId !== studentId ? r : { ...r, componentScores: r.componentScores.map((cs) => ({ ...cs, status })) }
     )));
     setDirty(true);
-  }
-
-  function handleChangeRemark(studentId: string, remark: string) {
-    updateRow(studentId, { remark });
   }
 
   const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus));
@@ -303,6 +321,7 @@ export function MarksEntryPage() {
         records: ready.map((r) => ({ studentId: r.studentId, componentScores: r.componentScores, remark: r.remark || undefined })),
       });
       setDirty(false);
+      draft.markSubmitted();
       toast.success('Draft saved', { description: `${ready.length} of ${rows.length} students saved` });
     } catch (err) {
       toast.error('Could not save marks', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
@@ -314,10 +333,36 @@ export function MarksEntryPage() {
     if (dirty) { toast.error('Save your changes before submitting'); return; }
     try {
       const result = await submitForReview({ examId, class: cls, section, subjectName });
+      draft.markSubmitted();
       toast.success(`Submitted for review`, { description: `${result.updated} record(s) sent to your admin/principal` });
     } catch (err) {
       toast.error('Could not submit', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
     }
+  }
+
+  function handleDownloadMarks() {
+    if (!table) return;
+    const components = table.exam.components;
+    downloadCsv(
+      `Marks_Class${cls}-${section}_${subjectName}_${table.exam.name}.csv`,
+      ['Roll No', 'Name', 'Status', ...components.map((c) => `${c.name} (/${c.maxMarks})`), 'Total', 'Percentage'],
+      rows.map((r) => {
+        const status = r.componentScores[0]?.status ?? 'present';
+        const isPresent = status === 'present';
+        return [
+          r.rollNumber ?? '',
+          r.fullName,
+          STATUS_LABELS[status],
+          ...components.map((c) => {
+            if (!isPresent) return '';
+            const score = r.componentScores.find((cs) => cs.componentName === c.name)?.score;
+            return score ?? '';
+          }),
+          isPresent ? r.total ?? '' : '',
+          isPresent && r.percentage !== undefined ? `${r.percentage}%` : '',
+        ];
+      }),
+    );
   }
 
   const isLoadingAny = isLoading;
@@ -336,6 +381,16 @@ export function MarksEntryPage() {
             </h1>
             {table && <p className="text-xs text-gray-400 dark:text-white/40 truncate">{table.exam.name}</p>}
           </div>
+          <DraftStatusIndicator status={draft.status} lastSavedAt={draft.lastSavedAt} />
+          <button
+            type="button"
+            onClick={handleDownloadMarks}
+            disabled={!table || rows.length === 0}
+            className="h-9 px-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-40 flex items-center gap-1.5 shrink-0 transition-colors"
+            title="Download marks (CSV)"
+          >
+            <Download className="w-3.5 h-3.5" /> Download
+          </button>
         </div>
 
         {summary && (
@@ -363,6 +418,12 @@ export function MarksEntryPage() {
         </div>
       ) : (
         <>
+          {/* Recovered/offline draft banners */}
+          {showRecoveryBanner && (
+            <RecoveryBanner savedAt={draft.lastSavedAt} onRestore={handleRestoreDraft} onDiscard={handleDiscardDraft} />
+          )}
+          {draft.isOffline && <OfflineBanner />}
+
           {table.exam.status === 'draft' && (
             <div className="mx-4 mt-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
               <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -393,7 +454,6 @@ export function MarksEntryPage() {
                   editable={rowIsEditable(row.workflowStatus)}
                   onChangeScore={handleChangeScore}
                   onChangeStatus={handleChangeStatus}
-                  onChangeRemark={handleChangeRemark}
                 />
               ))
             )}
