@@ -411,6 +411,10 @@ const TeacherAttendancePage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherAttendancePage'),
   'TeacherAttendancePage',
 );
+const TeacherBehaviorPage = lazyPage(
+  () => import('@/features/teacher-workspace/pages/TeacherBehaviorPage'),
+  'TeacherBehaviorPage',
+);
 const TeacherHistoryPage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherHistoryPage'),
   'TeacherHistoryPage',
@@ -638,6 +642,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/add-student',                                      element: <TeacherAddStudentPage /> },
                       { path: 'teacher/classes/:cls/:section/add-student',            element: <TeacherAddStudentPage /> },
                       { path: 'teacher/attendance/:cls/:section',                     element: <TeacherAttendancePage /> },
+                      { path: 'teacher/behavior/:cls/:section',                       element: <TeacherBehaviorPage /> },
                       { path: 'teacher/marks',                                        element: <MarksHubPage /> },
                       { path: 'teacher/marks/:cls/:section/:subjectName/:examId',      element: <MarksEntryPage /> },
                       { path: 'teacher/history',                                      element: <TeacherHistoryPage /> },

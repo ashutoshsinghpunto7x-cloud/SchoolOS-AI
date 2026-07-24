@@ -46,4 +46,12 @@ export const schoolSettingsController = {
       sendSuccess(res, settings, 'Payroll settings updated');
     } catch (err) { next(err); }
   },
+
+  async updateBehaviorWindow(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateBehaviorWindow(req.body, ctx);
+      sendSuccess(res, settings, 'Behaviour marking window updated');
+    } catch (err) { next(err); }
+  },
 };

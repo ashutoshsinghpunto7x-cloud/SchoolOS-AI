@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { schoolSettingsApi } from '../api/school-settings.api';
-import type { AttendanceRules, PayrollConfig } from '@schoolos/types';
+import type { AttendanceRules, PayrollConfig, BehaviorWindow } from '@schoolos/types';
 
 export const schoolSettingsKeys = {
   all: ['school-settings'] as const,
@@ -41,6 +41,14 @@ export const useUpdatePayrollConfig = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: PayrollConfig) => schoolSettingsApi.updatePayrollConfig(payload),
+    onSuccess: (data) => qc.setQueryData(schoolSettingsKeys.all, data),
+  });
+};
+
+export const useUpdateBehaviorWindow = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BehaviorWindow) => schoolSettingsApi.updateBehaviorWindow(payload),
     onSuccess: (data) => qc.setQueryData(schoolSettingsKeys.all, data),
   });
 };
