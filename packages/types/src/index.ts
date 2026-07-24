@@ -782,6 +782,83 @@ export interface AttendanceSummaryOptions {
   dateTo?: string;
 }
 
+// ── Behaviour Marking ─────────────────────────────────────────────────────────
+
+export type BehaviorCategory = 'positive' | 'negative' | 'neutral';
+
+export interface BehaviorOption extends BaseEntity {
+  label: string;
+  category: BehaviorCategory;
+  isDefault: boolean;
+  createdByTeacherId?: string;
+  isActive: boolean;
+  createdBy?: string;
+}
+
+export interface BehaviorRecord extends BaseEntity {
+  studentId: string;
+  class: string;
+  section: string;
+  date: string;                    // YYYY-MM-DD
+  optionId: string;
+  optionLabel: string;
+  category: BehaviorCategory;
+  note?: string;
+  markedById: string;
+  markedByName: string;
+  markedAt: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface BehaviorWindowStatus {
+  isOpen: boolean;
+  startTime: string;
+  endTime: string;
+  date: string;                    // today, YYYY-MM-DD
+}
+
+export interface CreateBehaviorOptionPayload {
+  label: string;
+  category?: BehaviorCategory;
+}
+
+export interface UpdateBehaviorOptionPayload {
+  label?: string;
+  category?: BehaviorCategory;
+  isActive?: boolean;
+}
+
+export interface MarkBehaviorPayload {
+  studentId: string;
+  class: string;
+  section: string;
+  date: string;
+  optionId: string;
+  note?: string;
+}
+
+export interface BulkBehaviorRecordInput {
+  studentId: string;
+  optionId: string;
+  note?: string;
+}
+
+export interface BulkBehaviorPayload {
+  class: string;
+  section: string;
+  date: string;
+  records: BulkBehaviorRecordInput[];
+}
+
+export interface BehaviorHistoryOptions {
+  page?: number;
+  limit?: number;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 // ── Fee Management ────────────────────────────────────────────────────────────
 
 export type FeeHead =
@@ -1937,12 +2014,18 @@ export interface PayrollConfig {
   workingDaysPerMonth: number;
 }
 
+export interface BehaviorWindow {
+  startTime: string;
+  endTime: string;
+}
+
 export interface SchoolSettings extends BaseEntity {
   schoolId: string;
   schoolName: string;
   logoUrl?: string;
   attendanceRules: AttendanceRules;
   payrollConfig: PayrollConfig;
+  behaviorWindow: BehaviorWindow;
   updatedBy?: string;
 }
 

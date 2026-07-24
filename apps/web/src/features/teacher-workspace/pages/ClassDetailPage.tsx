@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CalendarCheck, ClipboardList, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarCheck, ClipboardList, Loader2, AlertCircle, SmilePlus } from 'lucide-react';
 import { useTimetables, usePeriodSlots } from '@/features/timetable/hooks/useTimetable';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
@@ -75,6 +75,15 @@ export function ClassDetailPage() {
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               Mark Attendance
+            </button>
+          )}
+          {(isClassTeacher || subjectsTaught.length > 0) && (
+            <button
+              onClick={() => navigate(`/teacher/behavior/${cls}/${section}`)}
+              className="h-9 px-3.5 bg-white dark:bg-white/5 border border-[#DB2777]/20 dark:border-pink-400/20 text-[#DB2777] dark:text-pink-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#FFF1F2] dark:hover:bg-white/10 transition-colors"
+            >
+              <SmilePlus className="w-3.5 h-3.5" />
+              Mark Behaviour
             </button>
           )}
         </div>

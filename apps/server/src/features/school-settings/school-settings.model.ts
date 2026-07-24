@@ -15,12 +15,20 @@ export interface IPayrollConfig {
   workingDaysPerMonth: number;
 }
 
+/** Daily window (HH:mm, IST) during which teachers may submit behaviour
+ *  marks — same string-comparison convention as IAttendanceRules. */
+export interface IBehaviorWindow {
+  startTime: string;
+  endTime: string;
+}
+
 export interface ISchoolSettings extends Document {
   schoolId: string;
   schoolName: string;
   logoUrl?: string;
   attendanceRules: IAttendanceRules;
   payrollConfig: IPayrollConfig;
+  behaviorWindow: IBehaviorWindow;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -37,6 +45,14 @@ export const DEFAULT_ATTENDANCE_RULES: IAttendanceRules = {
 
 export const DEFAULT_PAYROLL_CONFIG: IPayrollConfig = {
   workingDaysPerMonth: 26,
+};
+
+// School day, matching DEFAULT_ATTENDANCE_RULES.startTime/schoolEndTime, so
+// behaviour marking is open whenever school is in session until an admin
+// narrows it.
+export const DEFAULT_BEHAVIOR_WINDOW: IBehaviorWindow = {
+  startTime: '09:00',
+  endTime: '15:00',
 };
 
 const attendanceRulesSchema = new Schema<IAttendanceRules>(
@@ -56,6 +72,14 @@ const payrollConfigSchema = new Schema<IPayrollConfig>(
   { _id: false },
 );
 
+const behaviorWindowSchema = new Schema<IBehaviorWindow>(
+  {
+    startTime: { type: String, required: true, default: DEFAULT_BEHAVIOR_WINDOW.startTime },
+    endTime:   { type: String, required: true, default: DEFAULT_BEHAVIOR_WINDOW.endTime },
+  },
+  { _id: false },
+);
+
 const schoolSettingsSchema = new Schema<ISchoolSettings>(
   {
     schoolId:        { type: String, required: true, unique: true },
@@ -63,6 +87,7 @@ const schoolSettingsSchema = new Schema<ISchoolSettings>(
     logoUrl:         { type: String },
     attendanceRules: { type: attendanceRulesSchema, default: () => ({ ...DEFAULT_ATTENDANCE_RULES }) },
     payrollConfig:   { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
+    behaviorWindow:  { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },
     updatedBy:       { type: String },
   },
   { timestamps: true, versionKey: false },

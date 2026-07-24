@@ -39,6 +39,7 @@ import staffAttendanceRouter from '../features/staff-attendance/staff-attendance
 import payrollRouter from '../features/payroll/payroll.routes';
 import examRouter from '../features/exams/exam.routes';
 import marksRouter from '../features/marks/marks.routes';
+import behaviorRouter from '../features/behavior/behavior.routes';
 
 const router = Router();
 
@@ -82,5 +83,6 @@ router.use('/attendance-qr', staffAttendanceRouter);
 router.use('/payroll', payrollRouter);
 router.use('/exams', examRouter);
 router.use('/marks', marksRouter);
+router.use('/behavior', behaviorRouter);
 
 export default router;

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useTeacherTheme } from '../context/TeacherThemeContext';
@@ -640,6 +640,22 @@ export function TeacherDashboard() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-900 dark:text-white">Marks & Report Cards</p>
             <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Enter marks for your classes</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Behaviour Marking ────────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/classes')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#FFF1F2] dark:bg-[#F472B6]/15 flex items-center justify-center shrink-0">
+            <SmilePlus className="w-5 h-5 text-[#DB2777] dark:text-pink-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Behaviour Marking</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Log day-to-day behaviour for your classes</p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
         </button>
