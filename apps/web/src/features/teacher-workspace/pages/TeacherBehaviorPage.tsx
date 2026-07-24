@@ -30,6 +30,17 @@ function toDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Ascending roll-number sort — numeric when possible, falling back to a plain string compare for non-numeric rolls. Mirrors TeacherAttendancePage's ordering. */
+function compareRollNumber(a?: string, b?: string): number {
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  const na = Number(a);
+  const nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
+
 const CATEGORY_META: Record<BehaviorCategory, { icon: React.ElementType; text: string; bg: string; ring: string; dot: string }> = {
   positive: { icon: Smile, text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', ring: 'ring-emerald-300 dark:ring-emerald-400/40', dot: 'bg-emerald-500' },
   negative: { icon: Frown,  text: 'text-red-500 dark:text-red-400',        bg: 'bg-red-50 dark:bg-red-500/10',        ring: 'ring-red-300 dark:ring-red-400/40',        dot: 'bg-red-500' },
@@ -277,7 +288,10 @@ export function TeacherBehaviorPage() {
     return map;
   }, [todayRecords]);
 
-  const students = studentsData?.data ?? [];
+  const students = useMemo(
+    () => [...(studentsData?.data ?? [])].sort((a, b) => compareRollNumber(a.rollNumber, b.rollNumber)),
+    [studentsData],
+  );
   const activeOptions = (options ?? []).filter((o) => o.isActive);
   const isLoading = studentsLoading || optionsLoading || windowLoading;
   const isClosed = windowStatus ? !windowStatus.isOpen : false;

@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import mongoose from 'mongoose';
 import { logger } from '../lib/logger';
 import { sendError } from '../lib/response';
+import { recordSecurityEvent } from '../lib/security-events';
 
 export class AppError extends Error {
   readonly statusCode: number;
@@ -72,6 +73,21 @@ export const errorHandler = (
     } else {
       logger.warn(`[${err.code}] ${err.message}`, { path: req.path });
     }
+
+    if (err.statusCode === 401 || err.statusCode === 403) {
+      const isLoginAttempt = req.originalUrl.includes('/auth/login');
+      recordSecurityEvent({
+        type: err.statusCode === 403 ? 'permission_denied' : isLoginAttempt ? 'failed_login' : 'invalid_token',
+        severity: err.statusCode === 403 ? 'medium' : isLoginAttempt ? 'medium' : 'high',
+        message: err.message,
+        ip: req.ip,
+        path: req.originalUrl,
+        userId: req.user?.userId,
+        role: req.user?.role,
+        schoolId: req.user?.schoolId,
+      });
+    }
+
     sendError(res, err.message, err.statusCode, err.code);
     return;
   }

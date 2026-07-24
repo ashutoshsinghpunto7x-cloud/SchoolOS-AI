@@ -1,6 +1,20 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export type UserRole = 'admin' | 'principal' | 'reception' | 'teacher' | 'accountant';
+export type UserRole =
+  | 'admin'
+  | 'principal'
+  | 'reception'
+  | 'teacher'
+  | 'accountant'
+  // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
+  | 'owner'
+  | 'super_admin'
+  | 'devops'
+  | 'developer'
+  | 'support';
+
+/** Sentinel schoolId used for internal staff accounts, which have no real tenant. */
+export const INTERNAL_SCHOOL_ID = 'INTERNAL';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 export interface IUser extends Document {
@@ -41,7 +55,11 @@ const userSchema = new Schema<IUser>(
     username: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phone: { type: String },
     passwordHash: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'principal', 'reception', 'teacher', 'accountant'], required: true },
+    role: {
+      type: String,
+      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      required: true,
+    },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
     tokenVersion: { type: Number, default: 0 },
     avatarUrl: { type: String },

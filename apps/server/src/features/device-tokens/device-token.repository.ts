@@ -12,4 +12,15 @@ export const deviceTokenRepository = {
   async remove(userId: string, token: string): Promise<void> {
     await DeviceToken.deleteOne({ userId, token });
   },
+
+  async findTokensForUsers(userIds: string[]): Promise<string[]> {
+    if (userIds.length === 0) return [];
+    const rows = await DeviceToken.find({ userId: { $in: userIds } }, { token: 1 }).lean();
+    return rows.map((r) => r.token);
+  },
+
+  async removeByTokens(tokens: string[]): Promise<void> {
+    if (tokens.length === 0) return;
+    await DeviceToken.deleteMany({ token: { $in: tokens } });
+  },
 };

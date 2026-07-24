@@ -22,6 +22,7 @@ export const PERMISSIONS = {
   MARKS_SUBMIT: 'marks.submit',
   MARKS_APPROVE: 'marks.approve',
   MARKS_PUBLISH: 'marks.publish',
+  OPS_VIEW: 'ops.view',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -38,6 +39,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   ],
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
+  // Internal SchoolOS staff — Ops Center only, no tenant-facing permissions.
+  owner: ['ops.view'],
+  super_admin: ['ops.view'],
+  devops: ['ops.view'],
+  developer: ['ops.view'],
+  support: ['ops.view'],
 };
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
@@ -46,6 +53,11 @@ export const ROLE_META: Record<UserRole, { label: string; description: string }>
   reception: { label: 'Receptionist', description: 'Student admissions and communication' },
   teacher: { label: 'Teacher', description: 'View students and communications' },
   accountant: { label: 'Accountant', description: 'Fee collection, salary, and expense management' },
+  owner: { label: 'Owner', description: 'SchoolOS platform owner — Ops Center access' },
+  super_admin: { label: 'Super Admin', description: 'SchoolOS platform super admin — Ops Center access' },
+  devops: { label: 'DevOps', description: 'SchoolOS infrastructure engineer — Ops Center access' },
+  developer: { label: 'Developer', description: 'SchoolOS developer — Ops Center access' },
+  support: { label: 'Support', description: 'SchoolOS support engineer — Ops Center access' },
 };
 
 export const PERMISSION_META: Record<Permission, { label: string; category: string }> = {
@@ -70,6 +82,7 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'marks.submit': { label: 'Submit Marks for Review', category: 'Marks & Report Cards' },
   'marks.approve': { label: 'Approve / Publish Marks', category: 'Marks & Report Cards' },
   'marks.publish': { label: 'Publish Report Cards', category: 'Marks & Report Cards' },
+  'ops.view': { label: 'View Ops Center', category: 'Ops Center' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

@@ -1,12 +1,10 @@
 import { Student } from '../students/student.model';
-import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { Enquiry } from '../enquiries/enquiry.model';
 import { Timetable } from '../timetable/timetable.model';
 import { SchoolEvent } from '../events/event.model';
 import type {
   PrincipalStudentStats,
-  PrincipalTeacherStats,
   PrincipalAdmissionStats,
   PrincipalTimetableStats,
   PrincipalUpcomingEvent,
@@ -29,14 +27,6 @@ export const principalRepository = {
     ]);
 
     return { total, active, newThisMonth };
-  },
-
-  async getTeacherStats(schoolId: string): Promise<PrincipalTeacherStats> {
-    const [total, active] = await Promise.all([
-      User.countDocuments({ schoolId, role: 'teacher', deletedAt: { $exists: false } }),
-      User.countDocuments({ schoolId, role: 'teacher', status: 'active', deletedAt: { $exists: false } }),
-    ]);
-    return { total, active };
   },
 
   /** Staff-directory counts (Teacher model, not User login accounts) — the same source LeaveRequest.teacherId points at. */

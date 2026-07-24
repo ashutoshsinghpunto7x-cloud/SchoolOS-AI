@@ -54,6 +54,10 @@ export const salaryRepository = {
     return SalaryRecord.findOne({ _id: id, schoolId, isDeleted: false }).lean<ISalaryRecord>();
   },
 
+  async findByIds(ids: string[], schoolId: string): Promise<ISalaryRecord[]> {
+    return SalaryRecord.find({ _id: { $in: ids }, schoolId, isDeleted: false }).lean<ISalaryRecord[]>();
+  },
+
   async findAll(schoolId: string, opts: FindSalaryOptions = {}): Promise<PaginatedSalary> {
     const page  = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 20));
@@ -102,6 +106,22 @@ export const salaryRepository = {
       { $set: { status: 'paid', paidDate, paymentMode, notes, updatedBy } },
       { new: true },
     ).lean<ISalaryRecord>();
+  },
+
+  /** Marks every given still-unpaid record as paid in one write; returns how many actually changed. */
+  async bulkMarkPaid(
+    ids: string[],
+    schoolId: string,
+    paidDate: Date,
+    paymentMode: PaymentMode,
+    updatedBy: string,
+    notes?: string,
+  ): Promise<number> {
+    const result = await SalaryRecord.updateMany(
+      { _id: { $in: ids }, schoolId, isDeleted: false, status: { $ne: 'paid' } },
+      { $set: { status: 'paid', paidDate, paymentMode, notes, updatedBy } },
+    );
+    return result.modifiedCount;
   },
 
   async softDelete(id: string, schoolId: string, deletedBy: string): Promise<boolean> {

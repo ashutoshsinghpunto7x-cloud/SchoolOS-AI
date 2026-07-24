@@ -5,6 +5,7 @@ import { env } from './config/env';
 import { connectDatabase } from './config/database';
 import { logger } from './lib/logger';
 import { requestLogger } from './middlewares/requestLogger';
+import { metricsMiddleware } from './middlewares/metrics';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { apiLimiter } from './middlewares/rateLimiter';
 import router from './routes';
@@ -66,6 +67,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Request Logging ───────────────────────────────────────────────────────────
 app.use(requestLogger);
+app.use(metricsMiddleware);
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 app.use('/api/', apiLimiter);

@@ -5,6 +5,7 @@ import {
   bulkCreateSalarySchema,
   updateSalaryRecordSchema,
   markSalaryPaidSchema,
+  bulkMarkPaidSchema,
   listSalarySchema,
 } from './salary.validation';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
@@ -180,6 +181,29 @@ export const salaryService = {
     });
 
     return record;
+  },
+
+  /** Marks a batch of records paid with one payment mode/date — a payroll-run
+   * shortcut so the accountant doesn't have to click "Mark Paid" per employee.
+   * Records already paid are silently skipped (not re-marked, not errored). */
+  async bulkMarkPaid(rawInput: unknown, ctx: AuthContext): Promise<{ updatedCount: number }> {
+    const data = bulkMarkPaidSchema.parse(rawInput);
+
+    const existing = await salaryRepository.findByIds(data.ids, ctx.schoolId);
+    const employeeNames = existing.filter((r) => r.status !== 'paid').map((r) => r.employeeName);
+
+    const updatedCount = await salaryRepository.bulkMarkPaid(
+      data.ids, ctx.schoolId, new Date(data.paidDate), data.paymentMode, ctx.displayName, data.notes,
+    );
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'salary.bulk_paid', resource: 'salary', resourceId: 'bulk',
+      details: { count: updatedCount, employeeNames, paymentMode: data.paymentMode },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return { updatedCount };
   },
 
   async deleteSalaryRecord(id: string, ctx: AuthContext): Promise<void> {

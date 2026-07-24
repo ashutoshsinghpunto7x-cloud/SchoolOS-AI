@@ -7,6 +7,7 @@ import type {
   CreateSalaryRecordPayload,
   UpdateSalaryRecordPayload,
   MarkSalaryPaidPayload,
+  BulkMarkSalaryPaidPayload,
   SalaryListOptions,
 } from '@schoolos/types';
 
@@ -37,6 +38,13 @@ export const salaryApi = {
   async getSummary(month?: string, year?: number): Promise<SalarySummary> {
     try {
       const res = await apiClient.get<ApiResponse<SalarySummary>>(`${BASE}/summary`, { params: { month, year } });
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async bulkMarkPaid(payload: BulkMarkSalaryPaidPayload): Promise<{ updatedCount: number }> {
+    try {
+      const res = await apiClient.post<ApiResponse<{ updatedCount: number }>>(`${BASE}/bulk-mark-paid`, payload);
       return res.data.data!;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

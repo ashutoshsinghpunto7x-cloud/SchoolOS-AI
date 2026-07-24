@@ -87,6 +87,7 @@ export type AuditAction =
   | 'salary.bulk_created'
   | 'salary.updated'
   | 'salary.paid'
+  | 'salary.bulk_paid'
   | 'salary.deleted'
   | 'salary.forced_pending'
   | 'class_teacher.assigned'

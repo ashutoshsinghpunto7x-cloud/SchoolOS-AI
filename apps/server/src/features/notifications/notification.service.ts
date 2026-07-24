@@ -1,4 +1,5 @@
 import { notificationRepository } from './notification.repository';
+import { sendPushToUsers } from './push.sender';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { userRepository } from '../users/user.repository';
 import { NotFoundError } from '../../middlewares/errorHandler';
@@ -94,7 +95,7 @@ export const notificationService = {
    */
   async sendToTeachers(input: SendToTeachersInput, ctx: AuthContext): Promise<SendMessageToTeachersResult> {
     const skipped: string[] = [];
-    let sent = 0;
+    const recipientUserIds: string[] = [];
 
     for (const teacherId of input.teacherIds) {
       const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
@@ -119,10 +120,15 @@ export const notificationService = {
         senderUserId: ctx.userId,
         senderName: ctx.displayName,
       });
-      sent += 1;
+      recipientUserIds.push(String(user._id));
     }
 
-    return { sent, skipped };
+    // Real phone push, on top of the in-app record above — best-effort, and
+    // a no-op wherever Firebase isn't configured or a teacher never granted
+    // notification permission (see push.sender.ts).
+    await sendPushToUsers({ userIds: recipientUserIds, title: input.title, body: input.body, priority: input.priority });
+
+    return { sent: recipientUserIds.length, skipped };
   },
 
   /** Direct send to a known User id — skips the Teacher-lookup indirection sendToTeachers relies on. */
@@ -138,6 +144,7 @@ export const notificationService = {
       senderUserId: ctx.userId,
       senderName: ctx.displayName,
     });
+    await sendPushToUsers({ userIds: [input.recipientUserId], title: input.title, body: input.body, priority: input.priority });
   },
 
   /** Notifies every admin User in the school (e.g. a new change request awaiting review). */

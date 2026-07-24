@@ -14,12 +14,14 @@ import {
   Loader2,
   Camera,
   ChevronDown,
+  ArrowDownAZ,
 } from 'lucide-react';
 import {
   useStudentsPaginated,
   useDeleteStudent,
   useUpdateRollNumber,
   useUploadStudentPhoto,
+  useAutoAssignRollNumbers,
 } from '@/features/students/hooks/useStudents';
 import { TeacherEditStudentModal } from '../components/TeacherEditStudentModal';
 import type { Student } from '@schoolos/types';
@@ -254,8 +256,18 @@ export function TeacherStudentListPage() {
   });
 
   const { mutate: deleteStudent } = useDeleteStudent();
+  const { mutateAsync: autoAssignRollNumbers, isPending: assigningRollNumbers } = useAutoAssignRollNumbers();
 
   const students: Student[] = data?.data ?? [];
+
+  async function handleAutoAssignRollNumbers() {
+    const ordered = [...students].sort((a, b) => a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' }));
+    const confirmed = window.confirm(
+      `Assign roll numbers 1–${ordered.length} in alphabetical order? This overwrites any existing roll numbers for this class.`,
+    );
+    if (!confirmed) return;
+    await autoAssignRollNumbers(ordered.map((s) => s._id));
+  }
 
   // Roll number order — numeric where possible, students without one pushed to
   // the end (sorted by name among themselves) rather than sorting alphabetically.
@@ -293,6 +305,18 @@ export function TeacherStudentListPage() {
               {isLoading ? '…' : `${students.length} students enrolled`}
             </p>
           </div>
+          {students.length > 1 && (
+            <button
+              onClick={handleAutoAssignRollNumbers}
+              disabled={assigningRollNumbers}
+              className="h-10 px-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-white/60 rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors shrink-0 disabled:opacity-50"
+              type="button"
+              title="Auto-assign roll numbers alphabetically"
+            >
+              {assigningRollNumbers ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowDownAZ className="w-4 h-4" />}
+              <span className="hidden sm:inline">Auto Roll No.</span>
+            </button>
+          )}
           <button
             onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
             className="h-10 px-4 bg-[#5B21B6] text-white rounded-xl text-sm font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] transition-colors shrink-0"

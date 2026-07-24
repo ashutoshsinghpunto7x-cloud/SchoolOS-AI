@@ -16,6 +16,9 @@ import {
   Check,
   Undo2,
   Download,
+  Filter,
+  ArrowDownAZ,
+  Hash,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -379,7 +382,7 @@ function CompactRow({
             {row.status === 'present' ? 'Present' : 'Absent'}
           </span>
         ) : editable && onMark && allowTapToMarkUnmarked ? (
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-3.5 shrink-0">
             <button
               type="button"
               onClick={(e) => onMark(row.studentId, 'present', e.currentTarget.getBoundingClientRect())}
@@ -674,6 +677,8 @@ export function TeacherAttendancePage() {
   const [swipeMode,   setSwipeMode]   = useState(true);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<'roll' | 'name'>('roll');
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   // A stack (not a single slot) so the teacher can undo several marks in a row
   // instead of the Undo button disappearing after just one.
   const [undoStack, setUndoStack] = useState<{ studentId: string; prevStatus: RowStatus }[]>([]);
@@ -824,6 +829,11 @@ export function TeacherAttendancePage() {
   const filteredRows = isSearching
     ? rows.filter((r) => r.fullName.toLowerCase().includes(searchQuery.trim().toLowerCase()))
     : rows;
+  function compareBySortMode(a: Row, b: Row): number {
+    return sortMode === 'name'
+      ? a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' })
+      : compareRollNumber(a.rollNumber, b.rollNumber);
+  }
   const useSwipeFlow = swipeMode && !isSearching;
 
   function markStatus(studentId: string, status: RowStatus, originRect?: DOMRect) {
@@ -1006,8 +1016,18 @@ export function TeacherAttendancePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search student…"
-                  className="w-full h-9 pl-9 pr-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                  className="w-full h-9 pl-9 pr-9 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
+                    title="Clear and back to attendance"
+                  >
+                    <X className="w-3 h-3 text-gray-600 dark:text-white/70" />
+                  </button>
+                )}
               </div>
               <button
                 type="button"
@@ -1165,14 +1185,52 @@ export function TeacherAttendancePage() {
               >
                 <Search className="w-4 h-4 text-gray-500 dark:text-white/50" />
               </button>
-              <button
-                type="button"
-                onClick={handleDownloadAttendance}
-                className="w-11 h-11 flex items-center justify-center bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-                title="Download attendance (CSV)"
-              >
-                <Download className="w-4 h-4 text-gray-500 dark:text-white/50" />
-              </button>
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setFilterMenuOpen((v) => !v)}
+                  className={cn(
+                    'w-11 h-11 flex items-center justify-center border rounded-xl transition-colors',
+                    sortMode !== 'roll'
+                      ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 border-[#A855F7]/30 text-[#5B21B6] dark:text-violet-300'
+                      : 'bg-white dark:bg-[#150C29] border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-gray-50 dark:hover:bg-white/5',
+                  )}
+                  title="Filter / sort students"
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+                {filterMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setFilterMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-2 z-50 w-44 bg-white dark:bg-[#150C29] border border-gray-100 dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => { setSortMode('roll'); setFilterMenuOpen(false); }}
+                        className={cn(
+                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
+                          sortMode === 'roll'
+                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
+                        )}
+                      >
+                        <Hash className="w-3.5 h-3.5" /> Roll Number
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setSortMode('name'); setFilterMenuOpen(false); }}
+                        className={cn(
+                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
+                          sortMode === 'name'
+                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
+                        )}
+                      >
+                        <ArrowDownAZ className="w-3.5 h-3.5" /> Name
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -1211,7 +1269,7 @@ export function TeacherAttendancePage() {
                 // the unmarked queue at top always mirrors roll-number order.
                 .slice()
                 .sort((a, b) => {
-                  if (a.status === 'unmarked' && b.status === 'unmarked') return 0;
+                  if (a.status === 'unmarked' && b.status === 'unmarked') return compareBySortMode(a, b);
                   if (a.status === 'unmarked') return -1;
                   if (b.status === 'unmarked') return 1;
                   return (a.markedSeq ?? 0) - (b.markedSeq ?? 0);

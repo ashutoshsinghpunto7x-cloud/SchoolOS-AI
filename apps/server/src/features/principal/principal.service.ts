@@ -93,7 +93,7 @@ export const principalService = {
     const [students, teachers, todayAttendance, weeklyAttendance, fees, admissions, timetable, upcomingEvents] =
       await Promise.all([
         principalRepository.getStudentStats(schoolId),
-        principalRepository.getTeacherStats(schoolId),
+        principalRepository.countTeachersRoster(schoolId),
         attendanceRepository.getSummary(schoolId, { dateFrom: today, dateTo: today }),
         attendanceRepository.getSummary(schoolId, {
           dateFrom: (() => {

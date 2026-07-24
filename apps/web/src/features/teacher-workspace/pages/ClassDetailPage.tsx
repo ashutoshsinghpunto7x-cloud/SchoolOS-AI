@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CalendarCheck, ClipboardList, Loader2, AlertCircle, SmilePlus } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarCheck, Loader2, AlertCircle, SmilePlus } from 'lucide-react';
 import { useTimetables, usePeriodSlots } from '@/features/timetable/hooks/useTimetable';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ export function ClassDetailPage() {
   const isClassTeacher = (workspace?.classTeacherOf ?? []).some((c) => c.class === cls && c.section === section);
 
   // Subjects taught in this class, derived from the teacher's own week schedule (already loaded).
+  // Still computed (not just display) — it drives which subjects show as chips above.
   const subjectsTaught = useMemo(() => {
     const set = new Map<string, string>();
     for (const day of workspace?.weekSchedule ?? []) {
@@ -59,15 +60,6 @@ export function ClassDetailPage() {
           <p className="text-xs text-gray-500 dark:text-white/40">Subjects & timetable</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {subjectsTaught.length > 0 && (
-            <button
-              onClick={() => navigate('/teacher/marks')}
-              className="h-9 px-3.5 bg-white dark:bg-white/5 border border-[#5B21B6]/20 dark:border-violet-400/20 text-[#5B21B6] dark:text-violet-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#F3EEFF] dark:hover:bg-white/10 transition-colors"
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              Enter Marks
-            </button>
-          )}
           {isClassTeacher && (
             <button
               onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}

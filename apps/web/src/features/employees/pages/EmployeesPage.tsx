@@ -35,7 +35,7 @@ interface EmployeesPageProps {
 
 export function EmployeesPage({ basePath = '/admin/employees', readOnly = false }: EmployeesPageProps = {}) {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<EmployeeListOptions>({ page: 1, limit: PAGE_SIZE, status: 'active' });
+  const [filters, setFilters] = useState<EmployeeListOptions>({ page: 1, limit: PAGE_SIZE });
   const [searchInput, setSearchInput] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);

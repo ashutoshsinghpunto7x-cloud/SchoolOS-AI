@@ -85,7 +85,21 @@ export interface Address {
 
 export type Status = 'active' | 'inactive' | 'deleted';
 
-export type UserRole = 'admin' | 'principal' | 'reception' | 'teacher' | 'accountant';
+export type UserRole =
+  | 'admin'
+  | 'principal'
+  | 'reception'
+  | 'teacher'
+  | 'accountant'
+  // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
+  | 'owner'
+  | 'super_admin'
+  | 'devops'
+  | 'developer'
+  | 'support';
+
+/** Internal SchoolOS staff roles — used to gate the Ops Center and bypass tenant scoping. */
+export const OPS_ROLES: UserRole[] = ['owner', 'super_admin', 'devops', 'developer', 'support'];
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 // ── User ──────────────────────────────────────────────────────────────────────
@@ -1088,6 +1102,13 @@ export interface MarkSalaryPaidPayload {
   notes?: string;
 }
 
+export interface BulkMarkSalaryPaidPayload {
+  ids: string[];
+  paidDate: string;
+  paymentMode: PaymentMode;
+  notes?: string;
+}
+
 export interface SalaryListOptions {
   page?: number;
   limit?: number;
@@ -1352,6 +1373,13 @@ export interface SendMessageToTeachersPayload {
 export interface SendMessageToTeachersResult {
   sent: number;
   skipped: string[];
+}
+
+// ── Push notifications (FCM) ──────────────────────────────────────────────────
+
+export interface RegisterDeviceTokenPayload {
+  token: string;
+  platform: 'ios' | 'android';
 }
 
 // ── Student Change Requests ───────────────────────────────────────────────────

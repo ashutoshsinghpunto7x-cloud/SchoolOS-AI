@@ -1,4 +1,4 @@
-import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow } from './school-settings.model';
+import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, DEFAULT_BEHAVIOR_WINDOW } from './school-settings.model';
 import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
@@ -6,8 +6,15 @@ import { auditService } from '../audit/audit.service';
 export const schoolSettingsService = {
   async getSettings(schoolId: string): Promise<ISchoolSettings> {
     const existing = await SchoolSettings.findOne({ schoolId });
-    if (existing) return existing;
-    return SchoolSettings.create({ schoolId, schoolName: 'FNIC' });
+    if (!existing) return SchoolSettings.create({ schoolId, schoolName: 'FNIC' });
+
+    // Documents created before the behaviorWindow field existed on the schema
+    // never got the default backfilled — heal it in place on first read.
+    if (!existing.behaviorWindow) {
+      existing.behaviorWindow = { ...DEFAULT_BEHAVIOR_WINDOW };
+      await existing.save();
+    }
+    return existing;
   },
 
   async updateAttendanceRules(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {

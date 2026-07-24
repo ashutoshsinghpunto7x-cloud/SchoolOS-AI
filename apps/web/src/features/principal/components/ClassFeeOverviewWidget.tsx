@@ -36,7 +36,11 @@ export function ClassFeeOverviewWidget() {
           <div className="text-right shrink-0">
             <p className="text-xs font-semibold text-emerald-600">{fmt(r.collected)} collected</p>
             <p className={`text-xs font-semibold ${r.pending > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
-              {r.pending > 0 ? `${fmt(r.pending)} pending` : 'Fully collected'}
+              {r.pending > 0
+                ? `${fmt(r.pending)} pending`
+                : r.collected > 0
+                  ? 'Fully collected'
+                  : 'No fees configured'}
             </p>
           </div>
         </div>

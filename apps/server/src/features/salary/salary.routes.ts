@@ -12,6 +12,7 @@ router.use(authorize('admin', 'accountant'));
 router.get('/summary', salaryController.getSummary);
 
 router.post('/bulk',            salaryController.bulkCreate);
+router.post('/bulk-mark-paid',  salaryController.bulkMarkPaid);
 
 // ── Generic resource routes ───────────────────────────────────────────────────
 router.post('/',                salaryController.create);

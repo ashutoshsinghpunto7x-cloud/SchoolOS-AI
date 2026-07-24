@@ -22,7 +22,7 @@ export const TimetableWorkspace = () => {
   // links to need an explicit way back — admin's sidebar is always visible.
   const isPrincipal = user?.role === 'principal';
 
-  const [filters, setFilters] = useState<TimetableListOptions>({ status: 'published' });
+  const [filters, setFilters] = useState<TimetableListOptions>({});
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useTimetables({ ...filters, page, limit: 20 });

@@ -103,6 +103,42 @@ const CommunicationWorkspace = lazyPage(
   () => import('@/features/communication/pages/CommunicationWorkspace'),
   'CommunicationWorkspace',
 );
+const OpsLayout = lazyPage(
+  () => import('@/features/ops-center/layouts/OpsLayout'),
+  'OpsLayout',
+);
+const OpsDashboardPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsDashboardPage'),
+  'OpsDashboardPage',
+);
+const OpsSchoolsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsSchoolsPage'),
+  'OpsSchoolsPage',
+);
+const OpsInfrastructurePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsInfrastructurePage'),
+  'OpsInfrastructurePage',
+);
+const OpsSecurityPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsSecurityPage'),
+  'OpsSecurityPage',
+);
+const OpsLogsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsLogsPage'),
+  'OpsLogsPage',
+);
+const OpsAuditTrailPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsAuditTrailPage'),
+  'OpsAuditTrailPage',
+);
+const OpsApplicationsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsApplicationsPage'),
+  'OpsApplicationsPage',
+);
+const OpsSchoolDetailPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsSchoolDetailPage'),
+  'OpsSchoolDetailPage',
+);
 const AdministrationWorkspace = lazyPage(
   () => import('@/features/administration/pages/AdministrationWorkspace'),
   'AdministrationWorkspace',
@@ -619,6 +655,29 @@ export const router = createBrowserRouter([
             path: 'recovery/reset',
             element: <RecoveryResetPage />,
           },
+
+          // Ops Center — internal SchoolOS staff only. Its own layout, kept
+          // fully separate from the school-facing AppLayout/Sidebar/Topbar.
+          {
+            element: <ProtectedRoute allowedRoles={['owner', 'super_admin', 'devops', 'developer', 'support']} />,
+            children: [
+              {
+                path: 'ops',
+                element: <OpsLayout />,
+                children: [
+                  { index: true, element: <OpsDashboardPage /> },
+                  { path: 'schools', element: <OpsSchoolsPage /> },
+                  { path: 'schools/:schoolId', element: <OpsSchoolDetailPage /> },
+                  { path: 'infrastructure', element: <OpsInfrastructurePage /> },
+                  { path: 'security', element: <OpsSecurityPage /> },
+                  { path: 'logs', element: <OpsLogsPage /> },
+                  { path: 'audit-trail', element: <OpsAuditTrailPage /> },
+                  { path: 'applications', element: <OpsApplicationsPage /> },
+                ],
+              },
+            ],
+          },
+
           {
             path: '/',
             element: <AppLayout />,

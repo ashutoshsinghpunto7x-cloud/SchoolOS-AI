@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Receipt, MessageSquare, CalendarClock, Repeat, Loader2 } from 'lucide-react';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '../hooks/useNotifications';
+import { EnableNotificationsButton } from '../push/EnableNotificationsButton';
 import { LeaveRequestReviewModal } from '@/features/leave-requests/components/LeaveRequestReviewModal';
 import { cn } from '@/lib/utils';
 import type { AppNotification } from '@schoolos/types';
@@ -93,17 +94,20 @@ export const NotificationBell = () => {
         <div className="fixed inset-x-4 top-[68px] z-30 mx-auto flex max-h-[70vh] max-w-sm flex-col overflow-hidden rounded-2xl border border-[#E8E8E8] dark:border-white/10 bg-white dark:bg-[#150C29] shadow-[0_10px_30px_rgba(0,0,0,0.12)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-[28rem] sm:w-80 sm:max-w-none sm:shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10">
             <p className="text-sm font-bold text-gray-900 dark:text-white">Notifications</p>
-            {unreadCount > 0 && (
-              <button
-                onClick={() => markAllRead.mutate()}
-                disabled={markAllRead.isPending}
-                className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50"
-                type="button"
-              >
-                <CheckCheck className="w-3.5 h-3.5" />
-                Mark all read
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              <EnableNotificationsButton />
+              {unreadCount > 0 && (
+                <button
+                  onClick={() => markAllRead.mutate()}
+                  disabled={markAllRead.isPending}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:opacity-50"
+                  type="button"
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  Mark all read
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1">

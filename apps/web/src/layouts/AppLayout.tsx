@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/sidebar/Sidebar';
@@ -21,6 +21,7 @@ function AppLayoutInner() {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
+  const mainRef = useRef<HTMLElement>(null);
 
   // Read the shared theme — safe because this component is always wrapped in
   // TeacherThemeProvider (see AppLayout below); it applies the `.dark` class
@@ -32,6 +33,14 @@ function AppLayoutInner() {
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // `main` (not window) is the actual scroll container here, and React Router
+  // never resets its scrollTop on navigation — so leaving a page scrolled down
+  // and opening a new one left that new page's header off-screen until the
+  // user manually scrolled back up.
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
   }, [location.pathname]);
 
   // Open sidebar by default on desktop
@@ -86,7 +95,7 @@ function AppLayoutInner() {
           onToggleDesktopCollapse={() => setAccountantSidebarCollapsed((v) => !v)}
         />
 
-        <main className="flex-1 overflow-y-auto flex flex-col">
+        <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col">
           <Suspense fallback={
             <div className="flex flex-1 items-center justify-center py-24">
               <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />

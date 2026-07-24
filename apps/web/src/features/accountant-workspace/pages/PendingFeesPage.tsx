@@ -211,7 +211,7 @@ export function PendingFeesPage() {
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
 
-  const { data, isLoading } = useFeeList({
+  const { data, isLoading, isError, error } = useFeeList({
     dueBefore: selectedDate,
     sortBy: 'dueDate',
     sortOrder: 'asc',
@@ -272,6 +272,12 @@ export function PendingFeesPage() {
         {/* Class-wise grouped list */}
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
+        ) : isError ? (
+          <div className="bg-red-50 rounded-2xl border border-red-200 p-10 text-center">
+            <AlertTriangle className="w-10 h-10 text-red-300 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-red-700">Couldn't load pending fees</p>
+            <p className="text-xs text-red-500 mt-1">{error instanceof Error ? error.message : 'Please try again.'}</p>
+          </div>
         ) : !classGroups.length ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <Wallet className="w-10 h-10 text-gray-300 mx-auto mb-3" />

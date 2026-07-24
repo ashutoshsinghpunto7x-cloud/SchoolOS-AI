@@ -213,6 +213,11 @@ export function TeacherTimetablePage() {
               <button
                 key={day}
                 onClick={() => setActiveDay(day)}
+                style={
+                  isActive && isToday
+                    ? { boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 0 22px 4px rgba(255,255,255,0.65)' }
+                    : undefined
+                }
                 className={`relative flex-shrink-0 min-w-[52px] px-3 py-2 rounded-2xl text-sm font-semibold transition-all ${
                   isActive
                     ? 'bg-white text-[#5B21B6] shadow-lg shadow-black/10'

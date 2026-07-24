@@ -92,6 +92,23 @@ export const useUpdateRollNumber = (id: string) => {
   });
 };
 
+/** Assigns roll numbers 1..N to a set of students in the given order (e.g.
+ * alphabetical by name) — the same order teachers already use by hand, just
+ * applied in one action instead of editing each student individually. */
+export const useAutoAssignRollNumbers = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (studentIds: string[]) => {
+      for (let i = 0; i < studentIds.length; i++) {
+        await studentsApi.updateRollNumber(studentIds[i], String(i + 1));
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+    },
+  });
+};
+
 export const useUpdateFeeProfile = (id: string) => {
   const queryClient = useQueryClient();
   return useMutation({

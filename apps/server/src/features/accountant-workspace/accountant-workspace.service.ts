@@ -32,7 +32,7 @@ import type { IFeeRecord } from '../fees/fee.model';
 
 const ACCOUNTING_ACTIONS = [
   'fee.payment_recorded', 'fee.created', 'fee.updated',
-  'salary.created', 'salary.paid', 'salary.updated',
+  'salary.created', 'salary.paid', 'salary.bulk_paid', 'salary.updated',
   'expense.created', 'expense.approved', 'expense.updated',
 ] as const;
 
@@ -42,6 +42,7 @@ const ACTIVITY_DESCRIPTIONS: Record<string, (details: Record<string, unknown>) =
   'fee.updated':          () => 'Updated a fee record',
   'salary.created':       (d) => `Added salary record for ${d.employeeName}`,
   'salary.paid':          (d) => `Paid salary to ${d.employeeName} (₹${d.amount})`,
+  'salary.bulk_paid':     (d) => `Paid salary to ${d.count} employees in bulk`,
   'salary.updated':       () => 'Updated a salary record',
   'expense.created':      (d) => `Recorded expense: ${d.title} (₹${d.amount})`,
   'expense.approved':     () => 'Approved an expense',

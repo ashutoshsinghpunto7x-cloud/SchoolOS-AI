@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -29,6 +30,10 @@ import { useStudentAttendanceHistory, useAttendanceSummary } from '@/features/at
 import { AttendanceCalendar } from '@/features/attendance/components/AttendanceCalendar';
 import { AttendanceSummaryCard } from '@/features/attendance/components/AttendanceSummaryCard';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useStudentFees } from '@/features/fees/hooks/useFees';
+
+const fmtCurrency = (n: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 
@@ -79,6 +84,11 @@ export const StudentProfilePage = () => {
     { studentId: id },
     isAttendanceTab,
   );
+
+  const { data: feeRecords } = useStudentFees(id!);
+  const outstandingFees = (feeRecords ?? []).filter((r) => r.status !== 'paid' && r.status !== 'waived');
+  const isDefaulter = outstandingFees.length > 0;
+  const totalOutstanding = outstandingFees.reduce((sum, r) => sum + r.balance, 0);
 
   if (isLoading) {
     return (
@@ -223,6 +233,30 @@ export const StudentProfilePage = () => {
       {/* ── Overview tab ──────────────────────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {isDefaulter && (
+            <div className="lg:col-span-2 bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" strokeWidth={1.75} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-red-700">
+                  Fee Defaulter · {outstandingFees.length} outstanding record{outstandingFees.length !== 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-red-600/80 mt-0.5">{fmtCurrency(totalOutstanding)} balance due</p>
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {outstandingFees.slice(0, 6).map((r) => (
+                    <span key={r._id} className="text-[11px] font-semibold text-red-700 bg-white border border-red-200 rounded-full px-2 py-0.5">
+                      {r.feeHead}{r.month ? ` · ${r.month}` : ''}
+                    </span>
+                  ))}
+                  {outstandingFees.length > 6 && (
+                    <span className="text-[11px] font-semibold text-red-500 px-1 py-0.5">+{outstandingFees.length - 6} more</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <InfoCard
             title="Student Details"
             icon={User}

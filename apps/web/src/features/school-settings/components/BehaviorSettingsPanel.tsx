@@ -34,7 +34,7 @@ export function BehaviorSettingsPanel() {
   const [editingLabel, setEditingLabel] = useState('');
 
   useEffect(() => {
-    if (!settings) return;
+    if (!settings?.behaviorWindow) return;
     setStartTime(settings.behaviorWindow.startTime);
     setEndTime(settings.behaviorWindow.endTime);
   }, [settings]);

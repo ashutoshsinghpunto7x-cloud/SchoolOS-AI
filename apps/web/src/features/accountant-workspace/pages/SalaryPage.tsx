@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil, CheckSquare } from 'lucide-react';
 import {
   useSalaryList, useSalarySummary, useCreateSalaryRecord, useMarkSalaryPaid, useForcePendingSalary,
-  useUpdateSalaryRecord,
+  useUpdateSalaryRecord, useBulkMarkSalaryPaid,
 } from '../hooks/useSalary';
 import { BulkAddSalaryModal } from '../components/BulkAddSalaryModal';
 import { AuditLogPanel } from '@/features/audit/components/AuditLogPanel';
@@ -246,6 +246,64 @@ function MarkPaidModal({ record, onClose }: { record: SalaryRecord; onClose: () 
   );
 }
 
+// ── Bulk Mark Paid Modal ─────────────────────────────────────────────────────
+
+function BulkMarkPaidModal({ records, onClose }: { records: SalaryRecord[]; onClose: () => void }) {
+  const { mutateAsync, isPending, error } = useBulkMarkSalaryPaid();
+  const [paidDate, setPaidDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('bank_transfer');
+
+  const total = records.reduce((s, r) => s + r.amount, 0);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await mutateAsync({ ids: records.map((r) => r._id), paidDate, paymentMode });
+    onClose();
+  }
+
+  const displayErr = error instanceof Error ? error.message : null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900">Mark {records.length} as Paid</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <div className="max-h-32 overflow-y-auto space-y-1 mb-4 bg-gray-50 rounded-xl p-3">
+          {records.map((r) => (
+            <div key={r._id} className="flex items-center justify-between text-xs">
+              <span className="text-gray-600 truncate">{r.employeeName}</span>
+              <span className="font-semibold text-gray-800 shrink-0 ml-2">{fmt(r.amount)}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500 mb-4">Total <span className="font-bold text-gray-900">{fmt(total)}</span> across {records.length} employee{records.length === 1 ? '' : 's'} — same payment mode/date applied to all.</p>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className={labelCls}>Payment Date</label>
+            <input type="date" value={paidDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setPaidDate(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Payment Mode</label>
+            <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value as PaymentMode)} className={inputCls}>
+              {PAYMENT_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+          {displayErr && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
+            </div>
+          )}
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-gray-900 hover:bg-black disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Confirm {records.length} Payments
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Inline-editable field — click to edit, Enter/blur to save ──────────────────
 
 function EditableField({
@@ -331,6 +389,8 @@ export function SalaryPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [payingRecord, setPayingRecord] = useState<SalaryRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<SalaryRecord | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkPayOpen, setBulkPayOpen] = useState(false);
   const { mutate: forcePending, isPending: forcingId } = useForcePendingSalary();
 
   const { data, isLoading } = useSalaryList({ status: status === 'all' ? undefined : status, limit: 100 });
@@ -345,6 +405,28 @@ export function SalaryPage() {
     () => (designation ? (data?.data ?? []).filter((r) => r.designation === designation) : data?.data ?? []),
     [data, designation],
   );
+
+  // Only unpaid records can be bulk-paid — payroll-run day is picking a batch
+  // of pending/scheduled employees and clearing them in one confirmation.
+  const payableRecords = useMemo(() => records.filter((r) => r.status !== 'paid'), [records]);
+  const selectedRecords = useMemo(() => payableRecords.filter((r) => selectedIds.has(r._id)), [payableRecords, selectedIds]);
+  const allSelected = payableRecords.length > 0 && selectedRecords.length === payableRecords.length;
+
+  // Filter/status changes can drop records out of view — clear selection so
+  // "N selected" never silently refers to rows the accountant can't see anymore.
+  useEffect(() => { setSelectedIds(new Set()); }, [status, designation]);
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds(allSelected ? new Set() : new Set(payableRecords.map((r) => r._id)));
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -416,6 +498,23 @@ export function SalaryPage() {
           </select>
         </div>
 
+        {/* Select-all row — only shown when there's something payable to select */}
+        {!isLoading && payableRecords.length > 0 && (
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            className="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-gray-700"
+          >
+            <span className={cn(
+              'w-4 h-4 rounded border flex items-center justify-center transition-colors',
+              allSelected ? 'bg-[#5B21B6] border-[#5B21B6]' : 'border-gray-300',
+            )}>
+              {allSelected && <CheckSquare className="w-3 h-3 text-white" strokeWidth={3} />}
+            </span>
+            Select all {payableRecords.length} unpaid
+          </button>
+        )}
+
         {/* List */}
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
@@ -425,9 +524,22 @@ export function SalaryPage() {
             <p className="text-sm font-semibold text-gray-700">No salary records{designation ? ` for ${designation}` : ''}</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 pb-16">
             {records.map((rec) => (
               <div key={rec._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                {rec.status !== 'paid' && (
+                  <button
+                    type="button"
+                    onClick={() => toggleSelected(rec._id)}
+                    className={cn(
+                      'w-4.5 h-4.5 rounded border flex items-center justify-center shrink-0 transition-colors',
+                      selectedIds.has(rec._id) ? 'bg-[#5B21B6] border-[#5B21B6]' : 'border-gray-300',
+                    )}
+                    title="Select for bulk payment"
+                  >
+                    {selectedIds.has(rec._id) && <CheckSquare className="w-3 h-3 text-white" strokeWidth={3} />}
+                  </button>
+                )}
                 <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
                   {rec.employeeName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
@@ -439,7 +551,11 @@ export function SalaryPage() {
                       record={rec}
                       field="dueDate"
                       type="date"
-                      displayValue={new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      displayValue={
+                        safeDateInputValue(rec.dueDate)
+                          ? new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                          : '—'
+                      }
                     />
                   </p>
                 </div>
@@ -484,11 +600,41 @@ export function SalaryPage() {
         )}
       </div>
 
+      {/* Sticky bulk-action bar — appears once at least one unpaid record is selected */}
+      {selectedRecords.length > 0 && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-gray-900 text-white px-4 py-3 flex items-center gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">{selectedRecords.length} selected</p>
+            <p className="text-xs text-gray-300">{fmt(selectedRecords.reduce((s, r) => s + r.amount, 0))} total</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            className="h-9 px-3 rounded-xl text-xs font-semibold text-gray-300 hover:text-white"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkPayOpen(true)}
+            className="h-9 px-4 bg-white text-gray-900 rounded-xl text-xs font-bold hover:bg-gray-100"
+          >
+            Mark {selectedRecords.length} Paid
+          </button>
+        </div>
+      )}
+
       {addOpen && <AddSalaryModal onClose={() => setAddOpen(false)} />}
       {bulkAddOpen && <BulkAddSalaryModal onClose={() => setBulkAddOpen(false)} />}
       {historyOpen && <AuditLogPanel resource="salary" title="Salary Change History" onClose={() => setHistoryOpen(false)} />}
       {payingRecord && <MarkPaidModal record={payingRecord} onClose={() => setPayingRecord(null)} />}
       {editingRecord && <EditSalaryModal record={editingRecord} onClose={() => setEditingRecord(null)} />}
+      {bulkPayOpen && (
+        <BulkMarkPaidModal
+          records={selectedRecords}
+          onClose={() => { setBulkPayOpen(false); setSelectedIds(new Set()); }}
+        />
+      )}
     </div>
   );
 }

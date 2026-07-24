@@ -46,6 +46,15 @@ export const markSalaryPaidSchema = z.object({
   notes:       z.string().max(1000).trim().optional(),
 });
 
+// ── Bulk Mark Paid ────────────────────────────────────────────────────────────
+
+export const bulkMarkPaidSchema = z.object({
+  ids:         z.array(z.string()).min(1, 'At least one record is required').max(200, 'At most 200 records per batch'),
+  paidDate:    z.string({ required_error: 'paidDate is required' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'paidDate must be YYYY-MM-DD'),
+  paymentMode: z.enum(PAYMENT_MODES, { required_error: 'paymentMode is required' }),
+  notes:       z.string().max(1000).trim().optional(),
+});
+
 // ── List / Query ──────────────────────────────────────────────────────────────
 
 export const listSalarySchema = z.object({
@@ -63,4 +72,5 @@ export type CreateSalaryRecordInput = z.infer<typeof createSalaryRecordSchema>;
 export type BulkCreateSalaryInput   = z.infer<typeof bulkCreateSalarySchema>;
 export type UpdateSalaryRecordInput = z.infer<typeof updateSalaryRecordSchema>;
 export type MarkSalaryPaidInput     = z.infer<typeof markSalaryPaidSchema>;
+export type BulkMarkPaidInput       = z.infer<typeof bulkMarkPaidSchema>;
 export type ListSalaryInput         = z.infer<typeof listSalarySchema>;

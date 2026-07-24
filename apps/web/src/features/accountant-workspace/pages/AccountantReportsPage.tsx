@@ -103,6 +103,7 @@ export function AccountantReportsPage() {
   const expenseByCategory = useMemo(() => {
     const buckets = new Map<string, number>();
     for (const e of filteredExpenses) {
+      if (e.status !== 'approved') continue;
       buckets.set(e.category, (buckets.get(e.category) ?? 0) + e.amount);
     }
     return Array.from(buckets.entries())

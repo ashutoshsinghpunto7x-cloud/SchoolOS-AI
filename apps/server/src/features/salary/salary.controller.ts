@@ -62,6 +62,14 @@ export const salaryController = {
     } catch (err) { next(err); }
   },
 
+  async bulkMarkPaid(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await salaryService.bulkMarkPaid(req.body, ctx);
+      sendSuccess(res, result, `${result.updatedCount} salary record${result.updatedCount === 1 ? '' : 's'} marked as paid`);
+    } catch (err) { next(err); }
+  },
+
   async forcePending(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx    = buildAuthContext(req.user!);
