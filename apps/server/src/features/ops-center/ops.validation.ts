@@ -12,3 +12,12 @@ export const auditTrailQuerySchema = z.object({
 });
 
 export type AuditTrailQuery = z.infer<typeof auditTrailQuerySchema>;
+
+export const updateAlertSchema = z.object({
+  status: z.enum(['open', 'acknowledged', 'resolved']).optional(),
+  assignedToUserId: z.string().optional(),
+  assignedToName: z.string().optional(),
+  note: z.string().max(1000).optional(),
+});
+
+export type UpdateAlertInput = z.infer<typeof updateAlertSchema>;

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { logger } from '../lib/logger';
 import { sendError } from '../lib/response';
 import { recordSecurityEvent } from '../lib/security-events';
+import { recordErrorEvent } from '../lib/error-events';
 
 export class AppError extends Error {
   readonly statusCode: number;
@@ -56,6 +57,11 @@ export const errorHandler = (
 ): void => {
   if (err instanceof ZodError) {
     const message = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    recordErrorEvent({
+      statusCode: 400, code: 'VALIDATION_ERROR', message,
+      path: req.originalUrl, method: req.method,
+      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+    });
     sendError(res, message, 400, 'VALIDATION_ERROR');
     return;
   }
@@ -63,7 +69,14 @@ export const errorHandler = (
   if (err instanceof mongoose.mongo.MongoServerError && (err as { code?: number }).code === 11000) {
     const keyValue = (err as { keyValue?: Record<string, unknown> }).keyValue ?? {};
     const field = Object.keys(keyValue)[0] ?? 'field';
-    sendError(res, `${field} already exists`, 409, 'DUPLICATE_KEY');
+    const message = `${field} already exists`;
+    recordErrorEvent({
+      statusCode: 409, code: 'DUPLICATE_KEY', message,
+      path: req.originalUrl, method: req.method,
+      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+      stack: err.stack,
+    });
+    sendError(res, message, 409, 'DUPLICATE_KEY');
     return;
   }
 
@@ -75,6 +88,8 @@ export const errorHandler = (
     }
 
     if (err.statusCode === 401 || err.statusCode === 403) {
+      // 401/403 get their own Security Center view instead — recording them
+      // here too would just duplicate the same events across two screens.
       const isLoginAttempt = req.originalUrl.includes('/auth/login');
       recordSecurityEvent({
         type: err.statusCode === 403 ? 'permission_denied' : isLoginAttempt ? 'failed_login' : 'invalid_token',
@@ -85,6 +100,13 @@ export const errorHandler = (
         userId: req.user?.userId,
         role: req.user?.role,
         schoolId: req.user?.schoolId,
+      });
+    } else {
+      recordErrorEvent({
+        statusCode: err.statusCode, code: err.code, message: err.message,
+        path: req.originalUrl, method: req.method,
+        userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+        stack: err.statusCode >= 500 ? err.stack : undefined,
       });
     }
 
@@ -97,6 +119,12 @@ export const errorHandler = (
     stack: err.stack,
     path: req.path,
     method: req.method,
+  });
+  recordErrorEvent({
+    statusCode: 500, code: 'INTERNAL_ERROR', message: err.message,
+    path: req.originalUrl, method: req.method,
+    userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+    stack: err.stack,
   });
   sendError(res, 'Internal server error', 500, 'INTERNAL_ERROR');
 };

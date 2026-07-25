@@ -130,7 +130,7 @@ function SummaryCard({
         // backdrop-blurred fill made the highlight ring look detached from
         // the card edge in dark mode. A solid dark background keeps this
         // card's look identical to light mode, just recolored.
-        'relative flex-1 rounded-[22px] p-4 flex items-center gap-3 border overflow-hidden bg-white dark:bg-[#150C29] shadow-sm',
+        'relative flex-1 rounded-2xl p-2.5 flex items-center gap-2 border overflow-hidden bg-white dark:bg-[#150C29] shadow-sm',
         isPresent ? 'border-emerald-100 dark:border-emerald-500/20' : 'border-red-100 dark:border-red-500/20',
       )}
     >
@@ -140,7 +140,7 @@ function SummaryCard({
           <motion.span
             key={p.id}
             className={cn(
-              'absolute left-9 top-1/2 w-1.5 h-1.5 rounded-full pointer-events-none',
+              'absolute left-6 top-1/2 w-1.5 h-1.5 rounded-full pointer-events-none',
               isPresent ? 'bg-emerald-400' : 'bg-red-400',
             )}
             initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
@@ -158,7 +158,7 @@ function SummaryCard({
       {/* "3D" icon badge — gradient sphere + inner highlight to fake dimensionality */}
       <div
         className={cn(
-          'relative w-11 h-11 rounded-2xl flex items-center justify-center shrink-0',
+          'relative w-8 h-8 rounded-xl flex items-center justify-center shrink-0',
           isPresent ? 'bg-gradient-to-br from-emerald-300 to-emerald-600' : 'bg-gradient-to-br from-red-300 to-red-600',
         )}
         style={{
@@ -168,20 +168,20 @@ function SummaryCard({
         }}
       >
         {isPresent ? (
-          <Check className="w-6 h-6 text-white drop-shadow" strokeWidth={3} />
+          <Check className="w-4 h-4 text-white drop-shadow" strokeWidth={3} />
         ) : (
-          <X className="w-6 h-6 text-white drop-shadow" strokeWidth={3} />
+          <X className="w-4 h-4 text-white drop-shadow" strokeWidth={3} />
         )}
       </div>
 
       <div>
         <p className={cn(
-          'text-2xl font-extrabold tabular-nums leading-none',
+          'text-lg font-extrabold tabular-nums leading-none',
           isPresent ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400',
         )}>
           {displayCount}
         </p>
-        <p className="text-xs font-semibold text-gray-400 dark:text-white/40 mt-1">
+        <p className="text-[11px] font-semibold text-gray-400 dark:text-white/40 mt-0.5">
           {isPresent ? 'Present' : 'Absent'}
         </p>
       </div>
@@ -1001,7 +1001,7 @@ export function TeacherAttendancePage() {
             type="button"
             onClick={() => navigate(-1)}
             aria-label="Back"
-            className="w-8 h-8 -ml-1 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
+            className="w-8 h-8 -ml-2 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
           >
             <ArrowLeft className="w-4.5 h-4.5 text-gray-400 dark:text-white/40" />
           </button>

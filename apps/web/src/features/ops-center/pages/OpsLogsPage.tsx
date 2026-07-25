@@ -40,7 +40,7 @@ export function OpsLogsPage() {
 
   return (
     <div className="flex h-full flex-col space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-[#F4F6F8]">Logs</h1>
           <p className="mt-1 text-sm text-[#98A2B3]">
@@ -64,9 +64,9 @@ export function OpsLogsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search logs…"
-          className="w-64 rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#3B82F6]"
+          className="w-full rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#3B82F6] sm:w-64"
         />
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {LEVELS.map((l) => (
             <button
               key={l}

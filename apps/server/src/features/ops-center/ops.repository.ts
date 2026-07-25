@@ -6,6 +6,8 @@ import { Teacher } from '../teachers/teacher.model';
 import { Attendance } from '../attendance/attendance.model';
 import { FeePayment } from '../fees/fee.payment.model';
 import { User } from '../users/user.model';
+import { Communication } from '../communications/communication.model';
+import { Notification } from '../notifications/notification.model';
 import { OPS_ROLES } from '@schoolos/types';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { getMetricsSnapshot } from '../../middlewares/metrics';
@@ -170,5 +172,123 @@ export const opsRepository = {
     ]);
 
     return { studentTotal, teacherTotal, schoolCount, internalActiveUsers };
+  },
+
+  /** Live-probes what the current Atlas tier actually allows, rather than
+   * trusting a hardcoded tier name — so this automatically reports more once
+   * the cluster is upgraded, with no code change needed. */
+  async getDatabaseStats() {
+    const db = mongoose.connection.db;
+    if (!db) {
+      return { connected: false as const };
+    }
+
+    const [serverStatus, dbStats, collections] = await Promise.all([
+      db.admin().serverStatus().catch(() => null),
+      db.stats().catch(() => null),
+      db.listCollections().toArray().catch(() => []),
+    ]);
+
+    const topCollections = await Promise.all(
+      collections.slice(0, 15).map(async (c) => {
+        try {
+          const stats = await db.command({ collStats: c.name });
+          return {
+            name: c.name,
+            count: stats.count as number,
+            storageSizeBytes: stats.storageSize as number,
+            totalIndexSizeBytes: stats.totalIndexSize as number,
+            avgObjSizeBytes: (stats.avgObjSize as number) ?? 0,
+          };
+        } catch {
+          return { name: c.name, count: 0, storageSizeBytes: 0, totalIndexSizeBytes: 0, avgObjSizeBytes: 0 };
+        }
+      }),
+    );
+    topCollections.sort((a, b) => b.storageSizeBytes - a.storageSizeBytes);
+
+    let profilerStatus: { available: boolean; reason?: string } = { available: false };
+    try {
+      await db.command({ profile: -1 });
+      profilerStatus = { available: true };
+    } catch (err) {
+      profilerStatus = { available: false, reason: (err as Error).message };
+    }
+
+    return {
+      connected: true as const,
+      version: (serverStatus?.version as string) ?? null,
+      uptimeSeconds: (serverStatus?.uptime as number) ?? null,
+      connections: (serverStatus?.connections as { current: number; available: number; totalCreated: number }) ?? null,
+      opcounters: (serverStatus?.opcounters as Record<string, number>) ?? null,
+      network: (serverStatus?.network as { bytesIn: number; bytesOut: number; numRequests: number }) ?? null,
+      storage: dbStats
+        ? {
+            dataSizeBytes: dbStats.dataSize as number,
+            storageSizeBytes: dbStats.storageSize as number,
+            indexSizeBytes: dbStats.indexSize as number,
+            collectionCount: dbStats.collections as number,
+            indexCount: dbStats.indexes as number,
+          }
+        : null,
+      topCollections: topCollections.slice(0, 10),
+      profiler: profilerStatus,
+    };
+  },
+
+  async getCommunicationsStats() {
+    const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [whatsappByStatus, whatsappRecent, notificationTotal30d, notificationReadTotal30d] = await Promise.all([
+      Communication.aggregate([
+        { $match: { type: 'whatsapp', createdAt: { $gte: since30d } } },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      Communication.find({ type: 'whatsapp' })
+        .sort({ createdAt: -1 })
+        .limit(30)
+        .select('title status provider schoolId createdAt')
+        .lean(),
+      Notification.countDocuments({ createdAt: { $gte: since30d } }),
+      Notification.countDocuments({ createdAt: { $gte: since30d }, isRead: true }),
+    ]);
+
+    const whatsappStatusCounts: Record<string, number> = {};
+    for (const row of whatsappByStatus as { _id: string; count: number }[]) {
+      whatsappStatusCounts[row._id] = row.count;
+    }
+
+    return {
+      whatsapp: {
+        last30dByStatus: whatsappStatusCounts,
+        recent: whatsappRecent,
+      },
+      pushNotifications: {
+        last30dSent: notificationTotal30d,
+        last30dRead: notificationReadTotal30d,
+        readRatePercent: notificationTotal30d > 0 ? Math.round((notificationReadTotal30d / notificationTotal30d) * 100) : 0,
+        note: 'Read rate reflects in-app read state — there is no device delivery-confirmation webhook wired up yet, so this is not the same as "delivered".',
+      },
+    };
+  },
+
+  async listUsers() {
+    const users = await User.find({ deletedAt: { $exists: false } })
+      .select('firstName lastName email role schoolId status lastLoginAt createdAt')
+      .sort({ lastLoginAt: -1 })
+      .limit(500)
+      .lean();
+
+    return users.map((u) => ({
+      id: String(u._id),
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      role: u.role,
+      schoolId: u.schoolId,
+      status: u.status,
+      lastLoginAt: u.lastLoginAt ?? null,
+      createdAt: u.createdAt,
+    }));
   },
 };

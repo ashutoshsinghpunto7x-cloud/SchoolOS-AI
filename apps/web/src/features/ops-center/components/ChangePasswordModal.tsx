@@ -30,7 +30,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-sm rounded-2xl border border-[#232D38] bg-[#121922] p-6">
         <h2 className="text-base font-semibold text-[#F4F6F8]">Change Password</h2>
 

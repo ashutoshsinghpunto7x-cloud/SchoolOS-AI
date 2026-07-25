@@ -49,7 +49,7 @@ export function OpsInfrastructurePage() {
 
       <section>
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-[#98A2B3]">Load Average</h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <MetricCard label="1 min" value={data.loadAverage[0]?.toFixed(2) ?? '—'} />
           <MetricCard label="5 min" value={data.loadAverage[1]?.toFixed(2) ?? '—'} />
           <MetricCard label="15 min" value={data.loadAverage[2]?.toFixed(2) ?? '—'} />

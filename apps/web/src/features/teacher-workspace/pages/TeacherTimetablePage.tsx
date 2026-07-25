@@ -204,7 +204,7 @@ export function TeacherTimetablePage() {
         </div>
 
         {/* Day selector chips */}
-        <div className="relative flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative grid grid-cols-6 gap-1.5">
           {[1, 2, 3, 4, 5, 6].map((day) => {
             const isToday  = day === todayDow;
             const isActive = day === activeDay;
@@ -214,11 +214,13 @@ export function TeacherTimetablePage() {
                 key={day}
                 onClick={() => setActiveDay(day)}
                 style={
-                  isActive && isToday
-                    ? { boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 0 22px 4px rgba(255,255,255,0.65)' }
+                  isToday
+                    ? isActive
+                      ? { boxShadow: '0 0 0 2px rgba(255,255,255,0.9), 0 0 22px 4px rgba(255,255,255,0.65)' }
+                      : { boxShadow: '0 0 0 2px rgba(253,224,71,0.55), 0 0 16px 3px rgba(253,224,71,0.35)' }
                     : undefined
                 }
-                className={`relative flex-shrink-0 min-w-[52px] px-3 py-2 rounded-2xl text-sm font-semibold transition-all ${
+                className={`relative w-full px-1 py-2 rounded-2xl text-sm font-semibold transition-all ${
                   isActive
                     ? 'bg-white text-[#5B21B6] shadow-lg shadow-black/10'
                     : 'bg-white/15 text-white/80 hover:bg-white/25'
@@ -231,9 +233,6 @@ export function TeacherTimetablePage() {
                       isActive ? 'bg-[#5B21B6]' : isToday ? 'bg-yellow-300' : 'bg-white/60'
                     }`}
                   />
-                )}
-                {isToday && !isActive && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-white/80 rounded-full" />
                 )}
               </button>
             );

@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { opsService } from './ops.service';
 import { sendPaginated, sendSuccess } from '../../lib/response';
-import { auditTrailQuerySchema } from './ops.validation';
+import { auditTrailQuerySchema, updateAlertSchema } from './ops.validation';
+import { NotFoundError } from '../../middlewares/errorHandler';
 
 export const opsController = {
   async dashboard(_req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -63,9 +64,70 @@ export const opsController = {
     try {
       const data = await opsService.getSchoolDetail(req.params.schoolId);
       if (!data) {
-        res.status(404).json({ success: false, error: { message: 'School not found', code: 'NOT_FOUND', statusCode: 404 } });
+        next(new NotFoundError('School'));
         return;
       }
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async errors(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getErrors();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async database(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getDatabase();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async deployments(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getDeployments();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async communications(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getCommunications();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async users(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getUsersScreen();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async alerts(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.evaluateAlerts();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async updateAlert(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const updates = updateAlertSchema.parse(req.body);
+      const { userId, firstName, lastName } = req.user!;
+      const data = await opsService.updateAlert(req.params.alertKey, updates, {
+        userId,
+        name: `${firstName} ${lastName}`,
+      });
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async settings(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = opsService.getSettings();
       sendSuccess(res, data);
     } catch (err) { next(err); }
   },

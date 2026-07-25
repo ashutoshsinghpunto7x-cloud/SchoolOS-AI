@@ -44,12 +44,12 @@ export function OpsAuditTrailPage() {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <div>
+        <div className="w-full sm:w-auto">
           <label className="mb-1 block text-xs text-[#98A2B3]">School</label>
           <select
             value={schoolId}
             onChange={(e) => { setSchoolId(e.target.value); resetToFirstPage(); }}
-            className="rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] focus:outline-none focus:ring-1 focus:ring-[#3B82F6]"
+            className="w-full rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] focus:outline-none focus:ring-1 focus:ring-[#3B82F6] sm:w-auto"
           >
             <option value="">All schools</option>
             {schools?.map((s) => (
@@ -57,13 +57,13 @@ export function OpsAuditTrailPage() {
             ))}
           </select>
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label className="mb-1 block text-xs text-[#98A2B3]">Action</label>
           <input
             value={action}
             onChange={(e) => { setAction(e.target.value); resetToFirstPage(); }}
             placeholder="e.g. auth.login"
-            className="w-48 rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#3B82F6]"
+            className="w-full rounded-md border border-[#232D38] bg-[#121922] px-3 py-1.5 text-sm text-[#F4F6F8] placeholder:text-[#64748B] focus:outline-none focus:ring-1 focus:ring-[#3B82F6] sm:w-48"
           />
         </div>
         <div>
@@ -96,7 +96,7 @@ export function OpsAuditTrailPage() {
       ) : (
         <>
           <DataTable columns={COLUMNS} rows={data.data} rowKey={(r) => r._id} emptyMessage="No matching audit events." />
-          <div className="flex items-center justify-between text-sm text-[#98A2B3]">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#98A2B3]">
             <span>
               Page {data.meta.page} of {Math.max(1, data.meta.totalPages)} — {data.meta.total.toLocaleString()} total events
             </span>

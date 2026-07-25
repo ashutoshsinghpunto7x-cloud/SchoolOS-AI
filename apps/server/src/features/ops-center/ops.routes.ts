@@ -17,5 +17,13 @@ router.get('/logs', opsController.logs);
 router.get('/audit-trail', opsController.auditTrail);
 router.get('/applications', opsController.applications);
 router.get('/schools/:schoolId', opsController.schoolDetail);
+router.get('/errors', opsController.errors);
+router.get('/database', opsController.database);
+router.get('/deployments', opsController.deployments);
+router.get('/communications', opsController.communications);
+router.get('/users', opsController.users);
+router.get('/alerts', opsController.alerts);
+router.patch('/alerts/:alertKey', opsController.updateAlert);
+router.get('/settings', opsController.settings);
 
 export default router;

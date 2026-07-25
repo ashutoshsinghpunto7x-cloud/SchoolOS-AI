@@ -40,7 +40,7 @@ export function OpsDashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-semibold text-[#F4F6F8]">Dashboard Overview</h1>
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <StatusBadge status={infrastructure.database.healthy ? 'healthy' : 'critical'} label="Database" />
           <StatusBadge status="healthy" label="API" />
         </div>

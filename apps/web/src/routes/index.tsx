@@ -139,6 +139,34 @@ const OpsSchoolDetailPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsSchoolDetailPage'),
   'OpsSchoolDetailPage',
 );
+const OpsErrorsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsErrorsPage'),
+  'OpsErrorsPage',
+);
+const OpsDatabasePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsDatabasePage'),
+  'OpsDatabasePage',
+);
+const OpsDeploymentsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsDeploymentsPage'),
+  'OpsDeploymentsPage',
+);
+const OpsCommunicationsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsCommunicationsPage'),
+  'OpsCommunicationsPage',
+);
+const OpsUsersPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsUsersPage'),
+  'OpsUsersPage',
+);
+const OpsAlertsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsAlertsPage'),
+  'OpsAlertsPage',
+);
+const OpsSettingsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsSettingsPage'),
+  'OpsSettingsPage',
+);
 const AdministrationWorkspace = lazyPage(
   () => import('@/features/administration/pages/AdministrationWorkspace'),
   'AdministrationWorkspace',
@@ -668,6 +696,13 @@ export const router = createBrowserRouter([
                   { index: true, element: <OpsDashboardPage /> },
                   { path: 'schools', element: <OpsSchoolsPage /> },
                   { path: 'schools/:schoolId', element: <OpsSchoolDetailPage /> },
+                  { path: 'errors', element: <OpsErrorsPage /> },
+                  { path: 'database', element: <OpsDatabasePage /> },
+                  { path: 'deployments', element: <OpsDeploymentsPage /> },
+                  { path: 'communications', element: <OpsCommunicationsPage /> },
+                  { path: 'users', element: <OpsUsersPage /> },
+                  { path: 'alerts', element: <OpsAlertsPage /> },
+                  { path: 'settings', element: <OpsSettingsPage /> },
                   { path: 'infrastructure', element: <OpsInfrastructurePage /> },
                   { path: 'security', element: <OpsSecurityPage /> },
                   { path: 'logs', element: <OpsLogsPage /> },

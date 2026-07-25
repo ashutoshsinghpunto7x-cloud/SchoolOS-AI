@@ -51,34 +51,38 @@ export function ClassDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-transparent">
-      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 flex items-center gap-3">
-        <button onClick={() => navigate('/teacher/classes')} className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-base font-bold text-gray-900 dark:text-white">Class {cls}{section ? ` – ${section}` : ''}</h1>
-          <p className="text-xs text-gray-500 dark:text-white/40">Subjects & timetable</p>
+      <div className="bg-white teacher-glass-card border-b border-gray-100 dark:border-white/5 px-4 py-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/teacher/classes')} className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/60" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">Class {cls}{section ? ` – ${section}` : ''}</h1>
+            <p className="text-xs text-gray-500 dark:text-white/40">Subjects & timetable</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isClassTeacher && (
-            <button
-              onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
-              className="h-9 px-3.5 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
-            >
-              <CalendarCheck className="w-3.5 h-3.5" />
-              Mark Attendance
-            </button>
-          )}
-          {(isClassTeacher || subjectsTaught.length > 0) && (
-            <button
-              onClick={() => navigate(`/teacher/behavior/${cls}/${section}`)}
-              className="h-9 px-3.5 bg-white dark:bg-white/5 border border-[#DB2777]/20 dark:border-pink-400/20 text-[#DB2777] dark:text-pink-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 hover:bg-[#FFF1F2] dark:hover:bg-white/10 transition-colors"
-            >
-              <SmilePlus className="w-3.5 h-3.5" />
-              Mark Behaviour
-            </button>
-          )}
-        </div>
+        {(isClassTeacher || subjectsTaught.length > 0) && (
+          <div className="flex items-center gap-2">
+            {isClassTeacher && (
+              <button
+                onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
+                className="flex-1 h-10 px-3 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
+              >
+                <CalendarCheck className="w-3.5 h-3.5" />
+                Mark Attendance
+              </button>
+            )}
+            {(isClassTeacher || subjectsTaught.length > 0) && (
+              <button
+                onClick={() => navigate(`/teacher/behavior/${cls}/${section}`)}
+                className="flex-1 h-10 px-3 bg-white dark:bg-white/5 border border-[#DB2777]/20 dark:border-pink-400/20 text-[#DB2777] dark:text-pink-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#FFF1F2] dark:hover:bg-white/10 transition-colors"
+              >
+                <SmilePlus className="w-3.5 h-3.5" />
+                Mark Behaviour
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="px-4 py-5 max-w-2xl mx-auto space-y-5">
