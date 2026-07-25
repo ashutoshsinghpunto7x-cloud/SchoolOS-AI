@@ -45,6 +45,8 @@ export const useApproveLeaveRequest = () => {
       qc.invalidateQueries({ queryKey: ['leave-requests'] });
       // Approving a leave changes which periods need a substitute.
       qc.invalidateQueries({ queryKey: ['timetable'] });
+      // Teachers Present/Absent + weekly attendance are derived from approved leaves.
+      qc.invalidateQueries({ queryKey: ['principal'] });
     },
   });
 };
@@ -57,6 +59,7 @@ export const useRejectLeaveRequest = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leave-requests'] });
       qc.invalidateQueries({ queryKey: ['timetable'] });
+      qc.invalidateQueries({ queryKey: ['principal'] });
     },
   });
 };
