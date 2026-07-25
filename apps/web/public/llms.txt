@@ -1,0 +1,23 @@
+# FNIC — School Operating System
+
+FNIC is an AI-powered school management platform (ERP) used internally by
+school staff — principals, teachers, accountants, front-office/reception,
+and administrators — to manage students, attendance, fees, payroll,
+timetables, communications, and reporting for a single school organization.
+
+This is an authenticated, internal business application, not a public
+website or content platform. Nearly all functionality requires a staff
+login issued by the school's administrator; there is no public signup,
+and no content here is intended for general public indexing or reuse.
+
+## Access
+
+- Sign in: https://fnicschool.com/login
+- Account recovery: https://fnicschool.com/recover-account
+- System status: https://fnicschool.com/status
+
+## Contact
+
+This platform has no public support desk. Staff with access issues should
+contact their school administrator directly (see the "Need Help?" link on
+the sign-in page).

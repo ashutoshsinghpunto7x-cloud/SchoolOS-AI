@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useMemo, memo, FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, Lock, KeyRound, Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
 import { PinSetupPrompt } from '../components/PinSetupPrompt';
 import { pingServerAwake } from '../../../services/api';
-import fnicLogo from '../../../assets/illustrations/fnic-logo.jpg';
+import fnicLogo from '../../../assets/illustrations/fnic-logo.webp';
 
 // Module-level cache: the chroma-keyed result only ever depends on the
 // (static) logo asset, so computing it once per page load — instead of on
@@ -54,13 +54,13 @@ function useChromaKeyedLogo(src: string) {
 }
 
 /** Purely decorative dot-grid accent used in the page corners (matches reference design). */
-const DotGrid = ({ className = '' }: { className?: string }) => (
+const DotGrid = memo(({ className = '' }: { className?: string }) => (
   <div className={`pointer-events-none grid grid-cols-4 grid-rows-4 gap-2 ${className}`} aria-hidden="true">
     {Array.from({ length: 16 }).map((_, i) => (
       <span key={i} className="h-1 w-1 rounded-full bg-orange-500/50" />
     ))}
   </div>
-);
+));
 
 export const LoginPage = () => {
   const { login, loginWithPin, isAuthenticated, user } = useAuthContext();
@@ -80,7 +80,10 @@ export const LoginPage = () => {
   const [slowLoading, setSlowLoading] = useState(false);
   const [pinPrompt, setPinPrompt] = useState<{ email: string } | null>(null);
 
-  const rememberedDevices = getRememberedDevices();
+  // Read once per mount, not on every keystroke — the list only changes via
+  // saveRememberedDevice (in PinSetupPrompt), which always navigates away
+  // afterwards, so LoginPage never needs to see an updated list mid-session.
+  const rememberedDevices = useMemo(() => getRememberedDevices(), []);
 
   useEffect(() => {
     if (rememberedDevices.length > 0 && !selectedDeviceEmail) {
@@ -170,6 +173,12 @@ export const LoginPage = () => {
 
   return (
     <div className="min-h-screen w-full bg-[#050505] lg:flex text-white selection:bg-orange-500/30 selection:text-white font-sans relative overflow-hidden">
+      {/* Single canonical page heading — the visible wordmark below is
+          decorative and desktop-only (hidden on mobile), so a real, always-
+          present <h1> is kept here for semantics/SEO/accessibility without
+          changing anything visible. */}
+      <h1 className="sr-only">FNIC — Sign In</h1>
+
       {/* ── Ambient background glow + corner dot-grid accents ─────────────── */}
       <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
         <div className="absolute -top-40 right-0 h-[32rem] w-[32rem] rounded-full bg-orange-600/10 blur-[120px]" />
@@ -192,13 +201,13 @@ export const LoginPage = () => {
 
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-6 px-10 text-center">
           <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white ring-2 ring-orange-500/70 shadow-[0_0_60px_rgba(249,115,22,0.35)]">
-            <img src={fnicLogo} alt="FNIC Logo" className="h-20 w-20 object-contain" />
+            <img src={fnicLogo} alt="FNIC Logo" width={80} height={80} className="h-20 w-20 object-contain" />
           </div>
           <div>
-            <h1 className="text-5xl font-black tracking-tight">
+            <p className="text-5xl font-black tracking-tight" aria-hidden="true">
               <span className="text-white">FNI</span>
               <span className="text-orange-500">C</span>
-            </h1>
+            </p>
             <p className="mt-2 text-sm font-medium tracking-[0.35em] text-white/60">
               SCHOOL MANAGEMENT SYSTEM
             </p>
@@ -223,6 +232,8 @@ export const LoginPage = () => {
                 <img
                   src={transparentLogo ?? fnicLogo}
                   alt="FNIC Logo"
+                  width={44}
+                  height={44}
                   className="h-11 w-11 object-contain"
                 />
               </div>
