@@ -30,6 +30,8 @@ export default defineConfig({
           if (id.includes('react-router-dom') || id.includes('/react-dom/') || id.includes('/react/')) return 'vendor-react';
           if (id.includes('@tanstack')) return 'vendor-query';
           if (id.includes('framer-motion')) return 'vendor-motion';
+          if (id.includes('firebase')) return 'vendor-firebase';
+          if (id.includes('html5-qrcode')) return 'vendor-qrcode';
           return undefined;
         },
       },

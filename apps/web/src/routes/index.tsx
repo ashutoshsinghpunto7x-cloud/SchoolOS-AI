@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { AppLayout } from '@/layouts/AppLayout';
+import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { AuthProvider } from '@/features/auth/components/AuthProvider';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -47,9 +47,15 @@ const lazyPage = <T extends Record<string, React.ComponentType<any>>, K extends 
     }
   }) as React.LazyExoticComponent<T[K]>;
 
-const LoginPage = lazyPage(
-  () => import('@/features/auth/pages/LoginPage'),
-  'LoginPage',
+// LoginPage is imported eagerly (above), not via lazyPage: it's the page
+// almost every fresh visit hits first, so bundling it into the main chunk
+// avoids an extra dynamic-import round trip that would otherwise delay the
+// login form's first paint. AppLayout — the authenticated app shell
+// (sidebar/topbar/notifications) — is lazy instead, so none of that weight
+// loads until a user is actually past login.
+const AppLayout = lazyPage(
+  () => import('@/layouts/AppLayout'),
+  'AppLayout',
 );
 const RecoverAccountPage = lazyPage(
   () => import('@/features/auth/pages/RecoverAccountPage'),

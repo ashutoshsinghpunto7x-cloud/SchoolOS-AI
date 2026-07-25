@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!robots\\.txt|favicon\\.svg|firebase-messaging-sw\\.js|assets/|sounds/).*)",
       "destination": "/index.html"
     }
   ]

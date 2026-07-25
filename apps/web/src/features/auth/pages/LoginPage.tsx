@@ -9,10 +9,17 @@ import { PinSetupPrompt } from '../components/PinSetupPrompt';
 import { pingServerAwake } from '../../../services/api';
 import fnicLogo from '../../../assets/illustrations/fnic-logo.jpg';
 
+// Module-level cache: the chroma-keyed result only ever depends on the
+// (static) logo asset, so computing it once per page load — instead of on
+// every LoginPage mount (e.g. navigating away and back to /login) — avoids
+// repeating the same canvas/pixel work for no visual difference.
+const chromaKeyCache = new Map<string, string>();
+
 function useChromaKeyedLogo(src: string) {
-  const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(() => chromaKeyCache.get(src) ?? null);
 
   useEffect(() => {
+    if (chromaKeyCache.has(src)) return;
     let cancelled = false;
     const img = new Image();
     img.src = src;
@@ -32,7 +39,11 @@ function useChromaKeyedLogo(src: string) {
         else if (brightness > 222) d[i + 3] = Math.round(255 * (248 - brightness) / (248 - 222));
       }
       ctx.putImageData(frame, 0, 0);
-      if (!cancelled) setDataUrl(canvas.toDataURL('image/png'));
+      if (!cancelled) {
+        const result = canvas.toDataURL('image/png');
+        chromaKeyCache.set(src, result);
+        setDataUrl(result);
+      }
     };
     return () => {
       cancelled = true;
@@ -202,7 +213,7 @@ export const LoginPage = () => {
       </div>
 
       {/* ── Right panel — login form ────────────────────────────────────────── */}
-      <div className="relative flex min-h-screen flex-1 items-center justify-center px-4 py-3 lg:min-h-0 z-10">
+      <main className="relative flex min-h-screen flex-1 items-center justify-center px-4 py-3 lg:min-h-0 z-10">
         <div className="relative w-full max-w-[410px] z-10">
           {/* Card */}
           <div className="rounded-[28px] border border-white/[0.08] bg-[#0E0E0E] p-5 shadow-[0_25px_60px_rgba(0,0,0,0.85)]">
@@ -277,7 +288,7 @@ export const LoginPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -432,7 +443,7 @@ export const LoginPage = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </main>
 
       {pinPrompt && (
         <PinSetupPrompt
