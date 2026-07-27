@@ -211,7 +211,14 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
     setFinalizing(false);
 
     const recognition = new Ctor();
-    recognition.continuous = true;
+    // `continuous: true` is unreliable on mobile engines (Android Chrome in
+    // particular) — instead of cleanly finalizing each phrase, it can
+    // re-segment mid-session and re-emit earlier words folded into a new
+    // "final" result, producing compounding duplicate text ("Parth Parth
+    // Singh Parth Singh Bhatti Parth…"). Running single-utterance sessions
+    // and restarting after each one (via onend below) sidesteps that
+    // re-segmentation bug entirely while still covering continuous speech.
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-IN'; // dictates in English/Latin script so names match the roster
     recognition.onresult = (e) => {

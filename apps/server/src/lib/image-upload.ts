@@ -19,6 +19,23 @@ export const imageUploadMiddleware = multer({
   },
 }).single('file');
 
+// A phone camera photo (e.g. of a marks sheet) routinely runs 3-8MB — far
+// past the 2MB limit above, which exists to keep documents under Mongo's
+// 16MB cap. That constraint doesn't apply here: this image is forwarded to
+// the AI vision model as a data URI and never persisted. iPhones in
+// particular can produce larger JPEGs than that on high-res captures, so
+// this stays generous — well under OpenAI's own 20MB request limit.
+const MAX_AI_IMAGE_SIZE = 15 * 1024 * 1024; // 15 MB
+
+export const aiImageUploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_AI_IMAGE_SIZE, files: 1 },
+  fileFilter(_req, file, cb) {
+    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new ValidationError('Only JPEG, PNG, WEBP, or GIF images are allowed.'));
+  },
+}).single('file');
+
 const ALLOWED_DOC_TYPES = [
   ...ALLOWED_IMAGE_TYPES,
   'application/pdf',

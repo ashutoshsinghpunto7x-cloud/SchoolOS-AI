@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { MulterError } from 'multer';
 import mongoose from 'mongoose';
 import { logger } from '../lib/logger';
 import { sendError } from '../lib/response';
@@ -77,6 +78,21 @@ export const errorHandler = (
       stack: err.stack,
     });
     sendError(res, message, 409, 'DUPLICATE_KEY');
+    return;
+  }
+
+  if (err instanceof MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'That file is too large — try a smaller photo or recording.'
+      : err.code === 'LIMIT_UNEXPECTED_FILE'
+      ? 'Only one file can be uploaded at a time.'
+      : 'Could not upload that file.';
+    recordErrorEvent({
+      statusCode: 400, code: 'VALIDATION_ERROR', message,
+      path: req.originalUrl, method: req.method,
+      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+    });
+    sendError(res, message, 400, 'VALIDATION_ERROR');
     return;
   }
 
