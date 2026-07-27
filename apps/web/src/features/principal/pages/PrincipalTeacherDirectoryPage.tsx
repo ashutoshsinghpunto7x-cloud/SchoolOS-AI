@@ -8,6 +8,7 @@ import { PageContainer } from '@/components/workspace/PageContainer';
 import { BackLink } from '@/components/workspace/BackLink';
 import { useTeachersPaginated, useTeacher } from '@/features/teachers/hooks/useTeachers';
 import { useTeachersSummary } from '../hooks/usePrincipal';
+import { useLanguage } from '@/context/LanguageContext';
 import type { Teacher } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +39,7 @@ const STATUS_PILL: Record<string, string> = {
 // ── Teacher row ───────────────────────────────────────────────────────────────
 
 function TeacherRow({ teacher, onSelect }: { teacher: Teacher; onSelect: () => void }) {
+  const { t } = useLanguage();
   const color = avatarColor(teacher._id);
   const statusKey = teacher.employmentStatus ?? 'active';
   const pillCls = STATUS_PILL[statusKey] ?? STATUS_PILL.active;
@@ -58,7 +60,7 @@ function TeacherRow({ teacher, onSelect }: { teacher: Teacher; onSelect: () => v
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 truncate">{teacher.fullName}</p>
         <p className="text-xs text-gray-400 truncate">
-          {teacher.employeeId} · {teacher.subjects?.join(', ') || 'No subjects assigned'}
+          {teacher.employeeId} · {teacher.subjects?.join(', ') || t('teacherDirectory.noSubjects')}
         </p>
       </div>
       <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full capitalize shrink-0', pillCls)}>
@@ -73,6 +75,7 @@ function TeacherRow({ teacher, onSelect }: { teacher: Teacher; onSelect: () => v
 
 function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: () => void }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { data: teacher, isLoading, isError } = useTeacher(teacherId);
 
   if (isLoading) {
@@ -86,7 +89,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
     return (
       <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-5 mt-4">
         <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-        <p className="text-sm font-semibold text-red-700">Couldn't load teacher details.</p>
+        <p className="text-sm font-semibold text-red-700">{t('teacherDirectory.detailError')}</p>
       </div>
     );
   }
@@ -112,7 +115,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-5 -ml-1"
       >
-        <ArrowLeft className="w-4 h-4" /> All Teachers
+        <ArrowLeft className="w-4 h-4" /> {t('teacherDirectory.allTeachers')}
       </button>
 
       {/* Profile header */}
@@ -137,19 +140,19 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
 
       {/* Contact & basics */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Details</h3>
+        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{t('teacherDirectory.details')}</h3>
         <div className="grid grid-cols-2 gap-4">
-          <InfoRow label="Phone" value={teacher.phone} />
-          <InfoRow label="Email" value={teacher.email} />
-          <InfoRow label="Gender" value={teacher.gender} />
-          <InfoRow label="Address" value={teacher.address} />
-          <InfoRow label="Joined" value={teacher.joiningDate} />
-          <InfoRow label="Department" value={teacher.department} />
-          <InfoRow label="Experience" value={teacher.experienceYears ? `${teacher.experienceYears} yrs` : undefined} />
+          <InfoRow label={t('teacherDirectory.phone')} value={teacher.phone} />
+          <InfoRow label={t('teacherDirectory.email')} value={teacher.email} />
+          <InfoRow label={t('teacherDirectory.gender')} value={teacher.gender} />
+          <InfoRow label={t('teacherDirectory.address')} value={teacher.address} />
+          <InfoRow label={t('teacherDirectory.joined')} value={teacher.joiningDate} />
+          <InfoRow label={t('teacherDirectory.department')} value={teacher.department} />
+          <InfoRow label={t('teacherDirectory.experience')} value={teacher.experienceYears ? `${teacher.experienceYears} yrs` : undefined} />
         </div>
         {teacher.subjects?.length ? (
           <div className="mt-4">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-2">Subjects</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-2">{t('teacherDirectory.subjects')}</p>
             <div className="flex flex-wrap gap-1.5">
               {teacher.subjects.map((s) => (
                 <span key={s} className="text-xs font-semibold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">
@@ -167,14 +170,14 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
           onClick={() => navigate(`/timetable/teacher/${teacher._id}`)}
           className="flex items-center gap-1.5 h-9 px-3 bg-violet-50 text-[#5B21B6] rounded-xl text-xs font-semibold hover:bg-violet-100 transition-colors"
         >
-          <BookOpen className="w-3.5 h-3.5" /> View Timetable
+          <BookOpen className="w-3.5 h-3.5" /> {t('teacherDirectory.viewTimetable')}
         </button>
         {teacher.phone && (
           <a
             href={`tel:${teacher.phone}`}
             className="flex items-center gap-1.5 h-9 px-3 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold hover:bg-emerald-100 transition-colors"
           >
-            <Phone className="w-3.5 h-3.5" /> Call
+            <Phone className="w-3.5 h-3.5" /> {t('teacherDirectory.call')}
           </a>
         )}
         {teacher.email && (
@@ -182,21 +185,21 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
             href={`mailto:${teacher.email}`}
             className="flex items-center gap-1.5 h-9 px-3 bg-sky-50 text-sky-700 rounded-xl text-xs font-semibold hover:bg-sky-100 transition-colors"
           >
-            <Mail className="w-3.5 h-3.5" /> Email
+            <Mail className="w-3.5 h-3.5" /> {t('teacherDirectory.email')}
           </a>
         )}
         <button
           onClick={() => navigate(`/teachers/${teacher._id}`)}
           className="flex items-center gap-1.5 h-9 px-3 bg-gray-100 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-200 transition-colors"
         >
-          Full Profile →
+          {t('teacherDirectory.fullProfile')} →
         </button>
       </div>
 
       {/* Qualification */}
       {teacher.qualification && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Qualification</h3>
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('teacherDirectory.qualification')}</h3>
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-medium text-gray-800">{teacher.qualification.degree}</span>
             <span className="text-xs text-gray-400">
@@ -213,6 +216,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function PrincipalTeacherDirectoryPage() {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -231,13 +235,13 @@ export function PrincipalTeacherDirectoryPage() {
 
   return (
     <PageContainer>
-      <BackLink to="/principal" label="Principal Dashboard" />
+      <BackLink to="/principal" label={t('leaveApprovals.backLabel')} />
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('teacherDirectory.title')}</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {summary ? `${summary.total} total · ${summary.presentCount} present · ${summary.onLeave.length} on leave` : 'Loading…'}
+            {summary ? `${summary.total} ${t('teacherDirectory.total').toLowerCase()} · ${summary.presentCount} ${t('teacherDirectory.present').toLowerCase()} · ${summary.onLeave.length} ${t('teacherDirectory.onLeave').toLowerCase()}` : t('teacherDirectory.loading')}
           </p>
         </div>
       </div>
@@ -251,7 +255,7 @@ export function PrincipalTeacherDirectoryPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900 leading-none">{summary.total}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">Total</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t('teacherDirectory.total')}</p>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
@@ -260,7 +264,7 @@ export function PrincipalTeacherDirectoryPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900 leading-none">{summary.presentCount}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">Present</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t('teacherDirectory.present')}</p>
             </div>
           </div>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
@@ -269,7 +273,7 @@ export function PrincipalTeacherDirectoryPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900 leading-none">{summary.onLeave.length}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">On Leave</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t('teacherDirectory.onLeave')}</p>
             </div>
           </div>
         </div>
@@ -282,7 +286,7 @@ export function PrincipalTeacherDirectoryPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, subject, or employee ID…"
+          placeholder={t('teacherDirectory.searchPlaceholder')}
           className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#A855F7]/40 bg-white"
         />
       </div>
@@ -296,13 +300,13 @@ export function PrincipalTeacherDirectoryPage() {
         ) : isError ? (
           <div className="flex items-center gap-3 p-5">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-            <p className="text-sm font-semibold text-red-700">Couldn't load teacher list.</p>
+            <p className="text-sm font-semibold text-red-700">{t('teacherDirectory.loadError')}</p>
           </div>
         ) : teachers.length === 0 ? (
           <div className="py-16 text-center">
             <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-600">No teachers found</p>
-            {search && <p className="text-xs text-gray-400 mt-1">Try a different search term.</p>}
+            <p className="text-sm font-semibold text-gray-600">{t('teacherDirectory.emptyTitle')}</p>
+            {search && <p className="text-xs text-gray-400 mt-1">{t('teacherDirectory.emptyDesc')}</p>}
           </div>
         ) : (
           <div className="divide-y divide-gray-50">

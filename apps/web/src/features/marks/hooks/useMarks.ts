@@ -61,3 +61,13 @@ export const useRequestMarksCorrection = () => useBatchMutation((payload: MarksR
 export const usePublishMarks = () => useBatchMutation((target: MarksBatchTarget) => marksApi.publish(target));
 export const useLockMarks = () => useBatchMutation((target: MarksBatchTarget) => marksApi.lock(target));
 export const useReopenMarks = () => useBatchMutation((payload: MarksReopenPayload) => marksApi.reopen(payload));
+
+// AI extraction never saves anything, so no query invalidation on success.
+export const useExtractMarksFromImage = () =>
+  useMutation({ mutationFn: ({ target, file }: { target: MarksBatchTarget; file: File }) => marksApi.extractFromImage(target, file) });
+
+export const useExtractMarksFromVoice = () =>
+  useMutation({ mutationFn: ({ target, file, filename }: { target: MarksBatchTarget; file: Blob; filename: string }) => marksApi.extractFromVoice(target, file, filename) });
+
+export const useExtractMarksFromTranscript = () =>
+  useMutation({ mutationFn: ({ target, transcript, timeoutMs }: { target: MarksBatchTarget; transcript: string; timeoutMs?: number }) => marksApi.extractFromTranscript(target, transcript, timeoutMs) });

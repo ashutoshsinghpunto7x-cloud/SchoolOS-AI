@@ -1669,6 +1669,8 @@ export interface EnquiryListOptions {
   assignedCounsellor?: string;
   followUpBefore?: string;
   followUpAfter?: string;
+  createdAfter?: string;
+  createdBefore?: string;
   sortBy?: 'createdAt' | 'followUpDate' | 'studentName';
   sortOrder?: 'asc' | 'desc';
 }
@@ -2047,6 +2049,17 @@ export interface BehaviorWindow {
   endTime: string;
 }
 
+export interface ReportCardBranding {
+  motto?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  email?: string;
+  principalName?: string;
+  principalSignatureUrl?: string;
+  schoolSealUrl?: string;
+}
+
 export interface SchoolSettings extends BaseEntity {
   schoolId: string;
   schoolName: string;
@@ -2054,7 +2067,17 @@ export interface SchoolSettings extends BaseEntity {
   attendanceRules: AttendanceRules;
   payrollConfig: PayrollConfig;
   behaviorWindow: BehaviorWindow;
+  reportCardBranding: ReportCardBranding;
   updatedBy?: string;
+}
+
+export interface UpdateReportCardBrandingPayload {
+  motto?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  email?: string;
+  principalName?: string;
 }
 
 export interface NeedsSubstituteEntry {
@@ -2103,6 +2126,11 @@ export interface PrincipalDashboardData {
   timetable: PrincipalTimetableStats;
   upcomingEvents: PrincipalUpcomingEvent[];
   alerts: PrincipalAlert[];
+  generatedAt: string;
+}
+
+export interface PrincipalBriefingSummary {
+  summary: string;
   generatedAt: string;
 }
 
@@ -2863,12 +2891,20 @@ export interface GradeBand {
   maxPercent: number;
 }
 
+export type SubjectEvaluationType = 'marks' | 'grade' | 'both';
+
+export interface SubjectConfig {
+  name: string;
+  evaluationType: SubjectEvaluationType;
+}
+
 export interface Exam extends BaseEntity {
   name: string;
   examType: ExamType;
   termLabel?: string;
   classesApplicable: string[];
   subjects: string[];
+  subjectConfigs?: SubjectConfig[];
   components: ExamComponent[];
   gradingBands: GradeBand[];
   passPercent: number;
@@ -2884,6 +2920,7 @@ export interface CreateExamPayload {
   termLabel?: string;
   classesApplicable: string[];
   subjects: string[];
+  subjectConfigs?: SubjectConfig[];
   components: ExamComponent[];
   gradingBands?: GradeBand[];
   passPercent?: number;
@@ -3036,6 +3073,29 @@ export interface MarksListOptions {
   limit?: number;
 }
 
+// ── Marks AI extraction (photo / voice → pre-filled entry table) ──────────────
+
+export interface ExtractedMarksRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  componentScores: ComponentScore[];
+}
+
+export interface UnmatchedExtraction {
+  rawName?: string;
+  rawRollNumber?: string;
+  scores: Record<string, number>;
+}
+
+export interface MarksExtractionResult {
+  source: 'image' | 'voice';
+  extracted: ExtractedMarksRow[];
+  unmatched: UnmatchedExtraction[];
+  warnings: string[];
+  transcript?: string;
+}
+
 export interface PayrollSummary {
   totalGross: number;
   totalDeductions: number;
@@ -3043,4 +3103,113 @@ export interface PayrollSummary {
   draftCount: number;
   generatedCount: number;
   paidCount: number;
+}
+
+// ── Report Cards ──────────────────────────────────────────────────────────────
+
+export type PromotionStatus = 'promoted' | 'not_promoted' | 'pending';
+export type ReportCardStatus = 'draft' | 'published';
+
+export interface ReportCardSubjectRow {
+  subjectName: string;
+  evaluationType: SubjectEvaluationType;
+  maxMarks?: number;
+  marksObtained?: number;
+  percentage?: number;
+  grade?: string;
+  result: MarksResultStatus;
+  teacherRemark?: string;
+}
+
+export interface CoScholasticEntry {
+  activity: string;
+  grade: string;
+}
+
+export interface ReportCardSummary {
+  totalMaxMarks: number;
+  totalObtained: number;
+  percentage: number;
+  overallGrade?: string;
+  rank?: number;
+  classSize?: number;
+  promotionStatus: PromotionStatus;
+  highestMarksPercent?: number;
+  classAveragePercent?: number;
+}
+
+export interface ReportCardAttendance {
+  workingDays: number;
+  present: number;
+  absent: number;
+  late: number;
+  halfDay: number;
+  leaveApproved: number;
+  percent: number;
+}
+
+export interface ReportCardAiRemark {
+  text: string;
+  generatedAt?: string;
+  model?: string;
+  edited: boolean;
+}
+
+export interface ReportCard extends BaseEntity {
+  examId: string;
+  studentId: string;
+  class: string;
+  section: string;
+  subjects: ReportCardSubjectRow[];
+  coScholastic: CoScholasticEntry[];
+  summary: ReportCardSummary;
+  attendance: ReportCardAttendance;
+  aiRemark?: ReportCardAiRemark;
+  teacherRemark?: string;
+  principalRemark?: string;
+  parentFeedback?: string;
+  warnings: string[];
+  verificationToken: string;
+  status: ReportCardStatus;
+  generatedById: string;
+  generatedByName: string;
+  generatedAt: string;
+}
+
+export interface GenerateReportCardPayload {
+  examId: string;
+  studentId: string;
+}
+
+export interface UpdateReportCardPayload {
+  aiRemarkText?: string;
+  teacherRemark?: string;
+  principalRemark?: string;
+  parentFeedback?: string;
+  coScholastic?: CoScholasticEntry[];
+}
+
+export interface ReportCardRosterRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  photoUrl?: string;
+  hasReportCard: boolean;
+  missingSubjects: number;
+}
+
+export interface ReportCardRoster {
+  exam: Exam;
+  rows: ReportCardRosterRow[];
+}
+
+export interface ReportCardVerification {
+  studentName: string;
+  class: string;
+  section: string;
+  examName: string;
+  overallGrade?: string;
+  promotionStatus: PromotionStatus;
+  issuedAt: string;
+  schoolId: string;
 }

@@ -1,4 +1,6 @@
 import { PageContainer } from '@/components/workspace/PageContainer';
+import { WorkspaceSection } from '@/components/workspace/WorkspaceSection';
+import { SectionHeader } from '@/components/workspace/SectionHeader';
 import { AiHeroSection } from '../components/AiHeroSection';
 import { PriorityCenter } from '../components/PriorityCenter';
 import { SchoolHealthCard } from '../components/SchoolHealthCard';
@@ -7,7 +9,13 @@ import { FinancialSnapshotCard } from '../components/FinancialSnapshotCard';
 import { StaffManagementCard } from '../components/StaffManagementCard';
 import { LiveActivityCard } from '../components/LiveActivityCard';
 import { DashboardQuickActions } from '../components/DashboardQuickActions';
+import { DailyBriefingCard } from '../components/DailyBriefingCard';
+import { AlertsPanel } from '../components/AlertsPanel';
+import { AttendanceInsightsCard } from '../components/AttendanceInsightsCard';
+import { FeeInsightsCard } from '../components/FeeInsightsCard';
+import { AdmissionAssistantCard } from '../components/AdmissionAssistantCard';
 import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal';
+import { useLanguage } from '@/context/LanguageContext';
 
 // ── PrincipalWorkspace — the Principal's Daily Command Center ────────────────
 // AI Assistant is the hero (row 1, 70/30 with Priority Center — the single
@@ -22,6 +30,7 @@ import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal
 export const PrincipalWorkspace = () => {
   const { data, isLoading, error, refetch } = usePrincipalDashboard();
   const { data: teachersSummary } = useTeachersSummary();
+  const { t } = useLanguage();
 
   return (
     <PageContainer>
@@ -35,10 +44,13 @@ export const PrincipalWorkspace = () => {
               onClick={() => void refetch()}
               className="h-8 px-3 shrink-0 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
             >
-              Retry
+              {t('workspace.retry')}
             </button>
           </div>
         )}
+
+        {/* Daily Briefing — morning summary strip, above everything else */}
+        <DailyBriefingCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
 
         {/* Row 1 — AI Assistant hero + Today's Schedule */}
         <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-stretch">
@@ -53,10 +65,25 @@ export const PrincipalWorkspace = () => {
           <FinancialSnapshotCard data={data?.fees} isLoading={isLoading} />
         </div>
 
+        {/* Smart Alerts — only high-signal alerts, reusing the existing AlertsPanel */}
+        {(data?.alerts?.length ?? 0) > 0 && (
+          <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <SectionHeader title={t('smartAlerts.title')} subtitle={t('smartAlerts.subtitle')} />
+            <AlertsPanel alerts={data?.alerts ?? []} isLoading={isLoading} />
+          </WorkspaceSection>
+        )}
+
         {/* Row 3 — Staff Management, Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
           <StaffManagementCard />
           <LiveActivityCard />
+        </div>
+
+        {/* Row 3.5 — Attendance Insights, Fee Insights, Admission Assistant */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          <AttendanceInsightsCard />
+          <FeeInsightsCard />
+          <AdmissionAssistantCard data={data?.admissions} isLoading={isLoading} />
         </div>
 
         {/* Row 4 — Quick Actions */}

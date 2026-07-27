@@ -5,20 +5,22 @@ import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { useScanQr, useTodayStaffAttendance, useMarkAttendanceManual } from '@/features/employees/hooks/useStaffAttendance';
 import { useTeacherList } from '@/features/teachers/hooks/useTeachers';
+import { useLanguage } from '@/context/LanguageContext';
+import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 import type { StaffAttendanceScanResult, StaffAttendanceRecord, StaffAttendanceStatus } from '@schoolos/types';
 
 const SCANNER_ELEMENT_ID = 'qr-reader';
 
-const STATUS_LABEL: Record<string, string> = {
-  present:  'Present',
-  late:     'Late',
-  half_day: 'Half Day',
+const STATUS_KEY: Record<string, PrincipalTranslationKey> = {
+  present:  'attendanceScanner.present',
+  late:     'attendanceScanner.late',
+  half_day: 'attendanceScanner.halfDay',
 };
 
-function actionStatusText(result: StaffAttendanceScanResult): string {
-  if (result.action === 'already_marked') return 'Already Marked';
-  if (result.action === 'check_out') return 'Checked Out';
-  return STATUS_LABEL[result.record.status] ?? 'Checked In';
+function actionStatusText(result: StaffAttendanceScanResult, t: (k: PrincipalTranslationKey) => string): string {
+  if (result.action === 'already_marked') return t('attendanceScanner.alreadyMarked');
+  if (result.action === 'check_out') return t('attendanceScanner.checkedOut');
+  return STATUS_KEY[result.record.status] ? t(STATUS_KEY[result.record.status]) : t('attendanceScanner.checkedIn');
 }
 
 function initialsOf(name: string): string {
@@ -33,6 +35,7 @@ function timeLabel(iso?: string): string {
 // ── Manual mark panel — fallback for when a teacher's QR isn't handy ─────────
 
 function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanResult) => void }) {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [rowError, setRowError] = useState<{ id: string; message: string } | null>(null);
   const { data: teachers = [], isLoading } = useTeacherList(search);
@@ -61,7 +64,7 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search teacher by name…"
+          placeholder={t('attendanceScanner.searchTeacher')}
           className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-colors"
         />
       </div>
@@ -70,48 +73,48 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)
         ) : teachers.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-10">No teachers found.</p>
+          <p className="text-sm text-gray-400 text-center py-10">{t('attendanceScanner.noTeachersFound')}</p>
         ) : (
-          teachers.map((t) => {
-            const status = t.employeeId ? statusByEmployeeId.get(t.employeeId) : undefined;
-            const pending = isPending && variables?.employeeId === t.employeeId;
-            const hasEmployeeId = t.hasEmployeeRecord ?? true;
+          teachers.map((teacher) => {
+            const status = teacher.employeeId ? statusByEmployeeId.get(teacher.employeeId) : undefined;
+            const pending = isPending && variables?.employeeId === teacher.employeeId;
+            const hasEmployeeId = teacher.hasEmployeeRecord ?? true;
             return (
-              <div key={t._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+              <div key={teacher._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                 <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
-                  {initialsOf(t.fullName)}
+                  {initialsOf(teacher.fullName)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate">{t.fullName}</p>
+                  <p className="text-sm font-semibold text-gray-800 truncate">{teacher.fullName}</p>
                   {status ? (
                     <p className={`text-xs mt-0.5 font-medium ${status === 'absent' ? 'text-red-500' : 'text-emerald-600'}`}>
-                      {STATUS_LABEL[status] ?? (status === 'absent' ? 'Absent' : status)}
+                      {STATUS_KEY[status] ? t(STATUS_KEY[status]) : status === 'absent' ? t('attendanceScanner.absent') : status}
                     </p>
-                  ) : rowError?.id === t.employeeId ? (
+                  ) : rowError?.id === teacher.employeeId ? (
                     <p className="text-xs mt-0.5 font-medium text-red-500 truncate">{rowError.message}</p>
                   ) : !hasEmployeeId ? (
-                    <p className="text-xs mt-0.5 font-medium text-amber-600 truncate">No HR employee record — add in Admin &gt; Employees</p>
+                    <p className="text-xs mt-0.5 font-medium text-amber-600 truncate">{t('attendanceScanner.noHrRecord')}</p>
                   ) : (
-                    <p className="text-xs mt-0.5 text-gray-400">Not marked</p>
+                    <p className="text-xs mt-0.5 text-gray-400">{t('attendanceScanner.notMarked')}</p>
                   )}
                 </div>
                 <button
                   type="button"
                   disabled={!hasEmployeeId || pending}
-                  onClick={() => t.employeeId && mark(t.employeeId, 'present')}
+                  onClick={() => teacher.employeeId && mark(teacher.employeeId, 'present')}
                   className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition-colors disabled:opacity-40"
-                  aria-label={`Mark ${t.fullName} present`}
-                  title={hasEmployeeId ? 'Mark present' : 'No HR employee record for this teacher yet'}
+                  aria-label={`Mark ${teacher.fullName} present`}
+                  title={hasEmployeeId ? t('attendanceScanner.markPresent') : t('attendanceScanner.noHrRecord')}
                 >
                   {pending && variables?.status === 'present' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 </button>
                 <button
                   type="button"
                   disabled={!hasEmployeeId || pending}
-                  onClick={() => t.employeeId && mark(t.employeeId, 'absent')}
+                  onClick={() => teacher.employeeId && mark(teacher.employeeId, 'absent')}
                   className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors disabled:opacity-40"
-                  aria-label={`Mark ${t.fullName} absent`}
-                  title={hasEmployeeId ? 'Mark absent' : 'No HR employee record for this teacher yet'}
+                  aria-label={`Mark ${teacher.fullName} absent`}
+                  title={hasEmployeeId ? t('attendanceScanner.markAbsent') : t('attendanceScanner.noHrRecord')}
                 >
                   {pending && variables?.status === 'absent' ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                 </button>
@@ -125,6 +128,7 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
 }
 
 export function AttendanceScannerPage() {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'scan' | 'manual'>('scan');
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [scannerRunning, setScannerRunning] = useState(false);
@@ -208,10 +212,10 @@ export function AttendanceScannerPage() {
   return (
     <PageContainer>
       <WorkspaceHeader
-        title="Today's Attendance"
-        subtitle="Scan staff QR codes, or mark attendance manually when a QR isn't handy"
+        title={t('attendanceScanner.title')}
+        subtitle={t('attendanceScanner.subtitle')}
         backTo="/principal"
-        backLabel="Principal Dashboard"
+        backLabel={t('leaveApprovals.backLabel')}
       />
 
       {/* Scan / Manual mode switch */}
@@ -223,7 +227,7 @@ export function AttendanceScannerPage() {
             mode === 'scan' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          <QrCode className="w-4 h-4" /> Scan QR
+          <QrCode className="w-4 h-4" /> {t('attendanceScanner.scanQr')}
         </button>
         <button
           type="button"
@@ -232,7 +236,7 @@ export function AttendanceScannerPage() {
             mode === 'manual' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          <ListChecks className="w-4 h-4" /> Mark Manually
+          <ListChecks className="w-4 h-4" /> {t('attendanceScanner.markManually')}
         </button>
       </div>
 
@@ -262,7 +266,7 @@ export function AttendanceScannerPage() {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-emerald-800">{actionStatusText(banner.result)}</p>
+                <p className="text-sm font-bold text-emerald-800">{actionStatusText(banner.result, t)}</p>
                 <p className="text-xs text-emerald-600 mt-0.5 flex items-center gap-1 justify-end"><Clock className="w-3 h-3" /> {new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             </>
@@ -284,7 +288,7 @@ export function AttendanceScannerPage() {
               {!scannerRunning && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 pointer-events-none">
                   <ScanLine className="w-10 h-10 mb-2" />
-                  <p className="text-xs font-medium">Camera is off</p>
+                  <p className="text-xs font-medium">{t('attendanceScanner.cameraOff')}</p>
                 </div>
               )}
             </div>
@@ -298,7 +302,7 @@ export function AttendanceScannerPage() {
                 scannerRunning ? 'bg-white border border-gray-200 text-gray-700' : 'bg-gradient-to-r from-violet-600 to-pink-500 text-white'
               }`}
             >
-              <Camera className="w-4 h-4" /> {scannerRunning ? 'Stop Scanner' : 'Start Scanner'}
+              <Camera className="w-4 h-4" /> {scannerRunning ? t('attendanceScanner.stopScanner') : t('attendanceScanner.startScanner')}
             </button>
           </div>
         ) : (
@@ -311,7 +315,7 @@ export function AttendanceScannerPage() {
 
         {/* Today's attendance table */}
         <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">Today's Attendance</h3>
+          <h3 className="text-sm font-bold text-gray-900 mb-4">{t('attendanceScanner.todaysAttendance')}</h3>
 
           {loadingToday ? (
             <div className="space-y-2">
@@ -320,17 +324,17 @@ export function AttendanceScannerPage() {
           ) : !todayRecords?.length ? (
             <div className="py-10 text-center">
               <Loader2 className="hidden" />
-              <p className="text-sm text-gray-400">No check-ins yet today</p>
+              <p className="text-sm text-gray-400">{t('attendanceScanner.noCheckIns')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[11px] text-gray-400 uppercase tracking-wide">
-                    <th className="text-left font-semibold px-2 py-2">Employee ID</th>
-                    <th className="text-left font-semibold px-2 py-2">Check-In</th>
-                    <th className="text-left font-semibold px-2 py-2">Check-Out</th>
-                    <th className="text-left font-semibold px-2 py-2">Status</th>
+                    <th className="text-left font-semibold px-2 py-2">{t('attendanceScanner.employeeId')}</th>
+                    <th className="text-left font-semibold px-2 py-2">{t('attendanceScanner.checkIn')}</th>
+                    <th className="text-left font-semibold px-2 py-2">{t('attendanceScanner.checkOut')}</th>
+                    <th className="text-left font-semibold px-2 py-2">{t('attendanceScanner.status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -341,7 +345,7 @@ export function AttendanceScannerPage() {
                       <td className="px-2 py-2.5 text-gray-600">{timeLabel(r.checkOut?.time)}</td>
                       <td className="px-2 py-2.5">
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#A855F7]/10 text-[#5B21B6] capitalize">
-                          {r.status.replace('_', ' ')}
+                          {STATUS_KEY[r.status] ? t(STATUS_KEY[r.status]) : r.status.replace('_', ' ')}
                         </span>
                       </td>
                     </tr>

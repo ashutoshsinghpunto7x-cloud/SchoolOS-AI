@@ -493,6 +493,22 @@ const MarksHubPage = lazyPage(
   () => import('@/features/marks/pages/MarksHubPage'),
   'MarksHubPage',
 );
+const ReportCardHubPage = lazyPage(
+  () => import('@/features/report-cards/pages/ReportCardHubPage'),
+  'ReportCardHubPage',
+);
+const ReportCardRosterPage = lazyPage(
+  () => import('@/features/report-cards/pages/ReportCardRosterPage'),
+  'ReportCardRosterPage',
+);
+const ReportCardPreviewPage = lazyPage(
+  () => import('@/features/report-cards/pages/ReportCardPreviewPage'),
+  'ReportCardPreviewPage',
+);
+const VerifyReportCardPage = lazyPage(
+  () => import('@/features/report-cards/pages/VerifyReportCardPage'),
+  'VerifyReportCardPage',
+);
 const MarksEntryPage = lazyPage(
   () => import('@/features/marks/pages/MarksEntryPage'),
   'MarksEntryPage',
@@ -655,6 +671,10 @@ export const router = createBrowserRouter([
     path: '/forbidden',
     element: <Forbidden />,
   },
+  {
+    path: '/verify/report-card/:token',
+    element: <VerifyReportCardPage />,
+  },
 
   // ── Auth shell (provides AuthProvider for login + app) ────────────────────
   {
@@ -745,6 +765,9 @@ export const router = createBrowserRouter([
                       { path: 'teacher/behavior/:cls/:section',                       element: <TeacherBehaviorPage /> },
                       { path: 'teacher/marks',                                        element: <MarksHubPage /> },
                       { path: 'teacher/marks/:cls/:section/:subjectName/:examId',      element: <MarksEntryPage /> },
+                      { path: 'teacher/report-cards',                                 element: <ReportCardHubPage /> },
+                      { path: 'teacher/report-cards/:examId/:cls/:section',           element: <ReportCardRosterPage /> },
+                      { path: 'teacher/report-cards/:examId/student/:studentId',      element: <ReportCardPreviewPage /> },
                       { path: 'teacher/history',                                      element: <TeacherHistoryPage /> },
                       { path: 'teacher/timetable',                                    element: <TeacherWorkspaceTimetablePage /> },
                       { path: 'teacher/profile',                                      element: <TeacherWorkspaceProfilePage /> },

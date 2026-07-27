@@ -9,6 +9,9 @@ import { BehaviorSettingsPanel } from '../components/BehaviorSettingsPanel';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
 import { NotificationSoundToggle } from '@/features/notifications/components/NotificationSoundToggle';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageTogglePill } from '@/features/principal/components/LanguageTogglePill';
+import { Languages } from 'lucide-react';
 
 export function SchoolSettingsPage() {
   const navigate = useNavigate();
@@ -17,6 +20,7 @@ export function SchoolSettingsPage() {
   const { mutateAsync: uploadLogo, isPending: uploading } = useUploadSchoolLogo();
   const { mutateAsync: removeLogo, isPending: removing } = useRemoveSchoolLogo();
   const { theme, toggleTheme } = useTeacherTheme();
+  const { language, setLanguage, t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
 
@@ -34,16 +38,16 @@ export function SchoolSettingsPage() {
 
   return (
     <PageContainer narrow>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
-      <p className="text-sm text-gray-500 mb-6">School branding and system configuration.</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('settings.title')}</h1>
+      <p className="text-sm text-gray-500 mb-6">{t('settings.subtitle')}</p>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-1">
           <Building2 className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-900">School Logo</h2>
+          <h2 className="text-sm font-bold text-gray-900">{t('settings.logo.title')}</h2>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          Shown in the sidebar across the app. Recommended: square image, under 2MB.
+          {t('settings.logo.subtitle')}
         </p>
 
         {isLoading ? (
@@ -67,7 +71,7 @@ export function SchoolSettingsPage() {
                 className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-semibold transition-colors"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {uploading ? 'Uploading…' : settings?.logoUrl ? 'Replace Logo' : 'Upload Logo'}
+                {uploading ? t('settings.logo.uploading') : settings?.logoUrl ? t('settings.logo.replace') : t('settings.logo.upload')}
               </button>
               {settings?.logoUrl && (
                 <button
@@ -76,7 +80,7 @@ export function SchoolSettingsPage() {
                   disabled={removing}
                   className="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-red-600 disabled:opacity-50"
                 >
-                  <X className="w-3.5 h-3.5" /> Remove logo
+                  <X className="w-3.5 h-3.5" /> {t('settings.logo.remove')}
                 </button>
               )}
             </div>
@@ -89,26 +93,44 @@ export function SchoolSettingsPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
         <div className="flex items-center gap-2 mb-1">
           <Palette className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-900">Appearance</h2>
+          <h2 className="text-sm font-bold text-gray-900">{t('settings.appearance.title')}</h2>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          Switch between light and dark mode. Your dashboard stays light by default until you toggle this.
+          {t('settings.appearance.subtitle')}
         </p>
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-800">
-            {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+            {theme === 'dark' ? t('settings.appearance.dark') : t('settings.appearance.light')}
           </span>
           <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
         </div>
 
         <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-50">
           <div>
-            <span className="text-sm font-semibold text-gray-800 block">Notification Sounds</span>
-            <span className="text-xs text-gray-400">Play a short sound when a new notification arrives.</span>
+            <span className="text-sm font-semibold text-gray-800 block">{t('settings.notifSounds.title')}</span>
+            <span className="text-xs text-gray-400">{t('settings.notifSounds.subtitle')}</span>
           </div>
           <NotificationSoundToggle />
         </div>
       </div>
+
+      {user?.role === 'principal' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Languages className="w-4 h-4 text-gray-400" />
+            <h2 className="text-sm font-bold text-gray-900">{t('settings.language.title')}</h2>
+          </div>
+          <p className="text-xs text-gray-400 mb-4">
+            {t('settings.language.subtitle')}
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-800">
+              {language === 'hi' ? t('settings.language.hindi') : t('settings.language.english')}
+            </span>
+            <LanguageTogglePill language={language} onChange={setLanguage} />
+          </div>
+        </div>
+      )}
 
       {user?.role === 'admin' && <AttendanceRulesPanel />}
 
@@ -124,7 +146,7 @@ export function SchoolSettingsPage() {
             <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4 text-gray-500" />
             </div>
-            <span className="flex-1 text-sm font-semibold text-gray-800">Change Password</span>
+            <span className="flex-1 text-sm font-semibold text-gray-800">{t('settings.changePassword')}</span>
             <ChevronRight className="w-4 h-4 text-gray-300" />
           </button>
           <button
@@ -135,7 +157,7 @@ export function SchoolSettingsPage() {
             <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
               <LogOut className="w-4 h-4 text-red-500" />
             </div>
-            <span className="flex-1 text-sm font-semibold text-red-600">Log Out</span>
+            <span className="flex-1 text-sm font-semibold text-red-600">{t('settings.logOut')}</span>
           </button>
         </div>
       )}

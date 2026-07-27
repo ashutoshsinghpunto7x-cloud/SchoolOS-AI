@@ -6,20 +6,25 @@ import { usePrincipalAssistant } from '@/features/principal-assistant/hooks/useP
 import { ChatMessage } from '@/features/principal-assistant/components/ChatMessage';
 import { extractErrorMessage } from '@/services/api';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
+import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 
-const CHIPS = [
-  "Show today's attendance",
-  'Any urgent issues?',
-  'Pending approvals',
-  'Fee collection today',
-  "Generate today's report",
+const CHIP_KEYS: PrincipalTranslationKey[] = [
+  'hero.chip.attendance',
+  'hero.chip.urgent',
+  'hero.chip.approvals',
+  'hero.chip.feeCollection',
+  'hero.chip.report',
+  'hero.chip.todaysEnquiries',
+  'hero.chip.admissionFollowUps',
+  'hero.chip.teachersAbsent',
 ];
 
-function greeting(): string {
+function greetingKey(): PrincipalTranslationKey {
   const h = new Date().getHours();
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  return 'Good Evening';
+  if (h < 12) return 'hero.greeting.morning';
+  if (h < 17) return 'hero.greeting.afternoon';
+  return 'hero.greeting.evening';
 }
 
 // The single hero moment of the dashboard — calm, premium, AI-first. Sized to
@@ -28,6 +33,7 @@ function greeting(): string {
 // compact instead of permanently showing a wall of prompts.
 export function AiHeroSection() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { messages, sendMessage, isLoading, error } = usePrincipalAssistant();
   const [input, setInput] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
@@ -68,8 +74,8 @@ export function AiHeroSection() {
 
       <div className="relative flex items-center justify-between">
         <span className="flex items-center gap-2 text-[11px] font-semibold text-white/60 uppercase tracking-wide">
-          AI Assistant
-          <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] normal-case">Beta</span>
+          {t('hero.aiAssistant')}
+          <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] normal-case">{t('hero.beta')}</span>
         </span>
         <div className="flex items-center gap-3">
           {started && (
@@ -78,7 +84,7 @@ export function AiHeroSection() {
               onClick={() => window.location.reload()}
               className="flex items-center gap-1 text-[11px] font-semibold text-white/50 hover:text-white/80 transition-colors"
             >
-              <RotateCcw className="w-3 h-3" /> New chat
+              <RotateCcw className="w-3 h-3" /> {t('hero.newChat')}
             </button>
           )}
           <button
@@ -87,7 +93,7 @@ export function AiHeroSection() {
             className="flex items-center gap-1 text-[11px] font-semibold text-white/50 hover:text-white/80 transition-colors"
           >
             {maximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
-            {maximized ? 'Collapse' : 'Expand'}
+            {maximized ? t('hero.collapse') : t('hero.expand')}
           </button>
         </div>
       </div>
@@ -98,7 +104,7 @@ export function AiHeroSection() {
         </div>
         <div>
           <p className="text-base font-semibold text-white leading-tight">
-            {greeting()}, {user?.firstName ?? 'Principal'} 👋
+            {t(greetingKey())}, {user?.firstName ?? 'Principal'} 👋
           </p>
           <p className="text-xs text-white/50 mt-0.5">{dateStr}</p>
         </div>
@@ -132,19 +138,19 @@ export function AiHeroSection() {
 
         {showChips && (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-            <p className="text-xs text-white/60 mb-2">Try asking:</p>
+            <p className="text-xs text-white/60 mb-2">{t('hero.tryAsking')}</p>
             <div className="flex flex-wrap gap-2">
-              {CHIPS.map((chip) => (
+              {CHIP_KEYS.map((chipKey) => (
                 <button
-                  key={chip}
+                  key={chipKey}
                   type="button"
                   // onMouseDown fires before the input's onBlur, so the chip
                   // click registers before this section unmounts.
                   onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => handleSend(chip)}
+                  onClick={() => handleSend(t(chipKey))}
                   className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 border border-white/15 text-white/80 hover:bg-white/20 transition-colors"
                 >
-                  {chip}
+                  {t(chipKey)}
                 </button>
               ))}
             </div>
@@ -160,7 +166,7 @@ export function AiHeroSection() {
           onFocus={() => setInputFocused(true)}
           onBlur={() => setInputFocused(false)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder="Ask me anything about your school…"
+          placeholder={t('hero.inputPlaceholder')}
           disabled={isLoading}
           className="flex-1 h-10 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none disabled:opacity-60"
         />

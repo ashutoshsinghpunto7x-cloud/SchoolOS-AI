@@ -7,6 +7,7 @@ import { NotificationNudge } from '@/features/notifications/components/Notificat
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
 import { TeacherThemeProvider, useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 
@@ -115,6 +116,8 @@ function AppLayoutInner() {
 // can safely call useTeacherTheme() — the hook returns light/no-op for other roles.
 export const AppLayout = () => (
   <TeacherThemeProvider>
-    <AppLayoutInner />
+    <LanguageProvider>
+      <AppLayoutInner />
+    </LanguageProvider>
   </TeacherThemeProvider>
 );

@@ -1,4 +1,4 @@
-import { Exam, IExam, ExamType, ExamStatus, IExamComponent, IGradeBand } from './exam.model';
+import { Exam, IExam, ExamType, ExamStatus, IExamComponent, IGradeBand, ISubjectConfig } from './exam.model';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -9,6 +9,7 @@ export interface CreateExamData {
   termLabel?: string;
   classesApplicable: string[];
   subjects: string[];
+  subjectConfigs?: ISubjectConfig[];
   components: IExamComponent[];
   gradingBands: IGradeBand[];
   passPercent: number;

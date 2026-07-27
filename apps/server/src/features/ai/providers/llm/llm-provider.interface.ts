@@ -9,6 +9,8 @@ export interface LLMCompletionInput {
   maxTokens?: number;
   /** When true, instructs the model to respond with valid JSON only. */
   jsonResponse?: boolean;
+  /** Optional image (data URI) to attach for vision-capable models. */
+  imageDataUri?: string;
 }
 
 export interface LLMCompletionOutput {

@@ -36,4 +36,25 @@ export const principalController = {
       next(err);
     }
   },
+
+  async getBriefingSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const data = await principalService.getBriefingSummary(ctx.schoolId);
+
+      auditService.log({
+        userId: ctx.userId,
+        userDisplayName: ctx.displayName,
+        action: 'principal.briefing_summary.generated',
+        resource: 'principal',
+        resourceId: ctx.schoolId,
+        ip: ctx.ip,
+        schoolId: ctx.schoolId,
+      });
+
+      sendSuccess(res, data, 'Briefing summary generated');
+    } catch (err) {
+      next(err);
+    }
+  },
 };

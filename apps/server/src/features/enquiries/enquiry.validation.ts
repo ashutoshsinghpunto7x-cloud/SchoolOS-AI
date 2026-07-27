@@ -52,6 +52,8 @@ export const listEnquiriesSchema = z.object({
   assignedCounsellor: z.string().optional(),
   followUpBefore:     z.string().optional(),
   followUpAfter:      z.string().optional(),
+  createdAfter:       z.string().optional(),
+  createdBefore:      z.string().optional(),
   sortBy:             z.enum(['createdAt', 'followUpDate', 'studentName']).default('createdAt'),
   sortOrder:          z.enum(['asc', 'desc']).default('desc'),
 });

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { PrincipalDashboardData, TeachersSummaryData } from '@schoolos/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Only the metrics with a real data source are shown — Classes Running,
 // Buses Running, Power Status and CCTV Status all have no backing feature
@@ -13,6 +14,7 @@ interface SchoolHealthCardProps {
 
 export function SchoolHealthCard({ data, teachersSummary, isLoading }: SchoolHealthCardProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const teachersPresent = teachersSummary?.presentCount;
   const teachersTotal = teachersSummary?.total ?? data?.teachers.active;
@@ -20,27 +22,27 @@ export function SchoolHealthCard({ data, teachersSummary, isLoading }: SchoolHea
 
   const tiles = [
     {
-      label: 'Students Present',
+      label: t('health.studentsPresent'),
       value: data ? `${data.attendance.today.present}/${data.students.active}` : '—',
       onClick: () => navigate('/attendance'),
     },
     {
-      label: 'Teachers Present',
+      label: t('health.teachersPresent'),
       value: teachersSummary ? `${teachersPresent}/${teachersTotal}` : data ? `${data.teachers.active}` : '—',
       onClick: () => navigate('/principal/teachers-summary'),
     },
     {
-      label: 'Absent Teachers',
+      label: t('health.absentTeachers'),
       value: absentTeachers !== undefined ? String(absentTeachers) : '—',
       onClick: () => navigate('/principal/teachers-summary'),
     },
     {
-      label: 'Weekly Attendance',
+      label: t('health.weeklyAttendance'),
       value: data ? `${data.attendance.weeklyAvgRate}%` : '—',
       onClick: () => navigate('/attendance'),
     },
     {
-      label: 'Total Strength',
+      label: t('health.totalStrength'),
       value: data ? String(data.students.active + data.teachers.active) : '—',
       onClick: () => navigate('/attendance'),
     },
@@ -48,8 +50,8 @@ export function SchoolHealthCard({ data, teachersSummary, isLoading }: SchoolHea
 
   return (
     <div className="bg-white rounded-[22px] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6 h-[288px] flex flex-col">
-      <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">School Health</h3>
-      <p className="text-[12px] text-[#6B7280] font-medium mb-3">At a glance — no charts, just the numbers</p>
+      <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">{t('health.title')}</h3>
+      <p className="text-[12px] text-[#6B7280] font-medium mb-3">{t('health.subtitle')}</p>
 
       <div className="flex-1 flex flex-col justify-start gap-1 overflow-y-auto overscroll-contain">
         {isLoading ? (

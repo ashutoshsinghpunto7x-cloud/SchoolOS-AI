@@ -11,50 +11,52 @@ import { AdmissionsWidget } from '../components/AdmissionsWidget';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { AcademicWidget } from '../components/AcademicWidget';
 import { usePrincipalDashboard } from '../hooks/usePrincipal';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Deeper breakdowns that used to live on the main dashboard — moved here so
 // the dashboard itself stays a fast daily-glance view, reachable instead from
 // the sidebar for whenever the principal wants to dig into the detail.
 export const PrincipalInsightsPage = () => {
   const { data, isLoading } = usePrincipalDashboard();
+  const { t } = useLanguage();
 
   return (
     <PageContainer>
       <div className="flex flex-col gap-6">
         <WorkspaceHeader
-          title="More Insights"
-          subtitle="Deeper breakdowns beyond the daily dashboard"
+          title={t('insights.title')}
+          subtitle={t('insights.subtitle')}
           backTo="/principal"
-          backLabel="Principal Dashboard"
+          backLabel={t('leaveApprovals.backLabel')}
         />
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Attendance Overview" subtitle="Today's attendance breakdown" />
+                <SectionHeader title={t('insights.attendanceOverview')} subtitle={t('insights.attendanceOverviewSub')} />
                 <AttendanceWidget data={data?.attendance} isLoading={isLoading} />
               </WorkspaceSection>
 
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Fee Collection" subtitle="Current collection status" />
+                <SectionHeader title={t('insights.feeCollection')} subtitle={t('insights.feeCollectionSub')} />
                 <FeeWidget data={data?.fees} isLoading={isLoading} />
               </WorkspaceSection>
             </div>
 
             <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <SectionHeader title="Fees by Class" subtitle="Collected vs. pending, per class & section" />
+              <SectionHeader title={t('insights.feesByClass')} subtitle={t('insights.feesByClassSub')} />
               <ClassFeeOverviewWidget />
             </WorkspaceSection>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Admissions Pipeline" subtitle="Enquiry funnel overview" />
+                <SectionHeader title={t('insights.admissionsPipeline')} subtitle={t('insights.admissionsPipelineSub')} />
                 <AdmissionsWidget data={data?.admissions} isLoading={isLoading} />
               </WorkspaceSection>
 
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Academic Overview" subtitle="Timetable & staff status" />
+                <SectionHeader title={t('insights.academicOverview')} subtitle={t('insights.academicOverviewSub')} />
                 <AcademicWidget
                   timetable={data?.timetable}
                   teachers={data?.teachers}
@@ -63,7 +65,7 @@ export const PrincipalInsightsPage = () => {
               </WorkspaceSection>
 
               <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title="Calendar" subtitle="This month's events" />
+                <SectionHeader title={t('insights.calendar')} subtitle={t('insights.calendarSub')} />
                 <CalendarWidget events={data?.upcomingEvents ?? []} isLoading={isLoading} />
               </WorkspaceSection>
             </div>
@@ -71,12 +73,12 @@ export const PrincipalInsightsPage = () => {
 
           <div className="w-full lg:w-72 flex-shrink-0 flex flex-col gap-4">
             <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <SectionHeader title="Alerts" subtitle="Requires your attention" />
+              <SectionHeader title={t('insights.alerts')} subtitle={t('insights.alertsSub')} />
               <AlertsPanel alerts={data?.alerts ?? []} isLoading={isLoading} />
             </WorkspaceSection>
 
             <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <SectionHeader title="Quick Actions" subtitle="Common tasks" />
+              <SectionHeader title={t('insights.quickActions')} subtitle={t('insights.quickActionsSub')} />
               <QuickActions />
             </WorkspaceSection>
           </div>

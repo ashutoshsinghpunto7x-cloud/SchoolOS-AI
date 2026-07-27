@@ -25,6 +25,16 @@ export const updateBehaviorWindowSchema = z
     path: ['endTime'],
   });
 
+export const updateReportCardBrandingSchema = z.object({
+  motto:                 z.string().trim().max(200).optional(),
+  address:               z.string().trim().max(300).optional(),
+  phone:                 z.string().trim().max(30).optional(),
+  website:               z.string().trim().max(200).optional(),
+  email:                 z.string().trim().email().optional().or(z.literal('')),
+  principalName:         z.string().trim().max(100).optional(),
+});
+
 export type UpdateAttendanceRulesInput = z.infer<typeof updateAttendanceRulesSchema>;
 export type UpdatePayrollConfigInput   = z.infer<typeof updatePayrollConfigSchema>;
 export type UpdateBehaviorWindowInput  = z.infer<typeof updateBehaviorWindowSchema>;
+export type UpdateReportCardBrandingInput = z.infer<typeof updateReportCardBrandingSchema>;

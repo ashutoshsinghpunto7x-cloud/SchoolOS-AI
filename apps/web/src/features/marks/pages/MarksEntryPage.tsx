@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download,
+  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download, Sparkles,
 } from 'lucide-react';
 import { useMarksEntryTable, useMarksSummary, useBulkUpsertMarks, useSubmitMarksForReview } from '../hooks/useMarks';
+import { AiCaptureModal } from '../components/AiCaptureModal';
 import { avatarColorFor } from '@/features/teacher-workspace/utils/avatarColor';
 import { cn } from '@/lib/utils';
 import { downloadCsv } from '@/lib/csv';
@@ -14,7 +15,7 @@ import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
 import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
 import { OfflineBanner } from '@/components/drafts/OfflineBanner';
 import { DraftStatusIndicator } from '@/components/drafts/DraftStatusIndicator';
-import type { ComponentScore, ComponentStatus, MarksBatchTarget, MarksWorkflowStatus } from '@schoolos/types';
+import type { ComponentScore, ComponentStatus, MarksBatchTarget, MarksExtractionResult, MarksWorkflowStatus } from '@schoolos/types';
 
 // ── Row state ─────────────────────────────────────────────────────────────────
 
@@ -106,12 +107,13 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
 // ── Student row ───────────────────────────────────────────────────────────────
 
 function StudentRow({
-  row, index, maxByComponent, editable, onChangeScore, onChangeStatus,
+  row, index, maxByComponent, editable, aiFilled, onChangeScore, onChangeStatus,
 }: {
   row: RowState;
   index: number;
   maxByComponent: { name: string; maxMarks: number }[];
   editable: boolean;
+  aiFilled?: boolean;
   onChangeScore: (studentId: string, componentName: string, score: number | undefined) => void;
   onChangeStatus: (studentId: string, status: ComponentStatus) => void;
 }) {
@@ -127,14 +129,16 @@ function StudentRow({
     : [{ value: rowStatus, label: STATUS_LABELS[rowStatus] }, ...STATUS_OPTIONS];
 
   return (
-    <div className="px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0">
+    <div className={cn('px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0', aiFilled && 'bg-violet-50/60 dark:bg-violet-500/[0.06]')}>
       <div className="flex items-center gap-3">
         <span className="text-xs text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono tabular-nums">{index + 1}</span>
         <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0', color.bg)}>
           <span className={cn('text-[10px] font-bold', color.text)}>{initials}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{row.fullName}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
+            {row.fullName}
+          </p>
           {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
         </div>
         {row.workflowStatus && (
@@ -211,6 +215,8 @@ export function MarksEntryPage() {
 
   const [rows, setRows] = useState<RowState[]>([]);
   const [dirty, setDirty] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiFilledIds, setAiFilledIds] = useState<Set<string>>(new Set());
 
   // ── Smart draft (client-side autosave + crash recovery) ───────────────────
   const { user } = useAuth();
@@ -255,6 +261,7 @@ export function MarksEntryPage() {
       }),
     );
     setDirty(false);
+    setAiFilledIds(new Set());
   }, [table]);
 
   useEffect(() => {
@@ -279,6 +286,7 @@ export function MarksEntryPage() {
         componentScores: r.componentScores.map((cs) => (cs.componentName === componentName ? { ...cs, score } : cs)),
       };
     }));
+    setAiFilledIds((prev) => { if (!prev.has(studentId)) return prev; const next = new Set(prev); next.delete(studentId); return next; });
     setDirty(true);
   }
 
@@ -286,7 +294,22 @@ export function MarksEntryPage() {
     setRows((prev) => prev.map((r) => (
       r.studentId !== studentId ? r : { ...r, componentScores: r.componentScores.map((cs) => ({ ...cs, status })) }
     )));
+    setAiFilledIds((prev) => { if (!prev.has(studentId)) return prev; const next = new Set(prev); next.delete(studentId); return next; });
     setDirty(true);
+  }
+
+  function handleApplyExtraction(result: MarksExtractionResult) {
+    const byStudent = new Map(result.extracted.map((e) => [e.studentId, e]));
+    setRows((prev) => prev.map((r) => {
+      const ext = byStudent.get(r.studentId);
+      if (!ext || !rowIsEditable(r.workflowStatus)) return r;
+      return { ...r, componentScores: ext.componentScores };
+    }));
+    setAiFilledIds(new Set(result.extracted.map((e) => e.studentId)));
+    setDirty(true);
+    toast.success(`AI filled ${result.extracted.length} student${result.extracted.length === 1 ? '' : 's'}`, {
+      description: 'Review the highlighted rows, then save as usual.',
+    });
   }
 
   const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus));
@@ -307,6 +330,11 @@ export function MarksEntryPage() {
   );
 
   const unfilledCount = rows.filter((r) => !rowIsComplete(r, maxByComponentName)).length;
+  // Derived from the rows already in memory rather than the server summary —
+  // that way "Completed"/"Pending" reflect an AI fill or manual edit the
+  // instant it happens, instead of waiting on a save + summary refetch.
+  const localCompleted = rows.length - unfilledCount;
+  const localPending = unfilledCount;
 
   async function handleSaveDraft() {
     if (!cls || !section || !examId || !subjectName) return;
@@ -384,6 +412,15 @@ export function MarksEntryPage() {
           <DraftStatusIndicator status={draft.status} lastSavedAt={draft.lastSavedAt} />
           <button
             type="button"
+            onClick={() => setShowAiModal(true)}
+            disabled={!table || !allEditable}
+            className="h-9 px-3 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 disabled:opacity-40 flex items-center gap-1.5 shrink-0 transition-colors"
+            title="Fill marks from a photo or voice note"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> AI Fill
+          </button>
+          <button
+            type="button"
             onClick={handleDownloadMarks}
             disabled={!table || rows.length === 0}
             className="h-9 px-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-40 flex items-center gap-1.5 shrink-0 transition-colors"
@@ -396,8 +433,8 @@ export function MarksEntryPage() {
         {summary && (
           <div className="flex gap-2 mt-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <KpiPill label="Total" value={summary.totalStudents} />
-            <KpiPill label="Completed" value={summary.completed} tone="ok" />
-            <KpiPill label="Pending" value={summary.pending} tone={summary.pending > 0 ? 'warn' : undefined} />
+            <KpiPill label="Completed" value={localCompleted} tone="ok" />
+            <KpiPill label="Pending" value={localPending} tone={localPending > 0 ? 'warn' : undefined} />
             <KpiPill label="Submitted" value={summary.submitted} />
             <KpiPill label="Locked" value={summary.locked} />
           </div>
@@ -452,6 +489,7 @@ export function MarksEntryPage() {
                   index={i}
                   maxByComponent={table.exam.components}
                   editable={rowIsEditable(row.workflowStatus)}
+                  aiFilled={aiFilledIds.has(row.studentId)}
                   onChangeScore={handleChangeScore}
                   onChangeStatus={handleChangeStatus}
                 />
@@ -493,6 +531,14 @@ export function MarksEntryPage() {
             </div>
           )}
         </>
+      )}
+
+      {showAiModal && cls && section && subjectName && examId && (
+        <AiCaptureModal
+          target={{ examId, class: cls, section, subjectName }}
+          onApply={handleApplyExtraction}
+          onClose={() => setShowAiModal(false)}
+        />
       )}
     </div>
   );

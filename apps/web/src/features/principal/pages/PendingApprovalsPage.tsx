@@ -9,25 +9,27 @@ import {
   useApproveChangeRequest,
   useRejectChangeRequest,
 } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { useLanguage } from '@/context/LanguageContext';
+import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 import type { StudentChangeRequest } from '@schoolos/types';
 
-const FIELD_LABELS: Record<string, string> = {
-  fullName: 'Full Name',
-  rollNumber: 'Roll No.',
-  class: 'Class',
-  section: 'Section',
-  gender: 'Gender',
-  dateOfBirth: 'Date of Birth',
-  fatherName: "Father's Name",
-  motherName: "Mother's Name",
-  parentPhone: 'Primary Phone',
-  alternatePhone: 'Alternate Phone',
-  email: 'Email',
-  address: 'Address',
-  admissionStatus: 'Admission Status',
-  tags: 'Tags',
-  remarks: 'Remarks',
-  monthlyTuitionFee: 'Monthly Tuition Fee',
+const FIELD_KEYS: Record<string, PrincipalTranslationKey> = {
+  fullName: 'pendingApprovals.field.fullName',
+  rollNumber: 'pendingApprovals.field.rollNumber',
+  class: 'pendingApprovals.field.class',
+  section: 'pendingApprovals.field.section',
+  gender: 'pendingApprovals.field.gender',
+  dateOfBirth: 'pendingApprovals.field.dateOfBirth',
+  fatherName: 'pendingApprovals.field.fatherName',
+  motherName: 'pendingApprovals.field.motherName',
+  parentPhone: 'pendingApprovals.field.parentPhone',
+  alternatePhone: 'pendingApprovals.field.alternatePhone',
+  email: 'pendingApprovals.field.email',
+  address: 'pendingApprovals.field.address',
+  admissionStatus: 'pendingApprovals.field.admissionStatus',
+  tags: 'pendingApprovals.field.tags',
+  remarks: 'pendingApprovals.field.remarks',
+  monthlyTuitionFee: 'pendingApprovals.field.monthlyTuitionFee',
 };
 
 const formatValue = (value: unknown): string => {
@@ -37,6 +39,7 @@ const formatValue = (value: unknown): string => {
 };
 
 function RequestCard({ request }: { request: StudentChangeRequest }) {
+  const { t } = useLanguage();
   const [showRejectNote, setShowRejectNote] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const approve = useApproveChangeRequest();
@@ -69,7 +72,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
         <div>
           <p className="text-base font-bold text-gray-900">{request.studentName}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Requested by <span className="font-semibold text-gray-600">{request.requestedByName}</span>
+            {t('pendingApprovals.requestedBy')} <span className="font-semibold text-gray-600">{request.requestedByName}</span>
             {' · '}
             {new Date(request.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
           </p>
@@ -80,7 +83,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
         {fields.map((field) => (
           <div key={field} className="flex items-center gap-3 text-sm">
             <span className="w-36 shrink-0 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-              {FIELD_LABELS[field] ?? field}
+              {FIELD_KEYS[field] ? t(FIELD_KEYS[field]) : field}
             </span>
             <span className="text-gray-400 line-through truncate">{formatValue(request.previousValues?.[field])}</span>
             <ArrowRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
@@ -93,7 +96,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
         <textarea
           value={reviewNote}
           onChange={(e) => setReviewNote(e.target.value)}
-          placeholder="Optional note for the teacher…"
+          placeholder={t('pendingApprovals.notePlaceholder')}
           rows={2}
           className="w-full mb-3 px-3 py-2 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20"
         />
@@ -107,7 +110,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
           className="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {approve.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          Approve
+          {t('leaveApprovals.approve')}
         </button>
         <button
           type="button"
@@ -116,7 +119,7 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
           className="flex-1 h-10 rounded-xl bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-600 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {reject.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-          {showRejectNote ? 'Confirm Reject' : 'Reject'}
+          {showRejectNote ? t('leaveApprovals.confirmReject') : t('leaveApprovals.reject')}
         </button>
       </div>
     </div>
@@ -124,15 +127,16 @@ function RequestCard({ request }: { request: StudentChangeRequest }) {
 }
 
 export const PendingApprovalsPage = () => {
+  const { t } = useLanguage();
   const { data: requests, isLoading, isError } = usePendingChangeRequests();
 
   return (
     <PageContainer>
       <WorkspaceHeader
-        title="Pending Edit Requests"
-        subtitle="Student detail changes submitted by teachers, awaiting your approval"
+        title={t('pendingApprovals.title')}
+        subtitle={t('pendingApprovals.subtitle')}
         backTo="/principal"
-        backLabel="Principal Dashboard"
+        backLabel={t('leaveApprovals.backLabel')}
       />
 
       {isLoading ? (
@@ -142,9 +146,9 @@ export const PendingApprovalsPage = () => {
           ))}
         </div>
       ) : isError ? (
-        <EmptyState icon={ClipboardCheck} title="Could not load requests" description="Check your connection and try refreshing." />
+        <EmptyState icon={ClipboardCheck} title={t('pendingApprovals.errorTitle')} description={t('pendingApprovals.errorDesc')} />
       ) : !requests?.length ? (
-        <EmptyState icon={ClipboardCheck} title="No pending requests" description="Teacher-submitted student edits will show up here for review." />
+        <EmptyState icon={ClipboardCheck} title={t('pendingApprovals.emptyTitle')} description={t('pendingApprovals.emptyDesc')} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {requests.map((r) => (

@@ -1,7 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { marksService } from './marks.service';
+import { marksExtractionService } from './marks-extraction.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { fileToDataUri } from '../../lib/image-upload';
+import { ValidationError } from '../../middlewares/errorHandler';
 
 export const marksController = {
   /** POST /marks — save/edit a single student's marks (draft) */
@@ -100,6 +103,41 @@ export const marksController = {
       const ctx    = buildAuthContext(req.user!);
       const result = await marksService.lock(req.body, ctx);
       sendSuccess(res, result, `${result.updated} record(s) locked`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /marks/extract/image — AI reads a photo of a marks sheet (does not save) */
+  async extractFromImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('An image file is required');
+      const ctx    = buildAuthContext(req.user!);
+      const result = await marksExtractionService.extractFromImage(req.query, fileToDataUri(req.file), ctx);
+      sendSuccess(res, result, `${result.extracted.length} student(s) read from the photo`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /marks/extract/voice — AI transcribes a voice note and reads marks from it (does not save) */
+  async extractFromVoice(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('An audio file is required');
+      const ctx    = buildAuthContext(req.user!);
+      const result = await marksExtractionService.extractFromVoice(
+        req.query,
+        { buffer: req.file.buffer, mimetype: req.file.mimetype, filename: req.file.originalname || 'voice-note.webm' },
+        ctx,
+      );
+      sendSuccess(res, result, `${result.extracted.length} student(s) read from the recording`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /marks/extract/transcript — AI reads marks from an already-transcribed dictation (does not save) */
+  async extractFromTranscript(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const transcript = typeof req.body?.transcript === 'string' ? req.body.transcript : '';
+      if (!transcript.trim()) throw new ValidationError('A transcript is required');
+      const ctx    = buildAuthContext(req.user!);
+      const result = await marksExtractionService.extractFromTranscript(req.query, transcript, ctx);
+      sendSuccess(res, result, `${result.extracted.length} student(s) read from the dictation`);
     } catch (err) { next(err); }
   },
 

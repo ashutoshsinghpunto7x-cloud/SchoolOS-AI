@@ -28,6 +28,18 @@ export interface IGradeBand {
   maxPercent: number;
 }
 
+/** Report-card display type for a subject — independent of how the mark is
+ *  computed (computeResult() in marks.service.ts always computes numeric
+ *  total/percentage/grade the same way). This only controls whether the
+ *  report card shows the number, the letter grade, or both for that subject —
+ *  e.g. Maths/English show marks, Art/Music show only a grade. */
+export type SubjectEvaluationType = 'marks' | 'grade' | 'both';
+
+export interface ISubjectConfig {
+  name: string;
+  evaluationType: SubjectEvaluationType;
+}
+
 // ── Document Interface ────────────────────────────────────────────────────────
 
 export interface IExam extends Document {
@@ -37,6 +49,10 @@ export interface IExam extends Document {
   termLabel?: string;              // e.g. 'Term 1', 'Annual 2026'
   classesApplicable: string[];     // e.g. ['10A', '10B']
   subjects: string[];              // subject names this exam covers (free text, matches Teacher.subjects)
+  /** Per-subject report-card display config. Optional and additive — a subject
+   *  present in `subjects` but missing here defaults to evaluationType 'marks'
+   *  (see resolveSubjectEvaluationType in report-cards/report-card.service.ts). */
+  subjectConfigs?: ISubjectConfig[];
   components: IExamComponent[];
   gradingBands: IGradeBand[];
   passPercent: number;             // overall min percent to pass
@@ -74,6 +90,14 @@ const gradeBandSchema = new Schema<IGradeBand>(
   { _id: false }
 );
 
+const subjectConfigSchema = new Schema<ISubjectConfig>(
+  {
+    name:           { type: String, required: true, trim: true },
+    evaluationType: { type: String, enum: ['marks', 'grade', 'both'], default: 'marks' },
+  },
+  { _id: false }
+);
+
 const EXAM_TYPES: ExamType[] = [
   'unit_test', 'monthly_test', 'half_yearly', 'annual', 'practical', 'internal_assessment', 'other',
 ];
@@ -88,6 +112,7 @@ const examSchema = new Schema<IExam>(
     termLabel:             { type: String, trim: true },
     classesApplicable:     { type: [String], default: [] },
     subjects:              { type: [String], default: [] },
+    subjectConfigs:        { type: [subjectConfigSchema], default: [] },
     components:            { type: [examComponentSchema], default: [] },
     gradingBands:          { type: [gradeBandSchema], default: [] },
     passPercent:           { type: Number, required: true, min: 0, max: 100, default: 33 },

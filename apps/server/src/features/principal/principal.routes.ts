@@ -10,5 +10,6 @@ router.use(authorize('admin', 'principal'));
 
 router.get('/dashboard', principalController.getDashboard);
 router.get('/teachers-summary', principalController.getTeachersSummary);
+router.post('/briefing-summary', principalController.getBriefingSummary);
 
 export default router;

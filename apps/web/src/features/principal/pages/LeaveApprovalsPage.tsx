@@ -9,9 +9,11 @@ import {
   useApproveLeaveRequest,
   useRejectLeaveRequest,
 } from '@/features/leave-requests/hooks/useLeaveRequests';
+import { useLanguage } from '@/context/LanguageContext';
 import type { LeaveRequest } from '@schoolos/types';
 
 function RequestCard({ request }: { request: LeaveRequest }) {
+  const { t } = useLanguage();
   const [showRejectNote, setShowRejectNote] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const approve = useApproveLeaveRequest();
@@ -42,7 +44,7 @@ function RequestCard({ request }: { request: LeaveRequest }) {
         <div>
           <p className="text-base font-bold text-gray-900">{request.teacherName}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {request.leaveType === 'full_day' ? 'Full day' : 'Half day'}
+            {request.leaveType === 'full_day' ? t('leaveApprovals.fullDay') : t('leaveApprovals.halfDay')}
             {' · '}
             {request.dateFrom === request.dateTo ? request.dateFrom : `${request.dateFrom} – ${request.dateTo}`}
           </p>
@@ -55,7 +57,7 @@ function RequestCard({ request }: { request: LeaveRequest }) {
         <textarea
           value={reviewNote}
           onChange={(e) => setReviewNote(e.target.value)}
-          placeholder="Optional note for the teacher…"
+          placeholder={t('leaveApprovals.notePlaceholder')}
           rows={2}
           className="w-full mb-3 px-3 py-2 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20"
         />
@@ -69,7 +71,7 @@ function RequestCard({ request }: { request: LeaveRequest }) {
           className="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {approve.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          Approve
+          {t('leaveApprovals.approve')}
         </button>
         <button
           type="button"
@@ -78,7 +80,7 @@ function RequestCard({ request }: { request: LeaveRequest }) {
           className="flex-1 h-10 rounded-xl bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-600 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {reject.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-          {showRejectNote ? 'Confirm Reject' : 'Reject'}
+          {showRejectNote ? t('leaveApprovals.confirmReject') : t('leaveApprovals.reject')}
         </button>
       </div>
     </div>
@@ -86,15 +88,16 @@ function RequestCard({ request }: { request: LeaveRequest }) {
 }
 
 export const LeaveApprovalsPage = () => {
+  const { t } = useLanguage();
   const { data: requests, isLoading, isError } = usePendingLeaveRequests();
 
   return (
     <PageContainer>
       <WorkspaceHeader
-        title="Leave Approvals"
-        subtitle="Teacher leave requests awaiting your decision"
+        title={t('leaveApprovals.title')}
+        subtitle={t('leaveApprovals.subtitle')}
         backTo="/principal"
-        backLabel="Principal Dashboard"
+        backLabel={t('leaveApprovals.backLabel')}
       />
 
       {isLoading ? (
@@ -104,9 +107,9 @@ export const LeaveApprovalsPage = () => {
           ))}
         </div>
       ) : isError ? (
-        <EmptyState icon={CalendarClock} title="Could not load leave requests" description="Check your connection and try refreshing." />
+        <EmptyState icon={CalendarClock} title={t('leaveApprovals.errorTitle')} description={t('leaveApprovals.errorDesc')} />
       ) : !requests?.length ? (
-        <EmptyState icon={CalendarClock} title="No pending leave requests" description="Teacher leave requests will show up here for review." />
+        <EmptyState icon={CalendarClock} title={t('leaveApprovals.emptyTitle')} description={t('leaveApprovals.emptyDesc')} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {requests.map((r) => (

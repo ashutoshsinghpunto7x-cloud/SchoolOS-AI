@@ -54,4 +54,12 @@ export const schoolSettingsController = {
       sendSuccess(res, settings, 'Behaviour marking window updated');
     } catch (err) { next(err); }
   },
+
+  async updateReportCardBranding(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateReportCardBranding(req.body, ctx);
+      sendSuccess(res, settings, 'Report card branding updated');
+    } catch (err) { next(err); }
+  },
 };

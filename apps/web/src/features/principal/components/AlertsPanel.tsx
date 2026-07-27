@@ -1,6 +1,7 @@
 import { AlertTriangle, Info, XCircle, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAlert } from '@schoolos/types';
 
 const SEVERITY_CONFIG = {
@@ -45,6 +46,7 @@ interface AlertsPanelProps {
 }
 
 export const AlertsPanel = ({ alerts, isLoading }: AlertsPanelProps) => {
+  const { t } = useLanguage();
   if (isLoading) {
     return (
       <div className="space-y-2 animate-pulse">
@@ -62,8 +64,8 @@ export const AlertsPanel = ({ alerts, isLoading }: AlertsPanelProps) => {
           <Info className="w-4 h-4 text-green-600" strokeWidth={2} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-green-700">All Clear</p>
-          <p className="text-xs text-gray-500 mt-0.5">No alerts at this time.</p>
+          <p className="text-sm font-semibold text-green-700">{t('widget.alerts.allClear')}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('widget.alerts.noAlerts')}</p>
         </div>
       </div>
     );

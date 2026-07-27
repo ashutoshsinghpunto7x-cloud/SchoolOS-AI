@@ -39,6 +39,7 @@ import staffAttendanceRouter from '../features/staff-attendance/staff-attendance
 import payrollRouter from '../features/payroll/payroll.routes';
 import examRouter from '../features/exams/exam.routes';
 import marksRouter from '../features/marks/marks.routes';
+import reportCardRouter from '../features/report-cards/report-card.routes';
 import behaviorRouter from '../features/behavior/behavior.routes';
 import opsRouter from '../features/ops-center/ops.routes';
 
@@ -84,6 +85,7 @@ router.use('/attendance-qr', staffAttendanceRouter);
 router.use('/payroll', payrollRouter);
 router.use('/exams', examRouter);
 router.use('/marks', marksRouter);
+router.use('/report-cards', reportCardRouter);
 router.use('/behavior', behaviorRouter);
 router.use('/ops', opsRouter);
 

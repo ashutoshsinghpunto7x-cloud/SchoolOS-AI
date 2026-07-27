@@ -1,5 +1,6 @@
 import { LayoutGrid, FileEdit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalTimetableStats, PrincipalTeacherStats } from '@schoolos/types';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 
 export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   if (isLoading || !timetable || !teachers) {
     return (
@@ -30,11 +32,11 @@ export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
           <LayoutGrid className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-800">Timetables</p>
+          <p className="text-sm font-medium text-gray-800">{t('widget.academic.timetables')}</p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-green-600 font-medium">{timetable.published} published</span>
+            <span className="text-xs text-green-600 font-medium">{timetable.published} {t('widget.academic.published')}</span>
             {timetable.draft > 0 && (
-              <span className="text-xs text-amber-600 font-medium">{timetable.draft} draft</span>
+              <span className="text-xs text-amber-600 font-medium">{timetable.draft} {t('widget.academic.draft')}</span>
             )}
           </div>
         </div>
@@ -49,10 +51,10 @@ export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
           <FileEdit className="w-4 h-4 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-800">Teaching Staff</p>
+          <p className="text-sm font-medium text-gray-800">{t('widget.academic.teachingStaff')}</p>
           <div className="flex items-center gap-3 mt-0.5">
-            <span className="text-xs text-[#5B21B6] font-medium">{teachers.active} active</span>
-            <span className="text-xs text-gray-400">of {teachers.total} total</span>
+            <span className="text-xs text-[#5B21B6] font-medium">{teachers.active} {t('widget.academic.active')}</span>
+            <span className="text-xs text-gray-400">{t('widget.academic.ofTotal')} {teachers.total} {t('widget.academic.total')}</span>
           </div>
         </div>
       </div>
@@ -61,7 +63,7 @@ export const AcademicWidget = ({ timetable, teachers, isLoading }: Props) => {
       {timetable.draft > 0 && (
         <div className="px-3 py-2 bg-amber-50 rounded-xl border border-amber-100">
           <p className="text-xs font-medium text-amber-700">
-            {timetable.draft} timetable{timetable.draft > 1 ? 's are' : ' is'} still in draft — review before publishing.
+            {timetable.draft} {t('widget.academic.timetables')} {t('widget.academic.draftWarning')}
           </p>
         </div>
       )}

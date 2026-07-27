@@ -22,6 +22,20 @@ export interface IBehaviorWindow {
   endTime: string;
 }
 
+/** Report-card / official-document branding — kept separate from the
+ *  operational config above since it's edited far less often and only ever
+ *  read (never used in scheduling/business logic). */
+export interface IReportCardBranding {
+  motto?: string;
+  address?: string;
+  phone?: string;
+  website?: string;
+  email?: string;
+  principalName?: string;
+  principalSignatureUrl?: string;
+  schoolSealUrl?: string;
+}
+
 export interface ISchoolSettings extends Document {
   schoolId: string;
   schoolName: string;
@@ -29,6 +43,7 @@ export interface ISchoolSettings extends Document {
   attendanceRules: IAttendanceRules;
   payrollConfig: IPayrollConfig;
   behaviorWindow: IBehaviorWindow;
+  reportCardBranding: IReportCardBranding;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -80,15 +95,30 @@ const behaviorWindowSchema = new Schema<IBehaviorWindow>(
   { _id: false },
 );
 
+const reportCardBrandingSchema = new Schema<IReportCardBranding>(
+  {
+    motto:                  { type: String, trim: true },
+    address:                { type: String, trim: true },
+    phone:                  { type: String, trim: true },
+    website:                { type: String, trim: true },
+    email:                  { type: String, trim: true, lowercase: true },
+    principalName:          { type: String, trim: true },
+    principalSignatureUrl:  { type: String },
+    schoolSealUrl:          { type: String },
+  },
+  { _id: false },
+);
+
 const schoolSettingsSchema = new Schema<ISchoolSettings>(
   {
-    schoolId:        { type: String, required: true, unique: true },
-    schoolName:      { type: String, required: true, trim: true, default: 'FNIC' },
-    logoUrl:         { type: String },
-    attendanceRules: { type: attendanceRulesSchema, default: () => ({ ...DEFAULT_ATTENDANCE_RULES }) },
-    payrollConfig:   { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
-    behaviorWindow:  { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },
-    updatedBy:       { type: String },
+    schoolId:          { type: String, required: true, unique: true },
+    schoolName:        { type: String, required: true, trim: true, default: 'FNIC' },
+    logoUrl:           { type: String },
+    attendanceRules:   { type: attendanceRulesSchema, default: () => ({ ...DEFAULT_ATTENDANCE_RULES }) },
+    payrollConfig:     { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
+    behaviorWindow:    { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },
+    reportCardBranding:{ type: reportCardBrandingSchema, default: () => ({}) },
+    updatedBy:         { type: String },
   },
   { timestamps: true, versionKey: false },
 );

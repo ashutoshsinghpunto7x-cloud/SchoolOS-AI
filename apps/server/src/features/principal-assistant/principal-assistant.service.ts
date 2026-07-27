@@ -3,20 +3,22 @@ import { chatSchema } from './principal-assistant.validation';
 import { classifyIntent, recordUsage, UNSUPPORTED_INTENT, IntentDefinition } from './intent-router';
 import { attendanceIntents } from './principal-assistant.intents';
 import { feeIntents } from './fees.intents';
+import { admissionsIntents } from './admissions.intents';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
 import { AuthContext } from '../../lib/auth-context';
 import { AppError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 
 const UNSUPPORTED_REPLY =
-  "I'm currently able to help with attendance and fees questions only — things like today's " +
-  'attendance summary, present/absent counts, fee collection totals, outstanding dues, or the ' +
-  'highest/lowest performing class on either. Could you rephrase your question around attendance or fees?';
+  "I'm currently able to help with attendance, fees, and admissions questions only — things like today's " +
+  'attendance summary, present/absent counts, fee collection totals, outstanding dues, admission enquiries, ' +
+  "pending follow-ups, or the highest/lowest performing class on attendance/fees. Could you rephrase your " +
+  'question around attendance, fees, or admissions?';
 
-// Combining both domains into one flat list keeps this a single LLM classification
+// Combining all domains into one flat list keeps this a single LLM classification
 // call (cheaper/faster than routing per-domain) — intent ids are unique across
 // domains, so finding the matching intent's fetchData afterward is unambiguous.
-const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents];
+const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents, ...admissionsIntents];
 
 export const principalAssistantService = {
   async chat(rawInput: unknown, ctx: AuthContext): Promise<{ reply: string }> {
@@ -27,7 +29,7 @@ export const principalAssistantService = {
     }
 
     // Step 1 — route the question to an attendance/fees intent (or UNSUPPORTED).
-    const { intentId, usage: routerUsage } = await classifyIntent(message, 'Attendance and Fees', allIntents);
+    const { intentId, usage: routerUsage } = await classifyIntent(message, 'Attendance, Fees and Admissions', allIntents);
     recordUsage(routerUsage, ctx.schoolId);
 
     if (intentId === UNSUPPORTED_INTENT) {

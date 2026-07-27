@@ -6,6 +6,7 @@ import {
   noteDateTime,
   type MeetingNote,
 } from '../utils/meetingNotes.storage';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Local date, not UTC — toISOString() shifts to UTC and can land on the wrong
 // day for timezones ahead of UTC (e.g. IST), silently defaulting the picker
@@ -28,6 +29,7 @@ function countdownParts(ms: number) {
 // not tied to the school Calendar. The nearest upcoming entry gets a live
 // countdown so nothing on a busy day gets forgotten.
 export function MeetingNotesWidget({ now }: { now: Date }) {
+  const { t } = useLanguage();
   const [notes, setNotes] = useState<MeetingNote[]>(() => loadMeetingNotes());
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -60,12 +62,12 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
   return (
     <div className="bg-white/10 rounded-xl p-3 flex flex-col gap-2 w-full">
       <div className="flex items-center justify-between px-1">
-        <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide">Meetings & Reminders</p>
+        <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide">{t('meetings.title')}</p>
         <button
           type="button"
           onClick={() => setAdding((v) => !v)}
           className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 border border-white/20 text-white/80 hover:bg-white/25 hover:text-white transition-colors"
-          title="Note a meeting, task, or reminder with a date and time"
+          title={t('meetings.addTooltip')}
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -77,7 +79,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Parent meeting, Submit report…"
+            placeholder={t('meetings.titlePlaceholder')}
             className="h-8 px-2 rounded-md border border-gray-200 text-xs focus:outline-none focus:border-[#A855F7]"
           />
           <div className="flex gap-1.5">
@@ -99,13 +101,13 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
             onClick={addNote}
             className="h-8 rounded-md bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white text-xs font-semibold transition-colors"
           >
-            Save
+            {t('meetings.save')}
           </button>
         </div>
       )}
 
       {!next ? (
-        <p className="text-sm text-white/60 px-1 py-2">Nothing scheduled — tap + to add one.</p>
+        <p className="text-sm text-white/60 px-1 py-2">{t('meetings.empty')}</p>
       ) : (
         <>
           {/* Nearest upcoming — with live countdown */}
@@ -120,7 +122,12 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
                 const { days, hrs, mins, secs } = countdownParts(noteDateTime(next).getTime() - now.getTime());
                 return (
                   <div className="flex items-center gap-2.5 tabular-nums">
-                    {[['D', days], ['H', hrs], ['M', mins], ['S', secs]].map(([label, v]) => (
+                    {[
+                      [t('meetings.countdown.d'), days],
+                      [t('meetings.countdown.h'), hrs],
+                      [t('meetings.countdown.m'), mins],
+                      [t('meetings.countdown.s'), secs],
+                    ].map(([label, v]) => (
                       <div key={label as string}>
                         <p className="text-sm font-bold text-white leading-none">{String(v).padStart(2, '0')}</p>
                         <p className="text-[9px] text-white/50 font-semibold">{label}</p>
@@ -134,7 +141,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
               type="button"
               onClick={() => removeNote(next.id)}
               className="text-white/40 hover:text-red-300 shrink-0"
-              aria-label="Remove"
+              aria-label={t('meetings.remove')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -155,7 +162,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
                     type="button"
                     onClick={() => removeNote(n.id)}
                     className="text-white/40 hover:text-red-300 shrink-0"
-                    aria-label="Remove"
+                    aria-label={t('meetings.remove')}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>

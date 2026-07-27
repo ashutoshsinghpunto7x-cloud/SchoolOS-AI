@@ -46,6 +46,13 @@ export const openaiProvider: ILLMProvider = {
     const model = env.OPENAI_MODEL;
 
     try {
+      const userContent: OpenAI.Chat.ChatCompletionContentPart[] | string = input.imageDataUri
+        ? [
+            { type: 'text', text: input.userPrompt },
+            { type: 'image_url', image_url: { url: input.imageDataUri, detail: 'high' } },
+          ]
+        : input.userPrompt;
+
       const response = await getClient().chat.completions.create({
         model,
         temperature: input.temperature ?? 0.4,
@@ -53,7 +60,7 @@ export const openaiProvider: ILLMProvider = {
         response_format: input.jsonResponse ? { type: 'json_object' } : { type: 'text' },
         messages: [
           { role: 'system', content: input.systemPrompt },
-          { role: 'user', content: input.userPrompt },
+          { role: 'user', content: userContent },
         ],
       });
 

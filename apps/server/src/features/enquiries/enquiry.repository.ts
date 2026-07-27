@@ -33,6 +33,8 @@ export interface FindEnquiriesOptions {
   assignedCounsellor?: string;
   followUpBefore?: string;
   followUpAfter?: string;
+  createdAfter?: string;
+  createdBefore?: string;
   sortBy?: 'createdAt' | 'followUpDate' | 'studentName';
   sortOrder?: 'asc' | 'desc';
 }
@@ -102,6 +104,13 @@ export const enquiryRepository = {
       if (opts.followUpBefore) range.$lte = new Date(opts.followUpBefore);
       if (opts.followUpAfter)  range.$gte = new Date(opts.followUpAfter);
       query.followUpDate = range;
+    }
+
+    if (opts.createdAfter || opts.createdBefore) {
+      const range: Record<string, Date> = {};
+      if (opts.createdAfter)  range.$gte = new Date(opts.createdAfter);
+      if (opts.createdBefore) range.$lte = new Date(opts.createdBefore);
+      query.createdAt = range;
     }
 
     const sortField = opts.sortBy ?? 'createdAt';

@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { principalApi } from '../api/principal.api';
-import type { PrincipalDashboardData, TeachersSummaryData } from '@schoolos/types';
+import type { PrincipalDashboardData, TeachersSummaryData, PrincipalBriefingSummary } from '@schoolos/types';
 
 export const principalKeys = {
   all: ['principal'] as const,
@@ -27,4 +27,11 @@ export const useTeachersSummary = (date?: string) =>
   useQuery<TeachersSummaryData, Error>({
     queryKey: principalKeys.teachersSummary(date),
     queryFn: () => principalApi.getTeachersSummary(date),
+  });
+
+// On-demand action (not a query) — the Daily Briefing card's "Summarize with
+// AI" button calls this explicitly rather than on every dashboard load.
+export const useBriefingSummary = () =>
+  useMutation<PrincipalBriefingSummary, Error, void>({
+    mutationFn: principalApi.getBriefingSummary,
   });

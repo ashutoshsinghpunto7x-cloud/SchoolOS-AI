@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { FeeCollectionSummary } from '@schoolos/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface FinancialSnapshotCardProps {
   data?: FeeCollectionSummary;
@@ -15,16 +16,17 @@ const formatCurrency = (n: number) =>
 // below are all real, cumulative numbers rather than a fabricated daily one.
 export function FinancialSnapshotCard({ data, isLoading }: FinancialSnapshotCardProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const collectionRate = data && data.totalCharged > 0
     ? Math.round((data.totalCollected / data.totalCharged) * 100)
     : 0;
 
   const tiles = data
     ? [
-        { label: 'Collected', value: formatCurrency(data.totalCollected) },
-        { label: 'Outstanding', value: formatCurrency(data.totalOutstanding) },
-        { label: 'Overdue Records', value: String(data.overdueCount), danger: data.overdueCount > 0 },
-        { label: 'Collection Rate', value: `${collectionRate}%` },
+        { label: t('financial.collected'), value: formatCurrency(data.totalCollected) },
+        { label: t('financial.outstanding'), value: formatCurrency(data.totalOutstanding) },
+        { label: t('financial.overdueRecords'), value: String(data.overdueCount), danger: data.overdueCount > 0 },
+        { label: t('financial.collectionRate'), value: `${collectionRate}%` },
       ]
     : [];
 
@@ -34,8 +36,8 @@ export function FinancialSnapshotCard({ data, isLoading }: FinancialSnapshotCard
       onClick={() => navigate('/fees')}
       className="bg-white rounded-[22px] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6 h-[288px] flex flex-col text-left hover:border-[#6D4AFF]/20 transition-colors"
     >
-      <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">Financial Snapshot</h3>
-      <p className="text-[12px] text-[#6B7280] font-medium mb-4">Fee collection at a glance</p>
+      <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">{t('financial.title')}</h3>
+      <p className="text-[12px] text-[#6B7280] font-medium mb-4">{t('financial.subtitle')}</p>
 
       <div className="flex-1 grid grid-cols-2 gap-3 content-center">
         {isLoading || !data ? (

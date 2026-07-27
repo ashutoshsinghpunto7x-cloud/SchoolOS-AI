@@ -40,3 +40,21 @@ export const documentUploadMiddleware = multer({
 export function fileToDataUri(file: Express.Multer.File): string {
   return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
 }
+
+// ── Audio (voice notes for AI transcription) ─────────────────────────────────
+// Not persisted anywhere — the buffer is sent straight to the transcription
+// provider and discarded. Same memory-storage rationale as images above.
+
+const ALLOWED_AUDIO_TYPES = [
+  'audio/webm', 'audio/mp4', 'audio/m4a', 'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-m4a',
+];
+const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10 MB — a few minutes of voice notes
+
+export const audioUploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_AUDIO_SIZE, files: 1 },
+  fileFilter(_req, file, cb) {
+    if (ALLOWED_AUDIO_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new ValidationError('Only WEBM, MP3, M4A, WAV, or OGG audio is allowed.'));
+  },
+}).single('file');

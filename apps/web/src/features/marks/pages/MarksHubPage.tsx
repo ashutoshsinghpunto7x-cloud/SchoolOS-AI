@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock } from 'lucide-react';
+import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText } from 'lucide-react';
 import { useTeacherWorkspace } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
 import { useExamsForClass } from '../hooks/useExams';
 import { cn } from '@/lib/utils';
@@ -155,6 +155,22 @@ export function MarksHubPage() {
         <p className="text-base text-gray-500 dark:text-white/40 mt-2">
           Pick a class and subject to enter marks.
         </p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/report-cards')}
+          className="w-full text-left flex items-center gap-4 rounded-2xl px-4 py-4 mt-5 shadow-sm hover:shadow-md transition-shadow"
+          style={{ backgroundColor: '#1C2B4A' }}
+        >
+          <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">Generate Report Cards</p>
+            <p className="text-xs text-white/60 mt-0.5">AI-assisted, premium report cards for any exam</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />
+        </button>
 
         <div className="flex flex-col gap-3 mt-6">
           {isLoading ? (

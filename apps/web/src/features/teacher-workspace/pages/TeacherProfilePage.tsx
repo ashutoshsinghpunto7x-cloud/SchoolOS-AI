@@ -17,7 +17,6 @@ import {
   KeyRound,
   CreditCard,
   ScanLine,
-  Wallet,
   Headphones,
   MessageCircle,
   Moon,
@@ -280,7 +279,6 @@ export function TeacherProfilePage() {
 
             <MenuRow icon={CreditCard} label="My ID Card"     onClick={() => navigate('/teacher/id-card')} />
             <MenuRow icon={ScanLine} label="My Attendance"    onClick={() => navigate('/teacher/my-attendance')} />
-            <MenuRow icon={Wallet} label="My Payslips"        onClick={() => navigate('/teacher/my-payslips')} />
             <MenuRow icon={KeyRound} label="Change Password"  onClick={() => navigate('/teacher/change-password')} />
 
             {/* Contact support — tapping the row calls the school office;

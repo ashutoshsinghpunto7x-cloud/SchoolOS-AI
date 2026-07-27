@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Users, UserCheck, CalendarOff, Loader2, Aler
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { BackLink } from '@/components/workspace/BackLink';
 import { useTeachersSummary } from '../hooks/usePrincipal';
+import { useLanguage } from '@/context/LanguageContext';
 
 function todayStr() {
   return new Date().toISOString().split('T')[0];
@@ -35,6 +36,7 @@ function StatCard({ icon: Icon, label, value, tone }: { icon: React.ElementType;
 }
 
 export function TeachersSummaryPage() {
+  const { t } = useLanguage();
   const today = todayStr();
   const [date, setDate] = useState(today);
   const { data, isLoading, isError } = useTeachersSummary(date);
@@ -42,11 +44,11 @@ export function TeachersSummaryPage() {
 
   return (
     <PageContainer>
-      <BackLink to="/principal" label="Principal Dashboard" />
+      <BackLink to="/principal" label={t('leaveApprovals.backLabel')} />
 
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('teachersSummary.title')}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{formatDisplayDate(date)}</p>
         </div>
 
@@ -55,7 +57,7 @@ export function TeachersSummaryPage() {
             type="button"
             onClick={() => setDate((d) => addDays(d, -1))}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Previous day"
+            aria-label={t('teachersSummary.prevDay')}
           >
             <ChevronLeft className="w-4 h-4 text-gray-500" />
           </button>
@@ -71,13 +73,13 @@ export function TeachersSummaryPage() {
             onClick={() => setDate((d) => addDays(d, 1))}
             disabled={isToday}
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next day"
+            aria-label={t('teachersSummary.nextDay')}
           >
             <ChevronRight className="w-4 h-4 text-gray-500" />
           </button>
           {!isToday && (
             <button type="button" onClick={() => setDate(today)} className="text-xs font-semibold text-[#5B21B6] hover:underline px-2">
-              Today
+              {t('teachersSummary.today')}
             </button>
           )}
         </div>
@@ -90,25 +92,25 @@ export function TeachersSummaryPage() {
       ) : isError || !data ? (
         <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-5">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-sm font-semibold text-red-700">Couldn't load teacher data.</p>
+          <p className="text-sm font-semibold text-red-700">{t('teachersSummary.loadError')}</p>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <StatCard icon={Users} label="Total Teachers" value={data.total} tone="bg-[#A855F7]/10 text-[#5B21B6]" />
-            <StatCard icon={UserCheck} label="Present Today" value={data.presentCount} tone="bg-emerald-50 text-emerald-600" />
-            <StatCard icon={CalendarOff} label="On Leave" value={data.onLeave.length} tone="bg-amber-50 text-amber-600" />
+            <StatCard icon={Users} label={t('teachersSummary.total')} value={data.total} tone="bg-[#A855F7]/10 text-[#5B21B6]" />
+            <StatCard icon={UserCheck} label={t('teachersSummary.present')} value={data.presentCount} tone="bg-emerald-50 text-emerald-600" />
+            <StatCard icon={CalendarOff} label={t('teachersSummary.onLeave')} value={data.onLeave.length} tone="bg-amber-50 text-amber-600" />
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="text-sm font-bold text-gray-900">Teachers on Leave</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Approved leave requests covering this date</p>
+              <h2 className="text-sm font-bold text-gray-900">{t('teachersSummary.onLeaveListTitle')}</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{t('teachersSummary.onLeaveListSubtitle')}</p>
             </div>
             {data.onLeave.length === 0 ? (
               <div className="p-10 text-center">
-                <p className="text-sm font-semibold text-gray-700">No teachers on leave</p>
-                <p className="text-xs text-gray-400 mt-1">Everyone on the active roster is expected in today.</p>
+                <p className="text-sm font-semibold text-gray-700">{t('teachersSummary.emptyTitle')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('teachersSummary.emptyDesc')}</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
@@ -117,12 +119,12 @@ export function TeachersSummaryPage() {
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{l.teacherName}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {l.leaveType === 'full_day' ? 'Full day' : 'Half day'}
+                        {l.leaveType === 'full_day' ? t('teachersSummary.fullDay') : t('teachersSummary.halfDay')}
                         {' · '}
                         {l.dateFrom === l.dateTo ? l.dateFrom : `${l.dateFrom} – ${l.dateTo}`}
                       </p>
                     </div>
-                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">On Leave</span>
+                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">{t('teachersSummary.onLeave')}</span>
                   </div>
                 ))}
               </div>

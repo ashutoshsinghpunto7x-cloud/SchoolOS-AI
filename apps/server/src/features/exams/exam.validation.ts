@@ -21,6 +21,13 @@ const gradeBandSchema = z.object({
   maxPercent: z.number().min(0).max(100),
 });
 
+export const SUBJECT_EVALUATION_TYPES = ['marks', 'grade', 'both'] as const;
+
+const subjectConfigSchema = z.object({
+  name:           z.string({ required_error: 'subject name is required' }).min(1).trim(),
+  evaluationType: z.enum(SUBJECT_EVALUATION_TYPES).default('marks'),
+});
+
 // ── Create / Update ───────────────────────────────────────────────────────────
 
 export const createExamSchema = z.object({
@@ -29,6 +36,7 @@ export const createExamSchema = z.object({
   termLabel:             z.string().trim().optional(),
   classesApplicable:     z.array(z.string().trim().min(1)).min(1, 'At least one class is required'),
   subjects:              z.array(z.string().trim().min(1)).min(1, 'At least one subject is required'),
+  subjectConfigs:        z.array(subjectConfigSchema).default([]),
   components:            z.array(examComponentSchema).min(1, 'At least one assessment component is required'),
   gradingBands:          z.array(gradeBandSchema).default([]),
   passPercent:           z.number().min(0).max(100).default(33),

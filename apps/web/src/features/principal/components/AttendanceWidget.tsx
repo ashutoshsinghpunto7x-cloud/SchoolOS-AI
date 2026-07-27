@@ -1,5 +1,6 @@
 import { Users, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAttendanceStats } from '@schoolos/types';
 
 interface Props {
@@ -30,6 +31,7 @@ const StatBar = ({ label, count, total, color }: StatBarProps) => {
 };
 
 export const AttendanceWidget = ({ data, isLoading }: Props) => {
+  const { t } = useLanguage();
   if (isLoading || !data) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -53,16 +55,16 @@ export const AttendanceWidget = ({ data, isLoading }: Props) => {
           <Users className="w-5 h-5 text-[#5B21B6]" strokeWidth={2} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-500 font-medium">Today's Attendance Rate</p>
+          <p className="text-xs text-gray-500 font-medium">{t('widget.attendance.rateTitle')}</p>
           <p className={cn('text-2xl font-bold leading-tight', rateColor)}>
-            {today.total > 0 ? `${today.attendanceRate}%` : 'No data'}
+            {today.total > 0 ? `${today.attendanceRate}%` : t('widget.attendance.noData')}
           </p>
           {today.total > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5">{today.total} records marked</p>
+            <p className="text-xs text-gray-400 mt-0.5">{today.total} {t('widget.attendance.recordsMarked')}</p>
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-xs text-gray-500 font-medium">7-Day Avg</p>
+          <p className="text-xs text-gray-500 font-medium">{t('widget.attendance.weeklyAvg')}</p>
           <div className="flex items-center gap-1 justify-end mt-0.5">
             <TrendingUp className="w-3.5 h-3.5 text-gray-400" strokeWidth={2} />
             <span className="text-sm font-semibold text-gray-700">{weeklyAvgRate}%</span>
@@ -73,14 +75,14 @@ export const AttendanceWidget = ({ data, isLoading }: Props) => {
       {/* Breakdown bars */}
       {today.total > 0 ? (
         <div className="space-y-2.5">
-          <StatBar label="Present"       count={today.present}        total={today.total} color="bg-green-500" />
-          <StatBar label="Absent"        count={today.absent}         total={today.total} color="bg-red-500" />
-          <StatBar label="Late"          count={today.late}           total={today.total} color="bg-amber-500" />
-          <StatBar label="Half Day"      count={today.half_day}       total={today.total} color="bg-orange-400" />
-          <StatBar label="Leave"         count={today.leave_approved} total={today.total} color="bg-blue-400" />
+          <StatBar label={t('widget.attendance.present')} count={today.present}        total={today.total} color="bg-green-500" />
+          <StatBar label={t('widget.attendance.absent')}  count={today.absent}         total={today.total} color="bg-red-500" />
+          <StatBar label={t('widget.attendance.late')}    count={today.late}           total={today.total} color="bg-amber-500" />
+          <StatBar label={t('widget.attendance.halfDay')} count={today.half_day}       total={today.total} color="bg-orange-400" />
+          <StatBar label={t('widget.attendance.leave')}   count={today.leave_approved} total={today.total} color="bg-blue-400" />
         </div>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-2">Attendance not marked yet for today.</p>
+        <p className="text-sm text-gray-400 text-center py-2">{t('widget.attendance.notMarked')}</p>
       )}
     </div>
   );

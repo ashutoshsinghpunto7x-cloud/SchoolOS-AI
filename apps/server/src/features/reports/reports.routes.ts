@@ -6,7 +6,7 @@ import { authorize } from '../../middlewares/authorize';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('admin', 'accountant'));
+router.use(authorize('admin', 'accountant', 'principal'));
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 router.get('/analytics/:category', reportsController.getAnalytics);

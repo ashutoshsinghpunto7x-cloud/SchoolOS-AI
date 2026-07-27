@@ -1,5 +1,7 @@
 import { CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/context/LanguageContext';
+import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 import type { PrincipalUpcomingEvent } from '@schoolos/types';
 
 const EVENT_TYPE_COLOR: Record<string, string> = {
@@ -13,15 +15,15 @@ const EVENT_TYPE_COLOR: Record<string, string> = {
   general:       'bg-gray-100 text-gray-600',
 };
 
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  holiday:       'Holiday',
-  ptm:           'PTM',
-  examination:   'Exam',
-  school_event:  'Event',
-  staff_meeting: 'Meeting',
-  fee_due_date:  'Fee Due',
-  admission_event:'Admission',
-  general:       'General',
+const EVENT_TYPE_KEY: Record<string, PrincipalTranslationKey> = {
+  holiday:        'widget.calendar.type.holiday',
+  ptm:            'widget.calendar.type.ptm',
+  examination:    'widget.calendar.type.examination',
+  school_event:   'widget.calendar.type.school_event',
+  staff_meeting:  'widget.calendar.type.staff_meeting',
+  fee_due_date:   'widget.calendar.type.fee_due_date',
+  admission_event:'widget.calendar.type.admission_event',
+  general:        'widget.calendar.type.general',
 };
 
 const isToday = (dateStr: string) => {
@@ -35,6 +37,7 @@ interface Props {
 
 export const CalendarWidget = ({ events, isLoading }: Props) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -48,7 +51,7 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
     return (
       <div className="flex flex-col items-center justify-center py-6 text-center">
         <CalendarDays className="w-8 h-8 text-gray-300 mb-2" strokeWidth={1.5} />
-        <p className="text-sm text-gray-400">No events this month.</p>
+        <p className="text-sm text-gray-400">{t('widget.calendar.noEvents')}</p>
       </div>
     );
   }
@@ -58,7 +61,7 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
       {events.map((ev) => {
         const today = isToday(ev.startDate);
         const colorClass = EVENT_TYPE_COLOR[ev.eventType] ?? EVENT_TYPE_COLOR.general;
-        const typeLabel = EVENT_TYPE_LABEL[ev.eventType] ?? ev.eventType;
+        const typeLabel = EVENT_TYPE_KEY[ev.eventType] ? t(EVENT_TYPE_KEY[ev.eventType]) : ev.eventType;
 
         return (
           <div
@@ -76,7 +79,7 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
-              {today && <p className="text-[11px] text-[#5B21B6] font-medium">Today</p>}
+              {today && <p className="text-[11px] text-[#5B21B6] font-medium">{t('widget.calendar.today')}</p>}
             </div>
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${colorClass}`}>
               {typeLabel}

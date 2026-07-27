@@ -1,5 +1,5 @@
 import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, DEFAULT_BEHAVIOR_WINDOW } from './school-settings.model';
-import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema } from './school-settings.validation';
+import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateReportCardBrandingSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 
@@ -66,6 +66,24 @@ export const schoolSettingsService = {
       userId: ctx.userId, userDisplayName: ctx.displayName,
       action: 'school_settings.behavior_window_updated', resource: 'school_settings', resourceId: ctx.schoolId,
       details: { ...window }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return updated;
+  },
+
+  async updateReportCardBranding(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {
+    const branding = updateReportCardBrandingSchema.parse(rawInput);
+
+    const updated = await SchoolSettings.findOneAndUpdate(
+      { schoolId: ctx.schoolId },
+      { $set: { reportCardBranding: branding, updatedBy: ctx.displayName }, $setOnInsert: { schoolName: 'FNIC' } },
+      { new: true, upsert: true },
+    );
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'school_settings.report_card_branding_updated', resource: 'school_settings', resourceId: ctx.schoolId,
+      details: { ...branding }, ip: ctx.ip, schoolId: ctx.schoolId,
     });
 
     return updated;

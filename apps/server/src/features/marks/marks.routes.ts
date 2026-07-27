@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate';
 import { authorize } from '../../middlewares/authorize';
+import { imageUploadMiddleware, audioUploadMiddleware } from '../../lib/image-upload';
 import { marksController } from './marks.controller';
 
 const router = Router();
@@ -10,6 +11,9 @@ router.use(authenticate);
 // Static routes first — must come before /:id to avoid param conflicts
 router.get('/entry-table',                                    marksController.getEntryTable);
 router.get('/summary',                                        marksController.getSummary);
+router.post('/extract/image',     imageUploadMiddleware,      marksController.extractFromImage);
+router.post('/extract/voice',     audioUploadMiddleware,      marksController.extractFromVoice);
+router.post('/extract/transcript',                            marksController.extractFromTranscript);
 router.post('/bulk',                                          marksController.bulkUpsert);
 router.post('/submit',                                        marksController.submitForReview);
 router.post('/approve',           authorize('admin', 'principal'), marksController.approve);

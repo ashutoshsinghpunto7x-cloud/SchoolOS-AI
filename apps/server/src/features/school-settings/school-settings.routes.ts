@@ -14,5 +14,6 @@ router.delete('/logo', authorize('admin', 'principal', 'accountant'), schoolSett
 router.patch('/attendance-rules', authorize('admin'), schoolSettingsController.updateAttendanceRules);
 router.patch('/payroll-config', authorize('admin'), schoolSettingsController.updatePayrollConfig);
 router.patch('/behavior-window', authorize('admin', 'principal'), schoolSettingsController.updateBehaviorWindow);
+router.patch('/report-card-branding', authorize('admin', 'principal'), schoolSettingsController.updateReportCardBranding);
 
 export default router;

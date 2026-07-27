@@ -2,8 +2,11 @@ import { principalRepository } from './principal.repository';
 import { feeRepository } from '../fees/fee.repository';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { leaveRequestRepository } from '../leave-requests/leave-request.repository';
+import { openaiProvider } from '../ai/providers/llm/openai.provider';
+import { recordUsage } from '../principal-assistant/intent-router';
 import { logger } from '../../lib/logger';
-import type { PrincipalDashboardData, PrincipalAlert, TeachersSummaryData } from '@schoolos/types';
+import { AppError } from '../../middlewares/errorHandler';
+import type { PrincipalDashboardData, PrincipalAlert, TeachersSummaryData, PrincipalBriefingSummary } from '@schoolos/types';
 
 // ── Thresholds ────────────────────────────────────────────────────────────────
 
@@ -126,6 +129,49 @@ export const principalService = {
       alerts: buildAlerts(partial),
       generatedAt: new Date().toISOString(),
     };
+  },
+
+  /** On-demand only (never called on dashboard load) — turns the same
+   *  structured dashboard snapshot the stat-row already renders into a
+   *  short, descriptive recap. Re-fetches server-side rather than trusting
+   *  client-supplied numbers. Never invents a figure that isn't in the data. */
+  async getBriefingSummary(schoolId: string): Promise<PrincipalBriefingSummary> {
+    if (!openaiProvider.isAvailable()) {
+      throw new AppError('AI Assistant is not configured. Please contact your administrator.', 503, 'AI_UNAVAILABLE');
+    }
+
+    const [dashboard, teachers] = await Promise.all([
+      principalService.getDashboard(schoolId),
+      principalService.getTeachersSummary(schoolId),
+    ]);
+
+    const snapshot = {
+      teachersAbsent: teachers.onLeave.length,
+      teachersTotal: teachers.total,
+      attendanceRate: dashboard.attendance.today.attendanceRate,
+      overdueFees: dashboard.fees.overdueCount,
+      pendingAdmissionFollowUps: dashboard.admissions.pendingFollowUp,
+      newAdmissionsThisMonth: dashboard.admissions.newThisMonth,
+      upcomingEvents: dashboard.upcomingEvents.slice(0, 3).map((e) => ({ title: e.title, startDate: e.startDate })),
+    };
+
+    const systemPrompt =
+      'You are summarizing today\'s school operations for the Principal. Given this JSON snapshot, ' +
+      'write 2-3 short sentences in a calm, executive tone. Only use numbers present in the data — ' +
+      'never speculate, predict, or invent a figure that is not in the JSON.';
+    const userPrompt = `Data (JSON):\n${JSON.stringify(snapshot, null, 2)}`;
+
+    const result = await openaiProvider.complete({
+      systemPrompt,
+      userPrompt,
+      temperature: 0.4,
+      maxTokens: 200,
+    });
+    recordUsage(result, schoolId);
+
+    logger.info('Principal briefing summary generated', { schoolId });
+
+    return { summary: result.content.trim(), generatedAt: new Date().toISOString() };
   },
 
   async getTeachersSummary(schoolId: string, date?: string): Promise<TeachersSummaryData> {

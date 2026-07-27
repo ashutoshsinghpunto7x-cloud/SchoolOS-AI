@@ -1,16 +1,16 @@
 import { TrendingUp } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 import type { PrincipalAdmissionStats } from '@schoolos/types';
 
-const STAGE_LABELS: Record<string, string> = {
-  new_enquiry:          'New Enquiry',
-  contacted:            'Contacted',
-  follow_up_scheduled:  'Follow-up Scheduled',
-  campus_visit:         'Campus Visit',
-  application_submitted:'Application Submitted',
-  documents_pending:    'Documents Pending',
-  admission_approved:   'Admission Approved',
-  converted:            'Converted',
-  lost:                 'Lost',
+const STAGE_KEYS: Record<string, PrincipalTranslationKey> = {
+  new_enquiry:           'widget.admissions.stage.new_enquiry',
+  contacted:             'widget.admissions.stage.contacted',
+  follow_up_scheduled:   'widget.admissions.stage.follow_up_scheduled',
+  campus_visit:          'widget.admissions.stage.campus_visit',
+  application_submitted: 'widget.admissions.stage.application_submitted',
+  documents_pending:     'widget.admissions.stage.documents_pending',
+  admission_approved:    'widget.admissions.stage.admission_approved',
 };
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export const AdmissionsWidget = ({ data, isLoading }: Props) => {
+  const { t } = useLanguage();
   if (isLoading || !data) {
     return (
       <div className="space-y-2 animate-pulse">
@@ -38,15 +39,15 @@ export const AdmissionsWidget = ({ data, isLoading }: Props) => {
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2.5 bg-[#A855F7]/10 rounded-xl border border-[#A855F7]/20">
           <p className="text-lg font-bold text-[#4C1D95]">{data.total}</p>
-          <p className="text-[10px] font-medium text-[#5B21B6] mt-0.5">Total</p>
+          <p className="text-[10px] font-medium text-[#5B21B6] mt-0.5">{t('widget.admissions.total')}</p>
         </div>
         <div className="text-center p-2.5 bg-amber-50 rounded-xl border border-amber-100">
           <p className="text-lg font-bold text-amber-700">{data.newThisMonth}</p>
-          <p className="text-[10px] font-medium text-amber-600 mt-0.5">New This Month</p>
+          <p className="text-[10px] font-medium text-amber-600 mt-0.5">{t('widget.admissions.newThisMonth')}</p>
         </div>
         <div className="text-center p-2.5 bg-green-50 rounded-xl border border-green-100">
           <p className="text-lg font-bold text-green-700">{data.convertedThisMonth}</p>
-          <p className="text-[10px] font-medium text-green-600 mt-0.5">Converted</p>
+          <p className="text-[10px] font-medium text-green-600 mt-0.5">{t('widget.admissions.converted')}</p>
         </div>
       </div>
 
@@ -55,19 +56,19 @@ export const AdmissionsWidget = ({ data, isLoading }: Props) => {
         <div className="space-y-2">
           {activeStages.map(([stage, count]) => (
             <div key={stage} className="flex items-center justify-between py-1.5">
-              <span className="text-xs text-gray-600">{STAGE_LABELS[stage] ?? stage}</span>
+              <span className="text-xs text-gray-600">{STAGE_KEYS[stage] ? t(STAGE_KEYS[stage]) : stage}</span>
               <span className="text-xs font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-full">{count}</span>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-400 text-center py-2">No active pipeline enquiries.</p>
+        <p className="text-sm text-gray-400 text-center py-2">{t('widget.admissions.noPipeline')}</p>
       )}
 
       {data.pendingFollowUp > 0 && (
         <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-100">
           <TrendingUp className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" strokeWidth={2} />
-          <p className="text-xs font-medium text-amber-700">{data.pendingFollowUp} follow-up{data.pendingFollowUp > 1 ? 's' : ''} due today</p>
+          <p className="text-xs font-medium text-amber-700">{data.pendingFollowUp} {t('widget.admissions.followUpDue')}</p>
         </div>
       )}
     </div>

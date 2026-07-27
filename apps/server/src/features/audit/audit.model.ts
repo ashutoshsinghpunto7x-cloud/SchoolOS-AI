@@ -13,6 +13,7 @@ export type AuditAction =
   | 'school_settings.attendance_rules_updated'
   | 'school_settings.payroll_config_updated'
   | 'school_settings.behavior_window_updated'
+  | 'school_settings.report_card_branding_updated'
   | 'payroll.generated'
   | 'payroll.generate_all'
   | 'payroll.marked_paid'
@@ -121,6 +122,7 @@ export type AuditAction =
   | 'teacher_timetable.updated'
   | 'teacher_timetable.deleted'
   | 'principal.dashboard.viewed'
+  | 'principal.briefing_summary.generated'
   | 'report.generated'
   | 'report.saved'
   | 'report.exported'
@@ -182,7 +184,11 @@ export type AuditAction =
   | 'marks.correction_requested'
   | 'marks.published'
   | 'marks.locked'
-  | 'marks.reopened';
+  | 'marks.reopened'
+  | 'report_card.generated'
+  | 'report_card.updated'
+  | 'report_card.remark_regenerated'
+  | 'report_card.published';
 
 export interface IAuditLog extends Document {
   userId: string;

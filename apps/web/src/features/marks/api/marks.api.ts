@@ -9,6 +9,7 @@ import type {
   MarksListOptions,
   MarksEntryTable,
   MarksSummary,
+  MarksExtractionResult,
   PaginatedResponse,
 } from '@schoolos/types';
 
@@ -97,6 +98,40 @@ export const marksApi = {
   reopen: async (payload: MarksReopenPayload): Promise<BatchResult> => {
     try {
       const res = await apiClient.post<{ data: BatchResult }>(`${BASE}/reopen`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  extractFromImage: async (target: MarksBatchTarget, file: File): Promise<MarksExtractionResult> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post<{ data: MarksExtractionResult }>(`${BASE}/extract/image`, formData, {
+        params: target,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  extractFromVoice: async (target: MarksBatchTarget, file: Blob, filename: string): Promise<MarksExtractionResult> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file, filename);
+      const res = await apiClient.post<{ data: MarksExtractionResult }>(`${BASE}/extract/voice`, formData, {
+        params: target,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  extractFromTranscript: async (target: MarksBatchTarget, transcript: string, timeoutMs?: number): Promise<MarksExtractionResult> => {
+    try {
+      const res = await apiClient.post<{ data: MarksExtractionResult }>(`${BASE}/extract/transcript`, { transcript }, {
+        params: target,
+        ...(timeoutMs ? { timeout: timeoutMs } : {}),
+      });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

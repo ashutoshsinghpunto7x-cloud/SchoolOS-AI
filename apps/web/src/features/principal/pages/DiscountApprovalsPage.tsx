@@ -5,11 +5,13 @@ import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { usePendingDiscounts, useApproveDiscountRequest, useRejectDiscountRequest } from '@/features/fees/hooks/useFeeStructure';
+import { useLanguage } from '@/context/LanguageContext';
 import type { FeeDiscountRequest } from '@schoolos/types';
 
 const fmt = (n: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 function DiscountCard({ request }: { request: FeeDiscountRequest }) {
+  const { t } = useLanguage();
   const [showRejectNote, setShowRejectNote] = useState(false);
   const [reviewNote, setReviewNote] = useState('');
   const approve = useApproveDiscountRequest();
@@ -40,7 +42,7 @@ function DiscountCard({ request }: { request: FeeDiscountRequest }) {
         <div className="min-w-0">
           <p className="text-base font-bold text-gray-900 truncate">{request.studentName}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Class {request.class}-{request.section} · Requested by{' '}
+            {t('discountApprovals.class')} {request.class}-{request.section} · {t('discountApprovals.requestedBy')}{' '}
             <span className="font-semibold text-gray-600">{request.requestedByName}</span>
           </p>
         </div>
@@ -53,7 +55,7 @@ function DiscountCard({ request }: { request: FeeDiscountRequest }) {
         <textarea
           value={reviewNote}
           onChange={(e) => setReviewNote(e.target.value)}
-          placeholder="Optional note for the requester…"
+          placeholder={t('discountApprovals.notePlaceholder')}
           rows={2}
           className="w-full mb-3 px-3 py-2 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500/20"
         />
@@ -67,7 +69,7 @@ function DiscountCard({ request }: { request: FeeDiscountRequest }) {
           className="flex-1 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {approve.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          Approve
+          {t('leaveApprovals.approve')}
         </button>
         <button
           type="button"
@@ -76,7 +78,7 @@ function DiscountCard({ request }: { request: FeeDiscountRequest }) {
           className="flex-1 h-10 rounded-xl bg-red-50 hover:bg-red-100 disabled:opacity-50 text-red-600 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
         >
           {reject.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-          {showRejectNote ? 'Confirm Reject' : 'Reject'}
+          {showRejectNote ? t('leaveApprovals.confirmReject') : t('leaveApprovals.reject')}
         </button>
       </div>
     </div>
@@ -84,15 +86,16 @@ function DiscountCard({ request }: { request: FeeDiscountRequest }) {
 }
 
 export const DiscountApprovalsPage = () => {
+  const { t } = useLanguage();
   const { data: requests, isLoading } = usePendingDiscounts();
 
   return (
     <PageContainer>
       <WorkspaceHeader
-        title="Discount Approvals"
-        subtitle="Fee discount requests submitted by staff, awaiting your review"
+        title={t('discountApprovals.title')}
+        subtitle={t('discountApprovals.subtitle')}
         backTo="/principal"
-        backLabel="Principal Dashboard"
+        backLabel={t('leaveApprovals.backLabel')}
       />
 
       {isLoading ? (
@@ -102,7 +105,7 @@ export const DiscountApprovalsPage = () => {
           ))}
         </div>
       ) : !requests?.length ? (
-        <EmptyState icon={BadgePercent} title="No pending discount requests" description="Fee discount requests will show up here for your review." />
+        <EmptyState icon={BadgePercent} title={t('discountApprovals.emptyTitle')} description={t('discountApprovals.emptyDesc')} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {requests.map((r) => (

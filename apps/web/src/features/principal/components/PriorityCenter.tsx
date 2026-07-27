@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAlert } from '@schoolos/types';
 
 interface PriorityCenterProps {
@@ -19,15 +20,16 @@ interface PriorityCenterProps {
 // since the fee row above already surfaces that count.
 export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityCenterProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { data: leave } = usePendingLeaveRequests();
   const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
 
   const rows = [
-    { label: 'Leave Requests', count: leave?.length ?? 0, path: '/principal/leave-approvals' },
-    { label: 'Student Edit Requests', count: changeRequests?.length ?? 0, path: '/principal/approvals' },
-    { label: 'Fee Discount Approvals', count: discounts?.length ?? 0, path: '/principal/discount-approvals' },
-    { label: 'Overdue Fee Payments', count: overdueFeeCount ?? 0, path: '/fees' },
+    { label: t('priority.leaveRequests'), count: leave?.length ?? 0, path: '/principal/leave-approvals' },
+    { label: t('priority.editRequests'), count: changeRequests?.length ?? 0, path: '/principal/approvals' },
+    { label: t('priority.discountApprovals'), count: discounts?.length ?? 0, path: '/principal/discount-approvals' },
+    { label: t('priority.overdueFees'), count: overdueFeeCount ?? 0, path: '/fees' },
   ];
 
   const otherAlerts = (alerts ?? []).filter((a) => a.type !== 'overdue_fees');
@@ -36,9 +38,9 @@ export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityC
   return (
     <div className="bg-white rounded-[22px] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6 h-[288px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">Priority Center</h3>
+        <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">{t('priority.title')}</h3>
         {totalOpen > 0 && (
-          <span className="text-[11px] font-semibold text-[#EF4444]">{totalOpen} open</span>
+          <span className="text-[11px] font-semibold text-[#EF4444]">{totalOpen} {t('priority.open')}</span>
         )}
       </div>
 
@@ -64,7 +66,7 @@ export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityC
 
       <div className="flex-1 mt-3 pt-3 border-t border-black/[0.06] overflow-y-auto overscroll-contain min-h-0">
         {otherAlerts.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Everything else looks good today.</p>
+          <p className="text-sm text-gray-400 text-center py-4">{t('priority.allGood')}</p>
         ) : (
           <div className="flex flex-col gap-1">
             {otherAlerts.map((alert) => (

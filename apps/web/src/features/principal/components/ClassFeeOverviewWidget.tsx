@@ -1,11 +1,13 @@
 import { GraduationCap } from 'lucide-react';
 import { useClassFeeOverview } from '@/features/school-classes/hooks/useSchoolClasses';
+import { useLanguage } from '@/context/LanguageContext';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
 export function ClassFeeOverviewWidget() {
   const { data: rows, isLoading } = useClassFeeOverview();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -19,8 +21,8 @@ export function ClassFeeOverviewWidget() {
     return (
       <div className="py-6 text-center">
         <GraduationCap className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-        <p className="text-sm font-semibold text-gray-700">No classes set up yet</p>
-        <p className="text-xs text-gray-400 mt-1">Add classes under Classes &amp; Sections to see fee breakdowns here.</p>
+        <p className="text-sm font-semibold text-gray-700">{t('widget.classFee.noClasses')}</p>
+        <p className="text-xs text-gray-400 mt-1">{t('widget.classFee.noClassesDesc')}</p>
       </div>
     );
   }
@@ -30,17 +32,17 @@ export function ClassFeeOverviewWidget() {
       {rows.map((r) => (
         <div key={`${r.class}-${r.section}`} className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">Class {r.class}-{r.section}</p>
-            <p className="text-xs text-gray-400">{r.studentCount} student{r.studentCount === 1 ? '' : 's'}</p>
+            <p className="text-sm font-semibold text-gray-900 truncate">{t('discountApprovals.class')} {r.class}-{r.section}</p>
+            <p className="text-xs text-gray-400">{r.studentCount} {r.studentCount === 1 ? t('widget.classFee.student') : t('widget.classFee.students')}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-xs font-semibold text-emerald-600">{fmt(r.collected)} collected</p>
+            <p className="text-xs font-semibold text-emerald-600">{fmt(r.collected)} {t('widget.classFee.collected')}</p>
             <p className={`text-xs font-semibold ${r.pending > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
               {r.pending > 0
-                ? `${fmt(r.pending)} pending`
+                ? `${fmt(r.pending)} ${t('widget.classFee.pending')}`
                 : r.collected > 0
-                  ? 'Fully collected'
-                  : 'No fees configured'}
+                  ? t('widget.classFee.fullyCollected')
+                  : t('widget.classFee.noFees')}
             </p>
           </div>
         </div>
