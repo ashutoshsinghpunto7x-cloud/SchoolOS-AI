@@ -96,6 +96,14 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const finalTranscriptRef = useRef('');
   const lastExtractedRef = useRef('');
+  // Mobile speech-recognition engines are unreliable about resultIndex —
+  // they can re-report an already-finalized result in a later event, or
+  // (since mobile restarts the recognizer far more often than desktop,
+  // sometimes after every single phrase) briefly re-hear the tail of the
+  // previous utterance right after a restart. Both look the same from here:
+  // the same name/number getting appended twice. Guard against both.
+  const seenFinalIndicesRef = useRef<Set<number>>(new Set());
+  const lastFinalChunkRef = useRef('');
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const extractSeqRef = useRef(0);
   // A plain ref, not transcriptMutation.isPending — the poll interval's
@@ -195,6 +203,8 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
     finalTranscriptRef.current = '';
     lastExtractedRef.current = '';
     extractingRef.current = false;
+    seenFinalIndicesRef.current = new Set();
+    lastFinalChunkRef.current = '';
     setLiveCaption('');
     setLiveResult(null);
     setOverrides({});
@@ -209,7 +219,13 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const chunk = e.results[i];
         if (chunk.isFinal) {
-          finalTranscriptRef.current = `${finalTranscriptRef.current} ${chunk[0].transcript}`.trim();
+          if (seenFinalIndicesRef.current.has(i)) continue; // this exact index already got appended
+          seenFinalIndicesRef.current.add(i);
+          const text = chunk[0].transcript;
+          const normalized = text.trim().toLowerCase().replace(/\s+/g, ' ');
+          if (normalized && normalized === lastFinalChunkRef.current) continue; // same phrase heard again, e.g. right after a restart
+          if (normalized) lastFinalChunkRef.current = normalized;
+          finalTranscriptRef.current = `${finalTranscriptRef.current} ${text}`.trim();
         } else {
           interim += chunk[0].transcript;
         }
@@ -235,6 +251,10 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
       if (!recordingRef.current) return;
       setTimeout(() => {
         if (!recordingRef.current) return;
+        // A restarted session gets its own results list starting at index 0 —
+        // clear the index guard (but keep lastFinalChunkRef, which is what
+        // catches the browser re-hearing the same phrase across the restart).
+        seenFinalIndicesRef.current = new Set();
         try { recognition.start(); } catch { /* already running — fine */ }
       }, 250);
     };
