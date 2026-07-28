@@ -216,6 +216,21 @@ export const attendanceRepository = {
     return { total, present, absent, late, half_day, leave_approved, attendanceRate };
   },
 
+  /** All 'absent' records for a date, optionally narrowed to a class/section —
+   *  unpaginated (used to build the notification recipient list, where a
+   *  partial page would silently under-notify). */
+  async findAbsentees(
+    schoolId: string,
+    date: string,
+    cls?: string,
+    section?: string,
+  ): Promise<IAttendance[]> {
+    const query: Record<string, unknown> = { schoolId, date, status: 'absent', isDeleted: false };
+    if (cls) query.class = cls;
+    if (section) query.section = section;
+    return Attendance.find(query).lean<IAttendance[]>();
+  },
+
   /** Today's date in YYYY-MM-DD, in IST — independent of the server host's timezone. */
   todayString(): string {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });

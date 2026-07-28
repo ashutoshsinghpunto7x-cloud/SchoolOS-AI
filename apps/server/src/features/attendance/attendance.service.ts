@@ -17,6 +17,9 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { substituteRepository } from '../timetable/timetable.substitute.repository';
 import { classTeacherRepository } from '../classes/class-teacher.repository';
+import { schoolSettingsService } from '../school-settings/school-settings.service';
+import { attendanceNotificationService } from '../communication/attendance-notification.service';
+import { logger } from '../../lib/logger';
 
 // Only the class teacher assigned to a class/section (by admin/principal) may
 // mark its attendance — teaching a subject there is not enough, since a
@@ -124,6 +127,20 @@ export const attendanceService = {
       ip:              ctx.ip,
       schoolId:        ctx.schoolId,
     });
+
+    // Auto Send (Communication Settings) — fire-and-forget so a slow/failed
+    // notification run never delays or fails the attendance submission itself.
+    schoolSettingsService.getSettings(ctx.schoolId)
+      .then((settings) => {
+        if (!settings.communicationSettings.attendanceAutoNotify) return;
+        return attendanceNotificationService.sendAbsentNotifications(
+          { date: data.date, class: data.class, section: data.section },
+          ctx,
+        );
+      })
+      .catch((err) => {
+        logger.error('Attendance auto-notify failed', { class: data.class, section: data.section, date: data.date, err });
+      });
 
     return records;
   },

@@ -1,0 +1,166 @@
+{
+  "info": {
+    "name": "SchoolOS - Communication & Notification Engine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5050/api/v1" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Send Absent Notifications",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/attendance/send",
+            "body": { "mode": "raw", "raw": "{\n  \"date\": \"2026-07-28\",\n  \"class\": \"10\",\n  \"section\": \"A\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fees",
+      "item": [
+        {
+          "name": "Send Fee Reminders",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/fees/send",
+            "body": { "mode": "raw", "raw": "{\n  \"month\": \"April\",\n  \"class\": \"10\",\n  \"section\": \"A\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Broadcast",
+      "item": [
+        {
+          "name": "Broadcast - Entire School",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/broadcast/school",
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"School will remain closed tomorrow due to heavy rain.\"\n}" }
+          }
+        },
+        {
+          "name": "Broadcast - Class",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/broadcast/class",
+            "body": { "mode": "raw", "raw": "{\n  \"class\": \"10\",\n  \"message\": \"Reminder: submit the science project by Friday.\"\n}" }
+          }
+        },
+        {
+          "name": "Broadcast - Section",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/broadcast/section",
+            "body": { "mode": "raw", "raw": "{\n  \"class\": \"10\",\n  \"section\": \"A\",\n  \"message\": \"PTM rescheduled to Saturday 10am.\"\n}" }
+          }
+        },
+        {
+          "name": "Broadcast - Selected Students",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/broadcast/students",
+            "body": { "mode": "raw", "raw": "{\n  \"studentIds\": [\"<studentId1>\", \"<studentId2>\"],\n  \"message\": \"Please collect the report card from the office.\"\n}" }
+          }
+        },
+        {
+          "name": "Broadcast - Selected Teachers",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/broadcast/teachers",
+            "body": { "mode": "raw", "raw": "{\n  \"teacherIds\": [\"<teacherId1>\"],\n  \"message\": \"Staff meeting at 4pm today.\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logs & Jobs",
+      "item": [
+        { "name": "List Logs", "request": { "method": "GET", "url": "{{baseUrl}}/communication/logs?page=1&limit=20" } },
+        { "name": "Get Log by Id", "request": { "method": "GET", "url": "{{baseUrl}}/communication/logs/:id" } },
+        { "name": "Retry Log", "request": { "method": "POST", "url": "{{baseUrl}}/communication/logs/:id/retry" } },
+        { "name": "List Bulk Jobs", "request": { "method": "GET", "url": "{{baseUrl}}/communication/jobs" } },
+        { "name": "Get Bulk Job Progress", "request": { "method": "GET", "url": "{{baseUrl}}/communication/jobs/:id" } }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/communication/dashboard/summary" } },
+        { "name": "Recent Activity", "request": { "method": "GET", "url": "{{baseUrl}}/communication/dashboard/recent" } },
+        { "name": "Failed Notifications", "request": { "method": "GET", "url": "{{baseUrl}}/communication/dashboard/failed" } },
+        { "name": "Retry All Failed", "request": { "method": "POST", "url": "{{baseUrl}}/communication/dashboard/retry-failed" } }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        { "name": "List Templates", "request": { "method": "GET", "url": "{{baseUrl}}/communication/templates" } },
+        {
+          "name": "Create Template",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/templates",
+            "body": { "mode": "raw", "raw": "{\n  \"notificationType\": \"FEE_REMINDER\",\n  \"channel\": \"whatsapp\",\n  \"name\": \"Fee Reminder - Friendly\",\n  \"body\": \"Dear Parent, {{student_name}}'s fee of ₹{{amount}} is due on {{due_date}}.\"\n}" }
+          }
+        },
+        {
+          "name": "Update Template",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/communication/templates/:id",
+            "body": { "mode": "raw", "raw": "{\n  \"body\": \"Updated template text with {{student_name}}\"\n}" }
+          }
+        },
+        { "name": "Activate Template", "request": { "method": "POST", "url": "{{baseUrl}}/communication/templates/:id/activate" } },
+        { "name": "Delete Template", "request": { "method": "DELETE", "url": "{{baseUrl}}/communication/templates/:id" } }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        { "name": "Get School Settings", "request": { "method": "GET", "url": "{{baseUrl}}/school-settings" } },
+        {
+          "name": "Update Communication Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/school-settings/communication-settings",
+            "body": { "mode": "raw", "raw": "{\n  \"whatsappEnabled\": true,\n  \"emailEnabled\": false,\n  \"smsEnabled\": false,\n  \"pushEnabled\": false,\n  \"attendanceAutoNotify\": true,\n  \"feeReminderAutoNotify\": false,\n  \"workingHoursStart\": \"08:00\",\n  \"workingHoursEnd\": \"20:00\",\n  \"dailyLimit\": 5000,\n  \"retryCount\": 3\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meta Webhook (public)",
+      "item": [
+        {
+          "name": "Verify Webhook (GET)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/communication/webhook?hub.mode=subscribe&hub.verify_token=YOUR_VERIFY_TOKEN&hub.challenge=12345"
+          }
+        }
+      ]
+    }
+  ]
+}

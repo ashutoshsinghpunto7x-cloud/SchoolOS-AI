@@ -34,7 +34,26 @@ export const updateReportCardBrandingSchema = z.object({
   principalName:         z.string().trim().max(100).optional(),
 });
 
+export const updateCommunicationSettingsSchema = z
+  .object({
+    whatsappEnabled:       z.boolean(),
+    emailEnabled:          z.boolean(),
+    smsEnabled:            z.boolean(),
+    pushEnabled:           z.boolean(),
+    attendanceAutoNotify:  z.boolean(),
+    feeReminderAutoNotify: z.boolean(),
+    workingHoursStart:     hhmm,
+    workingHoursEnd:       hhmm,
+    dailyLimit:            z.coerce.number().int().min(1).max(100000),
+    retryCount:            z.coerce.number().int().min(0).max(10),
+  })
+  .refine((v) => v.workingHoursStart < v.workingHoursEnd, {
+    message: 'workingHoursStart must be before workingHoursEnd',
+    path: ['workingHoursEnd'],
+  });
+
 export type UpdateAttendanceRulesInput = z.infer<typeof updateAttendanceRulesSchema>;
 export type UpdatePayrollConfigInput   = z.infer<typeof updatePayrollConfigSchema>;
 export type UpdateBehaviorWindowInput  = z.infer<typeof updateBehaviorWindowSchema>;
 export type UpdateReportCardBrandingInput = z.infer<typeof updateReportCardBrandingSchema>;
+export type UpdateCommunicationSettingsInput = z.infer<typeof updateCommunicationSettingsSchema>;

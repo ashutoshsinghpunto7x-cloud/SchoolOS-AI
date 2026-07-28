@@ -1,5 +1,5 @@
-import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, DEFAULT_BEHAVIOR_WINDOW } from './school-settings.model';
-import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateReportCardBrandingSchema } from './school-settings.validation';
+import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, ICommunicationSettings, DEFAULT_BEHAVIOR_WINDOW, DEFAULT_COMMUNICATION_SETTINGS } from './school-settings.model';
+import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 
@@ -12,6 +12,12 @@ export const schoolSettingsService = {
     // never got the default backfilled — heal it in place on first read.
     if (!existing.behaviorWindow) {
       existing.behaviorWindow = { ...DEFAULT_BEHAVIOR_WINDOW };
+      await existing.save();
+    }
+    // Documents created before communicationSettings existed on the schema
+    // never got the default backfilled — heal it in place on first read.
+    if (!existing.communicationSettings) {
+      existing.communicationSettings = { ...DEFAULT_COMMUNICATION_SETTINGS };
       await existing.save();
     }
     return existing;
@@ -84,6 +90,24 @@ export const schoolSettingsService = {
       userId: ctx.userId, userDisplayName: ctx.displayName,
       action: 'school_settings.report_card_branding_updated', resource: 'school_settings', resourceId: ctx.schoolId,
       details: { ...branding }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return updated;
+  },
+
+  async updateCommunicationSettings(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {
+    const settings: ICommunicationSettings = updateCommunicationSettingsSchema.parse(rawInput);
+
+    const updated = await SchoolSettings.findOneAndUpdate(
+      { schoolId: ctx.schoolId },
+      { $set: { communicationSettings: settings, updatedBy: ctx.displayName }, $setOnInsert: { schoolName: 'FNIC' } },
+      { new: true, upsert: true },
+    );
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'communication_settings.updated', resource: 'school_settings', resourceId: ctx.schoolId,
+      details: { ...settings }, ip: ctx.ip, schoolId: ctx.schoolId,
     });
 
     return updated;

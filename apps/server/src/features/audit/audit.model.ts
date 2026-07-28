@@ -188,7 +188,16 @@ export type AuditAction =
   | 'report_card.generated'
   | 'report_card.updated'
   | 'report_card.remark_regenerated'
-  | 'report_card.published';
+  | 'report_card.published'
+  | 'notification.sent'
+  | 'notification.bulk_sent'
+  | 'notification.bulk_job_completed'
+  | 'notification.retried'
+  | 'notification.webhook_received'
+  | 'communication_settings.updated'
+  | 'message_template.created'
+  | 'message_template.updated'
+  | 'message_template.deleted';
 
 export interface IAuditLog extends Document {
   userId: string;

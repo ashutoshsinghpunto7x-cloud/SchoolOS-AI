@@ -15,5 +15,6 @@ router.patch('/attendance-rules', authorize('admin'), schoolSettingsController.u
 router.patch('/payroll-config', authorize('admin'), schoolSettingsController.updatePayrollConfig);
 router.patch('/behavior-window', authorize('admin', 'principal'), schoolSettingsController.updateBehaviorWindow);
 router.patch('/report-card-branding', authorize('admin', 'principal'), schoolSettingsController.updateReportCardBranding);
+router.patch('/communication-settings', authorize('admin', 'principal'), schoolSettingsController.updateCommunicationSettings);
 
 export default router;

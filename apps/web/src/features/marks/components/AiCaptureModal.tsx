@@ -52,7 +52,7 @@ function EditableExtractedRow({
         <span className="truncate">{row.fullName}</span>
       </span>
       <div className="flex items-center gap-1.5 shrink-0">
-        {row.componentScores.filter((c) => c.score !== undefined).map((c) => (
+        {row.componentScores.map((c) => (
           <label key={c.componentName} className="flex items-center gap-1">
             <span className="text-[10px] text-gray-400 dark:text-white/40">{c.componentName}</span>
             <input

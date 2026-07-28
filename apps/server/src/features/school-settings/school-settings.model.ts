@@ -36,6 +36,26 @@ export interface IReportCardBranding {
   schoolSealUrl?: string;
 }
 
+/** Admin-configurable knobs for the Communication & Notification Engine —
+ *  channel on/off switches, auto-notify toggles, and send-safety limits.
+ *  Per-notification-type/channel template text itself lives in the
+ *  MessageTemplate collection (features/communication), not here. */
+export interface ICommunicationSettings {
+  whatsappEnabled: boolean;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  pushEnabled: boolean;
+  attendanceAutoNotify: boolean;
+  feeReminderAutoNotify: boolean;
+  /** HH:mm 24-hour, IST — outside this window, sends are queued as SKIPPED rather than fired immediately. */
+  workingHoursStart: string;
+  workingHoursEnd: string;
+  /** Max notifications a single school may send per calendar day, across all channels. */
+  dailyLimit: number;
+  /** Automatic retry attempts for a failed send before it's left as FAILED. */
+  retryCount: number;
+}
+
 export interface ISchoolSettings extends Document {
   schoolId: string;
   schoolName: string;
@@ -44,6 +64,7 @@ export interface ISchoolSettings extends Document {
   payrollConfig: IPayrollConfig;
   behaviorWindow: IBehaviorWindow;
   reportCardBranding: IReportCardBranding;
+  communicationSettings: ICommunicationSettings;
   updatedBy?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +89,22 @@ export const DEFAULT_PAYROLL_CONFIG: IPayrollConfig = {
 export const DEFAULT_BEHAVIOR_WINDOW: IBehaviorWindow = {
   startTime: '09:00',
   endTime: '15:00',
+};
+
+// WhatsApp on by default (the only channel with a real provider today); the
+// others stay off until their providers are actually implemented, so enabling
+// them can never silently no-op a send.
+export const DEFAULT_COMMUNICATION_SETTINGS: ICommunicationSettings = {
+  whatsappEnabled: true,
+  emailEnabled: false,
+  smsEnabled: false,
+  pushEnabled: false,
+  attendanceAutoNotify: false,
+  feeReminderAutoNotify: false,
+  workingHoursStart: '08:00',
+  workingHoursEnd: '20:00',
+  dailyLimit: 5000,
+  retryCount: 3,
 };
 
 const attendanceRulesSchema = new Schema<IAttendanceRules>(
@@ -109,6 +146,22 @@ const reportCardBrandingSchema = new Schema<IReportCardBranding>(
   { _id: false },
 );
 
+const communicationSettingsSchema = new Schema<ICommunicationSettings>(
+  {
+    whatsappEnabled:       { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.whatsappEnabled },
+    emailEnabled:          { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.emailEnabled },
+    smsEnabled:            { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.smsEnabled },
+    pushEnabled:           { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.pushEnabled },
+    attendanceAutoNotify:  { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.attendanceAutoNotify },
+    feeReminderAutoNotify: { type: Boolean, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.feeReminderAutoNotify },
+    workingHoursStart:     { type: String, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.workingHoursStart },
+    workingHoursEnd:       { type: String, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.workingHoursEnd },
+    dailyLimit:            { type: Number, required: true, min: 1, default: DEFAULT_COMMUNICATION_SETTINGS.dailyLimit },
+    retryCount:            { type: Number, required: true, min: 0, max: 10, default: DEFAULT_COMMUNICATION_SETTINGS.retryCount },
+  },
+  { _id: false },
+);
+
 const schoolSettingsSchema = new Schema<ISchoolSettings>(
   {
     schoolId:          { type: String, required: true, unique: true },
@@ -118,6 +171,7 @@ const schoolSettingsSchema = new Schema<ISchoolSettings>(
     payrollConfig:     { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
     behaviorWindow:    { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },
     reportCardBranding:{ type: reportCardBrandingSchema, default: () => ({}) },
+    communicationSettings: { type: communicationSettingsSchema, default: () => ({ ...DEFAULT_COMMUNICATION_SETTINGS }) },
     updatedBy:         { type: String },
   },
   { timestamps: true, versionKey: false },

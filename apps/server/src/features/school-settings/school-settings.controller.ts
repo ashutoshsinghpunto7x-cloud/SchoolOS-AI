@@ -62,4 +62,12 @@ export const schoolSettingsController = {
       sendSuccess(res, settings, 'Report card branding updated');
     } catch (err) { next(err); }
   },
+
+  async updateCommunicationSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateCommunicationSettings(req.body, ctx);
+      sendSuccess(res, settings, 'Communication settings updated');
+    } catch (err) { next(err); }
+  },
 };

@@ -36,11 +36,18 @@ const envSchema = z.object({
   // AI — ElevenLabs (Speech)
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().default('21m00Tcm4TlvDq8ikWAM'),
-  // Twilio — WhatsApp messaging
+  // Twilio — WhatsApp messaging (legacy path, kept for backward compatibility — new
+  // notification engine uses Meta WhatsApp Cloud API below instead)
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   // Your Twilio WhatsApp-enabled number, e.g. +14155238886 (sandbox) or your own verified number
   TWILIO_WHATSAPP_FROM: z.string().optional(),
+  // Meta WhatsApp Cloud API — Communication & Notification Engine
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  // Arbitrary string this server expects back from Meta during webhook (GET) verification.
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_API_VERSION: z.string().default('v21.0'),
 });
 
 const parsed = envSchema.safeParse(process.env);
