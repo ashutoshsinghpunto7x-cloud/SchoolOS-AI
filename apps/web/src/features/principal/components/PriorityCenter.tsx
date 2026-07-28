@@ -40,7 +40,9 @@ export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityC
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-[15px] font-semibold text-[#111827] tracking-tight">{t('priority.title')}</h3>
         {totalOpen > 0 && (
-          <span className="text-[11px] font-semibold text-[#EF4444]">{totalOpen} {t('priority.open')}</span>
+          <span className="text-[11px] font-semibold text-[#B91C1C] bg-[#EF4444]/10 rounded-full px-2 py-0.5">
+            {totalOpen} {t('priority.open')}
+          </span>
         )}
       </div>
 
@@ -56,7 +58,13 @@ export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityC
               className="flex items-center justify-between py-3 hover:bg-black/[0.02] transition-colors text-left -mx-1 px-1 rounded-lg"
             >
               <span className="text-sm font-medium text-[#374151]">{label}</span>
-              <span className={count > 0 ? 'text-sm font-semibold text-[#111827]' : 'text-sm font-medium text-gray-300'}>
+              <span
+                className={
+                  count > 0
+                    ? 'min-w-[24px] text-center text-[13px] font-semibold text-[#B91C1C] bg-[#EF4444]/10 rounded-full px-2 py-0.5'
+                    : 'min-w-[24px] text-center text-[13px] font-medium text-gray-300'
+                }
+              >
                 {count}
               </span>
             </button>

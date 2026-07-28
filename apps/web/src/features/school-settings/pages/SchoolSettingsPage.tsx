@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, Upload, X, Loader2, ShieldCheck, LogOut, ChevronRight, Palette } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../hooks/useSchoolSettings';
 import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
@@ -91,21 +92,25 @@ export function SchoolSettingsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
-        <div className="flex items-center gap-2 mb-1">
-          <Palette className="w-4 h-4 text-gray-400" />
-          <h2 className="text-sm font-bold text-gray-900">{t('settings.appearance.title')}</h2>
-        </div>
-        <p className="text-xs text-gray-400 mb-4">
-          {t('settings.appearance.subtitle')}
-        </p>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-800">
-            {theme === 'dark' ? t('settings.appearance.dark') : t('settings.appearance.light')}
-          </span>
-          <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
-        </div>
+        {user?.role !== 'principal' && (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <Palette className="w-4 h-4 text-gray-400" />
+              <h2 className="text-sm font-bold text-gray-900">{t('settings.appearance.title')}</h2>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">
+              {t('settings.appearance.subtitle')}
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-800">
+                {theme === 'dark' ? t('settings.appearance.dark') : t('settings.appearance.light')}
+              </span>
+              <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
+            </div>
+          </>
+        )}
 
-        <div className="flex items-center justify-between mt-5 pt-5 border-t border-gray-50">
+        <div className={cn('flex items-center justify-between', user?.role !== 'principal' && 'mt-5 pt-5 border-t border-gray-50')}>
           <div>
             <span className="text-sm font-semibold text-gray-800 block">{t('settings.notifSounds.title')}</span>
             <span className="text-xs text-gray-400">{t('settings.notifSounds.subtitle')}</span>

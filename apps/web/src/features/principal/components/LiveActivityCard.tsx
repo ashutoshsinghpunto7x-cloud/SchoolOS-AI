@@ -5,6 +5,29 @@ function formatAction(action: string): string {
   return action.split('.').pop()!.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Colors the left accent bar by the audit action's domain prefix (e.g.
+// "leave_request.approved" -> "leave_request") so the list reads at a
+// glance, same idea as the category dots in the reference dashboard mock —
+// purely cosmetic, no new data. Prefixes taken from the actual action
+// strings services log (see e.g. leave-request.service.ts, fee.service.ts).
+const CATEGORY_COLORS: Record<string, string> = {
+  leave_request: '#F59E0B',
+  fee: '#10B981',
+  salary: '#10B981',
+  payroll: '#10B981',
+  enquiry: '#6D4AFF',
+  student: '#3B82F6',
+  attendance: '#3B82F6',
+  staff_attendance: '#3B82F6',
+  teacher: '#3B82F6',
+  behavior: '#F59E0B',
+};
+
+function categoryColor(action: string): string {
+  const domain = action.split('.')[0];
+  return CATEGORY_COLORS[domain] ?? '#9CA3AF';
+}
+
 function relativeTime(iso: string, justNow: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60_000);
@@ -39,7 +62,11 @@ export function LiveActivityCard() {
           </div>
         ) : (
           logs.slice(0, 5).map((log) => (
-            <div key={log._id} className="py-2.5">
+            <div key={log._id} className="py-2.5 pl-3 relative">
+              <span
+                className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full"
+                style={{ backgroundColor: categoryColor(log.action) }}
+              />
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[13px] font-semibold text-[#111827] truncate">{formatAction(log.action)}</p>
                 <p className="text-[11px] text-[#6B7280] shrink-0">{relativeTime(log.createdAt, t('activity.justNow'))}</p>

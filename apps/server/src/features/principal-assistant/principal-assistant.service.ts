@@ -5,8 +5,9 @@ import { attendanceIntents } from './principal-assistant.intents';
 import { feeIntents } from './fees.intents';
 import { admissionsIntents } from './admissions.intents';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
+import { principalAssistantActionService, ActionPreviewResult } from './principal-assistant.action.service';
 import { AuthContext } from '../../lib/auth-context';
-import { AppError } from '../../middlewares/errorHandler';
+import { AppError, ForbiddenError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 
 const UNSUPPORTED_REPLY =
@@ -20,12 +21,41 @@ const UNSUPPORTED_REPLY =
 // domains, so finding the matching intent's fetchData afterward is unambiguous.
 const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents, ...admissionsIntents];
 
+export type ChatResult =
+  | { type: 'text'; reply: string }
+  | { type: 'action_preview'; actionId: string; params: Record<string, unknown>; preview: ActionPreviewResult['preview'] };
+
 export const principalAssistantService = {
-  async chat(rawInput: unknown, ctx: AuthContext): Promise<{ reply: string }> {
+  async chat(rawInput: unknown, ctx: AuthContext): Promise<ChatResult> {
     const { message } = chatSchema.parse(rawInput);
 
     if (!openaiProvider.isAvailable()) {
       throw new AppError('AI Assistant is not configured. Please contact your administrator.', 503, 'AI_UNAVAILABLE');
+    }
+
+    // Step 0 — check whether this is an action request (e.g. "schedule a staff
+    // meeting") before falling into the read-only Q&A flow below. Kept as a
+    // separate classification call for now since there's only one action
+    // registered; once more actions exist this should merge into a single
+    // combined classification call the way allIntents already merges domains.
+    try {
+      const actionResult = await principalAssistantActionService.previewFromMessage(message, ctx);
+      if (actionResult) {
+        return {
+          type: 'action_preview',
+          actionId: actionResult.actionId,
+          params: actionResult.params,
+          preview: actionResult.preview,
+        };
+      }
+    } catch (err) {
+      if (err instanceof ForbiddenError) throw err;
+      // AI_UNAVAILABLE or other action-path errors shouldn't block the Q&A
+      // fallback below — log and continue.
+      logger.warn('[PrincipalAssistant] Action classification failed, falling back to Q&A', {
+        schoolId: ctx.schoolId,
+        err: (err as Error).message,
+      });
     }
 
     // Step 1 — route the question to an attendance/fees intent (or UNSUPPORTED).
@@ -34,13 +64,13 @@ export const principalAssistantService = {
 
     if (intentId === UNSUPPORTED_INTENT) {
       logger.info('[PrincipalAssistant] Unsupported intent', { schoolId: ctx.schoolId, message });
-      return { reply: UNSUPPORTED_REPLY };
+      return { type: 'text', reply: UNSUPPORTED_REPLY };
     }
 
     const intent = allIntents.find((i) => i.id === intentId);
     if (!intent) {
       // Defensive: classifyIntent only returns ids from allIntents or UNSUPPORTED.
-      return { reply: UNSUPPORTED_REPLY };
+      return { type: 'text', reply: UNSUPPORTED_REPLY };
     }
 
     // Step 2 — fetch only the data this intent needs (backend does all the math).
@@ -64,6 +94,6 @@ export const principalAssistantService = {
       totalTokens: routerUsage.totalTokens + result.totalTokens,
     });
 
-    return { reply: result.content.trim() };
+    return { type: 'text', reply: result.content.trim() };
   },
 };

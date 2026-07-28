@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Wallet, AlertTriangle, FileWarning, PieChart } from 'lucide-react';
 import type { FeeCollectionSummary } from '@schoolos/types';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -23,10 +24,15 @@ export function FinancialSnapshotCard({ data, isLoading }: FinancialSnapshotCard
 
   const tiles = data
     ? [
-        { label: t('financial.collected'), value: formatCurrency(data.totalCollected) },
-        { label: t('financial.outstanding'), value: formatCurrency(data.totalOutstanding) },
-        { label: t('financial.overdueRecords'), value: String(data.overdueCount), danger: data.overdueCount > 0 },
-        { label: t('financial.collectionRate'), value: `${collectionRate}%` },
+        { label: t('financial.collected'), value: formatCurrency(data.totalCollected), icon: Wallet },
+        { label: t('financial.outstanding'), value: formatCurrency(data.totalOutstanding), icon: AlertTriangle },
+        {
+          label: t('financial.overdueRecords'),
+          value: String(data.overdueCount),
+          danger: data.overdueCount > 0,
+          icon: FileWarning,
+        },
+        { label: t('financial.collectionRate'), value: `${collectionRate}%`, icon: PieChart },
       ]
     : [];
 
@@ -44,11 +50,20 @@ export function FinancialSnapshotCard({ data, isLoading }: FinancialSnapshotCard
           [1, 2, 3, 4].map((i) => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)
         ) : (
           tiles.map((tile) => (
-            <div key={tile.label} className="px-1">
-              <p className="text-[11px] font-medium text-[#6B7280]">{tile.label}</p>
-              <p className={`text-xl font-semibold mt-0.5 ${tile.danger ? 'text-[#EF4444]' : 'text-[#111827]'}`}>
-                {tile.value}
-              </p>
+            <div key={tile.label} className="px-1 flex items-start gap-2.5">
+              <span
+                className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 mt-0.5 ${
+                  tile.danger ? 'bg-[#EF4444]/10 text-[#EF4444]' : 'bg-[#6D4AFF]/8 text-[#6D4AFF]'
+                }`}
+              >
+                <tile.icon className="w-4 h-4" strokeWidth={2} />
+              </span>
+              <span className="min-w-0">
+                <p className="text-[11px] font-medium text-[#6B7280] truncate">{tile.label}</p>
+                <p className={`text-xl font-semibold mt-0.5 truncate ${tile.danger ? 'text-[#EF4444]' : 'text-[#111827]'}`}>
+                  {tile.value}
+                </p>
+              </span>
             </div>
           ))
         )}

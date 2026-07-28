@@ -7,6 +7,8 @@ export const principalTranslations = {
     // AiHeroSection
     'hero.aiAssistant': 'AI Assistant',
     'hero.beta': 'Beta',
+    'hero.askAi': 'Ask AI',
+    'hero.collapseBar': 'Collapse',
     'hero.newChat': 'New chat',
     'hero.expand': 'Expand',
     'hero.collapse': 'Collapse',
@@ -23,6 +25,10 @@ export const principalTranslations = {
     'hero.chip.todaysEnquiries': "Today's enquiries",
     'hero.chip.admissionFollowUps': 'Open admission follow-ups',
     'hero.chip.teachersAbsent': 'Teachers absent today',
+
+    // RemindersStrip
+    'reminders.title': 'Reminders',
+    'reminders.startsIn': 'starts in',
 
     // MeetingNotesWidget
     'meetings.title': 'Meetings & Reminders',
@@ -374,6 +380,11 @@ export const principalTranslations = {
     'briefing.noUpcomingEvents': 'None scheduled',
     'briefing.summarizeWithAi': 'Summarize with AI',
     'briefing.generating': 'Generating summary…',
+    'briefing.viewAllInsights': 'View All Insights',
+    'briefing.viewDetails': 'View Details',
+    'briefing.viewReport': 'View Report',
+    'briefing.reviewNow': 'Review Now',
+    'briefing.viewEnquiries': 'View Enquiries',
 
     // Smart Alerts (PrincipalWorkspace)
     'smartAlerts.title': 'Smart Alerts',
@@ -402,6 +413,8 @@ export const principalTranslations = {
   hi: {
     'hero.aiAssistant': 'एआई सहायक',
     'hero.beta': 'बीटा',
+    'hero.askAi': 'एआई से पूछें',
+    'hero.collapseBar': 'छोटा करें',
     'hero.newChat': 'नई चैट',
     'hero.expand': 'बड़ा करें',
     'hero.collapse': 'छोटा करें',
@@ -418,6 +431,9 @@ export const principalTranslations = {
     'hero.chip.todaysEnquiries': 'आज की पूछताछ',
     'hero.chip.admissionFollowUps': 'लंबित प्रवेश फॉलो-अप',
     'hero.chip.teachersAbsent': 'आज अनुपस्थित शिक्षक',
+
+    'reminders.title': 'रिमाइंडर',
+    'reminders.startsIn': 'शुरू होने में',
 
     'meetings.title': 'बैठकें और रिमाइंडर',
     'meetings.titlePlaceholder': 'जैसे अभिभावक बैठक, रिपोर्ट जमा करना…',
@@ -750,6 +766,11 @@ export const principalTranslations = {
     'briefing.noUpcomingEvents': 'कोई निर्धारित नहीं',
     'briefing.summarizeWithAi': 'एआई से सारांश',
     'briefing.generating': 'सारांश तैयार हो रहा है…',
+    'briefing.viewAllInsights': 'सभी जानकारी देखें',
+    'briefing.viewDetails': 'विवरण देखें',
+    'briefing.viewReport': 'रिपोर्ट देखें',
+    'briefing.reviewNow': 'अभी समीक्षा करें',
+    'briefing.viewEnquiries': 'पूछताछ देखें',
 
     // Smart Alerts (PrincipalWorkspace)
     'smartAlerts.title': 'महत्वपूर्ण अलर्ट',

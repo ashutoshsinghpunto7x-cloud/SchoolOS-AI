@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 type Theme = 'light' | 'dark';
 
@@ -22,6 +23,14 @@ function readStoredTheme(): Theme {
  *  to this provider's own wrapper div, not `<html>`, so Tailwind's `dark:`
  *  variant only activates for teacher pages nested inside it. */
 export function TeacherThemeProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  // Principal dashboard isn't designed/tested for dark mode yet — lock it to
+  // light regardless of what's in localStorage (e.g. left over from a teacher
+  // session on the same browser), and ignore toggle attempts. The toggle UI
+  // itself is also hidden in Settings for principal; this is the enforcement
+  // behind that, in case it's ever reachable another way.
+  const isPrincipal = user?.role === 'principal';
+
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,6 +40,8 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
+    if (isPrincipal) return;
+
     // Clear any in-flight transition timer
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
 
@@ -41,11 +52,13 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
     transitionTimer.current = setTimeout(() => {
       setIsTransitioning(false);
     }, 400);
-  }, []);
+  }, [isPrincipal]);
+
+  const effectiveTheme: Theme = isPrincipal ? 'light' : theme;
 
   return (
-    <TeacherThemeContext.Provider value={{ theme, toggleTheme, isTransitioning }}>
-      <div className={`teacher-theme-root${theme === 'dark' ? ' dark' : ''}`}>{children}</div>
+    <TeacherThemeContext.Provider value={{ theme: effectiveTheme, toggleTheme, isTransitioning }}>
+      <div className={`teacher-theme-root${effectiveTheme === 'dark' ? ' dark' : ''}`}>{children}</div>
     </TeacherThemeContext.Provider>
   );
 }

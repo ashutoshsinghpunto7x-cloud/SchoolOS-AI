@@ -3,6 +3,7 @@ import { Teacher } from '../teachers/teacher.model';
 import { Enquiry } from '../enquiries/enquiry.model';
 import { Timetable } from '../timetable/timetable.model';
 import { SchoolEvent } from '../events/event.model';
+import { StaffAttendanceRecord } from '../staff-attendance/staff-attendance.model';
 import type {
   PrincipalStudentStats,
   PrincipalAdmissionStats,
@@ -36,6 +37,25 @@ export const principalRepository = {
       Teacher.countDocuments({ schoolId, isDeleted: false, employmentStatus: 'active' }),
     ]);
     return { total, active };
+  },
+
+  /** Teachers actually checked in today via the Attendance Scanner — the
+   *  StaffAttendanceRecord is keyed by Employee.employeeId, which Teacher
+   *  docs also carry (they mirror one HR Employee record each), so we join
+   *  on that shared string id. This is the single source of truth "teachers
+   *  present" should mean everywhere (Daily Briefing, AI Assistant, School
+   *  Health) — previously each of those derived a different number from
+   *  Teacher.employmentStatus instead, which never reflected scanner data. */
+  async countPresentTeachersToday(schoolId: string, date: string): Promise<number> {
+    const teacherEmployeeIds = await Teacher.distinct('employeeId', { schoolId, isDeleted: false });
+    if (teacherEmployeeIds.length === 0) return 0;
+
+    return StaffAttendanceRecord.countDocuments({
+      schoolId,
+      date,
+      employeeId: { $in: teacherEmployeeIds },
+      status: { $in: ['present', 'late', 'half_day'] },
+    });
   },
 
   async getAdmissionStats(schoolId: string): Promise<PrincipalAdmissionStats> {

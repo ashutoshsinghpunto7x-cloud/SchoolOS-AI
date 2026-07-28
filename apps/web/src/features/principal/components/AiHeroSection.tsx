@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, ArrowRight, RotateCcw, Maximize2, Minimize2 } from 'lucide-react';
+import { Sparkles, ArrowRight, RotateCcw, Maximize2, Minimize2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { heroGradient } from '@/theme/brand';
 import { usePrincipalAssistant } from '@/features/principal-assistant/hooks/usePrincipalAssistant';
@@ -27,17 +27,19 @@ function greetingKey(): PrincipalTranslationKey {
   return 'hero.greeting.evening';
 }
 
-// The single hero moment of the dashboard — calm, premium, AI-first. Sized to
-// match the other 288px cards by default; the suggestion chips only surface
-// once the Principal actually focuses the input, so the resting state stays
-// compact instead of permanently showing a wall of prompts.
+// Collapsed by default to a slim "Ask AI" bar — matches the reference
+// layout, which treats the AI Assistant as a full-width strip rather than a
+// permanently-open chat pane. Clicking "Ask AI" expands it in place into
+// the full hero chat card (same gradient/chat implementation as before);
+// collapsing again just hides the card, it never loses the conversation.
 export function AiHeroSection() {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { messages, sendMessage, isLoading, error } = usePrincipalAssistant();
+  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading, error } = usePrincipalAssistant();
   const [input, setInput] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const dateStr = useMemo(
@@ -60,6 +62,27 @@ export function AiHeroSection() {
   const started = messages.length > 0;
   const showChips = inputFocused && !started;
 
+  if (!expanded) {
+    return (
+      <div className="bg-white rounded-2xl border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] px-6 py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm font-semibold text-[#111827] shrink-0">{t('hero.aiAssistant')}</span>
+          <span className="text-sm font-medium text-[#7C3AED] truncate">
+            {t(greetingKey())}, {user?.firstName ?? 'Principal'}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-xl border border-black/[0.08] text-sm font-semibold text-[#111827] hover:bg-black/[0.02] transition-colors"
+        >
+          {t('hero.askAi')}
+          <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       id="ai-hero-section"
@@ -78,6 +101,13 @@ export function AiHeroSection() {
           <span className="px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 text-[10px] normal-case">{t('hero.beta')}</span>
         </span>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="flex items-center gap-1 text-[11px] font-semibold text-white/50 hover:text-white/80 transition-colors"
+          >
+            <ChevronUp className="w-3 h-3" /> {t('hero.collapseBar')}
+          </button>
           {started && (
             <button
               type="button"
@@ -114,7 +144,13 @@ export function AiHeroSection() {
         {started && (
           <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-2.5 pr-1">
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage
+                key={message.id}
+                message={message}
+                onEditField={onEditField}
+                onApprove={onApprove}
+                onCancel={onCancel}
+              />
             ))}
             {isLoading && (
               <div className="flex gap-2.5 justify-start">

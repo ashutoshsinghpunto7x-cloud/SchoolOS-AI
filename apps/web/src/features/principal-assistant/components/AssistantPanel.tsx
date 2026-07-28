@@ -7,7 +7,7 @@ import { SuggestedPrompts } from './SuggestedPrompts';
 import { extractErrorMessage } from '@/services/api';
 
 export const AssistantPanel = () => {
-  const { messages, sendMessage, isLoading, error } = usePrincipalAssistant();
+  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading, error } = usePrincipalAssistant();
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +50,13 @@ export const AssistantPanel = () => {
         ) : (
           <>
             {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
+              <ChatMessage
+                key={message.id}
+                message={message}
+                onEditField={onEditField}
+                onApprove={onApprove}
+                onCancel={onCancel}
+              />
             ))}
             {isLoading && (
               <div className="flex gap-2.5 justify-start">

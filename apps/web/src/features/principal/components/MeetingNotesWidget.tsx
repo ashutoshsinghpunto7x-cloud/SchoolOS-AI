@@ -25,11 +25,22 @@ function countdownParts(ms: number) {
   return { days, hrs, mins, secs };
 }
 
+interface MeetingNotesWidgetProps {
+  now: Date;
+  /** 'onGradient' (default) matches the AI hero's purple background; 'onLight'
+   *  is for placing this inside a plain white card (e.g. the Reminders strip). */
+  variant?: 'onGradient' | 'onLight';
+  /** Fired after a note is added/removed, so a parent showing its own
+   *  derived summary (e.g. a collapsed count) can re-read storage. */
+  onChange?: () => void;
+}
+
 // The principal's own scratch list for meetings / personal tasks / reminders —
 // not tied to the school Calendar. The nearest upcoming entry gets a live
 // countdown so nothing on a busy day gets forgotten.
-export function MeetingNotesWidget({ now }: { now: Date }) {
+export function MeetingNotesWidget({ now, variant = 'onGradient', onChange }: MeetingNotesWidgetProps) {
   const { t } = useLanguage();
+  const light = variant === 'onLight';
   const [notes, setNotes] = useState<MeetingNote[]>(() => loadMeetingNotes());
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
@@ -51,22 +62,30 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
     setTitle('');
     setTime('');
     setAdding(false);
+    onChange?.();
   }
 
   function removeNote(id: string) {
     const next = notes.filter((n) => n.id !== id);
     setNotes(next);
     saveMeetingNotes(next);
+    onChange?.();
   }
 
   return (
-    <div className="bg-white/10 rounded-xl p-3 flex flex-col gap-2 w-full">
+    <div className={light ? 'bg-black/[0.02] rounded-xl p-3 flex flex-col gap-2 w-full' : 'bg-white/10 rounded-xl p-3 flex flex-col gap-2 w-full'}>
       <div className="flex items-center justify-between px-1">
-        <p className="text-[11px] font-bold text-white/70 uppercase tracking-wide">{t('meetings.title')}</p>
+        <p className={light ? 'text-[11px] font-bold text-[#6B7280] uppercase tracking-wide' : 'text-[11px] font-bold text-white/70 uppercase tracking-wide'}>
+          {t('meetings.title')}
+        </p>
         <button
           type="button"
           onClick={() => setAdding((v) => !v)}
-          className="w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 border border-white/20 text-white/80 hover:bg-white/25 hover:text-white transition-colors"
+          className={
+            light
+              ? 'w-6 h-6 flex items-center justify-center rounded-lg bg-black/[0.04] border border-black/[0.08] text-[#6B7280] hover:bg-black/[0.08] hover:text-[#111827] transition-colors'
+              : 'w-6 h-6 flex items-center justify-center rounded-lg bg-white/15 border border-white/20 text-white/80 hover:bg-white/25 hover:text-white transition-colors'
+          }
           title={t('meetings.addTooltip')}
         >
           <Plus className="w-3.5 h-3.5" />
@@ -107,15 +126,15 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
       )}
 
       {!next ? (
-        <p className="text-sm text-white/60 px-1 py-2">{t('meetings.empty')}</p>
+        <p className={light ? 'text-sm text-[#9CA3AF] px-1 py-2' : 'text-sm text-white/60 px-1 py-2'}>{t('meetings.empty')}</p>
       ) : (
         <>
           {/* Nearest upcoming — with live countdown */}
-          <div className="bg-white/10 rounded-lg px-3 py-2.5 flex items-start gap-2">
-            <CalendarClock className="w-4 h-4 text-white shrink-0 mt-0.5" />
+          <div className={light ? 'bg-black/[0.03] rounded-lg px-3 py-2.5 flex items-start gap-2' : 'bg-white/10 rounded-lg px-3 py-2.5 flex items-start gap-2'}>
+            <CalendarClock className={light ? 'w-4 h-4 text-[#7C3AED] shrink-0 mt-0.5' : 'w-4 h-4 text-white shrink-0 mt-0.5'} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-white truncate">{next.title}</p>
-              <p className="text-[11px] text-white/60 mb-1">
+              <p className={light ? 'text-sm font-bold text-[#111827] truncate' : 'text-sm font-bold text-white truncate'}>{next.title}</p>
+              <p className={light ? 'text-[11px] text-[#6B7280] mb-1' : 'text-[11px] text-white/60 mb-1'}>
                 {noteDateTime(next).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {next.time}
               </p>
               {(() => {
@@ -129,8 +148,10 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
                       [t('meetings.countdown.s'), secs],
                     ].map(([label, v]) => (
                       <div key={label as string}>
-                        <p className="text-sm font-bold text-white leading-none">{String(v).padStart(2, '0')}</p>
-                        <p className="text-[9px] text-white/50 font-semibold">{label}</p>
+                        <p className={light ? 'text-sm font-bold text-[#111827] leading-none' : 'text-sm font-bold text-white leading-none'}>
+                          {String(v).padStart(2, '0')}
+                        </p>
+                        <p className={light ? 'text-[9px] text-[#9CA3AF] font-semibold' : 'text-[9px] text-white/50 font-semibold'}>{label}</p>
                       </div>
                     ))}
                   </div>
@@ -140,7 +161,7 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
             <button
               type="button"
               onClick={() => removeNote(next.id)}
-              className="text-white/40 hover:text-red-300 shrink-0"
+              className={light ? 'text-[#9CA3AF] hover:text-red-500 shrink-0' : 'text-white/40 hover:text-red-300 shrink-0'}
               aria-label={t('meetings.remove')}
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -151,17 +172,24 @@ export function MeetingNotesWidget({ now }: { now: Date }) {
           {rest.length > 0 && (
             <div className="flex flex-col gap-1 max-h-32 overflow-y-auto overscroll-contain">
               {rest.map((n) => (
-                <div key={n.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/10">
+                <div
+                  key={n.id}
+                  className={
+                    light
+                      ? 'flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/[0.02] border border-black/[0.05]'
+                      : 'flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/10'
+                  }
+                >
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-white truncate">{n.title}</p>
-                    <p className="text-[10px] text-white/50">
+                    <p className={light ? 'text-xs font-semibold text-[#111827] truncate' : 'text-xs font-semibold text-white truncate'}>{n.title}</p>
+                    <p className={light ? 'text-[10px] text-[#9CA3AF]' : 'text-[10px] text-white/50'}>
                       {noteDateTime(n).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · {n.time}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeNote(n.id)}
-                    className="text-white/40 hover:text-red-300 shrink-0"
+                    className={light ? 'text-[#9CA3AF] hover:text-red-500 shrink-0' : 'text-white/40 hover:text-red-300 shrink-0'}
                     aria-label={t('meetings.remove')}
                   >
                     <Trash2 className="w-3 h-3" />

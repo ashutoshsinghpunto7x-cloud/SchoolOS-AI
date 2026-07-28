@@ -7,6 +7,7 @@ import { getErrorEvents, getErrorSummary } from '../../lib/error-events';
 import { getRenderDeploys } from '../../lib/render-client';
 import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_META, PERMISSION_META } from '../../lib/permissions';
 import { AlertState, AlertStatus } from './alert-state.model';
+import { runConsistencyChecks } from './consistency-checks';
 import { env } from '../../config/env';
 import type { AuditTrailQuery } from './ops.validation';
 import type { UserRole } from '../users/user.model';
@@ -168,6 +169,11 @@ export const opsService = {
         });
       }
     }
+
+    // Cross-checks two independent computations of the same real-world
+    // number and flags a school when they've silently drifted apart — see
+    // consistency-checks.ts for why this exists.
+    candidates.push(...(await runConsistencyChecks(schools)));
 
     const states = await AlertState.find({ alertKey: { $in: candidates.map((c) => c.alertKey) } }).lean();
     const stateByKey = new Map(states.map((s) => [s.alertKey, s]));

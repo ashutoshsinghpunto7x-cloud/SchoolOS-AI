@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -185,6 +185,68 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
 }
 
 
+// ── Profile dropdown (principal) ───────────────────────────────────────────────
+// Principal's Settings link lives here instead of the sidebar — see Sidebar.tsx.
+
+function ProfileMenu({ displayName, onClose }: { displayName: string; onClose: () => void }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-[calc(100%+8px)] z-50 w-60 bg-white rounded-2xl border border-[#E8E8E8] shadow-[0_16px_48px_rgba(0,0,0,0.14)] overflow-hidden py-1.5"
+    >
+      <div className="px-4 py-2.5 border-b border-gray-50">
+        <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+        <p className="text-xs text-gray-400">Principal</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => { onClose(); navigate('/settings'); }}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+      >
+        <Settings className="w-4 h-4 text-gray-400" />
+        Settings
+      </button>
+      <button
+        type="button"
+        onClick={() => { onClose(); navigate('/principal/change-password'); }}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+      >
+        <ShieldCheck className="w-4 h-4 text-gray-400" />
+        Change Password
+      </button>
+      <div className="border-t border-gray-50 mt-1 pt-1">
+        <button
+          type="button"
+          onClick={() => { onClose(); void logout(); }}
+          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
+        >
+          <LogOut className="w-4 h-4" />
+          Log Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 interface TopbarProps {
@@ -221,11 +283,13 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
 
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { theme } = useTeacherTheme();
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
     : '?';
+  const displayName = user ? `${user.firstName} ${user.lastName}` : '';
 
   const isTeacherDark = isTeacher && theme === 'dark';
 
@@ -427,28 +491,39 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
           {/* Notifications */}
           <NotificationBell />
 
-          {/* Avatar — teacher taps through straight to their profile */}
-          <button
-            onClick={isTeacher ? () => navigate('/teacher/profile') : undefined}
-            className={cn(
-              "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
-              usePillTopbar
-                ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
-                : "hover:bg-gray-100"
+          {/* Avatar — teacher taps through straight to their profile; principal opens a dropdown (Settings, Change Password, Log Out) */}
+          <div className="relative">
+            <button
+              onClick={
+                isTeacher
+                  ? () => navigate('/teacher/profile')
+                  : isPrincipal
+                  ? () => setProfileMenuOpen((v) => !v)
+                  : undefined
+              }
+              className={cn(
+                "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
+                usePillTopbar
+                  ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
+                  : "hover:bg-gray-100"
+              )}
+              aria-label="Profile"
+            >
+              {usePillTopbar ? (
+                <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-amber-400/10 border border-[#A855F7]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-amber-300">
+                  {initials}
+                </span>
+              ) : (
+                <span className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+                  <span className="text-xs font-bold text-white">{initials}</span>
+                </span>
+              )}
+              {!isTeacher && <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />}
+            </button>
+            {isPrincipal && profileMenuOpen && (
+              <ProfileMenu displayName={displayName} onClose={() => setProfileMenuOpen(false)} />
             )}
-            aria-label="Profile"
-          >
-            {usePillTopbar ? (
-              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-amber-400/10 border border-[#A855F7]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-amber-300">
-                {initials}
-              </span>
-            ) : (
-              <span className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-                <span className="text-xs font-bold text-white">{initials}</span>
-              </span>
-            )}
-            {!isTeacher && <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />}
-          </button>
+          </div>
         </div>
       </div>
     </header>

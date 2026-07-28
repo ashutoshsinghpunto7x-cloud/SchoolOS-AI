@@ -146,7 +146,12 @@ export const principalService = {
     ]);
 
     const snapshot = {
-      teachersAbsent: teachers.onLeave.length,
+      // Must match the Daily Briefing stat tile's definition (total minus
+      // scanner-verified presentCount) — teachers.onLeave.length is a
+      // different concept (approved leave requests, not "didn't show up
+      // today") and using it here made the AI summary silently disagree
+      // with the number displayed right above it.
+      teachersAbsent: Math.max(0, teachers.total - teachers.presentCount),
       teachersTotal: teachers.total,
       attendanceRate: dashboard.attendance.today.attendanceRate,
       overdueFees: dashboard.fees.overdueCount,
@@ -177,9 +182,16 @@ export const principalService = {
   async getTeachersSummary(schoolId: string, date?: string): Promise<TeachersSummaryData> {
     const targetDate = date ?? attendanceRepository.todayString();
 
-    const [{ total, active }, approvedLeaves] = await Promise.all([
+    // presentCount comes from real Attendance Scanner check-ins
+    // (StaffAttendanceRecord), not from Teacher.employmentStatus — that
+    // roster field only tracks employment type (active/on-leave/applicant),
+    // it was never meant to answer "did this teacher show up today" and
+    // using it for that gave Daily Briefing, the AI Assistant, and School
+    // Health three different, all-wrong answers to the same question.
+    const [{ total, active }, approvedLeaves, presentCount] = await Promise.all([
       principalRepository.countTeachersRoster(schoolId),
       leaveRequestRepository.findApprovedForDate(schoolId, targetDate),
+      principalRepository.countPresentTeachersToday(schoolId, targetDate),
     ]);
 
     const onLeave = approvedLeaves.map((l) => ({
@@ -196,7 +208,7 @@ export const principalService = {
       total,
       active,
       onLeave,
-      presentCount: Math.max(0, active - onLeave.length),
+      presentCount,
     };
   },
 };

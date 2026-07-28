@@ -53,7 +53,10 @@ export const principalAssistantData = {
     return {
       date: today,
       teachersPresent: teachers.presentCount,
-      teachersAbsent: Math.max(0, teachers.active - teachers.presentCount),
+      // Absent = out of the full roster, not checked in today — matches the
+      // Daily Briefing card's definition (principal.service.ts:getTeachersSummary)
+      // so the AI Assistant never disagrees with the dashboard it's reading from.
+      teachersAbsent: Math.max(0, teachers.total - teachers.presentCount),
       teachersTotal: teachers.total,
     };
   },

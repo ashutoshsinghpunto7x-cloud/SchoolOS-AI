@@ -2,9 +2,9 @@ import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceSection } from '@/components/workspace/WorkspaceSection';
 import { SectionHeader } from '@/components/workspace/SectionHeader';
 import { AiHeroSection } from '../components/AiHeroSection';
+import { RemindersStrip } from '../components/RemindersStrip';
 import { PriorityCenter } from '../components/PriorityCenter';
 import { SchoolHealthCard } from '../components/SchoolHealthCard';
-import { TodaysScheduleCard } from '../components/TodaysScheduleCard';
 import { FinancialSnapshotCard } from '../components/FinancialSnapshotCard';
 import { StaffManagementCard } from '../components/StaffManagementCard';
 import { LiveActivityCard } from '../components/LiveActivityCard';
@@ -18,14 +18,17 @@ import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal
 import { useLanguage } from '@/context/LanguageContext';
 
 // ── PrincipalWorkspace — the Principal's Daily Command Center ────────────────
-// AI Assistant is the hero (row 1, 70/30 with Priority Center — the single
-// merged source of truth for pending decisions, replacing what used to be
-// four overlapping cards). Everything below answers "is the school running
-// smoothly" and "what should I do next" in as few clicks as possible.
-// Anything the original brief asked for with no backing feature yet (Parent
-// Complaints, Visitors, Buses, Power/CCTV, Purchase/Transport approvals,
-// Reports, Circulars) was left out rather than faked — see each component's
-// own comment for specifics. Deeper breakdowns still live on "More Insights".
+// AI Assistant collapses to a slim "Ask AI" bar by default (row 1) rather
+// than sitting open — it expands in place on click. Reminders (row 2) and
+// Today's Briefing (row 3) are full-width strips. Row 4 is the primary
+// at-a-glance grid: Priority Center, School Health, Financial Snapshot, and
+// Recent Activity together. Everything else (Staff Management, Attendance/
+// Fee Insights, Admission Assistant) is real but secondary, so it lives
+// below the fold — "View All Insights" in the briefing scrolls straight to
+// it. Anything the original brief asked for with no backing feature yet
+// (Parent Complaints, Visitors, Buses, Power/CCTV, Purchase/Transport
+// approvals, Reports, Circulars) was left out rather than faked — see each
+// component's own comment for specifics.
 
 export const PrincipalWorkspace = () => {
   const { data, isLoading, error, refetch } = usePrincipalDashboard();
@@ -49,20 +52,21 @@ export const PrincipalWorkspace = () => {
           </div>
         )}
 
-        {/* Daily Briefing — morning summary strip, above everything else */}
+        {/* Row 1 — AI Assistant, collapsed bar by default */}
+        <AiHeroSection />
+
+        {/* Row 2 — Reminders (the principal's own meeting/task notes) */}
+        <RemindersStrip />
+
+        {/* Row 3 — Daily Briefing, morning summary strip */}
         <DailyBriefingCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
 
-        {/* Row 1 — AI Assistant hero + Today's Schedule */}
-        <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-stretch">
-          <AiHeroSection />
-          <TodaysScheduleCard upcomingEvents={data?.upcomingEvents} />
-        </div>
-
-        {/* Row 2 — School Health, Priority Center, Financial Snapshot */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <SchoolHealthCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
+        {/* Row 4 — Priority Center, School Health, Financial Snapshot, Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
           <PriorityCenter alerts={data?.alerts} overdueFeeCount={data?.fees.overdueCount} isLoading={isLoading} />
+          <SchoolHealthCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
           <FinancialSnapshotCard data={data?.fees} isLoading={isLoading} />
+          <LiveActivityCard />
         </div>
 
         {/* Smart Alerts — only high-signal alerts, reusing the existing AlertsPanel */}
@@ -73,20 +77,18 @@ export const PrincipalWorkspace = () => {
           </WorkspaceSection>
         )}
 
-        {/* Row 3 — Staff Management, Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-5 items-start">
+        {/* Below the fold — secondary detail, linked from "View All Insights" above */}
+        <div id="more-insights-section" className="flex flex-col gap-5 scroll-mt-4">
           <StaffManagementCard />
-          <LiveActivityCard />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+            <AttendanceInsightsCard />
+            <FeeInsightsCard />
+            <AdmissionAssistantCard data={data?.admissions} isLoading={isLoading} />
+          </div>
         </div>
 
-        {/* Row 3.5 — Attendance Insights, Fee Insights, Admission Assistant */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-          <AttendanceInsightsCard />
-          <FeeInsightsCard />
-          <AdmissionAssistantCard data={data?.admissions} isLoading={isLoading} />
-        </div>
-
-        {/* Row 4 — Quick Actions */}
+        {/* Row 5 — Quick Actions */}
         <DashboardQuickActions />
       </div>
     </PageContainer>

@@ -330,7 +330,8 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
         "px-3 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-3 space-y-0.5",
         useDarkSidebar ? "border-t border-white/5" : "border-t border-gray-100/80"
       )}>
-        <SidebarNavItem to="/settings" icon={Settings} label="Settings" />
+        {/* Principal accesses Settings from the profile dropdown in the topbar instead */}
+        {!isPrincipal && <SidebarNavItem to="/settings" icon={Settings} label="Settings" />}
 
         {/* Current user */}
         <div className={cn(
