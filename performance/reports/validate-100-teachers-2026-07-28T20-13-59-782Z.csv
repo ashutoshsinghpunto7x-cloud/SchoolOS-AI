@@ -1,0 +1,34 @@
+metric,type,avg,min,med,max,p(90),p(95),p(99),count,rate,passes,fails
+db_write_inconsistency_detected,rate,,,,,,,,,0,0,0
+http_req_failed,rate,,,,,,,,,0,0,800
+http_req_blocked,trend,1.0460709999999998,0,0,16.8489,6.3579,8.701,10.7121,,,,
+http_reqs,counter,,,,,,,,800,181.64559785867087,,
+http_req_duration,trend,342.47571587500096,0.5358,127.28115,1069.5732,910.4429,912.454,980.2522049999999,,,,
+http_req_duration{name:POST /auth/login},trend,869.8084139999992,557.6533,910.4429,1069.5732,912.48722,914.7971,940.8312240000007,,,,
+http_req_receiving,trend,4.3163021249999955,0,0,319.793,1.8843700000000003,2.943394999999999,234.8929539999999,,,,
+checks,rate,,,,,,,,,1,2700,0
+http_req_tls_handshaking,trend,0,0,0,0,0,0,0,,,,
+workflow_duration,trend,4197.35,3867,4242,4404,4365.3,4373.25,4402.02,,,,
+partial_attendance_save,rate,,,,,,,,,0,0,100
+http_req_duration{name:GET /students (roster)},trend,79.042443,15.2086,70.4414,137.8416,128.28096,130.19217999999998,136.815762,,,,
+iteration_duration,trend,4197.162290000002,3867.013,4241.9902,4404.1805,4365.05238,4372.9682999999995,4402.051604,,,,
+missing_attendance,rate,,,,,,,,,0,0,100
+teacher_workflow_success,rate,,,,,,,,,1,100,0
+data_sent,counter,,,,,,,,543303,123360.74781676182,,
+vus,gauge,,20,,100,,,,,,,
+http_req_duration{name:POST /attendance/bulk},trend,721.6577279999998,236.5216,810.56065,1014.5465,964.23972,995.278635,1013.9173549999999,,,,
+group_duration,trend,234.29234374999996,0,43.0723,1014.5465,838.9532300000002,896.335245,972.179895,,,,
+race_condition_detected,rate,,,,,,,,,0,0,0
+iterations,counter,,,,,,,,100,22.70569973233386,,
+vus_max,gauge,,100,,100,,,,,,,
+http_req_connecting,trend,0.16034300000000004,0,0,5.3398,0,1.0181,5.3398,,,,
+http_req_duration{expected_response:true},trend,342.47571587500096,0.5358,127.28115,1069.5732,910.4429,912.454,980.2522049999999,,,,
+http_429_count,counter,,,,,,,,0,0,,
+duplicate_fee_payment_detected,rate,,,,,,,,,0,0,0
+http_500_count,counter,,,,,,,,0,0,,
+http_req_sending,trend,0.012461749999999999,0,0,4.1192,0,0,0,,,,
+http_req_waiting,trend,338.1469520000004,0.5358,127.02565,1069.5732,909.9665600000001,912.454,978.5422769999999,,,,
+login_duration,trend,869.8084139999992,557.6533,910.4429,1069.5732,912.48722,914.7971,940.8312240000007,,,,
+data_received,counter,,,,,,,,4795868,1088935.3876390853,,
+duplicate_attendance_detected,rate,,,,,,,,,0,0,100
+http_req_duration{name:GET /teacher-workspace/me},trend,812.8490169999995,701.1972,815.34865,938.3755,888.9427400000001,906.53331,934.444309,,,,

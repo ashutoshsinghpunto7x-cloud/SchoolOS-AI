@@ -5,8 +5,11 @@ export const apiKeyRepository = {
     return ApiKey.create(data);
   },
 
-  async findById(id: string): Promise<IApiKey | null> {
-    return ApiKey.findById(id).lean<IApiKey>();
+  // schoolId is part of the query itself (not just checked after the fact by
+  // the caller) so tenant isolation doesn't depend on every call site
+  // remembering to re-check it.
+  async findById(id: string, schoolId: string): Promise<IApiKey | null> {
+    return ApiKey.findOne({ _id: id, schoolId }).lean<IApiKey>();
   },
 
   async findByPrefix(keyPrefix: string): Promise<IApiKey | null> {

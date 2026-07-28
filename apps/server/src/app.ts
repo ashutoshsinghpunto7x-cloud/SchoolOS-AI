@@ -1,11 +1,14 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { connectDatabase } from './config/database';
 import { logger } from './lib/logger';
+import { requestContextMiddleware } from './middlewares/requestContext';
 import { requestLogger } from './middlewares/requestLogger';
-import { metricsMiddleware } from './middlewares/metrics';
+import { metricsMiddleware, startMetricsSnapshotJob } from './middlewares/metrics';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 import { apiLimiter } from './middlewares/rateLimiter';
 import router from './routes';
@@ -22,6 +25,8 @@ connectDatabase().catch((error) => {
   logger.error('MongoDB connection failed', { error: String(error), message: (error as Error).message });
 });
 
+startMetricsSnapshotJob();
+
 // ── Security ──────────────────────────────────────────────────────────────────
 // FRONTEND_URL may be a comma-separated list (e.g. the old Vercel URL + a custom
 // domain during a DNS/SSL cutover) rather than a single origin — trim each entry
@@ -37,9 +42,14 @@ const envOrigins = env.FRONTEND_URL.split(',').map((origin) => origin.trim()).fi
 const allowedOrigins = Array.from(new Set([...baselineOrigins, ...envOrigins]));
 // Vite may fall back to another port (5174, 5175, ...) if 5173 is already taken
 // by another running dev server — allow any localhost port rather than a fixed one.
-const isLocalhostOrigin = (origin: string): boolean => /^https?:\/\/localhost:\d+$/.test(origin);
+// Dev-only: a browser only ever sends an Origin of "localhost" from an actual
+// localhost page, so this is low risk in prod too, but there's no reason to
+// widen the trust boundary there at all.
+const isLocalhostOrigin = (origin: string): boolean =>
+  env.NODE_ENV !== 'production' && /^https?:\/\/localhost:\d+$/.test(origin);
 
 app.use(helmet());
+app.use(compression());
 app.use(
   cors({
     // Passing a function (rather than an array or a raw string) guarantees the
@@ -57,15 +67,17 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   })
 );
 
 // ── Body Parsing ──────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
-// ── Request Logging ───────────────────────────────────────────────────────────
+// ── Request Context & Logging ─────────────────────────────────────────────────
+app.use(requestContextMiddleware);
 app.use(requestLogger);
 app.use(metricsMiddleware);
 

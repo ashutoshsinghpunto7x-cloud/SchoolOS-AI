@@ -85,33 +85,63 @@ export const teacherWorkspaceService = {
       ...activeSubstitutionsToday.map((s) => classSectionKey(s.class, s.section)),
     ]);
 
-    // Step 4: Build today's classes with attendance counts
-    const todayClassPromises: Promise<TodayClass>[] = [];
-
+    // Step 4: Build today's classes with attendance counts.
+    //
+    // Previously this fired 2 count queries (Attendance + Student) per
+    // *entry* — i.e. per period slot taught today, not per distinct class —
+    // so a teacher with 4 periods in the same class/section triggered 8
+    // Mongo round trips for what's really only 1 distinct class/section pair
+    // worth of counting. Under concurrency (100 teachers each hitting this
+    // endpoint) that fan-out was the dominant cost of the whole request (see
+    // performance/reports/validate-100-teachers-*, avg 2s+ before this
+    // change). Fixed by first collecting the entries, then running exactly
+    // 2 grouped aggregations total — one for attendance counts, one for
+    // student counts — across every distinct class/section needed, however
+    // many entries reference it.
+    type EntryContext = {
+      timetable: (typeof timetables)[number];
+      entry: (typeof timetables)[number]['entries'][number];
+    };
+    const todayEntryContexts: EntryContext[] = [];
+    const distinctPairs = new Map<string, { class: string; section: string }>();
     for (const timetable of timetables) {
       const todayEntries = timetable.entries.filter(
         (e) => e.dayOfWeek === todayDayOfWeek && e.teacherId === teacherId,
       );
-
       for (const entry of todayEntries) {
-        const slot = slotMap.get(entry.slotId);
+        todayEntryContexts.push({ timetable, entry });
+        distinctPairs.set(classSectionKey(timetable.class, timetable.section), {
+          class: timetable.class,
+          section: timetable.section,
+        });
+      }
+    }
 
-        const promise = Promise.all([
-          Attendance.countDocuments({
-            schoolId: ctx.schoolId,
-            class:    timetable.class,
-            section:  timetable.section,
-            date:     todayStr,
-            isDeleted: false,
-          }),
-          Student.countDocuments({
-            schoolId:        ctx.schoolId,
-            class:           timetable.class,
-            section:         timetable.section,
-            admissionStatus: 'active',
-            isDeleted:       false,
-          }),
-        ]).then(([attendanceCount, totalStudents]): TodayClass => ({
+    const pairList = Array.from(distinctPairs.values());
+    const [attendanceCounts, studentCounts] = pairList.length === 0
+      ? [[], []]
+      : await Promise.all([
+          Attendance.aggregate<{ _id: { class: string; section: string }; count: number }>([
+            { $match: { schoolId: ctx.schoolId, date: todayStr, isDeleted: false, $or: pairList.map((p) => ({ class: p.class, section: p.section })) } },
+            { $group: { _id: { class: '$class', section: '$section' }, count: { $sum: 1 } } },
+          ]),
+          Student.aggregate<{ _id: { class: string; section: string }; count: number }>([
+            { $match: { schoolId: ctx.schoolId, admissionStatus: 'active', isDeleted: false, $or: pairList.map((p) => ({ class: p.class, section: p.section })) } },
+            { $group: { _id: { class: '$class', section: '$section' }, count: { $sum: 1 } } },
+          ]),
+        ]);
+
+    const attendanceCountMap = new Map(attendanceCounts.map((r) => [classSectionKey(r._id.class, r._id.section), r.count]));
+    const studentCountMap = new Map(studentCounts.map((r) => [classSectionKey(r._id.class, r._id.section), r.count]));
+
+    const todayClasses = todayEntryContexts
+      .map(({ timetable, entry }): TodayClass => {
+        const slot = slotMap.get(entry.slotId);
+        const key = classSectionKey(timetable.class, timetable.section);
+        const attendanceCount = attendanceCountMap.get(key) ?? 0;
+        const totalStudents = studentCountMap.get(key) ?? 0;
+
+        return {
           timetableId:      String((timetable as unknown as { _id: { toString(): string } })._id),
           class:            timetable.class,
           section:          timetable.section,
@@ -123,16 +153,10 @@ export const teacherWorkspaceService = {
           attendanceMarked: attendanceCount > 0,
           attendanceCount,
           totalStudents,
-          canMarkAttendance: canMarkSet.has(classSectionKey(timetable.class, timetable.section)),
-        }));
-
-        todayClassPromises.push(promise);
-      }
-    }
-
-    const todayClasses = (await Promise.all(todayClassPromises)).sort(
-      (a, b) => a.startTime.localeCompare(b.startTime),
-    );
+          canMarkAttendance: canMarkSet.has(key),
+        };
+      })
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
     // Step 5: Build full week schedule (Mon–Sat, dayOfWeek 1–6)
     const weekSchedule = [1, 2, 3, 4, 5, 6].map((day) => ({

@@ -1,5 +1,5 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
-import type { ApiResponse, SchoolSettings, AttendanceRules, PayrollConfig, BehaviorWindow } from '@schoolos/types';
+import type { ApiResponse, SchoolSettings, AttendanceRules, PayrollConfig, BehaviorWindow, AttendanceEditPolicy } from '@schoolos/types';
 
 export const schoolSettingsApi = {
   async getSettings(): Promise<SchoolSettings> {
@@ -54,6 +54,15 @@ export const schoolSettingsApi = {
   async updateBehaviorWindow(payload: BehaviorWindow): Promise<SchoolSettings> {
     try {
       const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/behavior-window', payload);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async updateAttendanceEditPolicy(payload: AttendanceEditPolicy): Promise<SchoolSettings> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/attendance-edit-policy', payload);
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

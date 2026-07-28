@@ -18,6 +18,7 @@ router.get('/audit-trail', opsController.auditTrail);
 router.get('/applications', opsController.applications);
 router.get('/schools/:schoolId', opsController.schoolDetail);
 router.get('/errors', opsController.errors);
+router.get('/errors/by-module', opsController.errorsByModule);
 router.get('/database', opsController.database);
 router.get('/deployments', opsController.deployments);
 router.get('/communications', opsController.communications);

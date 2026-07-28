@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       .then((data) => setUser(data))
       .catch(() => {
         sessionStorage.removeItem('accessToken');
-        sessionStorage.removeItem('refreshToken');
       })
       .finally(() => setIsLoading(false));
   }, []);
@@ -42,7 +41,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const data = await authApi.login({ identifier, password });
     queryClient.clear();
     sessionStorage.setItem('accessToken', data.accessToken);
-    sessionStorage.setItem('refreshToken', data.refreshToken);
     const mergedUser: AuthUser = {
       ...data.user,
       mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
@@ -61,7 +59,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const tokens = await recoveryApi.loginWithPin({ deviceId, pin });
     queryClient.clear();
     sessionStorage.setItem('accessToken', tokens.accessToken);
-    sessionStorage.setItem('refreshToken', tokens.refreshToken);
     const data = await authApi.me();
     setUser(data);
     return data;
@@ -74,7 +71,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async (): Promise<void> => {
     await authApi.logout();
     sessionStorage.removeItem('accessToken');
-    sessionStorage.removeItem('refreshToken');
     resetAuthRefreshState();
     queryClient.clear();
     setUser(null);

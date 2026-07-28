@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import { Student, IStudent, AdmissionStatus } from './student.model';
 import { CreateStudentInput, UpdateStudentInput } from './student.validation';
 
@@ -32,9 +33,9 @@ export interface PaginatedStudents {
 // ── Repository ────────────────────────────────────────────────────────────────
 
 export const studentRepository = {
-  async create(data: CreatePayload): Promise<IStudent> {
+  async create(data: CreatePayload, session?: ClientSession): Promise<IStudent> {
     const student = new Student(data);
-    return student.save();
+    return student.save({ session });
   },
 
   async findAll(schoolId: string, opts: FindStudentsOptions = {}): Promise<PaginatedStudents> {
@@ -185,13 +186,14 @@ export const studentRepository = {
    * Basing the next number on the real max guarantees max+1 is always free.
    * Scans soft-deleted rows too, since the unique index covers them.
    */
-  async maxAdmissionSequence(schoolId: string, year: number): Promise<number> {
+  async maxAdmissionSequence(schoolId: string, year: number, session?: ClientSession): Promise<number> {
     const prefix = `ADM-${year}-`;
     const doc = await Student.findOne(
       { schoolId, admissionNumber: { $regex: `^${prefix}\\d+$` } },
       { admissionNumber: 1 },
     )
       .sort({ admissionNumber: -1 }) // zero-padded, so lexical sort == numeric sort
+      .session(session ?? null)
       .lean<{ admissionNumber: string }>();
     if (!doc) return 0;
     const seq = parseInt(doc.admissionNumber.slice(prefix.length), 10);

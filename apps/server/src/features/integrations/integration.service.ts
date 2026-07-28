@@ -57,8 +57,8 @@ export const integrationService = {
   },
 
   async getById(id: string, ctx: AuthContext): Promise<IIntegration> {
-    const integration = await integrationRepository.findById(id);
-    if (!integration || integration.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const integration = await integrationRepository.findById(id, ctx.schoolId);
+    if (!integration) throw new NotFoundError('Integration not found');
     return { ...integration, credentialsEncrypted: '[redacted]' } as IIntegration;
   },
 
@@ -114,8 +114,8 @@ export const integrationService = {
 
   async update(id: string, rawInput: unknown, ctx: AuthContext): Promise<IIntegration> {
     const input = updateSchema.parse(rawInput);
-    const existing = await integrationRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const existing = await integrationRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Integration not found');
 
     const updateData: Partial<IIntegration> = {};
     if (input.name)        updateData.name = input.name;
@@ -156,8 +156,8 @@ export const integrationService = {
   },
 
   async delete(id: string, ctx: AuthContext): Promise<void> {
-    const existing = await integrationRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const existing = await integrationRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Integration not found');
     await integrationRepository.delete(id);
     auditService.log({
       userId:          ctx.userId,
@@ -172,8 +172,8 @@ export const integrationService = {
   },
 
   async testConnection(id: string, ctx: AuthContext) {
-    const integration = await integrationRepository.findById(id);
-    if (!integration || integration.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const integration = await integrationRepository.findById(id, ctx.schoolId);
+    if (!integration) throw new NotFoundError('Integration not found');
 
     const provider = providerRegistry.get(integration.providerKey);
     const credentials = credentialService.decryptObject(integration.credentialsEncrypted);
@@ -204,8 +204,8 @@ export const integrationService = {
   },
 
   async getHealth(id: string, ctx: AuthContext) {
-    const integration = await integrationRepository.findById(id);
-    if (!integration || integration.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const integration = await integrationRepository.findById(id, ctx.schoolId);
+    if (!integration) throw new NotFoundError('Integration not found');
 
     const provider = providerRegistry.get(integration.providerKey);
     const credentials = credentialService.decryptObject(integration.credentialsEncrypted);

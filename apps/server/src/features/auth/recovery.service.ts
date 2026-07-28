@@ -315,7 +315,10 @@ export const recoveryService = {
     };
   },
 
-  async forgetDevice(deviceId: string): Promise<void> {
-    await RememberedDevice.deleteOne({ deviceId });
+  /** Scoped to the requesting user's own userId — without this, any authenticated user who learned
+   *  another user's deviceId (e.g. from a shared/leaked log line) could forget that user's remembered
+   *  device, an IDOR on a mutation endpoint even though the deviceId itself is a 192-bit random token. */
+  async forgetDevice(deviceId: string, userId: string): Promise<void> {
+    await RememberedDevice.deleteOne({ deviceId, userId });
   },
 };

@@ -7,8 +7,11 @@ export const integrationRepository = {
     return Integration.create(data);
   },
 
-  async findById(id: string): Promise<IIntegration | null> {
-    return Integration.findById(id).lean<IIntegration>();
+  // schoolId is part of the query itself (not just checked after the fact by
+  // the caller) so tenant isolation doesn't depend on every call site
+  // remembering to re-check it.
+  async findById(id: string, schoolId: string): Promise<IIntegration | null> {
+    return Integration.findOne({ _id: id, schoolId }).lean<IIntegration>();
   },
 
   async findAll(schoolId: string, filters: { providerType?: string; status?: string; enabled?: boolean } = {}): Promise<IIntegration[]> {

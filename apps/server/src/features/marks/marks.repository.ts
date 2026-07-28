@@ -137,6 +137,12 @@ export const marksRepository = {
     return Marks.find({ schoolId, examId, studentId, isDeleted: false }).lean<IMarks[]>();
   },
 
+  /** All subjects for every student in a class+section for one exam — one query
+   *  instead of one findByStudentExam per student, used for class rank/average. */
+  async findByClassExam(schoolId: string, examId: string, cls: string, section: string): Promise<IMarks[]> {
+    return Marks.find({ schoolId, examId, class: cls, section, isDeleted: false }).lean<IMarks[]>();
+  },
+
   async findAll(schoolId: string, opts: FindMarksOptions): Promise<PaginatedMarks> {
     const page  = Math.max(1, opts.page ?? 1);
     const limit = Math.min(500, Math.max(1, opts.limit ?? 300));

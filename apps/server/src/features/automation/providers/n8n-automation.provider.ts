@@ -1,8 +1,8 @@
-import axios from 'axios';
 import { IAutomationProvider, AutomationDispatchPayload } from './automation-provider.interface';
 import { IAutomationJob } from '../automation.model';
 import { env } from '../../../config/env';
 import { logger } from '../../../lib/logger';
+import { postWithRetry } from '../../../lib/retry-post';
 
 /**
  * Production automation provider.
@@ -36,8 +36,7 @@ export const n8nAutomationProvider: IAutomationProvider = {
       ...data.payload,
     };
 
-    void axios
-      .post(env.N8N_WEBHOOK_URL, outbound, { timeout: 8_000 })
+    void postWithRetry(env.N8N_WEBHOOK_URL, outbound, { timeoutMs: 8_000, attempts: 3 })
       .then(() => {
         logger.info('[N8nAutomationProvider] Job dispatched', {
           jobId: data.jobId,
@@ -45,7 +44,7 @@ export const n8nAutomationProvider: IAutomationProvider = {
         });
       })
       .catch((err: Error) => {
-        logger.error('[N8nAutomationProvider] Dispatch failed', {
+        logger.error('[N8nAutomationProvider] Dispatch failed after retries', {
           jobId: data.jobId,
           type: data.type,
           error: err.message,

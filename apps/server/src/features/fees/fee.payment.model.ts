@@ -21,6 +21,9 @@ export interface IFeePayment extends Document {
   receiptNumber?: string;
   /** Shared bill number across all months paid together in one multi-month collection. */
   batchId?: string;
+  /** Client-supplied key to make a payment submission safe to retry — a resend
+   *  of the same key returns the original payment instead of creating a second one. */
+  idempotencyKey?: string;
   metadata?: Record<string, unknown>;
 
   isDeleted: boolean;
@@ -54,6 +57,7 @@ const feePaymentSchema = new Schema<IFeePayment>(
 
     receiptNumber:  { type: String, trim: true },
     batchId:        { type: String, trim: true },
+    idempotencyKey: { type: String, trim: true },
     metadata:       { type: Schema.Types.Mixed },
 
     isDeleted:      { type: Boolean, default: false },
@@ -68,5 +72,6 @@ feePaymentSchema.index({ schoolId: 1, studentId: 1, isDeleted: 1, createdAt: -1 
 feePaymentSchema.index({ schoolId: 1, isDeleted: 1, paymentDate: -1 });
 feePaymentSchema.index({ schoolId: 1, receiptNumber: 1 }, { unique: true, sparse: true });
 feePaymentSchema.index({ schoolId: 1, batchId: 1 });
+feePaymentSchema.index({ schoolId: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 export const FeePayment = mongoose.model<IFeePayment>('FeePayment', feePaymentSchema);

@@ -66,8 +66,8 @@ export const apiKeyService = {
   },
 
   async rotate(id: string, ctx: AuthContext): Promise<{ key: IApiKey; rawKey: string }> {
-    const existing = await apiKeyRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('API key not found');
+    const existing = await apiKeyRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('API key not found');
 
     const { raw, prefix } = generateApiKey();
     const keyHash = await bcrypt.hash(raw, BCRYPT_ROUNDS);
@@ -101,8 +101,8 @@ export const apiKeyService = {
   },
 
   async revoke(id: string, ctx: AuthContext): Promise<void> {
-    const existing = await apiKeyRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('API key not found');
+    const existing = await apiKeyRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('API key not found');
     await apiKeyRepository.revoke(id);
     auditService.log({
       userId:          ctx.userId,

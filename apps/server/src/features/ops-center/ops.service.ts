@@ -4,6 +4,7 @@ import { getSecurityEvents, getSecuritySummary } from '../../lib/security-events
 import { getLogs, GetLogsOptions } from '../../lib/log-buffer';
 import { getFeatureHealth } from '../../middlewares/metrics';
 import { getErrorEvents, getErrorSummary } from '../../lib/error-events';
+import { ErrorEventModel } from '../../lib/error-event.model';
 import { getRenderDeploys } from '../../lib/render-client';
 import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_META, PERMISSION_META } from '../../lib/permissions';
 import { AlertState, AlertStatus } from './alert-state.model';
@@ -75,6 +76,56 @@ export const opsService = {
       summary: getErrorSummary(),
       events: getErrorEvents(100),
     };
+  },
+
+  // Per-module breakdown for the redesigned Error Dashboard: request/success/
+  // failure counts + status-code histogram + latency percentiles (from the
+  // live in-process feature stats) joined with the most recent persisted
+  // error per module (root cause, confidence, fix recommendation, affected
+  // role, last seen) — so a module tile never needs a second click to
+  // explain why it's failing.
+  async getErrorsByModule() {
+    const featureHealth = getFeatureHealth();
+
+    const latestByModule = await ErrorEventModel.aggregate([
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: '$module',
+          statusCode: { $first: '$statusCode' },
+          code: { $first: '$code' },
+          message: { $first: '$message' },
+          category: { $first: '$category' },
+          confidencePercent: { $first: '$confidencePercent' },
+          probableCause: { $first: '$probableCause' },
+          recommendedFix: { $first: '$recommendedFix' },
+          role: { $first: '$role' },
+          createdAt: { $first: '$createdAt' },
+        },
+      },
+    ]);
+    const latestMap = new Map(latestByModule.map((d) => [d._id as string, d]));
+
+    return featureHealth.map((fh) => {
+      const latest = latestMap.get(fh.feature);
+      return {
+        ...fh,
+        successCount: fh.requests - fh.errors,
+        lastError: latest
+          ? {
+              statusCode: latest.statusCode,
+              code: latest.code,
+              message: latest.message,
+              category: latest.category,
+              confidencePercent: latest.confidencePercent,
+              probableCause: latest.probableCause,
+              recommendedFix: latest.recommendedFix,
+              affectedRole: latest.role ?? null,
+              lastSeenAt: latest.createdAt,
+            }
+          : null,
+      };
+    });
   },
 
   async getDatabase() {

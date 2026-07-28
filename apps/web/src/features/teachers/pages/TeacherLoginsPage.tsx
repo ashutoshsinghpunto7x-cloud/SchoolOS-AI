@@ -5,6 +5,9 @@ import { useTeacherLoginStatus, useCreateTeacherLogin } from '../hooks/useTeache
 
 // ── Bulk credential generation ────────────────────────────────────────────────
 
+/** Default domain for admin-generated school login addresses — edit per school. */
+const LOGIN_EMAIL_DOMAIN = 'fnic.com';
+
 const USERNAME_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const PASSWORD_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 
@@ -18,17 +21,24 @@ function generatePassword(): string {
   return randomFrom(PASSWORD_CHARS, 10);
 }
 
-/** firstname + last-initial base, falling back to a random string, then a
- *  numeric suffix appended until it doesn't collide with any username
- *  already taken (existing logins) or generated earlier in this batch. */
-function generateUsername(fullName: string, taken: Set<string>): string {
+/** firstname + last-initial base, falling back to a random string. */
+function slugFromName(fullName: string): string {
   const parts = fullName.toLowerCase().replace(/[^a-z\s]/g, '').trim().split(/\s+/).filter(Boolean);
-  const base = parts.length > 0
+  return parts.length > 0
     ? (parts[0] + (parts[1]?.[0] ?? '')).slice(0, 14)
     : `teacher${randomFrom(USERNAME_CHARS, 4)}`;
-  let candidate = base.length >= 3 ? base : `${base}${randomFrom(USERNAME_CHARS, 3 - base.length)}`;
+}
+
+/** Generates a school login email like jsmith@fnic.com, appending a numeric
+ *  suffix until it doesn't collide with any login email already taken
+ *  (existing logins) or generated earlier in this batch. */
+function generateLoginEmail(fullName: string, taken: Set<string>, domain = LOGIN_EMAIL_DOMAIN): string {
+  const base = slugFromName(fullName);
+  let local = base.length >= 3 ? base : `${base}${randomFrom(USERNAME_CHARS, 3 - base.length)}`;
+  let candidate = `${local}@${domain}`;
   while (taken.has(candidate)) {
-    candidate = `${base}${randomFrom('0123456789', 3)}`;
+    local = `${base}${randomFrom('0123456789', 3)}`;
+    candidate = `${local}@${domain}`;
   }
   taken.add(candidate);
   return candidate;
@@ -37,7 +47,7 @@ function generateUsername(fullName: string, taken: Set<string>): string {
 interface BulkResult {
   teacherId: string;
   fullName: string;
-  username?: string;
+  loginEmail?: string;
   password?: string;
   status: 'ok' | 'error' | 'skipped';
   error?: string;
@@ -63,7 +73,7 @@ function BulkResultsModal({ results, onClose }: { results: BulkResult[]; onClose
   const skipped = results.filter((r) => r.status === 'skipped');
 
   function copyAll() {
-    const text = ok.map((r) => `${r.fullName}\t${r.username}\t${r.password}`).join('\n');
+    const text = ok.map((r) => `${r.fullName}\t${r.loginEmail}\t${r.password}`).join('\n');
     navigator.clipboard.writeText(text);
   }
 
@@ -78,7 +88,7 @@ function BulkResultsModal({ results, onClose }: { results: BulkResult[]; onClose
         </div>
         <p className="text-sm text-gray-500 mb-4">
           {ok.length} login{ok.length !== 1 ? 's' : ''} created
-          {skipped.length > 0 && `, ${skipped.length} skipped (no email on file)`}
+          {skipped.length > 0 && `, ${skipped.length} skipped`}
           {failed.length > 0 && `, ${failed.length} failed`}. Copy these and hand them out — teachers can change their password after signing in.
         </p>
 
@@ -89,7 +99,7 @@ function BulkResultsModal({ results, onClose }: { results: BulkResult[]; onClose
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-800 truncate">{r.fullName}</p>
                   <p className="text-xs text-gray-500 font-mono flex items-center gap-1">
-                    {r.username} <CopyButton text={r.username!} />
+                    {r.loginEmail} <CopyButton text={r.loginEmail!} />
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 font-mono flex items-center gap-1 shrink-0">
@@ -103,7 +113,7 @@ function BulkResultsModal({ results, onClose }: { results: BulkResult[]; onClose
         {(failed.length > 0 || skipped.length > 0) && (
           <div className="text-xs text-gray-400 mb-3 space-y-1">
             {[...skipped, ...failed].map((r) => (
-              <p key={r.teacherId}>{r.fullName} — {r.status === 'skipped' ? 'no email on file' : r.error}</p>
+              <p key={r.teacherId}>{r.fullName} — {r.error ?? 'skipped'}</p>
             ))}
           </div>
         )}
@@ -137,13 +147,15 @@ const inputCls =
 
 function CreateLoginModal({
   teacher,
+  existingLoginEmails,
   onClose,
 }: {
   teacher: TeacherLoginStatus;
+  existingLoginEmails: Set<string>;
   onClose: () => void;
 }) {
   const { mutateAsync, isPending } = useCreateTeacherLogin();
-  const [username, setUsername] = useState('');
+  const [loginEmail, setLoginEmail] = useState(() => generateLoginEmail(teacher.fullName, new Set(existingLoginEmails)));
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -152,11 +164,11 @@ function CreateLoginModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (username.trim().length < 3) return setError('Username must be at least 3 characters.');
+    if (!/^\S+@\S+\.\S+$/.test(loginEmail.trim())) return setError('Enter a valid email address.');
     if (password.length < 8) return setError('Password must be at least 8 characters.');
 
     try {
-      await mutateAsync({ teacherId: teacher.teacherId, payload: { username: username.trim(), password } });
+      await mutateAsync({ teacherId: teacher.teacherId, payload: { loginEmail: loginEmail.trim().toLowerCase(), password } });
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create login.');
@@ -171,7 +183,7 @@ function CreateLoginModal({
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-gray-900 mb-1">Login created</h2>
             <p className="text-sm text-gray-500">
-              Share the username <span className="font-mono font-semibold text-gray-800">{username.trim()}</span> and
+              Share the login email <span className="font-mono font-semibold text-gray-800">{loginEmail.trim()}</span> and
               the password you set with {teacher.fullName} — they can change the password themselves once signed in.
             </p>
             <button
@@ -190,23 +202,36 @@ function CreateLoginModal({
               </button>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              For <span className="font-semibold text-gray-800">{teacher.fullName}</span> ({teacher.email})
+              For <span className="font-semibold text-gray-800">{teacher.fullName}</span>
+              {teacher.email && <> ({teacher.email})</>}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Username</label>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">School Login Email</label>
                 <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. jsmith"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder={`e.g. jsmith@${LOGIN_EMAIL_DOMAIN}`}
                   autoComplete="off"
                   className={inputCls}
                 />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Auto-generated — separate from {teacher.email ? `their contact email (${teacher.email})` : 'any personal email on file'}. Edit if needed.
+                </p>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-600">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setPassword(generatePassword()); setShowPassword(true); }}
+                    className="text-[11px] font-semibold text-[#5B21B6] hover:text-[#4C1D95]"
+                  >
+                    Generate
+                  </button>
+                </div>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -224,7 +249,7 @@ function CreateLoginModal({
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">At least 8 characters. You'll hand this off to the teacher yourself.</p>
+                <p className="text-[11px] text-gray-400 mt-1">At least 8 characters. Type your own or use Generate — you'll hand this off to the teacher yourself.</p>
               </div>
 
               {error && (
@@ -249,6 +274,8 @@ function CreateLoginModal({
   );
 }
 
+type BulkPasswordMode = 'unique' | 'same';
+
 export function TeacherLoginsPage() {
   const { data, isLoading, isError } = useTeacherLoginStatus();
   const { mutateAsync: createLogin } = useCreateTeacherLogin();
@@ -256,6 +283,11 @@ export function TeacherLoginsPage() {
   const [creatingFor, setCreatingFor] = useState<TeacherLoginStatus | null>(null);
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkResults, setBulkResults] = useState<BulkResult[] | null>(null);
+  const [showBulkOptions, setShowBulkOptions] = useState(false);
+  const [bulkPasswordMode, setBulkPasswordMode] = useState<BulkPasswordMode>('unique');
+  const [bulkSharedPassword, setBulkSharedPassword] = useState('');
+  const [showBulkSharedPassword, setShowBulkSharedPassword] = useState(false);
+  const [bulkError, setBulkError] = useState('');
 
   const teachers = data ?? [];
   const filtered = teachers.filter((t) => {
@@ -266,27 +298,29 @@ export function TeacherLoginsPage() {
 
   const allottedCount = teachers.filter((t) => t.hasLogin).length;
   const needsLogin = teachers.filter((t) => !t.hasLogin);
+  const existingLoginEmails = new Set(
+    teachers.map((t) => t.loginEmail).filter((e): e is string => !!e).map((e) => e.toLowerCase()),
+  );
 
   async function generateAll() {
+    if (bulkPasswordMode === 'same' && bulkSharedPassword.length < 8) {
+      setBulkError('Shared password must be at least 8 characters.');
+      return;
+    }
+    setBulkError('');
     setBulkRunning(true);
-    const takenUsernames = new Set(
-      teachers.filter((t) => t.username).map((t) => t.username!.toLowerCase()),
-    );
+    const takenEmails = new Set(existingLoginEmails);
     const results: BulkResult[] = [];
 
-    // Sequential, not parallel — each generated username is checked against
-    // the running `takenUsernames` set, which only works if one create
-    // finishes (and its username gets reserved) before the next starts.
+    // Sequential, not parallel — each generated login email is checked against
+    // the running `takenEmails` set, which only works if one create finishes
+    // (and its email gets reserved) before the next starts.
     for (const t of needsLogin) {
-      if (!t.email) {
-        results.push({ teacherId: t.teacherId, fullName: t.fullName, status: 'skipped' });
-        continue;
-      }
-      const username = generateUsername(t.fullName, takenUsernames);
-      const password = generatePassword();
+      const loginEmail = generateLoginEmail(t.fullName, takenEmails);
+      const password = bulkPasswordMode === 'same' ? bulkSharedPassword : generatePassword();
       try {
-        await createLogin({ teacherId: t.teacherId, payload: { username, password } });
-        results.push({ teacherId: t.teacherId, fullName: t.fullName, username, password, status: 'ok' });
+        await createLogin({ teacherId: t.teacherId, payload: { loginEmail, password } });
+        results.push({ teacherId: t.teacherId, fullName: t.fullName, loginEmail, password, status: 'ok' });
       } catch (err) {
         results.push({
           teacherId: t.teacherId, fullName: t.fullName, status: 'error',
@@ -296,6 +330,7 @@ export function TeacherLoginsPage() {
     }
 
     setBulkRunning(false);
+    setShowBulkOptions(false);
     setBulkResults(results);
   }
 
@@ -311,7 +346,7 @@ export function TeacherLoginsPage() {
         {needsLogin.length > 0 && (
           <button
             type="button"
-            onClick={generateAll}
+            onClick={() => setShowBulkOptions((v) => !v)}
             disabled={bulkRunning}
             className="h-10 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-60 shrink-0"
             style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)' }}
@@ -322,9 +357,84 @@ export function TeacherLoginsPage() {
         )}
       </div>
       <p className="text-sm text-gray-500 mb-6">
-        Imported teachers have no self-signup — create a username and password here to give one access.
+        Imported teachers have no self-signup — generate a school login email and password here to give one access.
         {teachers.length > 0 && ` ${allottedCount} of ${teachers.length} teachers have a login.`}
       </p>
+
+      {showBulkOptions && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 mb-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-800">
+            Generating logins for {needsLogin.length} teacher{needsLogin.length === 1 ? '' : 's'} — school emails like
+            {' '}<span className="font-mono text-gray-500">name@{LOGIN_EMAIL_DOMAIN}</span> will be created automatically.
+          </p>
+          <div className="flex items-center gap-2">
+            {([
+              { label: 'Unique random password per teacher', value: 'unique' as const },
+              { label: 'Same password for all', value: 'same' as const },
+            ]).map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setBulkPasswordMode(opt.value)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  bulkPasswordMode === opt.value
+                    ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {bulkPasswordMode === 'same' && (
+            <div className="max-w-xs">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-600">Shared password</label>
+                <button
+                  type="button"
+                  onClick={() => { setBulkSharedPassword(generatePassword()); setShowBulkSharedPassword(true); }}
+                  className="text-[11px] font-semibold text-[#5B21B6] hover:text-[#4C1D95]"
+                >
+                  Generate
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showBulkSharedPassword ? 'text' : 'password'}
+                  value={bulkSharedPassword}
+                  onChange={(e) => setBulkSharedPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className={`${inputCls} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowBulkSharedPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  tabIndex={-1}
+                >
+                  {showBulkSharedPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">Every teacher in this batch gets this password — they can change it after signing in.</p>
+            </div>
+          )}
+          {bulkError && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {bulkError}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={generateAll}
+            disabled={bulkRunning}
+            className="h-10 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)' }}
+          >
+            {bulkRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {bulkRunning ? `Generating ${needsLogin.length}…` : `Confirm — Generate ${needsLogin.length}`}
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-4">
         {([
@@ -377,7 +487,7 @@ export function TeacherLoginsPage() {
                   <td className="px-5 py-3.5">
                     {t.hasLogin ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                        Allotted{t.username ? ` · ${t.username}` : ''}
+                        Allotted{t.loginEmail ? ` · ${t.loginEmail}` : t.username ? ` · ${t.username}` : ''}
                       </span>
                     ) : (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border bg-amber-50 text-amber-700 border-amber-200">
@@ -389,9 +499,7 @@ export function TeacherLoginsPage() {
                     {!t.hasLogin && (
                       <button
                         onClick={() => setCreatingFor(t)}
-                        disabled={!t.email}
-                        title={!t.email ? "Add an email to this teacher's profile first" : undefined}
-                        className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-40 disabled:cursor-not-allowed text-white"
+                        className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#5B21B6] hover:bg-[#4C1D95] text-white"
                       >
                         Create Login
                       </button>
@@ -404,7 +512,13 @@ export function TeacherLoginsPage() {
         )}
       </div>
 
-      {creatingFor && <CreateLoginModal teacher={creatingFor} onClose={() => setCreatingFor(null)} />}
+      {creatingFor && (
+        <CreateLoginModal
+          teacher={creatingFor}
+          existingLoginEmails={existingLoginEmails}
+          onClose={() => setCreatingFor(null)}
+        />
+      )}
       {bulkResults && <BulkResultsModal results={bulkResults} onClose={() => setBulkResults(null)} />}
     </div>
   );

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { recoveryService } from './recovery.service';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { setAuthCookies } from '../../lib/auth-cookies';
 import type { RecoveryRequestStatus } from './recovery-request.model';
 
 function meta(req: Request) {
@@ -75,14 +76,15 @@ export const recoveryController = {
 
   async loginWithPin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const result = await recoveryService.loginWithPin(req.body, meta(req));
+      const { refreshToken, ...result } = await recoveryService.loginWithPin(req.body, meta(req));
+      setAuthCookies(res, refreshToken);
       sendCreated(res, result, 'Login successful');
     } catch (err) { next(err); }
   },
 
   async forgetDevice(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await recoveryService.forgetDevice(req.params.deviceId);
+      await recoveryService.forgetDevice(req.params.deviceId, req.user!.userId);
       sendSuccess(res, null, 'Device forgotten');
     } catch (err) { next(err); }
   },

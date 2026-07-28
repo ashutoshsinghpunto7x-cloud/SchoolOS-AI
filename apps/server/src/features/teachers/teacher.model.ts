@@ -41,6 +41,10 @@ export interface ITeacher extends Document {
   phone: string;
   alternatePhone?: string;
   email?: string;
+  /** Admin-issued school login address (e.g. jsmith@fnic.com) — separate from
+   *  `email`, which is the teacher's own contact address from their documents.
+   *  This is what gets set as the linked User's login email. */
+  loginEmail?: string;
   address?: string;
   emergencyContact?: IEmergencyContact;
   // Professional
@@ -100,6 +104,7 @@ const teacherSchema = new Schema<ITeacher>(
     phone:           { type: String, required: true, trim: true },
     alternatePhone:  { type: String, trim: true },
     email:           { type: String, trim: true, lowercase: true },
+    loginEmail:      { type: String, trim: true, lowercase: true },
     address:         { type: String, trim: true },
     emergencyContact:{ type: emergencyContactSchema },
     department:      { type: String, trim: true },
@@ -138,6 +143,7 @@ teacherSchema.index({ schoolId: 1, isDeleted: 1, subjects: 1 });
 teacherSchema.index({ schoolId: 1, isDeleted: 1, assignedClasses: 1 });
 teacherSchema.index({ phone: 1 });
 teacherSchema.index({ schoolId: 1, email: 1 });
+teacherSchema.index({ schoolId: 1, loginEmail: 1 }, { unique: true, sparse: true });
 teacherSchema.index({
   fullName: 'text',
   employeeId: 'text',

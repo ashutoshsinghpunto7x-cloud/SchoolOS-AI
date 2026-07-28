@@ -74,9 +74,9 @@ export const recoveryApi = {
     }
   },
 
-  async loginWithPin(payload: LoginWithPinPayload): Promise<{ accessToken: string; refreshToken: string }> {
+  async loginWithPin(payload: LoginWithPinPayload): Promise<{ accessToken: string }> {
     try {
-      const res = await apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/auth/login-pin', payload);
+      const res = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/login-pin', payload);
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

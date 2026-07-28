@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { tokenService } from '../features/auth/token.service';
 import { UnauthorizedError } from './errorHandler';
+import { attachRequestUser } from './requestContext';
 
 export const authenticate = (req: Request, _res: Response, next: NextFunction): void => {
   const header = req.headers.authorization;
@@ -20,6 +21,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction): 
       firstName: payload.firstName,
       lastName: payload.lastName,
     };
+    attachRequestUser({ userId: payload.userId, schoolId: payload.schoolId, role: payload.role });
     next();
   } catch {
     next(new UnauthorizedError('Invalid or expired access token'));

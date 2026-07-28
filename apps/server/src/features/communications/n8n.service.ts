@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { env } from '../../config/env';
 import { logger } from '../../lib/logger';
+import { postWithRetry } from '../../lib/retry-post';
 
 export interface N8nCallPayload {
   communicationId: string;
@@ -28,13 +28,12 @@ export const n8nService = {
       return;
     }
 
-    void axios
-      .post(env.N8N_WEBHOOK_URL, payload, { timeout: 8_000 })
+    void postWithRetry(env.N8N_WEBHOOK_URL, payload, { timeoutMs: 8_000, attempts: 3 })
       .then(() => {
         logger.info('n8n webhook triggered', { communicationId: payload.communicationId });
       })
       .catch((err: Error) => {
-        logger.error('n8n webhook failed', {
+        logger.error('n8n webhook failed after retries', {
           communicationId: payload.communicationId,
           error: err.message,
         });

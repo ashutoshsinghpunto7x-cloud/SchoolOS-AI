@@ -45,6 +45,15 @@ export const userRepository = {
     });
   },
 
+  /** Batch lookup — one query instead of one-per-email, used when resolving a whole list of teacher emails at once (e.g. bulk notification send). */
+  async findByEmails(emails: string[]): Promise<IUser[]> {
+    if (emails.length === 0) return [];
+    return User.find({
+      email: { $in: emails.map((e) => e.toLowerCase()) },
+      deletedAt: { $exists: false },
+    });
+  },
+
   async findByUsername(username: string): Promise<IUser | null> {
     return User.findOne({
       username: username.toLowerCase(),

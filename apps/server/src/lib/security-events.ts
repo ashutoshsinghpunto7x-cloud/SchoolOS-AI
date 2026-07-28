@@ -17,6 +17,12 @@ export interface SecurityEvent {
   role?: string;
   schoolId?: string;
   createdAt: string;
+  // rate_limited-specific detail — populated so a 429 is never a mystery
+  // (Rate Limiting Dashboard reads these directly, no digging required).
+  limit?: number;
+  remaining?: number;
+  retryAfterSeconds?: number;
+  identifier?: string;
 }
 
 const MAX_EVENTS = 500;

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import {
   enquiryRepository,
   CreateEnquiryData,
@@ -177,20 +178,35 @@ export const enquiryService = {
       remarks:         existing.remarks,
     };
 
-    // Reuse student service — handles admission number generation + audit
-    const student = await studentService.createStudent(studentPayload, ctx);
+    // Student creation + marking the enquiry converted happen atomically —
+    // without a transaction, a crash between the two left an orphaned student
+    // with no enquiry link, and the enquiry stayed convertible again (risk of
+    // a duplicate student on retry).
+    const session = await mongoose.startSession();
+    let student: IStudent | undefined;
+    let updatedEnquiry: IEnquiry | null = null;
+    try {
+      await session.withTransaction(async () => {
+        // Reuse student service — handles admission number generation + audit
+        student = await studentService.createStudent(studentPayload, ctx, session);
 
-    const updatedEnquiry = await enquiryRepository.markConverted(
-      id,
-      ctx.schoolId,
-      {
-        studentId:   student._id.toString(),
-        convertedAt: new Date(),
-        convertedBy: ctx.displayName,
-      },
-      ctx.displayName,
-    );
-    if (!updatedEnquiry) throw new NotFoundError('Enquiry');
+        updatedEnquiry = await enquiryRepository.markConverted(
+          id,
+          ctx.schoolId,
+          {
+            studentId:   student._id.toString(),
+            convertedAt: new Date(),
+            convertedBy: ctx.displayName,
+          },
+          ctx.displayName,
+          session,
+        );
+        if (!updatedEnquiry) throw new NotFoundError('Enquiry');
+      });
+    } finally {
+      await session.endSession();
+    }
+    if (!student || !updatedEnquiry) throw new NotFoundError('Enquiry');
 
     auditService.log({
       userId:          ctx.userId,

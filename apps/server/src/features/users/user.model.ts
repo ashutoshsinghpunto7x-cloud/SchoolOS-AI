@@ -81,5 +81,8 @@ userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true, sparse: true });
 userSchema.index({ schoolId: 1, status: 1 });
 userSchema.index({ schoolId: 1, role: 1 });
+// Used as a join key to link a login account to its Employee/Teacher profile
+// (account recovery, employee-teacher linking) — was an unindexed plain string.
+userSchema.index({ schoolId: 1, employeeId: 1 }, { sparse: true });
 
 export const User = mongoose.model<IUser>('User', userSchema);

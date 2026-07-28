@@ -52,6 +52,7 @@ export const internalMessageRepository = {
       acknowledgedAt: { $exists: false },
     })
       .sort({ createdAt: 1 })
+      .limit(100)
       .lean<IInternalMessage[]>();
   },
 

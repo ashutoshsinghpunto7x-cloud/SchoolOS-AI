@@ -124,7 +124,32 @@ export interface OpsFeatureHealth {
   errors: number;
   errorRatePercent: number;
   avgResponseTimeMs: number;
+  p95ResponseTimeMs?: number;
+  p99ResponseTimeMs?: number;
+  statusCodes?: Record<string, number>;
   lastSeenAt: string;
+}
+
+export type RootCauseCategory =
+  | 'database' | 'authentication' | 'authorization' | 'validation' | 'frontend'
+  | 'network' | 'rate_limiting' | 'mongodb' | 'jwt' | 'external_api' | 'n8n'
+  | 'memory_leak' | 'race_condition' | 'unknown';
+
+export interface OpsLastError {
+  statusCode: number;
+  code: string;
+  message: string;
+  category: RootCauseCategory;
+  confidencePercent: number;
+  probableCause: string;
+  recommendedFix: string;
+  affectedRole: string | null;
+  lastSeenAt: string;
+}
+
+export interface OpsErrorModuleBreakdown extends OpsFeatureHealth {
+  successCount: number;
+  lastError: OpsLastError | null;
 }
 
 export interface OpsAuditTrailParams {
@@ -297,6 +322,123 @@ export interface OpsSettings {
   };
 }
 
+export type PerformanceTestStatus = 'running' | 'completed' | 'stopped' | 'failed';
+export type PerformanceTestStage = 'ramp-up' | 'steady' | 'ramp-down' | 'completed';
+
+export interface PerformanceTestSummary {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  requestsPerSec: number;
+  avgResponseMs: number;
+  medianResponseMs: number;
+  p90ResponseMs: number;
+  p95ResponseMs: number;
+  p99ResponseMs: number;
+  maxResponseMs: number;
+  successRatePercent: number;
+  errorRatePercent: number;
+  http429Count: number;
+  http500Count: number;
+  http401Count: number;
+  authFailures: number;
+  duplicateAttendanceRatePercent: number;
+  raceConditionRatePercent: number;
+  teacherWorkflowSuccessRatePercent: number;
+  peakVUs: number;
+}
+
+export interface PerformanceTestRun {
+  runId: string;
+  label: string;
+  scriptName: string;
+  targetVUs: number;
+  durationMinutes: number;
+  status: PerformanceTestStatus;
+  stage: PerformanceTestStage;
+  startedAt: string;
+  endedAt?: string;
+  startedByUserId: string;
+  startedByName: string;
+  summary?: PerformanceTestSummary;
+  failureReason?: string;
+}
+
+export interface PerformanceTestAlert {
+  id: string;
+  severity: 'critical' | 'warning';
+  title: string;
+  message: string;
+  occurredAt: string;
+}
+
+export interface PerformanceTestActivity {
+  timestamp: string;
+  message: string;
+  level: 'info' | 'warning' | 'critical';
+}
+
+export interface PerformanceTestLiveSnapshot {
+  runId: string;
+  label: string;
+  status: PerformanceTestStatus;
+  stage: PerformanceTestStage;
+  targetVUs: number;
+  durationMinutes: number;
+  currentVUs: number;
+  peakVUs: number;
+  startedAt: string;
+  elapsedSeconds: number;
+  remainingSeconds: number;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  requestsPerSec: number;
+  avgResponseMs: number;
+  medianResponseMs: number;
+  p90ResponseMs: number;
+  p95ResponseMs: number;
+  p99ResponseMs: number;
+  maxResponseMs: number;
+  successRatePercent: number;
+  errorRatePercent: number;
+  http429Count: number;
+  http500Count: number;
+  http401Count: number;
+  authFailures: number;
+  duplicateAttendanceRatePercent: number;
+  raceConditionRatePercent: number;
+  teacherWorkflowSuccessRatePercent: number;
+  statusCodeCounts: Record<string, number>;
+  topEndpoints: Array<{ name: string; requests: number; avgMs: number }>;
+  series: {
+    timestamps: string[];
+    avgResponseMs: number[];
+    p95ResponseMs: number[];
+    p99ResponseMs: number[];
+    requestsPerSec: number[];
+    virtualUsers: number[];
+    errorRatePercent: number[];
+  };
+  infra: {
+    cpuPercent: number;
+    memoryUsedMb: number;
+    memoryTotalMb: number;
+    eventLoopDelayMs: number;
+    mongoLatencyMs: number;
+    mongoHealthy: boolean;
+    mongoPoolSize: number;
+  };
+  alerts: PerformanceTestAlert[];
+  activity: PerformanceTestActivity[];
+}
+
+export interface StartPerformanceTestInput {
+  vus: number;
+  durationMinutes: number;
+  label?: string;
+}
+
 interface ApiEnvelope<T> {
   success: boolean;
   message: string;
@@ -349,6 +491,11 @@ export const opsApi = {
     return res.data.data;
   },
 
+  async getErrorsByModule(): Promise<OpsErrorModuleBreakdown[]> {
+    const res = await apiClient.get<ApiEnvelope<OpsErrorModuleBreakdown[]>>('/ops/errors/by-module');
+    return res.data.data;
+  },
+
   async getDatabase(): Promise<OpsDatabaseStats> {
     const res = await apiClient.get<ApiEnvelope<OpsDatabaseStats>>('/ops/database');
     return res.data.data;
@@ -384,5 +531,34 @@ export const opsApi = {
   async getSettings(): Promise<OpsSettings> {
     const res = await apiClient.get<ApiEnvelope<OpsSettings>>('/ops/settings');
     return res.data.data;
+  },
+
+  async startPerformanceTest(input: StartPerformanceTestInput): Promise<{ runId: string; label: string }> {
+    const res = await apiClient.post<ApiEnvelope<{ runId: string; label: string }>>('/performance-tests/start', input);
+    return res.data.data;
+  },
+
+  async stopPerformanceTest(runId: string): Promise<void> {
+    await apiClient.post(`/performance-tests/${runId}/stop`);
+  },
+
+  async getPerformanceTestLive(): Promise<PerformanceTestLiveSnapshot | null> {
+    const res = await apiClient.get<ApiEnvelope<PerformanceTestLiveSnapshot | null>>('/performance-tests/live');
+    return res.data.data;
+  },
+
+  async getPerformanceTestHistory(params: { page?: number; limit?: number }): Promise<PaginatedResult<PerformanceTestRun>> {
+    const res = await apiClient.get<PaginatedResult<PerformanceTestRun>>('/performance-tests', { params });
+    return res.data;
+  },
+
+  async getPerformanceTestDetail(runId: string): Promise<PerformanceTestRun> {
+    const res = await apiClient.get<ApiEnvelope<PerformanceTestRun>>(`/performance-tests/${runId}`);
+    return res.data.data;
+  },
+
+  async downloadPerformanceTestReport(runId: string, format: 'json' | 'csv'): Promise<Blob> {
+    const res = await apiClient.get(`/performance-tests/${runId}/report.${format}`, { responseType: 'blob' });
+    return res.data as Blob;
   },
 };

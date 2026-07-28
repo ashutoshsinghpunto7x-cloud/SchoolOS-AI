@@ -11,16 +11,31 @@ const rateLimitResponse = (message: string) => ({
 // express-rate-limit's `message` option responds directly without going
 // through errorHandler.ts, so the security-event recording has to happen
 // here via `handler` rather than the shared 401/403 hook in errorHandler.ts.
-const makeRateLimitHandler = (message: string) => (req: Request, res: Response) => {
-  recordSecurityEvent({
-    type: 'rate_limited',
-    severity: 'medium',
-    message,
-    ip: req.ip,
-    path: req.originalUrl,
-  });
-  res.status(429).json(rateLimitResponse(message));
-};
+// standardHeaders:true means express-rate-limit already computed
+// limit/remaining/reset onto the response — read those back rather than
+// re-deriving them, so a 429 never needs guessing "why".
+const makeRateLimitHandler = (message: string, identifierFrom?: (req: Request) => string | undefined) =>
+  (req: Request, res: Response) => {
+    const limit = Number(res.getHeader('RateLimit-Limit')) || undefined;
+    const remaining = Number(res.getHeader('RateLimit-Remaining')) || 0;
+    const resetSeconds = Number(res.getHeader('RateLimit-Reset')) || undefined;
+
+    recordSecurityEvent({
+      type: 'rate_limited',
+      severity: 'medium',
+      message,
+      ip: req.ip,
+      path: req.originalUrl,
+      userId: req.user?.userId,
+      role: req.user?.role,
+      schoolId: req.user?.schoolId,
+      limit,
+      remaining,
+      retryAfterSeconds: resetSeconds,
+      identifier: identifierFrom?.(req),
+    });
+    res.status(429).json(rateLimitResponse(message));
+  };
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
@@ -41,4 +56,25 @@ export const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: makeRateLimitHandler('Too many login attempts. Please try again in 15 minutes.'),
+});
+
+// authLimiter above is IP-keyed only — a distributed attacker spraying login
+// attempts for one account across many IPs isn't slowed by it at all. This
+// limiter is keyed on the submitted identifier (email/username) instead, so
+// it caps attempts against a single account regardless of source IP. Applied
+// alongside authLimiter, not instead of it — the two catch different attack
+// shapes (one attacker/many accounts vs. many attackers/one account).
+export const authAccountLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDevelopment ? 1000 : 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => {
+    const identifier = (req.body as { identifier?: string } | undefined)?.identifier;
+    return typeof identifier === 'string' ? identifier.trim().toLowerCase() : 'unknown';
+  },
+  handler: makeRateLimitHandler(
+    'Too many login attempts for this account. Please try again in 15 minutes.',
+    (req) => (req.body as { identifier?: string } | undefined)?.identifier,
+  ),
 });

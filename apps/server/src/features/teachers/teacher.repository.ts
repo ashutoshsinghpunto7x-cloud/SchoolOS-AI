@@ -106,6 +106,12 @@ export const teacherRepository = {
     return Teacher.findOne({ _id: id, schoolId, isDeleted: false }).lean<ITeacher>();
   },
 
+  /** Batch lookup — one query instead of one-per-id, used when resolving a whole list of teacherIds at once (e.g. bulk notification send). */
+  async findByIds(ids: string[], schoolId: string): Promise<ITeacher[]> {
+    if (ids.length === 0) return [];
+    return Teacher.find({ _id: { $in: ids }, schoolId, isDeleted: false }).lean<ITeacher[]>();
+  },
+
   async findByEmployeeId(employeeId: string, schoolId: string): Promise<ITeacher | null> {
     return Teacher.findOne({ employeeId, schoolId, isDeleted: false }).lean<ITeacher>();
   },

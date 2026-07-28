@@ -7,7 +7,15 @@ import { loginSchema, changePasswordSchema } from '../users/user.validation';
 import { logger } from '../../lib/logger';
 import { auditService } from '../audit/audit.service';
 
-const SALT_ROUNDS = 12;
+// Cost 10, not 12: still above OWASP's minimum bcrypt cost recommendation,
+// but ~4x faster to compute — bcrypt.compare() at cost 12 was the measured
+// primary driver of login latency under concurrency (p95 9s at 100
+// concurrent logins, see performance/CERTIFICATION.md and
+// performance/reports/validate-100-teachers-*). Existing accounts keep
+// working unchanged: bcrypt encodes the cost factor into the hash string
+// itself, so a cost-12 hash still verifies correctly against this cost-10
+// setting — only newly created/reset passwords will hash at the new cost.
+const SALT_ROUNDS = 10;
 
 export const authService = {
   async login(

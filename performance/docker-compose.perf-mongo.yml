@@ -1,0 +1,40 @@
+version: '3.8'
+
+# An isolated local MongoDB, used ONLY for performance-test runs so k6 load
+# never touches the shared Atlas free-tier cluster the real app's
+# apps/server/.env points at. Start it with:
+#   docker compose -f performance/docker-compose.perf-mongo.yml up -d
+# Then run the server with apps/server/.env.perf-test instead of .env (see
+# performance/README.md's "Local Mongo for perf testing" section).
+services:
+  perf-mongo:
+    image: mongo:7
+    container_name: schoolos-perf-mongo
+    restart: unless-stopped
+    # --replSet: apps/server's fee.service.ts (and any other code using
+    # Mongoose sessions/transactions) requires a replica set — a plain
+    # standalone mongod rejects `session.withTransaction()` with
+    # "Transaction numbers are only allowed on a replica set member or
+    # mongos". A single-node replica set is the standard way to get
+    # transaction support locally while still matching Atlas's (always a
+    # replica set) behavior. Initiate it once with (host must be a name the
+    # CLIENT — running on the host machine, not in Docker — can resolve):
+    #   docker exec schoolos-perf-mongo mongosh --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+    command: ['--replSet', 'rs0', '--bind_ip_all']
+    ports:
+      # Must equal the container's own port (27017): rs.initiate() below
+      # advertises the replica set member as localhost:27017, and the
+      # Node client (running on the host, not in Docker) resolves that
+      # literally — a host-port remap here would leave the client trying
+      # to reach a port nothing is listening on.
+      - '27017:27017'
+    volumes:
+      - perf-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  perf-mongo-data:

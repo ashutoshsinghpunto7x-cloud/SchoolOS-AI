@@ -13,6 +13,7 @@ export type AuditAction =
   | 'school_settings.attendance_rules_updated'
   | 'school_settings.payroll_config_updated'
   | 'school_settings.behavior_window_updated'
+  | 'school_settings.attendance_edit_policy_updated'
   | 'school_settings.report_card_branding_updated'
   | 'payroll.generated'
   | 'payroll.generate_all'
@@ -233,5 +234,10 @@ auditLogSchema.index({ schoolId: 1, createdAt: -1 });
 auditLogSchema.index({ schoolId: 1, action: 1, createdAt: -1 });
 auditLogSchema.index({ schoolId: 1, userId: 1, createdAt: -1 });
 auditLogSchema.index({ resourceId: 1, createdAt: -1 });
+// Audit events are logged on virtually every write path across the app with
+// no archival job — without a retention limit this collection grows forever,
+// degrading index efficiency and backup size as usage scales. 18 months is
+// well past any plausible compliance/investigation window for this app.
+auditLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 548 });
 
 export const AuditLog = mongoose.model<IAuditLog>('AuditLog', auditLogSchema);

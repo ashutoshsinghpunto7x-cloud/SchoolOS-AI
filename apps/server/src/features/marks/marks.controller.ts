@@ -106,27 +106,39 @@ export const marksController = {
     } catch (err) { next(err); }
   },
 
-  /** POST /marks/extract/image — AI reads a photo of a marks sheet (does not save) */
+  /** POST /marks/extract/image — kicks off AI reading of a marks-sheet photo in the
+   *  background (Whisper/GPT can take several seconds) and returns a job id
+   *  immediately; the client polls GET /marks/extract/jobs/:id for the result. */
   async extractFromImage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) throw new ValidationError('An image file is required');
       const ctx    = buildAuthContext(req.user!);
-      const result = await marksExtractionService.extractFromImage(req.query, fileToDataUri(req.file), ctx);
-      sendSuccess(res, result, `${result.extracted.length} student(s) read from the photo`);
+      const job    = await marksExtractionService.enqueueExtractFromImage(req.query, fileToDataUri(req.file), ctx);
+      sendCreated(res, job, 'Reading the photo…');
     } catch (err) { next(err); }
   },
 
-  /** POST /marks/extract/voice — AI transcribes a voice note and reads marks from it (does not save) */
+  /** POST /marks/extract/voice — same as extractFromImage, for a voice note
+   *  (Whisper transcription + GPT can take up to ~60s — always backgrounded). */
   async extractFromVoice(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) throw new ValidationError('An audio file is required');
-      const ctx    = buildAuthContext(req.user!);
-      const result = await marksExtractionService.extractFromVoice(
+      const ctx = buildAuthContext(req.user!);
+      const job = await marksExtractionService.enqueueExtractFromVoice(
         req.query,
         { buffer: req.file.buffer, mimetype: req.file.mimetype, filename: req.file.originalname || 'voice-note.webm' },
         ctx,
       );
-      sendSuccess(res, result, `${result.extracted.length} student(s) read from the recording`);
+      sendCreated(res, job, 'Listening to the recording…');
+    } catch (err) { next(err); }
+  },
+
+  /** GET /marks/extract/jobs/:id — poll for the result of a background extraction job */
+  async getExtractionJob(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const job = await marksExtractionService.getExtractionJob(req.params.id, ctx);
+      sendSuccess(res, job);
     } catch (err) { next(err); }
   },
 

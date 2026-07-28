@@ -1,0 +1,462 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>SchoolOS k6 validate-100-teachers report</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; background: #0f1117; color: #e6e6e6; }
+  h1 { font-size: 1.4rem; }
+  .summary { display: flex; gap: 1.5rem; margin: 1rem 0 2rem; flex-wrap: wrap; }
+  .stat { background: #1a1d27; border-radius: 8px; padding: 0.75rem 1.25rem; min-width: 140px; }
+  .stat .label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; }
+  .stat .value { font-size: 1.4rem; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+  th, td { text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #2a2e3a; font-size: 0.85rem; }
+  th { background: #1a1d27; position: sticky; top: 0; }
+  tr.pass td:nth-child(3) { color: #4ade80; }
+  tr.fail td:nth-child(3) { color: #f87171; font-weight: 700; }
+  .bar { background: #2a2e3a; border-radius: 4px; width: 120px; height: 10px; overflow: hidden; }
+  .bar-fill { background: #60a5fa; height: 100%; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+  .badge.pass { background: #14532d; color: #4ade80; }
+  .badge.fail { background: #7f1d1d; color: #f87171; }
+</style></head>
+<body>
+  <h1>SchoolOS performance report — validate-100-teachers <span class="badge fail">THRESHOLDS FAILED</span></h1>
+  <div class="summary">
+    <div class="stat"><div class="label">Total requests</div><div class="value">100</div></div>
+    <div class="stat"><div class="label">Throughput (req/s)</div><div class="value">88.03</div></div>
+    <div class="stat"><div class="label">Error rate</div><div class="value">100.00%</div></div>
+    <div class="stat"><div class="label">Avg latency (ms)</div><div class="value">459.2</div></div>
+    <div class="stat"><div class="label">P95 latency (ms)</div><div class="value">592.6</div></div>
+    <div class="stat"><div class="label">P99 latency (ms)</div><div class="value">1072.9</div></div>
+  </div>
+
+  <h2>Thresholds</h2>
+  <table><thead><tr><th>Metric</th><th>Expression</th><th>Result</th></tr></thead><tbody><tr class="pass">
+        <td>race_condition_detected</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>duplicate_attendance_detected</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>login_duration</td><td>p(95)&lt;1000</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>http_req_duration{name:GET /students (roster)}</td><td>p(95)&lt;500</td><td>PASS</td>
+      </tr>
+<tr class="fail">
+        <td>http_req_duration{name:POST /auth/login}</td><td>p(95)&lt;400</td><td>FAIL</td>
+      </tr>
+<tr class="pass">
+        <td>http_req_duration{name:POST /attendance/bulk}</td><td>p(95)&lt;500</td><td>PASS</td>
+      </tr>
+<tr class="fail">
+        <td>http_req_failed</td><td>rate==0</td><td>FAIL</td>
+      </tr>
+<tr class="pass">
+        <td>http_req_duration{name:GET /teacher-workspace/me}</td><td>p(95)&lt;500</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>duplicate_fee_payment_detected</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>db_write_inconsistency_detected</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="fail">
+        <td>teacher_workflow_success</td><td>rate==1</td><td>FAIL</td>
+      </tr>
+<tr class="pass">
+        <td>http_429_count</td><td>count==0</td><td>PASS</td>
+      </tr>
+<tr class="fail">
+        <td>http_req_duration</td><td>p(99)&lt;1000</td><td>FAIL</td>
+      </tr>
+<tr class="fail">
+        <td>http_req_duration</td><td>avg&lt;300</td><td>FAIL</td>
+      </tr>
+<tr class="pass">
+        <td>http_req_duration</td><td>p(95)&lt;800</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>partial_attendance_save</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>missing_attendance</td><td>rate==0</td><td>PASS</td>
+      </tr>
+<tr class="pass">
+        <td>http_500_count</td><td>count==0</td><td>PASS</td>
+      </tr></tbody></table>
+
+  <h2>Metrics</h2>
+  <table><thead><tr><th>Name</th><th>Type</th><th>Avg</th><th>Med</th><th>P90</th><th>P95</th><th>P99</th><th>Max</th><th>Count/Rate</th><th>P95 relative</th></tr></thead>
+  <tbody><tr>
+        <td>auth_failures</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>100</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>checks</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>data_received</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>126400</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>data_sent</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>21292</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>db_write_inconsistency_detected</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>duplicate_attendance_detected</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>duplicate_fee_payment_detected</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_429_count</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_500_count</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_blocked</td>
+        <td>trend</td>
+        <td>11.37</td>
+        <td>15.55</td>
+        <td>19.07</td>
+        <td>22.59</td>
+        <td>23.12</td>
+        <td>24.62</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:3.6%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_connecting</td>
+        <td>trend</td>
+        <td>2.75</td>
+        <td>2.03</td>
+        <td>7.18</td>
+        <td>7.18</td>
+        <td>9.30</td>
+        <td>10.31</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:1.2%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_duration</td>
+        <td>trend</td>
+        <td>459.24</td>
+        <td>465.17</td>
+        <td>585.75</td>
+        <td>592.65</td>
+        <td>1072.94</td>
+        <td>1107.68</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:95.3%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_duration{name:GET /students (roster)}</td>
+        <td>trend</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_duration{name:GET /teacher-workspace/me}</td>
+        <td>trend</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_duration{name:POST /attendance/bulk}</td>
+        <td>trend</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_duration{name:POST /auth/login}</td>
+        <td>trend</td>
+        <td>459.24</td>
+        <td>465.17</td>
+        <td>585.75</td>
+        <td>592.65</td>
+        <td>1072.94</td>
+        <td>1107.68</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:95.3%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_failed</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>100.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_receiving</td>
+        <td>trend</td>
+        <td>1.19</td>
+        <td>1.02</td>
+        <td>2.46</td>
+        <td>4.19</td>
+        <td>5.64</td>
+        <td>8.12</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:0.7%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_sending</td>
+        <td>trend</td>
+        <td>0.55</td>
+        <td>0.00</td>
+        <td>2.01</td>
+        <td>2.62</td>
+        <td>5.45</td>
+        <td>13.42</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:0.4%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_req_tls_handshaking</td>
+        <td>trend</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td>0.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+<tr>
+        <td>http_req_waiting</td>
+        <td>trend</td>
+        <td>457.50</td>
+        <td>463.70</td>
+        <td>583.94</td>
+        <td>592.65</td>
+        <td>1071.91</td>
+        <td>1093.54</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:95.3%"></div></div></td>
+      </tr>
+<tr>
+        <td>http_reqs</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>100</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>iteration_duration</td>
+        <td>trend</td>
+        <td>472.67</td>
+        <td>473.73</td>
+        <td>609.96</td>
+        <td>621.91</td>
+        <td>1089.10</td>
+        <td>1115.06</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:100.0%"></div></div></td>
+      </tr>
+<tr>
+        <td>iterations</td>
+        <td>counter</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>100</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>login_duration</td>
+        <td>trend</td>
+        <td>459.24</td>
+        <td>465.17</td>
+        <td>585.75</td>
+        <td>592.65</td>
+        <td>1072.94</td>
+        <td>1107.68</td>
+        <td></td>
+        <td><div class="bar"><div class="bar-fill" style="width:95.3%"></div></div></td>
+      </tr>
+<tr>
+        <td>missing_attendance</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>partial_attendance_save</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>race_condition_detected</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>teacher_workflow_success</td>
+        <td>rate</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>0.00%</td>
+        <td></td>
+      </tr>
+<tr>
+        <td>vus</td>
+        <td>gauge</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>93.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+<tr>
+        <td>vus_max</td>
+        <td>gauge</td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>100.00</td>
+        <td></td>
+        <td></td>
+      </tr></tbody></table>
+</body></html>

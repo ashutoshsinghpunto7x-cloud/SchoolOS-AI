@@ -2,13 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { env } from '../../config/env';
-import { ValidationError } from '../../middlewares/errorHandler';
+import { ValidationError, UnauthorizedError } from '../../middlewares/errorHandler';
+import { setAuthCookies, clearAuthCookies, getRefreshTokenFromRequest } from '../../lib/auth-cookies';
 
 export const authController = {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ip = req.ip ?? req.socket.remoteAddress;
-      const result = await authService.login(req.body, ip);
+      const { refreshToken, ...result } = await authService.login(req.body, ip);
+      setAuthCookies(res, refreshToken);
       sendCreated(res, result, 'Login successful');
     } catch (err) {
       next(err);
@@ -17,13 +19,14 @@ export const authController = {
 
   async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { refreshToken } = req.body as { refreshToken?: string };
+      const refreshToken = getRefreshTokenFromRequest(req);
       if (!refreshToken) {
-        next(new ValidationError('refreshToken is required'));
+        next(new UnauthorizedError('No refresh token — please log in again'));
         return;
       }
       const tokens = await authService.refresh(refreshToken);
-      sendSuccess(res, tokens, 'Tokens refreshed');
+      setAuthCookies(res, tokens.refreshToken);
+      sendSuccess(res, { accessToken: tokens.accessToken }, 'Tokens refreshed');
     } catch (err) {
       next(err);
     }
@@ -33,6 +36,7 @@ export const authController = {
     try {
       const { userId, schoolId, firstName, lastName } = req.user!;
       await authService.logout(userId, schoolId, `${firstName} ${lastName}`, req.ip ?? undefined);
+      clearAuthCookies(res);
       sendSuccess(res, null, 'Logged out successfully');
     } catch (err) {
       next(err);

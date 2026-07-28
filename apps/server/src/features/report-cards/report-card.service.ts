@@ -98,14 +98,23 @@ function computeStudentTotals(exam: IExam, marksRecords: IMarks[]): { rows: ISub
 async function computeClassStats(
   schoolId: string, exam: IExam, cls: string, section: string,
 ): Promise<{ percentages: number[]; classSize: number }> {
-  const students = await Student.find({ schoolId, class: cls, section, admissionStatus: 'active', isDeleted: false })
-    .select('_id').lean<{ _id: unknown }[]>();
+  const [students, allMarks] = await Promise.all([
+    Student.find({ schoolId, class: cls, section, admissionStatus: 'active', isDeleted: false })
+      .select('_id').lean<{ _id: unknown }[]>(),
+    marksRepository.findByClassExam(schoolId, exam._id.toString(), cls, section),
+  ]);
+
+  const marksByStudent = new Map<string, typeof allMarks>();
+  for (const m of allMarks) {
+    const list = marksByStudent.get(m.studentId) ?? [];
+    list.push(m);
+    marksByStudent.set(m.studentId, list);
+  }
 
   const percentages: number[] = [];
   for (const s of students) {
     const studentId = String(s._id);
-    const marksRecords = await marksRepository.findByStudentExam(schoolId, exam._id.toString(), studentId);
-    const { totals } = computeStudentTotals(exam, marksRecords);
+    const { totals } = computeStudentTotals(exam, marksByStudent.get(studentId) ?? []);
     if (totals.totalMaxMarks > 0) percentages.push(totals.percentage);
   }
 

@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import { Enquiry, IEnquiry, EnquiryStage, IConversionData } from './enquiry.model';
 
 export interface CreateEnquiryData {
@@ -167,6 +168,7 @@ export const enquiryRepository = {
     schoolId: string,
     conversionData: IConversionData,
     updatedBy: string,
+    session?: ClientSession,
   ): Promise<IEnquiry | null> {
     const historyEntry = { stage: 'converted' as EnquiryStage, changedAt: new Date(), changedBy: updatedBy };
     return Enquiry.findOneAndUpdate(
@@ -175,7 +177,7 @@ export const enquiryRepository = {
         $set:  { stage: 'converted', conversionData, updatedBy },
         $push: { stageHistory: historyEntry },
       },
-      { new: true },
+      { new: true, session },
     ).lean<IEnquiry>();
   },
 

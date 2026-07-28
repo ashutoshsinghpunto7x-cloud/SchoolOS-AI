@@ -21,6 +21,31 @@ import { schoolSettingsService } from '../school-settings/school-settings.servic
 import { attendanceNotificationService } from '../communication/attendance-notification.service';
 import { logger } from '../../lib/logger';
 
+// Teachers may only mark/edit attendance for the current day — past dates are
+// permanently view-only (no backfilling forgotten days) and future dates are
+// not yet in session. Same-day editing additionally closes at the principal's
+// configured cutoff time, if one is set. Admins/principals are exempt, same
+// as the class-assignment check below.
+async function assertAttendanceEditableForTeacher(ctx: AuthContext, date: string): Promise<void> {
+  if (ctx.role !== 'teacher') return;
+
+  const today = attendanceRepository.todayString();
+  if (date !== today) {
+    throw new ValidationError('Attendance can only be marked or edited for today — past attendance is view-only and future dates are not allowed.');
+  }
+
+  const settings = await schoolSettingsService.getSettings(ctx.schoolId);
+  const cutoffTime = settings.attendanceEditPolicy?.cutoffTime;
+  if (cutoffTime) {
+    const nowTime = new Date().toLocaleTimeString('en-GB', {
+      timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+    });
+    if (nowTime > cutoffTime) {
+      throw new ValidationError(`Attendance editing is closed for today after ${cutoffTime}. Contact your principal for changes.`);
+    }
+  }
+}
+
 // Only the class teacher assigned to a class/section (by admin/principal) may
 // mark its attendance — teaching a subject there is not enough, since a
 // subject teacher marking attendance for someone else's class would produce
@@ -59,9 +84,7 @@ export const attendanceService = {
   async markSingle(rawInput: unknown, ctx: AuthContext): Promise<IAttendance> {
     const data = singleAttendanceSchema.parse(rawInput);
 
-    if (ctx.role === 'teacher' && data.date > attendanceRepository.todayString()) {
-      throw new ValidationError('Attendance cannot be marked for future dates');
-    }
+    await assertAttendanceEditableForTeacher(ctx, data.date);
     await assertTeacherCanMarkClass(ctx, data.class, data.section, data.date);
 
     const student = await studentRepository.findById(data.studentId, ctx.schoolId);
@@ -97,9 +120,7 @@ export const attendanceService = {
   async bulkMark(rawInput: unknown, ctx: AuthContext): Promise<IAttendance[]> {
     const data = bulkAttendanceSchema.parse(rawInput);
 
-    if (ctx.role === 'teacher' && data.date > attendanceRepository.todayString()) {
-      throw new ValidationError('Attendance cannot be marked for future dates');
-    }
+    await assertAttendanceEditableForTeacher(ctx, data.date);
     await assertTeacherCanMarkClass(ctx, data.class, data.section, data.date);
 
     const records = await attendanceRepository.bulkUpsert(

@@ -387,14 +387,16 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
               >
                 Photo
               </button>
-              <button
+              {/* Voice tab temporarily disabled — dictation flow needs more work
+                  before it's ready for teachers. Re-enable by uncommenting. */}
+              {/* <button
                 type="button"
                 onClick={() => setTab('voice')}
                 disabled={recording}
                 className={cn('flex-1 h-9 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50', tab === 'voice' ? 'bg-violet-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60')}
               >
                 Voice
-              </button>
+              </button> */}
             </div>
 
             <div className="p-4">

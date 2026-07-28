@@ -76,9 +76,48 @@ export const attendanceRepository = {
     ).lean<IAttendance>() as unknown as IAttendance;
   },
 
-  /** Bulk upsert — runs all upserts in parallel (Promise.all). */
+  /**
+   * Bulk upsert — one `bulkWrite` round trip instead of N separate
+   * `findOneAndUpdate` calls fired via `Promise.all`. The old approach sent
+   * N concurrent operations to MongoDB per request (N = roster size, up to
+   * 200 per `bulkAttendanceSchema`), which is what made 100 concurrent
+   * teachers submitting attendance multiply into thousands of simultaneous
+   * driver-level operations competing for the connection pool
+   * (`maxPoolSize: 50` in config/database.ts) — a real, measured contributor
+   * to save latency under load (see performance/CERTIFICATION.md finding
+   * #5). `bulkWrite` batches all N upserts into a single wire operation.
+   * `ordered: false` lets independent per-student upserts (different unique
+   * keys) complete even if one somehow fails, instead of aborting the rest.
+   */
   async bulkUpsert(records: UpsertAttendanceData[]): Promise<IAttendance[]> {
-    return Promise.all(records.map((r) => this.upsert(r)));
+    if (records.length === 0) return [];
+
+    await Attendance.bulkWrite(
+      records.map((r) => ({
+        updateOne: {
+          filter: { schoolId: r.schoolId, studentId: r.studentId, date: r.date, isDeleted: false },
+          update: {
+            $set: {
+              class: r.class, section: r.section, status: r.status, note: r.note,
+              markedById: r.markedById, markedByName: r.markedByName, markedAt: r.markedAt,
+            },
+            $setOnInsert: { schoolId: r.schoolId, studentId: r.studentId, date: r.date, isDeleted: false },
+          },
+          upsert: true,
+        },
+      })),
+      { ordered: false },
+    );
+
+    // bulkWrite doesn't return the written documents — re-fetch by the same
+    // keys just upserted, one indexed query covering all of them (still just
+    // 2 total round trips for the whole batch, down from N+1).
+    const studentIds = records.map((r) => r.studentId);
+    const schoolId = records[0].schoolId;
+    const date = records[0].date;
+    const written = await Attendance.find({ schoolId, studentId: { $in: studentIds }, date, isDeleted: false }).lean<IAttendance[]>();
+    const byStudentId = new Map(written.map((doc) => [doc.studentId, doc]));
+    return records.map((r) => byStudentId.get(r.studentId)).filter((doc): doc is IAttendance => !!doc);
   },
 
   async findById(id: string, schoolId: string): Promise<IAttendance | null> {

@@ -36,5 +36,9 @@ const notificationSchema = new Schema<INotification>(
 
 notificationSchema.index({ recipientUserId: 1, schoolId: 1, createdAt: -1 });
 notificationSchema.index({ recipientUserId: 1, isRead: 1 });
+// For future school-wide queries (admin view, bulk cleanup) not scoped to one
+// recipient — every current query is per-recipient, so this is headroom, not
+// a fix for an existing slow query.
+notificationSchema.index({ schoolId: 1, createdAt: -1 });
 
 export const Notification = mongoose.model<INotification>('Notification', notificationSchema);

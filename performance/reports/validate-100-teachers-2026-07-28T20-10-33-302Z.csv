@@ -1,0 +1,32 @@
+metric,type,avg,min,med,max,p(90),p(95),p(99),count,rate,passes,fails
+http_req_duration{name:GET /teacher-workspace/me},trend,0,0,0,0,0,0,0,,,,
+duplicate_fee_payment_detected,rate,,,,,,,,,0,0,0
+http_reqs,counter,,,,,,,,100,88.03109046840726,,
+http_req_connecting,trend,2.7528149999999982,0,2.0323,10.306,7.184,7.184,9.302734000000004,,,,
+vus,gauge,,93,,93,,,,,,,
+http_req_receiving,trend,1.1878969999999998,0,1.02215,8.1186,2.4604400000000015,4.186984999999998,5.636967000000013,,,,
+http_req_waiting,trend,457.50243399999994,207.4893,463.6974,1093.5399,583.94276,592.64774,1071.90642,,,,
+iteration_duration,trend,472.66535500000015,233.8343,473.7327,1115.0619,609.96411,621.9120949999999,1089.100536,,,,
+vus_max,gauge,,100,,100,,,,,,,
+db_write_inconsistency_detected,rate,,,,,,,,,0,0,0
+teacher_workflow_success,rate,,,,,,,,,0,0,100
+http_429_count,counter,,,,,,,,0,0,,
+http_req_duration,trend,459.240551,212.2631,465.17185,1107.6848,585.7495200000001,592.64774,1072.9394630000002,,,,
+partial_attendance_save,rate,,,,,,,,,0,0,0
+missing_attendance,rate,,,,,,,,,0,0,0
+checks,rate,,,,,,,,,0,0,200
+http_req_blocked,trend,11.369406999999997,0,15.5507,24.6174,19.0745,22.585745,23.123490000000007,,,,
+data_received,counter,,,,,,,,126400,111271.29835206678,,
+http_500_count,counter,,,,,,,,0,0,,
+race_condition_detected,rate,,,,,,,,,0,0,0
+duplicate_attendance_detected,rate,,,,,,,,,0,0,0
+http_req_sending,trend,0.5502199999999999,0,0,13.4236,2.0134,2.6196649999999995,5.454100000000041,,,,
+iterations,counter,,,,,,,,100,88.03109046840726,,
+auth_failures,counter,,,,,,,,100,88.03109046840726,,
+login_duration,trend,459.240551,212.2631,465.17185,1107.6848,585.7495200000001,592.64774,1072.9394630000002,,,,
+http_req_duration{name:GET /students (roster)},trend,0,0,0,0,0,0,0,,,,
+http_req_duration{name:POST /auth/login},trend,459.240551,212.2631,465.17185,1107.6848,585.7495200000001,592.64774,1072.9394630000002,,,,
+data_sent,counter,,,,,,,,21292,18743.579782533274,,
+http_req_duration{name:POST /attendance/bulk},trend,0,0,0,0,0,0,0,,,,
+http_req_failed,rate,,,,,,,,,1,100,0
+http_req_tls_handshaking,trend,0,0,0,0,0,0,0,,,,

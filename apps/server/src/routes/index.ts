@@ -42,6 +42,7 @@ import marksRouter from '../features/marks/marks.routes';
 import reportCardRouter from '../features/report-cards/report-card.routes';
 import behaviorRouter from '../features/behavior/behavior.routes';
 import opsRouter from '../features/ops-center/ops.routes';
+import performanceTestRouter from '../features/performance-testing/performance-test.routes';
 import communicationEngineRouter from '../features/communication/communication-engine.routes';
 
 const router = Router();
@@ -89,6 +90,7 @@ router.use('/marks', marksRouter);
 router.use('/report-cards', reportCardRouter);
 router.use('/behavior', behaviorRouter);
 router.use('/ops', opsRouter);
+router.use('/performance-tests', performanceTestRouter);
 router.use('/communication', communicationEngineRouter);
 
 export default router;

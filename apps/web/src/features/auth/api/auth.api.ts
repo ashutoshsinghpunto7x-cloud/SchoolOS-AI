@@ -11,13 +11,15 @@ export const authApi = {
     }
   },
 
-  async refresh(
-    refreshToken: string
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  // Note: the actual token-refresh-on-401 flow lives in services/api.ts's
+  // response interceptor (it needs to attach the CSRF header and update
+  // sessionStorage directly) — this method isn't currently called anywhere,
+  // kept only in case a caller needs to trigger a refresh outside that flow.
+  async refresh(): Promise<{ accessToken: string }> {
     try {
-      const res = await apiClient.post<
-        ApiResponse<{ accessToken: string; refreshToken: string }>
-      >('/auth/refresh', { refreshToken });
+      const res = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/refresh', null, {
+        headers: { 'X-CSRF-Token': '1' },
+      });
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

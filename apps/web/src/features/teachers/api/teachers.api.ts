@@ -126,9 +126,9 @@ export const teachersApi = {
     }
   },
 
-  async createLogin(teacherId: string, payload: CreateTeacherLoginPayload): Promise<{ teacherId: string; username: string }> {
+  async createLogin(teacherId: string, payload: CreateTeacherLoginPayload): Promise<{ teacherId: string; loginEmail: string }> {
     try {
-      const res = await apiClient.post<ApiResponse<{ teacherId: string; username: string }>>(
+      const res = await apiClient.post<ApiResponse<{ teacherId: string; loginEmail: string }>>(
         `/teachers/${teacherId}/login`,
         payload,
       );

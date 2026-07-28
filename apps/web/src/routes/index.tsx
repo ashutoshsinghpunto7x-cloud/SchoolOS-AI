@@ -173,6 +173,10 @@ const OpsSettingsPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsSettingsPage'),
   'OpsSettingsPage',
 );
+const OpsPerformancePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsPerformancePage'),
+  'OpsPerformancePage',
+);
 const AdministrationWorkspace = lazyPage(
   () => import('@/features/administration/pages/AdministrationWorkspace'),
   'AdministrationWorkspace',
@@ -734,6 +738,7 @@ export const router = createBrowserRouter([
                   { path: 'logs', element: <OpsLogsPage /> },
                   { path: 'audit-trail', element: <OpsAuditTrailPage /> },
                   { path: 'applications', element: <OpsApplicationsPage /> },
+                  { path: 'performance', element: <OpsPerformancePage /> },
                 ],
               },
             ],

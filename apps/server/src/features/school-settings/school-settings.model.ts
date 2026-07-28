@@ -22,6 +22,14 @@ export interface IBehaviorWindow {
   endTime: string;
 }
 
+/** Daily cutoff (HH:mm, IST) after which teachers can no longer edit today's
+ *  attendance — undefined `cutoffTime` means no time restriction. Past dates
+ *  are always view-only for teachers, independent of this setting (enforced
+ *  in attendance.service.ts, not stored here). */
+export interface IAttendanceEditPolicy {
+  cutoffTime?: string;
+}
+
 /** Report-card / official-document branding — kept separate from the
  *  operational config above since it's edited far less often and only ever
  *  read (never used in scheduling/business logic). */
@@ -63,6 +71,7 @@ export interface ISchoolSettings extends Document {
   attendanceRules: IAttendanceRules;
   payrollConfig: IPayrollConfig;
   behaviorWindow: IBehaviorWindow;
+  attendanceEditPolicy: IAttendanceEditPolicy;
   reportCardBranding: IReportCardBranding;
   communicationSettings: ICommunicationSettings;
   updatedBy?: string;
@@ -132,6 +141,13 @@ const behaviorWindowSchema = new Schema<IBehaviorWindow>(
   { _id: false },
 );
 
+const attendanceEditPolicySchema = new Schema<IAttendanceEditPolicy>(
+  {
+    cutoffTime: { type: String },
+  },
+  { _id: false },
+);
+
 const reportCardBrandingSchema = new Schema<IReportCardBranding>(
   {
     motto:                  { type: String, trim: true },
@@ -170,6 +186,7 @@ const schoolSettingsSchema = new Schema<ISchoolSettings>(
     attendanceRules:   { type: attendanceRulesSchema, default: () => ({ ...DEFAULT_ATTENDANCE_RULES }) },
     payrollConfig:     { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
     behaviorWindow:    { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },
+    attendanceEditPolicy: { type: attendanceEditPolicySchema, default: () => ({}) },
     reportCardBranding:{ type: reportCardBrandingSchema, default: () => ({}) },
     communicationSettings: { type: communicationSettingsSchema, default: () => ({ ...DEFAULT_COMMUNICATION_SETTINGS }) },
     updatedBy:         { type: String },

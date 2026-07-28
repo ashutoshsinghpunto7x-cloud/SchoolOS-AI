@@ -30,6 +30,10 @@ export interface TeacherLoginStatus {
   employeeId: string;
   email?: string;
   hasLogin: boolean;
+  /** Admin-generated school login address (e.g. jsmith@fnic.com) — separate
+   *  from `email`, the teacher's own contact address. */
+  loginEmail?: string;
+  /** Legacy admin-issued username, from logins created before loginEmail existed. */
   username?: string;
 }
 
@@ -339,17 +343,19 @@ export const teacherService = {
 
   // ── Login Provisioning ──────────────────────────────────────────────────────
   // Teachers are imported from a spreadsheet and have no self-signup flow, so
-  // an admin issues them a login directly: a custom username (kept separate
-  // from email — see auth.service.login) plus a password the admin chooses
-  // and hands off to the teacher out of band.
+  // an admin issues them a login directly: a school login email the admin
+  // generates (e.g. jsmith@fnic.com — kept separate from the teacher's own
+  // contact `email`, which may not even be on file) plus a password the admin
+  // chooses and hands off to the teacher out of band. Older logins created
+  // before `loginEmail` existed are still linked via the legacy email match.
 
   async listLoginStatus(ctx: AuthContext): Promise<TeacherLoginStatus[]> {
     const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false })
-      .select('fullName employeeId email')
+      .select('fullName employeeId email loginEmail')
       .sort({ fullName: 1 })
-      .lean<{ _id: { toString(): string }; fullName: string; employeeId: string; email?: string }[]>();
+      .lean<{ _id: { toString(): string }; fullName: string; employeeId: string; email?: string; loginEmail?: string }[]>();
 
-    const emails = teachers.map((t) => t.email).filter((e): e is string => !!e);
+    const emails = teachers.flatMap((t) => [t.email, t.loginEmail]).filter((e): e is string => !!e);
     const users = emails.length
       ? await User.find({ schoolId: ctx.schoolId, role: 'teacher', email: { $in: emails } })
           .select('email username')
@@ -358,32 +364,33 @@ export const teacherService = {
     const userByEmail = new Map(users.map((u) => [u.email, u]));
 
     return teachers.map((t) => {
-      const linked = t.email ? userByEmail.get(t.email) : undefined;
+      const linked = (t.loginEmail ? userByEmail.get(t.loginEmail) : undefined)
+        ?? (t.email ? userByEmail.get(t.email) : undefined);
       return {
         teacherId: t._id.toString(),
         fullName: t.fullName,
         employeeId: t.employeeId,
         email: t.email,
         hasLogin: !!linked,
+        loginEmail: t.loginEmail,
         username: linked?.username,
       };
     });
   },
 
-  async createLogin(teacherId: string, rawInput: unknown, ctx: AuthContext): Promise<{ teacherId: string; username: string }> {
-    const { username, password } = createTeacherLoginSchema.parse(rawInput);
+  async createLogin(teacherId: string, rawInput: unknown, ctx: AuthContext): Promise<{ teacherId: string; loginEmail: string }> {
+    const { loginEmail, password } = createTeacherLoginSchema.parse(rawInput);
 
     const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
     if (!teacher) throw new NotFoundError('Teacher');
-    if (!teacher.email) {
-      throw new ValidationError("Add an email to this teacher's profile before creating a login.");
+    if (teacher.loginEmail) throw new ValidationError('This teacher already has login credentials.');
+    if (teacher.email) {
+      const legacyUser = await userRepository.findByEmail(teacher.email);
+      if (legacyUser) throw new ValidationError('This teacher already has login credentials.');
     }
 
-    const existingUser = await userRepository.findByEmail(teacher.email);
-    if (existingUser) throw new ValidationError('This teacher already has login credentials.');
-
-    const usernameTaken = await userRepository.findByUsername(username);
-    if (usernameTaken) throw new ValidationError('That username is already taken.');
+    const emailTaken = await userRepository.findByEmail(loginEmail);
+    if (emailTaken) throw new ValidationError('That login email is already in use.');
 
     const passwordHash = await bcrypt.hash(password, LOGIN_SALT_ROUNDS);
     const { firstName, lastName } = splitFullName(teacher.fullName);
@@ -391,13 +398,14 @@ export const teacherService = {
     await userRepository.create({
       firstName,
       lastName,
-      email: teacher.email,
-      username,
+      email: loginEmail,
       passwordHash,
       role: 'teacher',
       schoolId: ctx.schoolId,
       createdBy: ctx.userId,
     });
+
+    await Teacher.updateOne({ _id: teacherId, schoolId: ctx.schoolId }, { $set: { loginEmail } });
 
     auditService.log({
       userId: ctx.userId,
@@ -405,12 +413,12 @@ export const teacherService = {
       action: 'teacher.login_created',
       resource: 'teachers',
       resourceId: teacherId,
-      details: { username },
+      details: { loginEmail },
       ip: ctx.ip,
       schoolId: ctx.schoolId,
     });
 
-    return { teacherId, username };
+    return { teacherId, loginEmail };
   },
 
   // ── Notes ──────────────────────────────────────────────────────────────────

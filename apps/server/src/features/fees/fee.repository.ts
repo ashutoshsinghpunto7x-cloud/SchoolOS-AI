@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import { FeeRecord, IFeeRecord, FeeStatus, FeeHead } from './fee.model';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -68,8 +69,8 @@ export const feeRepository = {
     return record.save();
   },
 
-  async findById(id: string, schoolId: string): Promise<IFeeRecord | null> {
-    return FeeRecord.findOne({ _id: id, schoolId, isDeleted: false }).lean<IFeeRecord>();
+  async findById(id: string, schoolId: string, session?: ClientSession): Promise<IFeeRecord | null> {
+    return FeeRecord.findOne({ _id: id, schoolId, isDeleted: false }).session(session ?? null).lean<IFeeRecord>();
   },
 
   async findAll(schoolId: string, opts: FindFeesOptions = {}): Promise<PaginatedFees> {
@@ -240,8 +241,9 @@ export const feeRepository = {
     schoolId: string,
     paymentAmount: number,
     updatedBy: string,
+    session?: ClientSession,
   ): Promise<IFeeRecord | null> {
-    const record = await FeeRecord.findOne({ _id: id, schoolId, isDeleted: false });
+    const record = await FeeRecord.findOne({ _id: id, schoolId, isDeleted: false }).session(session ?? null);
     if (!record) return null;
 
     const newPaidAmount = record.paidAmount + paymentAmount;
@@ -259,7 +261,7 @@ export const feeRepository = {
     return FeeRecord.findOneAndUpdate(
       { _id: id, schoolId, isDeleted: false },
       { $set: { paidAmount: newPaidAmount, balance: newBalance, status: newStatus, updatedBy } },
-      { new: true },
+      { new: true, session },
     ).lean<IFeeRecord>();
   },
 

@@ -14,6 +14,13 @@ const start = async (): Promise<void> => {
     });
   });
 
+  // keepAliveTimeout must exceed the load balancer's idle timeout (Render's is
+  // ~60s) so Render never reuses a connection this process has already closed,
+  // which surfaces to clients as random connection-reset errors under load.
+  // headersTimeout must stay above keepAliveTimeout (Node requirement).
+  server.keepAliveTimeout = 65_000;
+  server.headersTimeout = 66_000;
+
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`${signal} received — shutting down gracefully`);
     server.close(async () => {

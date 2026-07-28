@@ -97,20 +97,31 @@ export const notificationService = {
     const skipped: string[] = [];
     const recipientUserIds: string[] = [];
 
+    // Batch both lookups — previously one findById + one findByEmail per
+    // teacherId (up to ~3 sequential round-trips each), fully serial.
+    const teachers = await teacherRepository.findByIds(input.teacherIds, ctx.schoolId);
+    const teachersById = new Map(teachers.map((t) => [String(t._id), t]));
+
+    const emails = teachers.map((t) => t.email).filter((e): e is string => Boolean(e));
+    const users = await userRepository.findByEmails(emails);
+    const usersByEmail = new Map(users.map((u) => [u.email.toLowerCase(), u]));
+
+    const toCreate: Parameters<typeof notificationRepository.createMany>[0] = [];
+
     for (const teacherId of input.teacherIds) {
-      const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
+      const teacher = teachersById.get(teacherId);
       if (!teacher?.email) {
         skipped.push(teacherId);
         continue;
       }
 
-      const user = await userRepository.findByEmail(teacher.email);
+      const user = usersByEmail.get(teacher.email.toLowerCase());
       if (!user || user.schoolId !== ctx.schoolId || user.role !== 'teacher') {
         skipped.push(teacherId);
         continue;
       }
 
-      await notificationRepository.create({
+      toCreate.push({
         recipientUserId: String(user._id),
         schoolId: ctx.schoolId,
         type: input.type,
@@ -122,6 +133,8 @@ export const notificationService = {
       });
       recipientUserIds.push(String(user._id));
     }
+
+    await notificationRepository.createMany(toCreate);
 
     // Real phone push, on top of the in-app record above — best-effort, and
     // a no-op wherever Firebase isn't configured or a teacher never granted

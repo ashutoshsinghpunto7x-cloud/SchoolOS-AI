@@ -5,8 +5,11 @@ export const webhookEndpointRepository = {
     return WebhookEndpoint.create(data);
   },
 
-  async findById(id: string): Promise<IWebhookEndpoint | null> {
-    return WebhookEndpoint.findById(id).lean<IWebhookEndpoint>();
+  // schoolId is part of the query itself (not just checked after the fact by
+  // the caller) so tenant isolation doesn't depend on every call site
+  // remembering to re-check it.
+  async findById(id: string, schoolId: string): Promise<IWebhookEndpoint | null> {
+    return WebhookEndpoint.findOne({ _id: id, schoolId }).lean<IWebhookEndpoint>();
   },
 
   async findBySchool(schoolId: string): Promise<IWebhookEndpoint[]> {

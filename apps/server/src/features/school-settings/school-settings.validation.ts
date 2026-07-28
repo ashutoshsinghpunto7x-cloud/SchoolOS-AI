@@ -25,6 +25,17 @@ export const updateBehaviorWindowSchema = z
     path: ['endTime'],
   });
 
+export const updateAttendanceEditPolicySchema = z.object({
+  cutoffTime: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v : undefined))
+    .refine((v) => v === undefined || /^([01]\d|2[0-3]):([0-5]\d)$/.test(v), {
+      message: 'Must be a 24-hour HH:mm time (e.g. 18:00), or omitted to disable the cutoff',
+    }),
+});
+
 export const updateReportCardBrandingSchema = z.object({
   motto:                 z.string().trim().max(200).optional(),
   address:               z.string().trim().max(300).optional(),
@@ -55,5 +66,6 @@ export const updateCommunicationSettingsSchema = z
 export type UpdateAttendanceRulesInput = z.infer<typeof updateAttendanceRulesSchema>;
 export type UpdatePayrollConfigInput   = z.infer<typeof updatePayrollConfigSchema>;
 export type UpdateBehaviorWindowInput  = z.infer<typeof updateBehaviorWindowSchema>;
+export type UpdateAttendanceEditPolicyInput = z.infer<typeof updateAttendanceEditPolicySchema>;
 export type UpdateReportCardBrandingInput = z.infer<typeof updateReportCardBrandingSchema>;
 export type UpdateCommunicationSettingsInput = z.infer<typeof updateCommunicationSettingsSchema>;

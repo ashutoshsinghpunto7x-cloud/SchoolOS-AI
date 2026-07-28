@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, IndianRupee, AlertCircle } from 'lucide-react';
 import type { FeeRecord, PaymentMode, RecordPaymentPayload } from '@schoolos/types';
 import { useRecordPayment } from '../hooks/useFees';
@@ -38,6 +38,11 @@ export function RecordPaymentModal({ fee, onClose, onSuccess }: Props) {
   // Keep amount in sync if balance changes (e.g., modal re-used)
   useEffect(() => { setAmount(String(fee.balance)); }, [fee._id, fee.balance]);
 
+  // Minted once per fee record this modal is open for — resubmitting (network
+  // retry, or a second click that slips through before the button disables)
+  // reuses the same key so the server treats it as a replay, not a new payment.
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), [fee._id]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLocalError('');
@@ -59,6 +64,7 @@ export function RecordPaymentModal({ fee, onClose, onSuccess }: Props) {
       paymentMode:     mode,
       referenceNumber: reference.trim() || undefined,
       remarks:         remarks.trim() || undefined,
+      idempotencyKey,
     };
 
     await recordPayment(payload);

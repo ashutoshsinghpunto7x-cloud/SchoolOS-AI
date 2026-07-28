@@ -39,8 +39,8 @@ export const webhookService = {
   },
 
   async getById(id: string, ctx: AuthContext): Promise<IWebhookEndpoint> {
-    const hook = await webhookEndpointRepository.findById(id);
-    if (!hook || hook.schoolId !== ctx.schoolId) throw new NotFoundError('Webhook not found');
+    const hook = await webhookEndpointRepository.findById(id, ctx.schoolId);
+    if (!hook) throw new NotFoundError('Webhook not found');
     return { ...hook, secretEncrypted: hook.secretEncrypted ? '[redacted]' : undefined } as IWebhookEndpoint;
   },
 
@@ -79,8 +79,8 @@ export const webhookService = {
 
   async update(id: string, rawInput: unknown, ctx: AuthContext): Promise<IWebhookEndpoint> {
     const input = updateWebhookSchema.parse(rawInput);
-    const existing = await webhookEndpointRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('Webhook not found');
+    const existing = await webhookEndpointRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Webhook not found');
 
     const updateData: Partial<IWebhookEndpoint> = {};
     if (input.name)            updateData.name = input.name;
@@ -110,8 +110,8 @@ export const webhookService = {
   },
 
   async delete(id: string, ctx: AuthContext): Promise<void> {
-    const existing = await webhookEndpointRepository.findById(id);
-    if (!existing || existing.schoolId !== ctx.schoolId) throw new NotFoundError('Webhook not found');
+    const existing = await webhookEndpointRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Webhook not found');
     await webhookEndpointRepository.delete(id);
     auditService.log({
       userId:          ctx.userId,
@@ -140,7 +140,7 @@ export const webhookService = {
     const delivery = await webhookDeliveryRepository.findById(deliveryId);
     if (!delivery) return;
 
-    const hook = await webhookEndpointRepository.findById(delivery.webhookId);
+    const hook = await webhookEndpointRepository.findById(delivery.webhookId, delivery.schoolId);
     if (!hook) return;
 
     const maxAttempts = hook.retryCount + 1;
@@ -208,8 +208,8 @@ export const webhookService = {
   },
 
   async getDeliveries(webhookId: string, ctx: AuthContext, page = 1, limit = 20) {
-    const hook = await webhookEndpointRepository.findById(webhookId);
-    if (!hook || hook.schoolId !== ctx.schoolId) throw new NotFoundError('Webhook not found');
+    const hook = await webhookEndpointRepository.findById(webhookId, ctx.schoolId);
+    if (!hook) throw new NotFoundError('Webhook not found');
     return webhookDeliveryRepository.findByWebhook(webhookId, page, limit);
   },
 

@@ -7,6 +7,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../hooks/useSchoolSettings';
 import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
 import { BehaviorSettingsPanel } from '../components/BehaviorSettingsPanel';
+import { AttendanceEditCutoffPanel } from '../components/AttendanceEditCutoffPanel';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
 import { NotificationSoundToggle } from '@/features/notifications/components/NotificationSoundToggle';
@@ -140,6 +141,8 @@ export function SchoolSettingsPage() {
       {user?.role === 'admin' && <AttendanceRulesPanel />}
 
       {(user?.role === 'admin' || user?.role === 'principal') && <BehaviorSettingsPanel />}
+
+      {(user?.role === 'admin' || user?.role === 'principal') && <AttendanceEditCutoffPanel />}
 
       {user?.role === 'principal' && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mt-5 overflow-hidden divide-y divide-gray-50">

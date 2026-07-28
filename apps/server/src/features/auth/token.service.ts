@@ -36,10 +36,13 @@ export const tokenService = {
   },
 
   verifyAccessToken(token: string): AccessTokenPayload {
-    return jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload;
+    // Pin the algorithm explicitly: both secrets here are symmetric (HMAC), so an attacker who got
+    // hold of any public key (e.g. from a future RS256/JWKS integration) couldn't replay an
+    // alg-confusion attack against this HMAC-only secret.
+    return jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: ['HS256'] }) as AccessTokenPayload;
   },
 
   verifyRefreshToken(token: string): DecodedRefreshToken {
-    return jwt.verify(token, env.JWT_REFRESH_SECRET) as DecodedRefreshToken;
+    return jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as DecodedRefreshToken;
   },
 };

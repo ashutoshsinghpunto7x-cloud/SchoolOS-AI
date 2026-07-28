@@ -56,13 +56,16 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
+  const requestContext = {
+    path: req.originalUrl, method: req.method,
+    userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
+    requestBody: req.body as Record<string, unknown> | undefined,
+    headers: req.headers as Record<string, unknown>,
+  };
+
   if (err instanceof ZodError) {
     const message = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
-    recordErrorEvent({
-      statusCode: 400, code: 'VALIDATION_ERROR', message,
-      path: req.originalUrl, method: req.method,
-      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
-    });
+    recordErrorEvent({ statusCode: 400, code: 'VALIDATION_ERROR', message, ...requestContext });
     sendError(res, message, 400, 'VALIDATION_ERROR');
     return;
   }
@@ -71,12 +74,7 @@ export const errorHandler = (
     const keyValue = (err as { keyValue?: Record<string, unknown> }).keyValue ?? {};
     const field = Object.keys(keyValue)[0] ?? 'field';
     const message = `${field} already exists`;
-    recordErrorEvent({
-      statusCode: 409, code: 'DUPLICATE_KEY', message,
-      path: req.originalUrl, method: req.method,
-      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
-      stack: err.stack,
-    });
+    recordErrorEvent({ statusCode: 409, code: 'DUPLICATE_KEY', message, stack: err.stack, ...requestContext });
     sendError(res, message, 409, 'DUPLICATE_KEY');
     return;
   }
@@ -87,11 +85,7 @@ export const errorHandler = (
       : err.code === 'LIMIT_UNEXPECTED_FILE'
       ? 'Only one file can be uploaded at a time.'
       : 'Could not upload that file.';
-    recordErrorEvent({
-      statusCode: 400, code: 'VALIDATION_ERROR', message,
-      path: req.originalUrl, method: req.method,
-      userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
-    });
+    recordErrorEvent({ statusCode: 400, code: 'VALIDATION_ERROR', message, ...requestContext });
     sendError(res, message, 400, 'VALIDATION_ERROR');
     return;
   }
@@ -120,9 +114,8 @@ export const errorHandler = (
     } else {
       recordErrorEvent({
         statusCode: err.statusCode, code: err.code, message: err.message,
-        path: req.originalUrl, method: req.method,
-        userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
         stack: err.statusCode >= 500 ? err.stack : undefined,
+        ...requestContext,
       });
     }
 
@@ -138,9 +131,8 @@ export const errorHandler = (
   });
   recordErrorEvent({
     statusCode: 500, code: 'INTERNAL_ERROR', message: err.message,
-    path: req.originalUrl, method: req.method,
-    userId: req.user?.userId, role: req.user?.role, schoolId: req.user?.schoolId,
     stack: err.stack,
+    ...requestContext,
   });
   sendError(res, 'Internal server error', 500, 'INTERNAL_ERROR');
 };

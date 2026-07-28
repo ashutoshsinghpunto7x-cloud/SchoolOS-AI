@@ -136,14 +136,25 @@ export const payrollService = {
     const succeeded: string[] = [];
     const failed: { employeeId: string; error: string }[] = [];
 
-    for (const employee of employees) {
-      try {
-        await generateForEmployeeCore(employee, data.month, data.year, ctx);
-        succeeded.push(employee.employeeId);
-      } catch (err) {
-        failed.push({ employeeId: employee.employeeId, error: err instanceof Error ? err.message : 'unknown error' });
+    // Bounded-concurrency worker pool instead of one-at-a-time — each employee
+    // still does several sequential DB round-trips internally
+    // (generateForEmployeeCore), so a school with 50+ staff previously meant
+    // 50+ fully serial runs of that chain. Concurrency is capped so a big
+    // school's payroll run doesn't monopolize the connection pool.
+    const CONCURRENCY = 8;
+    let cursor = 0;
+    async function worker(): Promise<void> {
+      while (cursor < employees.length) {
+        const employee = employees[cursor++];
+        try {
+          await generateForEmployeeCore(employee, data.month, data.year, ctx);
+          succeeded.push(employee.employeeId);
+        } catch (err) {
+          failed.push({ employeeId: employee.employeeId, error: err instanceof Error ? err.message : 'unknown error' });
+        }
       }
     }
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, employees.length) }, worker));
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,

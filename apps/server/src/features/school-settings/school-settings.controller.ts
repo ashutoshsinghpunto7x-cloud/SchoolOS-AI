@@ -55,6 +55,14 @@ export const schoolSettingsController = {
     } catch (err) { next(err); }
   },
 
+  async updateAttendanceEditPolicy(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateAttendanceEditPolicy(req.body, ctx);
+      sendSuccess(res, settings, 'Attendance edit cutoff updated');
+    } catch (err) { next(err); }
+  },
+
   async updateReportCardBranding(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

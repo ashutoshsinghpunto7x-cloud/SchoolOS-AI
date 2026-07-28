@@ -7,10 +7,14 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 60_000,
+  // Required so the browser attaches the httpOnly refresh-token cookie (and
+  // sends/receives it) on cross-origin requests to the API.
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
 
 // Fire-and-forget ping to start waking a cold-started free-tier server the
 // moment the login page mounts, so the real login request (sent once the
@@ -50,7 +54,6 @@ export const resetAuthRefreshState = () => {
 
 const clearAuthAndRedirect = () => {
   sessionStorage.removeItem('accessToken');
-  sessionStorage.removeItem('refreshToken');
   window.location.href = '/login';
 };
 
@@ -76,12 +79,6 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refreshToken = sessionStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      clearAuthAndRedirect();
-      return Promise.reject(error);
-    }
-
     originalRequest._retry = true;
 
     if (isRefreshing) {
@@ -98,12 +95,15 @@ apiClient.interceptors.response.use(
 
     try {
       const res = await axios.post<{
-        data: { accessToken: string; refreshToken: string };
-      }>(`${BASE_URL}/auth/refresh`, { refreshToken });
+        data: { accessToken: string };
+      }>(`${BASE_URL}/auth/refresh`, null, {
+        withCredentials: true,
+        // Presence-only CSRF defense — see server/src/middlewares/csrf.ts.
+        headers: { 'X-CSRF-Token': '1' },
+      });
 
-      const { accessToken, refreshToken: newRefreshToken } = res.data.data;
+      const { accessToken } = res.data.data;
       sessionStorage.setItem('accessToken', accessToken);
-      sessionStorage.setItem('refreshToken', newRefreshToken);
 
       pendingRequests.forEach(({ resolve }) => resolve(accessToken));
       pendingRequests = [];

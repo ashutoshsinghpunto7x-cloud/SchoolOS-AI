@@ -13,6 +13,7 @@ router.get('/entry-table',                                    marksController.ge
 router.get('/summary',                                        marksController.getSummary);
 router.post('/extract/image',     aiImageUploadMiddleware,    marksController.extractFromImage);
 router.post('/extract/voice',     audioUploadMiddleware,      marksController.extractFromVoice);
+router.get('/extract/jobs/:id',                               marksController.getExtractionJob);
 router.post('/extract/transcript',                            marksController.extractFromTranscript);
 router.post('/bulk',                                          marksController.bulkUpsert);
 router.post('/submit',                                        marksController.submitForReview);

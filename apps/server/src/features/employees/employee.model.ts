@@ -138,6 +138,10 @@ employeeSchema.index({ schoolId: 1, isDeleted: 1, department: 1 });
 employeeSchema.index({ phone: 1 });
 employeeSchema.index({ schoolId: 1, email: 1 });
 employeeSchema.index({ 'qr.token': 1 });
+// Join keys linking an Employee to its User login / Teacher profile — were
+// unindexed plain strings.
+employeeSchema.index({ teacherId: 1 }, { sparse: true });
+employeeSchema.index({ userId: 1 }, { sparse: true });
 employeeSchema.index({
   fullName: 'text',
   employeeId: 'text',

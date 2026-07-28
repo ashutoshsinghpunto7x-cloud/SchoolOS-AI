@@ -78,6 +78,13 @@ export const opsController = {
     } catch (err) { next(err); }
   },
 
+  async errorsByModule(_req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = await opsService.getErrorsByModule();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
   async database(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = await opsService.getDatabase();

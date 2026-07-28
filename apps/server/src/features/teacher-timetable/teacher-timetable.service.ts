@@ -44,6 +44,18 @@ async function syncClassTimetables(
   const newByKey = new Map(newEntries.map((e) => [key(e), e]));
   const allKeys = new Set([...oldByKey.keys(), ...newByKey.keys()]);
 
+  // Most of a teacher's changed slots land on the same handful of
+  // class+sections, so cache each class timetable lookup within this sync
+  // call instead of re-fetching it once per changed slot.
+  const classTtCache = new Map<string, Awaited<ReturnType<typeof timetableRepository.findByClassSection>>>();
+  async function getClassTt(cls: string, section: string) {
+    const cacheKey = `${cls}::${section}`;
+    if (!classTtCache.has(cacheKey)) {
+      classTtCache.set(cacheKey, await timetableRepository.findByClassSection(schoolId, cls, section, academicYear));
+    }
+    return classTtCache.get(cacheKey) ?? null;
+  }
+
   for (const k of allKeys) {
     const before = oldByKey.get(k);
     const after = newByKey.get(k);
@@ -57,7 +69,7 @@ async function syncClassTimetables(
       // but only if it's still our own synced entry, so a reassignment made directly
       // on the class timetable is never silently clobbered.
       if (before?.class && before.section && (before.class !== after?.class || before.section !== after?.section)) {
-        const oldTt = await timetableRepository.findByClassSection(schoolId, before.class, before.section, academicYear);
+        const oldTt = await getClassTt(before.class, before.section);
         if (oldTt) {
           const oldEntry = oldTt.entries.find((e) => e.dayOfWeek === before.dayOfWeek && e.slotId === before.slotId);
           if (oldEntry?.teacherId === teacherId) {
@@ -68,11 +80,12 @@ async function syncClassTimetables(
       }
       // Push to the new/current class's timetable.
       if (after?.class && after.section) {
-        let classTt = await timetableRepository.findByClassSection(schoolId, after.class, after.section, academicYear);
+        let classTt = await getClassTt(after.class, after.section);
         if (!classTt) {
           classTt = await timetableRepository.create({
             schoolId, class: after.class, section: after.section, academicYear, createdBy: updatedBy,
           });
+          classTtCache.set(`${after.class}::${after.section}`, classTt);
         }
         const classTtId = String((classTt as unknown as { _id: unknown })._id);
         await timetableRepository.upsertEntry(classTtId, schoolId, {

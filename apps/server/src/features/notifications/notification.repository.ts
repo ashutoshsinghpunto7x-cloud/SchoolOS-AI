@@ -17,6 +17,12 @@ export const notificationRepository = {
     return Notification.create(data);
   },
 
+  /** Batch insert — one round-trip instead of one-per-recipient. */
+  async createMany(data: CreateInput[]): Promise<void> {
+    if (data.length === 0) return;
+    await Notification.insertMany(data);
+  },
+
   async findForRecipient(
     userId: string,
     schoolId: string,

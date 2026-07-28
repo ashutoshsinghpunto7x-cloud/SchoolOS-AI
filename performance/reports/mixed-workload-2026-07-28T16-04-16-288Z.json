@@ -1,0 +1,1087 @@
+{
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)",
+      "p(99)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 19808.4336
+  },
+  "metrics": {
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "fails": 3,
+        "rate": 0.998693948628646,
+        "passes": 2294
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "max": 6.672,
+        "p(90)": 2.0144,
+        "p(95)": 2.2595,
+        "p(99)": 4.1398,
+        "avg": 0.294715716272601,
+        "min": 0
+      }
+    },
+    "data_received": {
+      "contains": "data",
+      "values": {
+        "count": 5047949,
+        "rate": 254838.37348956254
+      },
+      "type": "counter"
+    },
+    "http_req_blocked": {
+      "values": {
+        "avg": 1.4807692628650913,
+        "min": 0,
+        "med": 0,
+        "max": 22.359,
+        "p(90)": 3.5539400000000025,
+        "p(95)": 13.6628,
+        "p(99)": 19.75182400000001
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "group_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 8169.751184000001,
+        "avg": 1322.6480444771714,
+        "min": 0,
+        "med": 757.7685,
+        "max": 8449.939,
+        "p(90)": 3151.29638,
+        "p(95)": 4487.504500000003
+      }
+    },
+    "iterations": {
+      "contains": "default",
+      "values": {
+        "count": 100,
+        "rate": 5.048354757339318
+      },
+      "type": "counter"
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 441234,
+        "rate": 22275.057629998566
+      }
+    },
+    "http_req_duration": {
+      "thresholds": {
+        "p(99)<1500": {
+          "ok": false
+        },
+        "avg<500": {
+          "ok": false
+        },
+        "p(95)<1000": {
+          "ok": false
+        }
+      },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 9396.3104,
+        "p(90)": 5020.960020000001,
+        "p(95)": 7913.11305,
+        "p(99)": 8967.659364000001,
+        "avg": 2018.5321688456188,
+        "min": 9.9825,
+        "med": 1130.7745
+      }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0.0013908205841446453,
+        "passes": 1,
+        "fails": 718
+      },
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "values": {
+        "p(90)": 5022.897530000001,
+        "p(95)": 7914.013875,
+        "p(99)": 8967.701616,
+        "avg": 2018.5981710306407,
+        "min": 9.9825,
+        "med": 1127.84865,
+        "max": 9396.3104
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "workflow_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 19512.75,
+        "p(99)": 19757.38,
+        "avg": 15917.61,
+        "min": 6744,
+        "med": 16746.5,
+        "max": 19795,
+        "p(90)": 18892.2
+      }
+    },
+    "db_write_inconsistency_detected": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 0
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "duplicate_fee_payment_detected": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 19
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "missing_attendance": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 60
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "vus_max": {
+      "contains": "default",
+      "values": {
+        "max": 100,
+        "value": 100,
+        "min": 95
+      },
+      "type": "gauge"
+    },
+    "partial_attendance_save": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 60
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 16746.5845,
+        "max": 19794.7708,
+        "p(90)": 18891.443740000002,
+        "p(95)": 19512.757260000002,
+        "p(99)": 19757.188519,
+        "avg": 15917.889782999993,
+        "min": 6743.412
+      }
+    },
+    "http_req_waiting": {
+      "contains": "time",
+      "values": {
+        "p(90)": 5020.960020000001,
+        "p(95)": 7913.11305,
+        "p(99)": 8966.96802,
+        "avg": 2017.533873991656,
+        "min": 9.9825,
+        "med": 1130.7745,
+        "max": 9392.9753
+      },
+      "type": "trend"
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.9328913769123789,
+        "min": 0,
+        "med": 0.4132,
+        "max": 8.428,
+        "p(90)": 2.772200000000002,
+        "p(95)": 4.499460000000001,
+        "p(99)": 7.02888400000003
+      }
+    },
+    "race_condition_detected": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "passes": 0,
+        "fails": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.06540347705146035,
+        "min": 0,
+        "med": 0,
+        "max": 4.1398,
+        "p(90)": 0,
+        "p(95)": 0.5437,
+        "p(99)": 2.004412000000002
+      }
+    },
+    "http_429_count": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "http_500_count": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "duplicate_attendance_detected": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 60
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "login_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 5538.591877,
+        "min": 1382.2932,
+        "med": 5852.155199999999,
+        "max": 9396.3104,
+        "p(90)": 8953.40199,
+        "p(95)": 9127.85039,
+        "p(99)": 9388.069739
+      },
+      "thresholds": {
+        "p(95)<1000": {
+          "ok": false
+        }
+      }
+    },
+    "teacher_workflow_success": {
+      "contains": "default",
+      "values": {
+        "rate": 0.9666666666666667,
+        "passes": 58,
+        "fails": 2
+      },
+      "thresholds": {
+        "rate==1": {
+          "ok": false
+        }
+      },
+      "type": "rate"
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 719,
+        "rate": 36.297670705269695
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "min": 0,
+        "max": 100,
+        "value": 10
+      }
+    }
+  },
+  "root_group": {
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+      {
+        "id": "02a4f0c0b911109a7ca3012f181b0be7",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /employees: status is 200/201",
+              "path": "::admin: manage teachers/staff::GET /employees: status is 200/201",
+              "id": "f95a0bcb5953ce2c38bc96aa2e5fb9d4",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "name": "GET /employees: no 5xx",
+              "path": "::admin: manage teachers/staff::GET /employees: no 5xx",
+              "id": "eb1b48cb210cd8dff884227d2804b1d9",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "name": "GET /employees: not rate-limited",
+              "path": "::admin: manage teachers/staff::GET /employees: not rate-limited",
+              "id": "29256eb85c9de3b8140ad7af8af52e2b",
+              "passes": 10,
+              "fails": 0
+            }
+          ],
+        "name": "admin: manage teachers/staff",
+        "path": "::admin: manage teachers/staff"
+      },
+      {
+        "name": "receptionist: admissions pipeline",
+        "path": "::receptionist: admissions pipeline",
+        "id": "c6faf6aaa87dc3002c437bf2602c5fb7",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /enquiries: status is 200/201",
+              "path": "::receptionist: admissions pipeline::GET /enquiries: status is 200/201",
+              "id": "0ed3a6d840378d657d7a91e779c7ec3b",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "name": "GET /enquiries: no 5xx",
+              "path": "::receptionist: admissions pipeline::GET /enquiries: no 5xx",
+              "id": "904e7d4ad752eacba4e69a9317665d39",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "path": "::receptionist: admissions pipeline::GET /enquiries: not rate-limited",
+              "id": "07ca5b3ff46971c29657e8ff5613414e",
+              "passes": 20,
+              "fails": 0,
+              "name": "GET /enquiries: not rate-limited"
+            }
+          ]
+      },
+      {
+        "id": "cd7847f806c0c3dabc9729083cb4d20b",
+        "groups": [],
+        "checks": [
+            {
+              "path": "::principal: dashboard::GET /principal/dashboard: status is 200/201",
+              "id": "7997018489524d570fac737fbd8f0dc6",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /principal/dashboard: status is 200/201"
+            },
+            {
+              "name": "GET /principal/dashboard: no 5xx",
+              "path": "::principal: dashboard::GET /principal/dashboard: no 5xx",
+              "id": "14238093d77ddbebb4570dfe913e6bde",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "path": "::principal: dashboard::GET /principal/dashboard: not rate-limited",
+              "id": "5ad8131aba63374f38bf80ea782a588d",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /principal/dashboard: not rate-limited"
+            }
+          ],
+        "name": "principal: dashboard",
+        "path": "::principal: dashboard"
+      },
+      {
+        "path": "::teacher-full: dashboard + workspace",
+        "id": "ef86a16046579b2c523403ce904de5c8",
+        "groups": [],
+        "checks": [
+            {
+              "path": "::teacher-full: dashboard + workspace::GET /teacher-workspace/me: status is 200/201",
+              "id": "e0d23e54273f3086e008f809cff67725",
+              "passes": 60,
+              "fails": 0,
+              "name": "GET /teacher-workspace/me: status is 200/201"
+            },
+            {
+              "path": "::teacher-full: dashboard + workspace::GET /teacher-workspace/me: no 5xx",
+              "id": "8b89709d7e568c4d5bd5603797c50a2b",
+              "passes": 60,
+              "fails": 0,
+              "name": "GET /teacher-workspace/me: no 5xx"
+            },
+            {
+              "passes": 60,
+              "fails": 0,
+              "name": "GET /teacher-workspace/me: not rate-limited",
+              "path": "::teacher-full: dashboard + workspace::GET /teacher-workspace/me: not rate-limited",
+              "id": "e92f035da7a30a73320b18913a5a29eb"
+            }
+          ],
+        "name": "teacher-full: dashboard + workspace"
+      },
+      {
+        "name": "admin: manage students",
+        "path": "::admin: manage students",
+        "id": "f29e23c86778549b806d627df23771de",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "GET /students: status is 200/201",
+              "path": "::admin: manage students::GET /students: status is 200/201",
+              "id": "ed894488e4fdbb3488fa52599a5c56db",
+              "passes": 10
+            },
+            {
+              "path": "::admin: manage students::GET /students: no 5xx",
+              "id": "5d9d8eaed02854405f2ef8cb92dc14c4",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /students: no 5xx"
+            },
+            {
+              "id": "60f1c568bd9e3b90c76ca7494613d7fa",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /students: not rate-limited",
+              "path": "::admin: manage students::GET /students: not rate-limited"
+            }
+          ]
+      },
+      {
+        "name": "receptionist: search student",
+        "path": "::receptionist: search student",
+        "id": "b76065478f047bec486a41c0cecb60ca",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /students/search: status is 200/201",
+              "path": "::receptionist: search student::GET /students/search: status is 200/201",
+              "id": "34e2846de2be92bb6111f3c03a9fa338",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "GET /students/search: no 5xx",
+              "path": "::receptionist: search student::GET /students/search: no 5xx",
+              "id": "d05938f782af4b12276321ed0a3f6eaa",
+              "passes": 20
+            },
+            {
+              "passes": 20,
+              "fails": 0,
+              "name": "GET /students/search: not rate-limited",
+              "path": "::receptionist: search student::GET /students/search: not rate-limited",
+              "id": "88051206c1620a6b461aeb8aa59ddab9"
+            }
+          ]
+      },
+      {
+        "path": "::teacher-full: assigned classes",
+        "id": "6552f025f6121b32b429dc45eb1a9d25",
+        "groups": [],
+        "checks": [],
+        "name": "teacher-full: assigned classes"
+      },
+      {
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "GET /attendance/class/:class/:section: status is 200/201",
+              "path": "::teacher-full: attendance workspace::GET /attendance/class/:class/:section: status is 200/201",
+              "id": "3d9d53c3b9e806198a02d7d1aafbb0c0",
+              "passes": 60
+            },
+            {
+              "name": "GET /attendance/class/:class/:section: no 5xx",
+              "path": "::teacher-full: attendance workspace::GET /attendance/class/:class/:section: no 5xx",
+              "id": "4d0b877e2bff791a5498419d5f0cfd4e",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "name": "GET /attendance/class/:class/:section: not rate-limited",
+              "path": "::teacher-full: attendance workspace::GET /attendance/class/:class/:section: not rate-limited",
+              "id": "a47f83cbf93dd8a4193d795a8c97b1e7",
+              "passes": 60,
+              "fails": 0
+            }
+          ],
+        "name": "teacher-full: attendance workspace",
+        "path": "::teacher-full: attendance workspace",
+        "id": "fd88a73acedd8e7a70bf5e801a6c1390"
+      },
+      {
+        "name": "principal: attendance analytics",
+        "path": "::principal: attendance analytics",
+        "id": "36dc496d840766757b045d41378a08f8",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /reports/analytics/attendance: status is 200/201",
+              "path": "::principal: attendance analytics::GET /reports/analytics/attendance: status is 200/201",
+              "id": "5893ec344bbc311e034395ef217ec38d",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "path": "::principal: attendance analytics::GET /reports/analytics/attendance: no 5xx",
+              "id": "d973908bd055eb055d258f2c057cefa4",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/attendance: no 5xx"
+            },
+            {
+              "name": "GET /reports/analytics/attendance: not rate-limited",
+              "path": "::principal: attendance analytics::GET /reports/analytics/attendance: not rate-limited",
+              "id": "162db0a39517535d1c238c14b2ed4e03",
+              "passes": 10,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "receptionist: create admission (enquiry)",
+        "path": "::receptionist: create admission (enquiry)",
+        "id": "604ff44bc9ffe5ec0754500692ff43f8",
+        "groups": [],
+        "checks": [
+            {
+              "passes": 20,
+              "fails": 0,
+              "name": "POST /enquiries: status is 200/201",
+              "path": "::receptionist: create admission (enquiry)::POST /enquiries: status is 200/201",
+              "id": "aaf536c14f20173f259a795c39306c17"
+            },
+            {
+              "name": "POST /enquiries: no 5xx",
+              "path": "::receptionist: create admission (enquiry)::POST /enquiries: no 5xx",
+              "id": "f99c062ff0f75ed9610a05e8d01a4b94",
+              "passes": 20,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "POST /enquiries: not rate-limited",
+              "path": "::receptionist: create admission (enquiry)::POST /enquiries: not rate-limited",
+              "id": "8267d2adac75c7e6a2e51afe8bf623db",
+              "passes": 20
+            }
+          ]
+      },
+      {
+        "name": "admin: fee reports",
+        "path": "::admin: fee reports",
+        "id": "c47ead216771334b767b248cf2d53ef2",
+        "groups": [],
+        "checks": [
+            {
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/fees: status is 200/201",
+              "path": "::admin: fee reports::GET /reports/analytics/fees: status is 200/201",
+              "id": "50c242d970960e85124c5229d2dba3d9"
+            },
+            {
+              "path": "::admin: fee reports::GET /reports/analytics/fees: no 5xx",
+              "id": "9f413711f7eb0d5daa02148bf6ba30e3",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/fees: no 5xx"
+            },
+            {
+              "name": "GET /reports/analytics/fees: not rate-limited",
+              "path": "::admin: fee reports::GET /reports/analytics/fees: not rate-limited",
+              "id": "37bea96e824b37ef704a3849a9e07892",
+              "passes": 10,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "id": "d81035f2aca5b8aa039cd0e7c36aca0b",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /students (roster): status is 200/201",
+              "path": "::teacher-full: load student list::GET /students (roster): status is 200/201",
+              "id": "4acea5a7b676aa3b18bf30089ff04838",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "path": "::teacher-full: load student list::GET /students (roster): no 5xx",
+              "id": "036e9527b5b1769a8fb2ca184f906f5c",
+              "passes": 60,
+              "fails": 0,
+              "name": "GET /students (roster): no 5xx"
+            },
+            {
+              "name": "GET /students (roster): not rate-limited",
+              "path": "::teacher-full: load student list::GET /students (roster): not rate-limited",
+              "id": "12edbeb0f3689fe537359be665c760aa",
+              "passes": 60,
+              "fails": 0
+            }
+          ],
+        "name": "teacher-full: load student list",
+        "path": "::teacher-full: load student list"
+      },
+      {
+        "name": "principal: fee analytics",
+        "path": "::principal: fee analytics",
+        "id": "7fe965ea17df299813df548381bd565c",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /reports/analytics/fees: status is 200/201",
+              "path": "::principal: fee analytics::GET /reports/analytics/fees: status is 200/201",
+              "id": "2ebdee659763705629c1c5c09b87fd88",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "id": "abe51ed5b990f1669efede4c55d60d1a",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/fees: no 5xx",
+              "path": "::principal: fee analytics::GET /reports/analytics/fees: no 5xx"
+            },
+            {
+              "name": "GET /reports/analytics/fees: not rate-limited",
+              "path": "::principal: fee analytics::GET /reports/analytics/fees: not rate-limited",
+              "id": "df19ad51801b34eda03aa5e6b27bc208",
+              "passes": 10,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "admin: attendance reports",
+        "path": "::admin: attendance reports",
+        "id": "f33f6f1c73c68c30ee495d43540ab49d",
+        "groups": [],
+        "checks": [
+            {
+              "path": "::admin: attendance reports::GET /reports/analytics/attendance: status is 200/201",
+              "id": "f719b848a1aed01ace8e9e5171faaab1",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/attendance: status is 200/201"
+            },
+            {
+              "id": "8377fecff0ba4bd0933b71bb0bc51ce5",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /reports/analytics/attendance: no 5xx",
+              "path": "::admin: attendance reports::GET /reports/analytics/attendance: no 5xx"
+            },
+            {
+              "name": "GET /reports/analytics/attendance: not rate-limited",
+              "path": "::admin: attendance reports::GET /reports/analytics/attendance: not rate-limited",
+              "id": "8f2b60b8423057ac9bf7160337f1b8e5",
+              "passes": 10,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "admin: settings",
+        "path": "::admin: settings",
+        "id": "1024abf558d5731d1399edc3af368a31",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /school-settings: status is 200/201",
+              "path": "::admin: settings::GET /school-settings: status is 200/201",
+              "id": "9a225165b7661af5626ba9d4f85e0ac3",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /school-settings: no 5xx",
+              "path": "::admin: settings::GET /school-settings: no 5xx",
+              "id": "9854303ec5c998c6e59ad97ffa077d3a"
+            },
+            {
+              "id": "bdd9032bca4078c225995a0854914b88",
+              "passes": 10,
+              "fails": 0,
+              "name": "GET /school-settings: not rate-limited",
+              "path": "::admin: settings::GET /school-settings: not rate-limited"
+            }
+          ]
+      },
+      {
+        "name": "principal: teachers summary report",
+        "path": "::principal: teachers summary report",
+        "id": "00de36f795082fff69ff55221a7de1cd",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /principal/teachers-summary: status is 200/201",
+              "path": "::principal: teachers summary report::GET /principal/teachers-summary: status is 200/201",
+              "id": "29a16459f0f7fb6dda6f3de176884ed9",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "name": "GET /principal/teachers-summary: no 5xx",
+              "path": "::principal: teachers summary report::GET /principal/teachers-summary: no 5xx",
+              "id": "cb6a6b16a0bcbc5fa695fccd8e679daa",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "name": "GET /principal/teachers-summary: not rate-limited",
+              "path": "::principal: teachers summary report::GET /principal/teachers-summary: not rate-limited",
+              "id": "c811164f7a431a91204d180f116bfb47",
+              "passes": 10,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "groups": [],
+        "checks": [
+            {
+              "id": "6be8685f729dd59e6f7a8661be85b32f",
+              "passes": 60,
+              "fails": 0,
+              "name": "POST /attendance/bulk: status is 200/201",
+              "path": "::teacher-full: mark + save attendance::POST /attendance/bulk: status is 200/201"
+            },
+            {
+              "fails": 0,
+              "name": "POST /attendance/bulk: no 5xx",
+              "path": "::teacher-full: mark + save attendance::POST /attendance/bulk: no 5xx",
+              "id": "859a5769c17c1eb053798aed43600250",
+              "passes": 60
+            },
+            {
+              "fails": 0,
+              "name": "POST /attendance/bulk: not rate-limited",
+              "path": "::teacher-full: mark + save attendance::POST /attendance/bulk: not rate-limited",
+              "id": "1881fda3f97f9b93f3eb136a4cef8982",
+              "passes": 60
+            }
+          ],
+        "name": "teacher-full: mark + save attendance",
+        "path": "::teacher-full: mark + save attendance",
+        "id": "f1604d72e9274a58889f191ca7c594f4"
+      },
+      {
+        "id": "4c95fdcd745c44580c503cf79ede623c",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "GET /students/search: status is 200/201",
+              "path": "::principal: search::GET /students/search: status is 200/201",
+              "id": "14f22eb5ec59d23c3afdb47a1356ecbb",
+              "passes": 10
+            },
+            {
+              "name": "GET /students/search: no 5xx",
+              "path": "::principal: search::GET /students/search: no 5xx",
+              "id": "948a019eef65b5c05fccac1ffea5c46a",
+              "passes": 10,
+              "fails": 0
+            },
+            {
+              "name": "GET /students/search: not rate-limited",
+              "path": "::principal: search::GET /students/search: not rate-limited",
+              "id": "5f8e7f8bbb4daae74108c8bb7253d7fb",
+              "passes": 10,
+              "fails": 0
+            }
+          ],
+        "name": "principal: search",
+        "path": "::principal: search"
+      },
+      {
+        "id": "fde3ba923204ea0f683930ecc004281b",
+        "groups": [],
+        "checks": [
+            {
+              "name": "GET /attendance/class/:class/:section (verify): status is 200/201",
+              "path": "::teacher-full: verify attendance saved::GET /attendance/class/:class/:section (verify): status is 200/201",
+              "id": "b75a54fcce3365d8a66a54a5a82577de",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "name": "GET /attendance/class/:class/:section (verify): no 5xx",
+              "path": "::teacher-full: verify attendance saved::GET /attendance/class/:class/:section (verify): no 5xx",
+              "id": "d79fc9856cb0b215cbe4765726e9af78",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "passes": 60,
+              "fails": 0,
+              "name": "GET /attendance/class/:class/:section (verify): not rate-limited",
+              "path": "::teacher-full: verify attendance saved::GET /attendance/class/:class/:section (verify): not rate-limited",
+              "id": "85e928fd228bd21652bafb0b0b90db4c"
+            },
+            {
+              "name": "verify: no duplicate attendance rows",
+              "path": "::teacher-full: verify attendance saved::verify: no duplicate attendance rows",
+              "id": "a052979d652298b4a1fc4fe596d3c78a",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "name": "verify: no missing attendance rows",
+              "path": "::teacher-full: verify attendance saved::verify: no missing attendance rows",
+              "id": "0be2b3cd85ea1a8728fc7039499930f8",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "id": "f4c469a1922b0121c5f8c142177ab43e",
+              "passes": 60,
+              "fails": 0,
+              "name": "verify: no partial save",
+              "path": "::teacher-full: verify attendance saved::verify: no partial save"
+            },
+            {
+              "passes": 58,
+              "fails": 2,
+              "name": "verify: saved statuses match what was submitted",
+              "path": "::teacher-full: verify attendance saved::verify: saved statuses match what was submitted",
+              "id": "f21a4d3bbed73f4ddf48f22f1ea30cd8"
+            }
+          ],
+        "name": "teacher-full: verify attendance saved",
+        "path": "::teacher-full: verify attendance saved"
+      },
+      {
+        "groups": [],
+        "checks": [
+            {
+              "fails": 1,
+              "name": "POST /fees/payment: status is 200/201",
+              "path": "::receptionist: collect fee::POST /fees/payment: status is 200/201",
+              "id": "f054e3c85f73969dad1acf28d072e39f",
+              "passes": 19
+            },
+            {
+              "fails": 0,
+              "name": "POST /fees/payment: no 5xx",
+              "path": "::receptionist: collect fee::POST /fees/payment: no 5xx",
+              "id": "9078e059fe33a75350368afa7cac6c1a",
+              "passes": 20
+            },
+            {
+              "id": "b64073f397667902ebe825278dbe978a",
+              "passes": 20,
+              "fails": 0,
+              "name": "POST /fees/payment: not rate-limited",
+              "path": "::receptionist: collect fee::POST /fees/payment: not rate-limited"
+            }
+          ],
+        "name": "receptionist: collect fee",
+        "path": "::receptionist: collect fee",
+        "id": "6801781ff6f1cb64c508019049e2d11e"
+      },
+      {
+        "checks": [
+          {
+            "name": "GET /students/:id: status is 200/201",
+            "path": "::teacher-full: student profile::GET /students/:id: status is 200/201",
+            "id": "1c8c457ba6e5e231a59dbb73f5efa38e",
+            "passes": 60,
+            "fails": 0
+          },
+          {
+            "name": "GET /students/:id: no 5xx",
+            "path": "::teacher-full: student profile::GET /students/:id: no 5xx",
+            "id": "810ba626a04632b38411ad2072407d11",
+            "passes": 60,
+            "fails": 0
+          },
+          {
+            "passes": 60,
+            "fails": 0,
+            "name": "GET /students/:id: not rate-limited",
+            "path": "::teacher-full: student profile::GET /students/:id: not rate-limited",
+            "id": "447efa153562bfb25ecc8388f8419dd5"
+          }
+        ],
+        "name": "teacher-full: student profile",
+        "path": "::teacher-full: student profile",
+        "id": "68f67797f60b13ae2f74f5088cd25f90",
+        "groups": []
+      },
+      {
+        "name": "teacher-full: logout",
+        "path": "::teacher-full: logout",
+        "id": "2ddd2fee4ad709b76f088f540d1841b7",
+        "groups": [],
+        "checks": [
+            {
+              "name": "POST /auth/logout: status is 200/201",
+              "path": "::teacher-full: logout::POST /auth/logout: status is 200/201",
+              "id": "94f071469eebbfccd425a6337d520435",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "name": "POST /auth/logout: no 5xx",
+              "path": "::teacher-full: logout::POST /auth/logout: no 5xx",
+              "id": "6cf61965ce90ddcdba055ad88f4dd19a",
+              "passes": 60,
+              "fails": 0
+            },
+            {
+              "path": "::teacher-full: logout::POST /auth/logout: not rate-limited",
+              "id": "d610ecd48d8e3359a17345b559e4b2fd",
+              "passes": 60,
+              "fails": 0,
+              "name": "POST /auth/logout: not rate-limited"
+            }
+          ]
+      },
+      {
+        "checks": [
+          {
+            "id": "6246d4660757c59b8c92abd59416e594",
+            "passes": 19,
+            "fails": 0,
+            "name": "GET /fees/payments/receipt/:receiptNumber: status is 200/201",
+            "path": "::receptionist: receipt::GET /fees/payments/receipt/:receiptNumber: status is 200/201"
+          },
+          {
+            "name": "GET /fees/payments/receipt/:receiptNumber: no 5xx",
+            "path": "::receptionist: receipt::GET /fees/payments/receipt/:receiptNumber: no 5xx",
+            "id": "d6d5f906c1384ae2bf4db8dd1a3b2eb3",
+            "passes": 19,
+            "fails": 0
+          },
+          {
+            "name": "GET /fees/payments/receipt/:receiptNumber: not rate-limited",
+            "path": "::receptionist: receipt::GET /fees/payments/receipt/:receiptNumber: not rate-limited",
+            "id": "789f707c0978d2cba9e42692c486baa5",
+            "passes": 19,
+            "fails": 0
+          }
+        ],
+        "name": "receptionist: receipt",
+        "path": "::receptionist: receipt",
+        "id": "88be62653844fee189d56542405b6024",
+        "groups": []
+      }
+    ],
+    "checks": [
+      {
+        "name": "login succeeded (201)",
+        "path": "::login succeeded (201)",
+        "id": "48f87604d06fe2445706770091c6f433",
+        "passes": 100,
+        "fails": 0
+      },
+      {
+        "name": "login returned accessToken",
+        "path": "::login returned accessToken",
+        "id": "1d821dbde16186794388567eea8d27ab",
+        "passes": 100,
+        "fails": 0
+      }
+    ],
+    "name": ""
+  }
+}

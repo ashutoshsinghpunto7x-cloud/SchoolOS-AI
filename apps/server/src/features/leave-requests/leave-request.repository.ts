@@ -26,6 +26,7 @@ export const leaveRequestRepository = {
   async findPending(schoolId: string): Promise<ILeaveRequest[]> {
     return LeaveRequest.find({ schoolId, status: 'pending' })
       .sort({ createdAt: -1 })
+      .limit(200)
       .lean<ILeaveRequest[]>();
   },
 

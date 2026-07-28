@@ -11,7 +11,11 @@ export const internalMessageKeys = {
   staff: ['internal-messages', 'staff-directory'] as const,
 };
 
-const POLL_INTERVAL_MS = 20_000;
+// Was 20s — at 50+ concurrent users that's ~150 req/min against this endpoint
+// alone (300 combined with the pending-ack poll below). An internal-messages
+// inbox doesn't need chat-speed freshness, so a longer interval cuts request
+// volume roughly in half with no real UX cost.
+const POLL_INTERVAL_MS = 45_000;
 
 export const useInternalMessages = () => {
   const { isAuthenticated } = useAuth();

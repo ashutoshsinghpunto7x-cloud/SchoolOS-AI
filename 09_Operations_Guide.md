@@ -3,6 +3,8 @@
 **Version:** 1.0.0 · **Audience:** DevOps Engineers, Backend Developers, AI Assistants
 **Read time:** ~12 minutes · **Stack:** Docker · Nginx · VPS · MongoDB Atlas · GitHub
 
+> ⚠️ **STALE — does not match the actual deployment.** This document describes a planned VPS + Docker + Nginx architecture. The backend actually runs on **Render** (`https://schoolos-ai-eeiy.onrender.com`), not a self-managed VPS — there is no Nginx reverse proxy, no `docker-compose.yml` rollout, and `apps/server/src/app.ts` has code comments written for Vercel-style serverless deployment, not the VPS model described below. Do not use the VPS specs, SSH deploy flow, Nginx-based rate limiting/SSL, or VPS log-rotation details in this doc for incident response — they don't reflect what's actually running. Treat this as an early architecture plan, not an operational reference, until it's rewritten against the real Render/Atlas setup. See `docs/PRODUCTION_READINESS_AUDIT.md` for a code-verified account of the current infrastructure (as of 2026-07-28).
+
 ---
 
 ## Table of Contents

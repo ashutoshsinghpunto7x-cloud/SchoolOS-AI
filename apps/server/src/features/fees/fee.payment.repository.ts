@@ -1,5 +1,7 @@
+import { ClientSession } from 'mongoose';
 import { FeePayment, IFeePayment } from './fee.payment.model';
 import type { PaymentMode } from './fee.model';
+import { nextSequence } from '../../lib/counter.model';
 
 export interface RecentCollection {
   feeRecordId: string;
@@ -26,22 +28,38 @@ export interface CreatePaymentData {
   recordedByName: string;
   receiptNumber: string;
   batchId?: string;
+  idempotencyKey?: string;
 }
 
 export const feePaymentRepository = {
-  async create(data: CreatePaymentData): Promise<IFeePayment> {
+  async create(data: CreatePaymentData, session?: ClientSession): Promise<IFeePayment> {
     const payment = new FeePayment(data);
-    return payment.save();
+    return payment.save({ session });
+  },
+
+  /** Look up a payment by its client-supplied idempotency key, for replay-safe payment submission. */
+  async findByIdempotencyKey(schoolId: string, idempotencyKey: string): Promise<IFeePayment | null> {
+    return FeePayment.findOne({ schoolId, idempotencyKey, isDeleted: false }).lean<IFeePayment>();
   },
 
   /**
    * Human-readable, sequential receipt/bill number: RCPT-{academicYear digits}-{5-digit running total}.
    * Sequence is a total count of payments ever recorded for the school (not reset per day/year) so it
    * stays unique and monotonically increasing even if generated concurrently across academic years.
+   *
+   * Backed by the shared atomic `Counter` ($inc — never a read-then-write race), not
+   * countDocuments()+1: two concurrent payments used to be able to read the same count and both
+   * compute the same "next" number, tripping the unique index and aborting one payment's transaction
+   * under concurrent fee collection. Seeded from the current countDocuments() total only the first
+   * time this school's counter is created, so numbers already issued under the old scheme are never
+   * reused.
    */
   async generateReceiptNumber(schoolId: string, academicYear: string): Promise<string> {
-    const total = await FeePayment.countDocuments({ schoolId });
-    const seq = String(total + 1).padStart(5, '0');
+    const seqNum = await nextSequence(
+      `receiptNumber:${schoolId}`,
+      () => FeePayment.countDocuments({ schoolId }),
+    );
+    const seq = String(seqNum).padStart(5, '0');
     const yearPart = academicYear.replace(/[^0-9]/g, '') || 'NA';
     return `RCPT-${yearPart}-${seq}`;
   },

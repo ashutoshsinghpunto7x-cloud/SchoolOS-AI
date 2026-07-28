@@ -31,15 +31,11 @@ export const loginSchema = z.object({
 });
 
 /** Admin-issued login credentials for a staff member who has no self-signup
- *  flow (e.g. an imported teacher) — username is the login identifier, kept
- *  separate from email. */
+ *  flow (e.g. an imported teacher) — `loginEmail` is an admin-generated school
+ *  address (e.g. jsmith@fnic.com) used purely to sign in, kept separate from
+ *  the teacher's own contact email from their documents. */
 export const createTeacherLoginSchema = z.object({
-  username: z
-    .string()
-    .min(3, 'Username must be at least 3 characters')
-    .max(30, 'Username must be at most 30 characters')
-    .regex(/^[a-zA-Z0-9_.]+$/, 'Username can only contain letters, numbers, underscores, and dots')
-    .toLowerCase(),
+  loginEmail: z.string().email('Enter a valid email address').toLowerCase(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 

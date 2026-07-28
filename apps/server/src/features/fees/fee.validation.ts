@@ -64,6 +64,10 @@ export const recordPaymentSchema = z.object({
   paymentMode:     z.enum(PAYMENT_MODES, { required_error: 'paymentMode is required' }),
   referenceNumber: z.string().max(100).trim().optional(),
   remarks:         z.string().max(500).trim().optional(),
+  /** Client-generated key (e.g. a UUID minted once per form submission) — resubmitting
+   *  the same key (network retry, accidental double-click) returns the original payment
+   *  instead of recording a second one. */
+  idempotencyKey:  z.string().max(100).trim().optional(),
 });
 
 // ── Bulk / Multi-month Payment ────────────────────────────────────────────────

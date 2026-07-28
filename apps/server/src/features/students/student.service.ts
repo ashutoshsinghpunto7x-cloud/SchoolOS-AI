@@ -1,3 +1,4 @@
+import { ClientSession } from 'mongoose';
 import { studentRepository, PaginatedStudents, FindStudentsOptions } from './student.repository';
 import { studentNoteRepository } from './student.note.repository';
 import {
@@ -19,7 +20,7 @@ const isDuplicateKeyError = (err: unknown): boolean =>
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const studentService = {
-  async createStudent(rawInput: unknown, ctx: AuthContext): Promise<IStudent> {
+  async createStudent(rawInput: unknown, ctx: AuthContext, session?: ClientSession): Promise<IStudent> {
     const data = createStudentSchema.parse(rawInput);
     const admissionYear = new Date().getFullYear();
 
@@ -32,7 +33,7 @@ export const studentService = {
         admissionYear,
         schoolId: ctx.schoolId,
         createdBy: ctx.displayName,
-      });
+      }, session);
 
       auditService.log({
         userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -51,7 +52,7 @@ export const studentService = {
     // import batch size so a whole batch of new students can settle even when
     // every row starts from the same base.
     const MAX_ATTEMPTS = 60;
-    const baseSeq = await studentRepository.maxAdmissionSequence(ctx.schoolId, admissionYear);
+    const baseSeq = await studentRepository.maxAdmissionSequence(ctx.schoolId, admissionYear, session);
     let lastErr: unknown;
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -63,7 +64,7 @@ export const studentService = {
           admissionYear,
           schoolId: ctx.schoolId,
           createdBy: ctx.displayName,
-        });
+        }, session);
 
         auditService.log({
           userId: ctx.userId,

@@ -1,5 +1,5 @@
-import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, ICommunicationSettings, DEFAULT_BEHAVIOR_WINDOW, DEFAULT_COMMUNICATION_SETTINGS } from './school-settings.model';
-import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema } from './school-settings.validation';
+import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, IAttendanceEditPolicy, ICommunicationSettings, DEFAULT_BEHAVIOR_WINDOW, DEFAULT_COMMUNICATION_SETTINGS } from './school-settings.model';
+import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateAttendanceEditPolicySchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 
@@ -18,6 +18,12 @@ export const schoolSettingsService = {
     // never got the default backfilled — heal it in place on first read.
     if (!existing.communicationSettings) {
       existing.communicationSettings = { ...DEFAULT_COMMUNICATION_SETTINGS };
+      await existing.save();
+    }
+    // Documents created before attendanceEditPolicy existed on the schema
+    // never got the default backfilled — heal it in place on first read.
+    if (!existing.attendanceEditPolicy) {
+      existing.attendanceEditPolicy = {};
       await existing.save();
     }
     return existing;
@@ -72,6 +78,24 @@ export const schoolSettingsService = {
       userId: ctx.userId, userDisplayName: ctx.displayName,
       action: 'school_settings.behavior_window_updated', resource: 'school_settings', resourceId: ctx.schoolId,
       details: { ...window }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return updated;
+  },
+
+  async updateAttendanceEditPolicy(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {
+    const policy: IAttendanceEditPolicy = updateAttendanceEditPolicySchema.parse(rawInput);
+
+    const updated = await SchoolSettings.findOneAndUpdate(
+      { schoolId: ctx.schoolId },
+      { $set: { attendanceEditPolicy: policy, updatedBy: ctx.displayName }, $setOnInsert: { schoolName: 'FNIC' } },
+      { new: true, upsert: true },
+    );
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'school_settings.attendance_edit_policy_updated', resource: 'school_settings', resourceId: ctx.schoolId,
+      details: { ...policy }, ip: ctx.ip, schoolId: ctx.schoolId,
     });
 
     return updated;

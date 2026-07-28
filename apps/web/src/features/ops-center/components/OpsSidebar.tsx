@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Logs', path: '/ops/logs' },
   { label: 'Error Monitoring', path: '/ops/errors' },
   { label: 'Alerts', path: '/ops/alerts' },
+  { label: 'Performance Testing', path: '/ops/performance' },
   { label: 'Audit Trail', path: '/ops/audit-trail' },
   { label: 'Deployments', path: '/ops/deployments' },
   { label: 'Users', path: '/ops/users' },

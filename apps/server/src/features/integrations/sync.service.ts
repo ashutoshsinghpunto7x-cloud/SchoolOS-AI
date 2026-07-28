@@ -15,8 +15,8 @@ export const syncService = {
    * Uses setImmediate so it runs in the background and the response returns immediately.
    */
   async triggerSync(id: string, syncType: SyncType = 'manual', ctx: AuthContext) {
-    const integration = await integrationRepository.findById(id);
-    if (!integration || integration.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const integration = await integrationRepository.findById(id, ctx.schoolId);
+    if (!integration) throw new NotFoundError('Integration not found');
     if (!integration.enabled) throw new Error('Integration is disabled');
 
     const logId = String((await syncLogRepository.create({
@@ -45,7 +45,7 @@ export const syncService = {
   /** Background sync execution — called by setImmediate, never by controllers. */
   async _runSyncBackground(integrationId: string, logId: string, ctx: AuthContext): Promise<void> {
     try {
-      const integration = await integrationRepository.findById(integrationId);
+      const integration = await integrationRepository.findById(integrationId, ctx.schoolId);
       if (!integration) return;
 
       await integrationRepository.updateStatus(integrationId, 'syncing');
@@ -109,8 +109,8 @@ export const syncService = {
   },
 
   async getSyncHistory(integrationId: string, ctx: AuthContext, page = 1, limit = 20) {
-    const integration = await integrationRepository.findById(integrationId);
-    if (!integration || integration.schoolId !== ctx.schoolId) throw new NotFoundError('Integration not found');
+    const integration = await integrationRepository.findById(integrationId, ctx.schoolId);
+    if (!integration) throw new NotFoundError('Integration not found');
     return syncLogRepository.findByIntegration(integrationId, page, limit);
   },
 

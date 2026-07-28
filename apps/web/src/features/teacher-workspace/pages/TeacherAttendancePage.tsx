@@ -19,12 +19,14 @@ import {
   Filter,
   ArrowDownAZ,
   Hash,
+  Lock,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
+import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 // WhatsApp absent-notification sending is temporarily disabled — see AbsenteeOutreach
 // below. Re-import when re-enabling: `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
 import { useState, useEffect, useRef } from 'react';
@@ -235,6 +237,14 @@ function compareRollNumber(a?: string, b?: string): number {
   const nb = Number(b);
   if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+}
+
+/** Ascending alphabetical-by-name sort — the default class register order
+ *  (schools conventionally seat/number students alphabetically), roll
+ *  numbers included as a tiebreaker for same-name edge cases. */
+function compareByName(a: { fullName: string; rollNumber?: string }, b: { fullName: string; rollNumber?: string }): number {
+  const byName = a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' });
+  return byName !== 0 ? byName : compareRollNumber(a.rollNumber, b.rollNumber);
 }
 
 // ── Active (swipeable) card ───────────────────────────────────────────────────
@@ -677,7 +687,10 @@ export function TeacherAttendancePage() {
   const [swipeMode,   setSwipeMode]   = useState(true);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortMode, setSortMode] = useState<'roll' | 'name'>('roll');
+  // Alphabetical by name is the default — schools conventionally seat and
+  // number students alphabetically, so this mirrors the register order a
+  // teacher already knows instead of raw database roll-number order.
+  const [sortMode, setSortMode] = useState<'roll' | 'name' | 'present' | 'absent'>('name');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   // A stack (not a single slot) so the teacher can undo several marks in a row
   // instead of the Undo button disappearing after just one.
@@ -788,17 +801,28 @@ export function TeacherAttendancePage() {
     useClassAttendance(cls ?? '', section ?? '', date);
 
   const { mutateAsync: bulkMark, isPending } = useBulkMarkAttendance();
+  const { data: schoolSettings } = useSchoolSettings();
 
   const students: Student[] = studentsData?.data ?? [];
 
-  // Populate rows when data loads — sorted ascending by roll number so the
-  // swipe queue and list both follow the class register order.
+  // Past attendance is always view-only — no backfilling forgotten days.
+  // Today additionally locks once the principal's configured cutoff time
+  // passes, if one is set.
+  const isPastDate = date < today;
+  const cutoffTime = schoolSettings?.attendanceEditPolicy?.cutoffTime;
+  const cutoffPassed = !isPastDate && !!cutoffTime &&
+    new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) > cutoffTime;
+  const editLocked = isPastDate || cutoffPassed;
+
+  // Populate rows when data loads — sorted alphabetically by name by default
+  // so the swipe queue and list both follow the class register order schools
+  // conventionally use.
   useEffect(() => {
     if (!students.length) return;
     const existMap = new Map(
       (existingAttendance ?? []).map((a) => [a.studentId, a.status as AttendanceStatus]),
     );
-    const sorted = [...students].sort((a, b) => compareRollNumber(a.rollNumber, b.rollNumber));
+    const sorted = [...students].sort((a, b) => compareByName(a, b));
     let seq = 0;
     setRows(
       sorted.map((s) => {
@@ -817,7 +841,7 @@ export function TeacherAttendancePage() {
   const alreadySubmitted =
     !attendanceLoading && (existingAttendance ?? []).length > 0 && !editMode;
 
-  const editable = !alreadySubmitted || editMode;
+  const editable = !editLocked && (!alreadySubmitted || editMode);
 
   const presentCount = rows.filter((r) => r.status === 'present').length;
   const absentCount  = rows.filter((r) => r.status === 'absent').length;
@@ -830,9 +854,7 @@ export function TeacherAttendancePage() {
     ? rows.filter((r) => r.fullName.toLowerCase().includes(searchQuery.trim().toLowerCase()))
     : rows;
   function compareBySortMode(a: Row, b: Row): number {
-    return sortMode === 'name'
-      ? a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' })
-      : compareRollNumber(a.rollNumber, b.rollNumber);
+    return sortMode === 'roll' ? compareRollNumber(a.rollNumber, b.rollNumber) : compareByName(a, b);
   }
   const useSwipeFlow = swipeMode && !isSearching;
 
@@ -1064,7 +1086,14 @@ export function TeacherAttendancePage() {
                 </button>
               </div>
 
-              <DraftStatusIndicator status={draft.status} lastSavedAt={draft.lastSavedAt} />
+              {/* Only surfaced for a real problem (save error) — a persistent
+                  "Saved just now" label here competed with the date text for
+                  space and pushed it into a truncated ellipsis. Autosave is
+                  silent by design; there's nothing useful to show when it's
+                  working. */}
+              {draft.status === 'error' && (
+                <DraftStatusIndicator status={draft.status} lastSavedAt={draft.lastSavedAt} />
+              )}
 
               {undoStack.length > 0 && editable && (
                 <button
@@ -1077,7 +1106,7 @@ export function TeacherAttendancePage() {
                   {undoStack.length > 1 ? undoStack.length : ''}
                 </button>
               )}
-              {alreadySubmitted && (
+              {alreadySubmitted && !editLocked && (
                 <button
                   type="button"
                   onClick={() => setEditMode(true)}
@@ -1131,8 +1160,20 @@ export function TeacherAttendancePage() {
           )}
           {draft.isOffline && <OfflineBanner />}
 
+          {/* View-only banner — past date, or today's cutoff has passed */}
+          {editLocked && rows.length > 0 && (
+            <div className="mx-4 mt-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
+              <Lock className="w-5 h-5 text-gray-400 dark:text-white/40 shrink-0" />
+              <p className="text-sm font-semibold text-gray-500 dark:text-white/60">
+                {isPastDate
+                  ? 'Past attendance is view-only.'
+                  : `Editing is closed for today after ${cutoffTime}. Contact your principal for changes.`}
+              </p>
+            </div>
+          )}
+
           {/* Already submitted banner */}
-          {alreadySubmitted && (
+          {!editLocked && alreadySubmitted && (
             <div className="mx-4 mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl px-4 py-3 flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
@@ -1154,7 +1195,7 @@ export function TeacherAttendancePage() {
                     : 'text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/20',
                 )}
               >
-                {isAllPresent ? 'Unmark All' : 'Mark All Present'}
+                {isAllPresent ? 'Unmark All' : 'All Present'}
               </button>
               <button
                 type="button"
@@ -1191,7 +1232,7 @@ export function TeacherAttendancePage() {
                   onClick={() => setFilterMenuOpen((v) => !v)}
                   className={cn(
                     'w-11 h-11 flex items-center justify-center border rounded-xl transition-colors',
-                    sortMode !== 'roll'
+                    sortMode !== 'name'
                       ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 border-[#A855F7]/30 text-[#5B21B6] dark:text-violet-300'
                       : 'bg-white dark:bg-[#150C29] border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-gray-50 dark:hover:bg-white/5',
                   )}
@@ -1226,6 +1267,31 @@ export function TeacherAttendancePage() {
                         )}
                       >
                         <ArrowDownAZ className="w-3.5 h-3.5" /> Name
+                      </button>
+                      <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
+                      <button
+                        type="button"
+                        onClick={() => { setSortMode('present'); setFilterMenuOpen(false); }}
+                        className={cn(
+                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
+                          sortMode === 'present'
+                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
+                        )}
+                      >
+                        <Check className="w-3.5 h-3.5" /> Present First
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setSortMode('absent'); setFilterMenuOpen(false); }}
+                        className={cn(
+                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
+                          sortMode === 'absent'
+                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
+                        )}
+                      >
+                        <X className="w-3.5 h-3.5" /> Absent First
                       </button>
                     </div>
                   </>
@@ -1267,8 +1333,16 @@ export function TeacherAttendancePage() {
                 .filter((row) => !useSwipeFlow || !editable || row.studentId !== rows[activeIndex]?.studentId)
                 // Marked rows sink to the bottom, in the order they were marked —
                 // the unmarked queue at top always mirrors roll-number order.
+                // "Present First" / "Absent First" instead group everyone by
+                // that status first (marked or not), so a teacher can scan
+                // just the present (or absent) list in one place.
                 .slice()
                 .sort((a, b) => {
+                  if (sortMode === 'present' || sortMode === 'absent') {
+                    const aMatches = a.status === sortMode ? 0 : 1;
+                    const bMatches = b.status === sortMode ? 0 : 1;
+                    return aMatches !== bMatches ? aMatches - bMatches : compareByName(a, b);
+                  }
                   if (a.status === 'unmarked' && b.status === 'unmarked') return compareBySortMode(a, b);
                   if (a.status === 'unmarked') return -1;
                   if (b.status === 'unmarked') return 1;

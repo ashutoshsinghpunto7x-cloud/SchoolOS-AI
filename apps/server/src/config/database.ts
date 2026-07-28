@@ -17,6 +17,12 @@ export const connectDatabase = async (): Promise<void> => {
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 30000,
       connectTimeoutMS: 5000,
+      // Explicit pool bounds so a burst of concurrent requests can't exhaust
+      // the connection pool unpredictably, and idle periods don't pay full
+      // connection-establishment latency on the next request.
+      maxPoolSize: 50,
+      minPoolSize: 5,
+      waitQueueTimeoutMS: 10000,
     });
 
     logger.info('MongoDB connected', {

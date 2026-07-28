@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { z } from 'zod';
+import { logger } from '../lib/logger';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -48,13 +49,25 @@ const envSchema = z.object({
   // Arbitrary string this server expects back from Meta during webhook (GET) verification.
   WHATSAPP_VERIFY_TOKEN: z.string().optional(),
   WHATSAPP_API_VERSION: z.string().default('v21.0'),
+  // Ops Center Performance Testing — path to the k6 binary. Defaults to
+  // relying on PATH (winget install -e --id GrafanaLabs.k6), override if k6
+  // isn't on PATH for the process running the server.
+  K6_BIN_PATH: z.string().default('k6'),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error('❌ Invalid environment variables:');
-  console.error(parsed.error.flatten().fieldErrors);
+  logger.error('Invalid environment variables', { fieldErrors: parsed.error.flatten().fieldErrors });
+  process.exit(1);
+}
+
+// AUTOMATION_WEBHOOK_SECRET is optional in the schema (so unauthenticated n8n
+// dispatch keeps working in dev without extra setup), but leaving it unset in
+// production means POST /automation/webhook accepts unauthenticated job
+// mutations — fail closed the same way INTEGRATION_ENCRYPTION_KEY does.
+if (parsed.data.NODE_ENV === 'production' && !parsed.data.AUTOMATION_WEBHOOK_SECRET) {
+  logger.error('AUTOMATION_WEBHOOK_SECRET must be set in production.');
   process.exit(1);
 }
 

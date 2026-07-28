@@ -7,6 +7,7 @@ import { ComponentStatus, IComponentScore } from './marks.model';
 import { ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
+import { aiExtractionJobRepository } from './ai-extraction-job.repository';
 
 // ── Output shapes ─────────────────────────────────────────────────────────────
 
@@ -299,5 +300,54 @@ export const marksExtractionService = {
     const { extracted, unmatched, warnings } = reconcile(entries, roster, table.exam.components);
 
     return { source: 'voice', extracted, unmatched, warnings, transcript };
+  },
+
+  /**
+   * Starts image extraction in the background and returns a job id
+   * immediately instead of holding the request open for the OpenAI round
+   * trip — poll getExtractionJob(jobId) for the result.
+   */
+  async enqueueExtractFromImage(
+    rawQuery: unknown,
+    imageDataUri: string,
+    ctx: AuthContext,
+  ): Promise<{ jobId: string }> {
+    const job = await aiExtractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'image' });
+    const jobId = job._id.toString();
+
+    marksExtractionService.extractFromImage(rawQuery, imageDataUri, ctx)
+      .then((result) => aiExtractionJobRepository.markCompleted(jobId, result))
+      .catch((err) => {
+        logger.error('[MarksExtraction] Background image extraction failed', { jobId, err });
+        aiExtractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+      });
+
+    return { jobId };
+  },
+
+  /** Same as enqueueExtractFromImage, for the voice-note path (Whisper + GPT — the slowest of the two). */
+  async enqueueExtractFromVoice(
+    rawQuery: unknown,
+    audio: { buffer: Buffer; mimetype: string; filename: string },
+    ctx: AuthContext,
+  ): Promise<{ jobId: string }> {
+    const job = await aiExtractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'voice' });
+    const jobId = job._id.toString();
+
+    marksExtractionService.extractFromVoice(rawQuery, audio, ctx)
+      .then((result) => aiExtractionJobRepository.markCompleted(jobId, result))
+      .catch((err) => {
+        logger.error('[MarksExtraction] Background voice extraction failed', { jobId, err });
+        aiExtractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+      });
+
+    return { jobId };
+  },
+
+  async getExtractionJob(jobId: string, ctx: AuthContext) {
+    const job = await aiExtractionJobRepository.findById(jobId, ctx.schoolId);
+    if (!job) throw new ValidationError('Extraction job not found or expired');
+    if (job.userId !== ctx.userId) throw new ValidationError('Extraction job not found or expired');
+    return { status: job.status, result: job.result, error: job.error };
   },
 };

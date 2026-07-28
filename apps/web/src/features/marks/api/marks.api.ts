@@ -17,6 +17,30 @@ const BASE = '/marks';
 
 interface BatchResult { updated: number }
 
+interface ExtractionJobStatus {
+  status: 'processing' | 'completed' | 'failed';
+  result?: MarksExtractionResult;
+  error?: string;
+}
+
+const EXTRACTION_POLL_INTERVAL_MS = 1500;
+const EXTRACTION_POLL_TIMEOUT_MS = 90_000;
+
+/** The extract endpoints return a job id immediately (the AI call runs in the
+ *  background) — poll until it's done rather than holding one HTTP request
+ *  open for the whole OpenAI/Whisper round trip. */
+async function pollExtractionJob(jobId: string): Promise<MarksExtractionResult> {
+  const deadline = Date.now() + EXTRACTION_POLL_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const res = await apiClient.get<{ data: ExtractionJobStatus }>(`${BASE}/extract/jobs/${jobId}`);
+    const job = res.data.data;
+    if (job.status === 'completed' && job.result) return job.result;
+    if (job.status === 'failed') throw new Error(job.error || 'AI extraction failed');
+    await new Promise((resolve) => setTimeout(resolve, EXTRACTION_POLL_INTERVAL_MS));
+  }
+  throw new Error('AI extraction is taking longer than expected — try again.');
+}
+
 export const marksApi = {
   upsertSingle: async (payload: UpsertMarksPayload): Promise<Marks> => {
     try {
@@ -106,11 +130,11 @@ export const marksApi = {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await apiClient.post<{ data: MarksExtractionResult }>(`${BASE}/extract/image`, formData, {
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/image`, formData, {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return res.data.data;
+      return await pollExtractionJob(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
@@ -118,11 +142,11 @@ export const marksApi = {
     try {
       const formData = new FormData();
       formData.append('file', file, filename);
-      const res = await apiClient.post<{ data: MarksExtractionResult }>(`${BASE}/extract/voice`, formData, {
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/voice`, formData, {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return res.data.data;
+      return await pollExtractionJob(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

@@ -1,0 +1,34 @@
+metric,type,avg,min,med,max,p(90),p(95),p(99),count,rate,passes,fails
+http_req_blocked,trend,1.4072321249999995,0,0,26.7714,3.7013700000000043,15.6791,22.4792,,,,
+http_500_count,counter,,,,,,,,0,0,,
+http_req_duration{expected_response:true},trend,2082.7848996249995,14.4903,1101.80215,9644.7952,4642.45827,6264.184534999999,9124.191176,,,,
+http_req_failed,rate,,,,,,,,,0,0,800
+data_sent,counter,,,,,,,,542851,26833.395208782902,,
+duplicate_fee_payment_detected,rate,,,,,,,,,0,0,0
+teacher_workflow_success,rate,,,,,,,,,1,100,0
+race_condition_detected,rate,,,,,,,,,0,0,0
+vus,gauge,,0,,100,,,,,,,
+login_duration,trend,5613.266957000001,1325.5022,6089.3266,9644.7952,9115.68195,9145.572985,9635.350204,,,,
+http_req_duration{name:GET /teacher-workspace/me},trend,3438.8396609999995,72.8525,3816.6482,5781.2309,4647.278700000001,4762.76923,5130.696752000003,,,,
+vus_max,gauge,,84,,100,,,,,,,
+http_req_sending,trend,0.08256962500000001,0,0,2.7962,0,0.5960849999999996,1.6797529999999967,,,,
+http_429_count,counter,,,,,,,,0,0,,
+http_req_waiting,trend,2081.5941583749973,12.8011,1099.9862,9639.2053,4641.01232,6264.074565,9124.154291,,,,
+http_req_duration{name:POST /attendance/bulk},trend,3376.6523770000013,1599.2029,3139.7432,5797.6952,4507.90473,4647.201795,5031.751109000003,,,,
+duplicate_attendance_detected,rate,,,,,,,,,0,0,100
+http_req_duration{name:GET /students (roster)},trend,1121.9598499999997,404.0603,1032.30645,1937.9152,1496.9928900000002,1582.301865,1926.189145,,,,
+iteration_duration,trend,18092.127428999996,9798.9955,19481.58365,20229.4093,20033.72549,20080.225,20156.347003,,,,
+http_req_duration,trend,2082.7848996249995,14.4903,1101.80215,9644.7952,4642.45827,6264.184534999999,9124.191176,,,,
+checks,rate,,,,,,,,,1,2700,0
+group_duration,trend,1382.2517643750004,0,961.9264000000001,5798.2177,3757.93844,4347.833384999998,4766.737318,,,,
+data_received,counter,,,,,,,,4824050,238455.19333468884,,
+partial_attendance_save,rate,,,,,,,,,0,0,100
+http_req_receiving,trend,1.1081716249999998,0,0.34275,12.9145,3.5844900000000015,5.430369999999998,8.048241999999998,,,,
+http_req_duration{name:POST /auth/login},trend,5613.266957000001,1325.5022,6089.3266,9644.7952,9115.68195,9145.572985,9635.350204,,,,
+workflow_duration,trend,18090.34,9799,19482,20229,20030.4,20074.15,20154.75,,,,
+db_write_inconsistency_detected,rate,,,,,,,,,0,0,0
+http_req_connecting,trend,0.45662950000000035,0,0,8.0917,2.0229,4.089384999999991,6.937474999999999,,,,
+iterations,counter,,,,,,,,100,4.94304978876025,,
+http_req_tls_handshaking,trend,0,0,0,0,0,0,0,,,,
+http_reqs,counter,,,,,,,,800,39.544398310082,,
+missing_attendance,rate,,,,,,,,,0,0,100

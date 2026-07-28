@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { feeRepository, PaginatedFees, FeeCollectionSummary, CreateFeeData } from './fee.repository';
 import { feePaymentRepository } from './fee.payment.repository';
 import { IFeeRecord } from './fee.model';
@@ -213,6 +214,17 @@ export const feeService = {
   ): Promise<{ record: IFeeRecord; payment: IFeePayment }> {
     const data = recordPaymentSchema.parse(rawInput);
 
+    // Idempotent replay: a resubmission carrying the same key (network retry,
+    // accidental double-click before the button disabled) returns the original
+    // payment instead of recording the amount twice.
+    if (data.idempotencyKey) {
+      const existingPayment = await feePaymentRepository.findByIdempotencyKey(ctx.schoolId, data.idempotencyKey);
+      if (existingPayment) {
+        const existingRecord = await feeRepository.findById(existingPayment.feeRecordId, ctx.schoolId);
+        if (existingRecord) return { record: existingRecord, payment: existingPayment };
+      }
+    }
+
     const feeRecord = await feeRepository.findById(data.feeRecordId, ctx.schoolId);
     if (!feeRecord) throw new NotFoundError('Fee record');
 
@@ -229,13 +241,21 @@ export const feeService = {
       );
     }
 
-    // Retry a couple of times in the rare case two payments race to the same
-    // running-total receipt number (unique index rejects the duplicate).
+    // Payment creation + balance update happen atomically — without a
+    // transaction, a crash between the two left a payment on record with no
+    // matching balance/status change (money collected, ledger wrong).
+    const session = await mongoose.startSession();
     let payment: IFeePayment | undefined;
-    let lastErr: unknown;
-    for (let attempt = 0; attempt < 3 && !payment; attempt++) {
-      const receiptNumber = await feePaymentRepository.generateReceiptNumber(ctx.schoolId, feeRecord.academicYear);
-      try {
+    let updatedRecord: IFeeRecord | undefined;
+    try {
+      await session.withTransaction(async () => {
+        // generateReceiptNumber is now backed by an atomic $inc counter (see
+        // fee.payment.repository.ts), so two concurrent payments can never be handed the same
+        // "next" number — no retry loop needed. (The old count-then-increment version could race,
+        // but retrying here wouldn't have helped anyway: an E11000 from the unique index mid-transaction
+        // poisons the rest of this withTransaction callback, so a "retry" was really just guaranteed
+        // to fail a second time.)
+        const receiptNumber = await feePaymentRepository.generateReceiptNumber(ctx.schoolId, feeRecord.academicYear);
         payment = await feePaymentRepository.create({
           feeRecordId:    data.feeRecordId,
           studentId:      feeRecord.studentId,
@@ -248,20 +268,23 @@ export const feeService = {
           recordedById:   ctx.userId,
           recordedByName: ctx.displayName,
           receiptNumber,
-        });
-      } catch (err) {
-        lastErr = err;
-      }
-    }
-    if (!payment) throw lastErr instanceof Error ? lastErr : new Error('Failed to record payment');
+          idempotencyKey: data.idempotencyKey,
+        }, session);
 
-    const updatedRecord = await feeRepository.applyPayment(
-      data.feeRecordId,
-      ctx.schoolId,
-      data.amount,
-      ctx.displayName,
-    );
-    if (!updatedRecord) throw new NotFoundError('Fee record');
+        const applied = await feeRepository.applyPayment(
+          data.feeRecordId,
+          ctx.schoolId,
+          data.amount,
+          ctx.displayName,
+          session,
+        );
+        if (!applied) throw new NotFoundError('Fee record');
+        updatedRecord = applied;
+      });
+    } finally {
+      await session.endSession();
+    }
+    if (!payment || !updatedRecord) throw new Error('Failed to record payment');
 
     auditService.log({
       userId:          ctx.userId,

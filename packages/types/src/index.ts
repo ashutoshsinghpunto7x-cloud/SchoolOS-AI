@@ -145,11 +145,15 @@ export interface TeacherLoginStatus {
   employeeId: string;
   email?: string;
   hasLogin: boolean;
+  /** Admin-generated school login address (e.g. jsmith@fnic.com) — separate
+   *  from `email`, the teacher's own contact address from their documents. */
+  loginEmail?: string;
+  /** Legacy admin-issued username, from logins created before loginEmail existed. */
   username?: string;
 }
 
 export interface CreateTeacherLoginPayload {
-  username: string;
+  loginEmail: string;
   password: string;
 }
 
@@ -211,7 +215,6 @@ export interface LoginWithPinPayload {
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
   user: AuthUser;
   mustResetPassword?: boolean;
   mustResetPin?: boolean;
@@ -998,6 +1001,10 @@ export interface RecordPaymentPayload {
   paymentMode: PaymentMode;
   referenceNumber?: string;
   remarks?: string;
+  /** Client-generated key, minted once per form open — resubmitting with the same
+   *  key (network retry, accidental double-click) replays the original payment
+   *  instead of recording it twice. */
+  idempotencyKey?: string;
 }
 
 /** One month's worth of tuition fee to pay as part of a multi-month collection (arrears, current, or advance). */
@@ -2049,6 +2056,13 @@ export interface BehaviorWindow {
   endTime: string;
 }
 
+/** Daily cutoff (HH:mm, IST) after which teachers can no longer edit today's
+ *  attendance — undefined `cutoffTime` means no time restriction. Past dates
+ *  are always view-only for teachers regardless of this setting. */
+export interface AttendanceEditPolicy {
+  cutoffTime?: string;
+}
+
 export interface ReportCardBranding {
   motto?: string;
   address?: string;
@@ -2067,6 +2081,7 @@ export interface SchoolSettings extends BaseEntity {
   attendanceRules: AttendanceRules;
   payrollConfig: PayrollConfig;
   behaviorWindow: BehaviorWindow;
+  attendanceEditPolicy: AttendanceEditPolicy;
   reportCardBranding: ReportCardBranding;
   updatedBy?: string;
 }
