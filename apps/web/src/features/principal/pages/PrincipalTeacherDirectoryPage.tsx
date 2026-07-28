@@ -248,7 +248,7 @@ export function PrincipalTeacherDirectoryPage() {
 
       {/* Quick stats */}
       {summary && (
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
               <Users className="w-4 h-4 text-[#5B21B6]" />

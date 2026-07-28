@@ -12,7 +12,7 @@ export const PageContainer = ({ children, className, narrow = false }: PageConta
   return (
     <div
       className={cn(
-        'w-full mx-auto px-8 py-10',
+        'w-full mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10',
         narrow ? 'max-w-3xl' : 'max-w-7xl',
         className
       )}

@@ -2,6 +2,7 @@ import { AuthContext } from '../../lib/auth-context';
 import { notificationService } from '../notifications/notification.service';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { ISchoolEvent } from '../events/event.model';
+import { ITimetableEntry } from '../timetable/timetable.model';
 
 // ── AI action notification fan-out ────────────────────────────────────────────
 // Three notification/WhatsApp stacks exist in this repo. AI actions deliberately
@@ -41,6 +42,40 @@ export async function notifyStaffMeetingCreated(
   // WhatsApp/email fan-out via features/communication/ is Phase 2 — the
   // notifyChannels field is captured on the event/preview today so the UI
   // already reflects intent, but the actual bulk-send wiring isn't built yet.
+
+  return result.sent;
+}
+
+export async function notifyTimetableMoved(
+  data: {
+    class: string;
+    section: string;
+    dayName: string;
+    fromSlotName: string;
+    toSlotName: string;
+    sourceEntry: ITimetableEntry;
+    bumpedEntry?: ITimetableEntry;
+  },
+  ctx: AuthContext,
+): Promise<number> {
+  const teacherIds = [...new Set([data.sourceEntry.teacherId, data.bumpedEntry?.teacherId].filter((id): id is string => !!id))];
+  if (!teacherIds.length) return 0;
+
+  const body =
+    `${data.sourceEntry.subjectName} moved from ${data.fromSlotName} to ${data.toSlotName} on ${data.dayName}` +
+    (data.bumpedEntry ? `. ${data.bumpedEntry.subjectName} moved into ${data.fromSlotName}.` : '.');
+
+  const result = await notificationService.sendToTeachers(
+    {
+      teacherIds,
+      type: 'message',
+      title: `Timetable change: Class ${data.class}-${data.section}`,
+      body,
+      payload: { class: data.class, section: data.section },
+      priority: 'normal',
+    },
+    ctx,
+  );
 
   return result.sent;
 }

@@ -1,5 +1,6 @@
 import { classifyAction, extractActionParams, UNSUPPORTED_ACTION, ActionPreview } from './action-registry';
 import { meetingAction } from './actions/meeting.action';
+import { timetableMoveAction } from './actions/timetable-move.action';
 import { previewActionSchema, executeActionSchema } from './principal-assistant.action.validation';
 import { recordUsage } from './intent-router';
 import { AuthContext } from '../../lib/auth-context';
@@ -9,7 +10,7 @@ import { auditService } from '../audit/audit.service';
 import { logger } from '../../lib/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const actionRegistry: import('./action-registry').ActionDefinition<any, any, any>[] = [meetingAction];
+const actionRegistry: import('./action-registry').ActionDefinition<any, any, any>[] = [meetingAction, timetableMoveAction];
 
 function findAction(actionId: string) {
   const action = actionRegistry.find((a) => a.id === actionId);

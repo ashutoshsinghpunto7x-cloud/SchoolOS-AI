@@ -62,7 +62,7 @@ export const PrincipalWorkspace = () => {
         <DailyBriefingCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
 
         {/* Row 4 — Priority Center, School Health, Financial Snapshot, Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
           <PriorityCenter alerts={data?.alerts} overdueFeeCount={data?.fees.overdueCount} isLoading={isLoading} />
           <SchoolHealthCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
           <FinancialSnapshotCard data={data?.fees} isLoading={isLoading} />
@@ -81,7 +81,7 @@ export const PrincipalWorkspace = () => {
         <div id="more-insights-section" className="flex flex-col gap-5 scroll-mt-4">
           <StaffManagementCard />
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
             <AttendanceInsightsCard />
             <FeeInsightsCard />
             <AdmissionAssistantCard data={data?.admissions} isLoading={isLoading} />

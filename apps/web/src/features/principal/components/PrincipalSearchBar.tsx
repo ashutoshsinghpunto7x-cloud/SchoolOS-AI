@@ -64,7 +64,7 @@ export function PrincipalSearchBar() {
       </span>
 
       {open && active && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full min-w-[320px] bg-white rounded-2xl border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.14)] p-2 max-h-96 overflow-y-auto">
+        <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full min-w-0 sm:min-w-[320px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.14)] p-2 max-h-96 overflow-y-auto">
           {!hasResults ? (
             <p className="text-sm text-gray-400 text-center py-6">No matches for "{debounced}"</p>
           ) : (
