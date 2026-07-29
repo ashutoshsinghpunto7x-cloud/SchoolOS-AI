@@ -40,8 +40,11 @@ export interface TeacherLoginStatus {
 /** First token as firstName, remainder as lastName — User requires both, but a
  *  Teacher record only has one fullName field. Falls back to a placeholder
  *  lastName for single-word names so the User document still validates. */
+const HONORIFIC_PREFIX = /^(mr|mrs|ms|miss|mx|dr|prof)\.?$/i;
+
 function splitFullName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/);
+  while (parts.length > 1 && HONORIFIC_PREFIX.test(parts[0])) parts.shift();
   const firstName = parts[0] || fullName;
   const lastName = parts.slice(1).join(' ') || 'Teacher';
   return { firstName, lastName };
