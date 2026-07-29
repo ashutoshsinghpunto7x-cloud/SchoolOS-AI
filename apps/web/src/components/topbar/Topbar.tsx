@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, ArrowLeft, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -276,6 +276,10 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
   const isPrincipalDashboard = isPrincipal && location.pathname === '/principal';
   const section = getLabel(location.pathname);
   const subLabel = isAccountantDashboard ? null : getSubLabel(location.pathname);
+  // The attendance-marking page has its own dense header row (date, undo,
+  // edit) directly below this bar — its own back arrow was competing with
+  // that row for space, so it lives here instead, next to the breadcrumb.
+  const showTeacherBackButton = isTeacher && /^\/teacher\/attendance\//.test(location.pathname);
 
   const now = useNow();
   const date = isPrincipal ? formatDateLong(now) : formatDate(now);
@@ -364,6 +368,16 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
             the page's identity, so this would otherwise just repeat it */}
         {!isPrincipalDashboard && !isPrincipal && !isAccountantDashboard && (
           <nav aria-label="breadcrumb" className="flex items-center gap-1.5 shrink-0">
+            {showTeacherBackButton && (
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                aria-label="Back"
+                className="w-7 h-7 -ml-1.5 flex items-center justify-center rounded-lg hover:bg-[#A855F7]/5 text-gray-400 dark:text-white/40 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
             {isTeacher ? (
               <button
                 type="button"

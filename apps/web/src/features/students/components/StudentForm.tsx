@@ -101,6 +101,8 @@ interface StudentFormProps {
   onSubmit: (values: StudentFormValues) => Promise<void>;
   isLoading?: boolean;
   submitLabel?: string;
+  /** Monthly tuition fee is an accountant-only concern — hidden for other editors (e.g. teachers). */
+  showMonthlyFee?: boolean;
 }
 
 export const StudentForm = ({
@@ -108,6 +110,7 @@ export const StudentForm = ({
   onSubmit,
   isLoading = false,
   submitLabel = 'Create Student',
+  showMonthlyFee = true,
 }: StudentFormProps) => {
   const {
     register,
@@ -259,16 +262,18 @@ export const StudentForm = ({
             </select>
           </Field>
 
-          <Field label="Monthly Tuition Fee (₹)" error={errors.monthlyTuitionFee?.message}>
-            <input
-              {...register('monthlyTuitionFee')}
-              type="number"
-              min={0}
-              step="0.01"
-              placeholder="e.g. 2000 — used to auto-generate monthly fee records"
-              className={inputClass(!!errors.monthlyTuitionFee)}
-            />
-          </Field>
+          {showMonthlyFee && (
+            <Field label="Monthly Tuition Fee (₹)" error={errors.monthlyTuitionFee?.message}>
+              <input
+                {...register('monthlyTuitionFee')}
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="e.g. 2000 — used to auto-generate monthly fee records"
+                className={inputClass(!!errors.monthlyTuitionFee)}
+              />
+            </Field>
+          )}
 
           <div className="sm:col-span-2">
             <Field label="Tags" error={undefined}>

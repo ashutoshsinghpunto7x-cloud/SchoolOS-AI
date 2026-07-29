@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
 import { recoveryApi } from '../api/recovery.api';
-import { resetAuthRefreshState } from '@/services/api';
+import { resetAuthRefreshState, scheduleProactiveRefresh } from '@/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AuthContext } from '../context/AuthContext';
 import type { AuthUser } from '@schoolos/types';
@@ -28,6 +28,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
+    scheduleProactiveRefresh(token);
+
     authApi
       .me()
       .then((data) => setUser(data))
@@ -41,6 +43,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const data = await authApi.login({ identifier, password });
     queryClient.clear();
     sessionStorage.setItem('accessToken', data.accessToken);
+    scheduleProactiveRefresh(data.accessToken);
     const mergedUser: AuthUser = {
       ...data.user,
       mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
@@ -59,6 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const tokens = await recoveryApi.loginWithPin({ deviceId, pin });
     queryClient.clear();
     sessionStorage.setItem('accessToken', tokens.accessToken);
+    scheduleProactiveRefresh(tokens.accessToken);
     const data = await authApi.me();
     setUser(data);
     return data;

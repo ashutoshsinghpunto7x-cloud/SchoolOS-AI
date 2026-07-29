@@ -1,6 +1,5 @@
 import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import {
-  ArrowLeft,
   AlertCircle,
   CheckCircle2,
   ChevronLeft,
@@ -15,10 +14,7 @@ import {
   X,
   Check,
   Undo2,
-  Download,
   Filter,
-  ArrowDownAZ,
-  Hash,
   Lock,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
@@ -40,7 +36,6 @@ import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
 import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
 import { OfflineBanner } from '@/components/drafts/OfflineBanner';
 import { DraftStatusIndicator } from '@/components/drafts/DraftStatusIndicator';
-import { downloadCsv } from '@/lib/csv';
 
 // ── Numeric counter tween — animates a number smoothly instead of snapping ────
 
@@ -589,7 +584,6 @@ function SubmittedScreen({
   onEdit,
   onViewStudents,
   onDashboard,
-  onDownload,
 }: {
   cls:          string;
   section:      string;
@@ -600,7 +594,6 @@ function SubmittedScreen({
   onEdit:       () => void;
   onViewStudents: () => void;
   onDashboard:  () => void;
-  onDownload:   () => void;
 }) {
   const submitTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
 
@@ -646,13 +639,6 @@ function SubmittedScreen({
           className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
         >
           View Students
-        </button>
-        <button
-          onClick={onDownload}
-          className="h-12 bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 font-semibold rounded-xl text-sm flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Download Attendance (CSV)
         </button>
         <button
           onClick={onEdit}
@@ -917,18 +903,6 @@ export function TeacherAttendancePage() {
     if (!isAllPresent) setPresentBurst((n) => n + 1);
   }
 
-  function handleDownloadAttendance() {
-    downloadCsv(
-      `Attendance_Class${cls}-${section}_${date}.csv`,
-      ['Roll No', 'Name', 'Status'],
-      rows.map((r) => [
-        r.rollNumber ?? '',
-        r.fullName,
-        r.status === 'present' ? 'Present' : r.status === 'absent' ? 'Absent' : 'Unmarked',
-      ]),
-    );
-  }
-
   async function handleSave() {
     if (!cls || !section) return;
     try {
@@ -987,7 +961,6 @@ export function TeacherAttendancePage() {
         onEdit={() => { setSubmitted(false); setEditMode(true); }}
         onViewStudents={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
         onDashboard={() => navigate('/teacher')}
-        onDownload={handleDownloadAttendance}
       />
     );
   }
@@ -1016,18 +989,11 @@ export function TeacherAttendancePage() {
         ))}
       </AnimatePresence>
 
-      {/* Header — date top-left (no title, no progress ring), Undo/Edit right-aligned */}
+      {/* Header — date top-left (no title, no progress ring), Undo/Edit right-aligned.
+          The back arrow lives in the shared Topbar next to "FNIC" instead of here —
+          see Topbar.tsx's showTeacherBackButton — so this row has room to breathe. */}
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            aria-label="Back"
-            className="w-8 h-8 -ml-2 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-4.5 h-4.5 text-gray-400 dark:text-white/40" />
-          </button>
-
           {searchOpen ? (
             <>
               <div className="relative flex-1">
@@ -1246,32 +1212,10 @@ export function TeacherAttendancePage() {
                     <div className="absolute right-0 top-full mt-2 z-50 w-44 bg-white dark:bg-[#150C29] border border-gray-100 dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => { setSortMode('roll'); setFilterMenuOpen(false); }}
-                        className={cn(
-                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
-                          sortMode === 'roll'
-                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
-                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
-                        )}
-                      >
-                        <Hash className="w-3.5 h-3.5" /> Roll Number
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setSortMode('name'); setFilterMenuOpen(false); }}
-                        className={cn(
-                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
-                          sortMode === 'name'
-                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
-                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
-                        )}
-                      >
-                        <ArrowDownAZ className="w-3.5 h-3.5" /> Name
-                      </button>
-                      <div className="h-px bg-gray-100 dark:bg-white/10 my-1" />
-                      <button
-                        type="button"
-                        onClick={() => { setSortMode('present'); setFilterMenuOpen(false); }}
+                        // Clicking the active option again returns to the
+                        // default (already-alphabetical) order — the only way
+                        // back since "Name" was removed as its own option.
+                        onClick={() => { setSortMode((m) => (m === 'present' ? 'name' : 'present')); setFilterMenuOpen(false); }}
                         className={cn(
                           'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
                           sortMode === 'present'
@@ -1283,7 +1227,7 @@ export function TeacherAttendancePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setSortMode('absent'); setFilterMenuOpen(false); }}
+                        onClick={() => { setSortMode((m) => (m === 'absent' ? 'name' : 'absent')); setFilterMenuOpen(false); }}
                         className={cn(
                           'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
                           sortMode === 'absent'

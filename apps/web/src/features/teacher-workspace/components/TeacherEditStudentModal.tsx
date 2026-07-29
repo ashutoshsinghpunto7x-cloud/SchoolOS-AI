@@ -92,6 +92,7 @@ export function TeacherEditStudentModal({ student, onClose }: Props) {
             onSubmit={handleSubmit}
             isLoading={isPending}
             submitLabel="Send for Approval"
+            showMonthlyFee={false}
           />
         </div>
       </div>

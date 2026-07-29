@@ -44,17 +44,93 @@ type PendingRequest = {
 
 let isRefreshing = false;
 let pendingRequests: PendingRequest[] = [];
+let refreshTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+// Access tokens are opaque to us except for their exp claim, which we only
+// read (never verify) to time the proactive refresh below.
+const decodeTokenExpiryMs = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+};
+
+// Refresh this long before actual expiry so the token never goes stale while
+// the SPA is idle/open — avoids every in-flight widget request 401-ing at
+// once when the 15m access token lapses mid-session.
+const REFRESH_BUFFER_MS = 60_000;
+
+export const scheduleProactiveRefresh = (token: string) => {
+  if (refreshTimeoutId) clearTimeout(refreshTimeoutId);
+
+  const expiresAt = decodeTokenExpiryMs(token);
+  if (!expiresAt) return;
+
+  const delay = Math.max(expiresAt - Date.now() - REFRESH_BUFFER_MS, 0);
+  refreshTimeoutId = setTimeout(() => {
+    performRefresh().catch(() => {});
+  }, delay);
+};
+
+const clearProactiveRefresh = () => {
+  if (refreshTimeoutId) {
+    clearTimeout(refreshTimeoutId);
+    refreshTimeoutId = null;
+  }
+};
 
 // Called on logout so a refresh started under the previous session can't
 // resolve into a newly-logged-in user's queued requests on a shared device.
 export const resetAuthRefreshState = () => {
   isRefreshing = false;
   pendingRequests = [];
+  clearProactiveRefresh();
 };
 
 const clearAuthAndRedirect = () => {
   sessionStorage.removeItem('accessToken');
+  clearProactiveRefresh();
   window.location.href = '/login';
+};
+
+// Shared by the reactive 401 handler below and by the proactive timer, so a
+// refresh is never started twice at once — concurrent callers queue on
+// pendingRequests and resolve off the single in-flight call.
+const performRefresh = async (): Promise<string> => {
+  if (isRefreshing) {
+    return new Promise<string>((resolve, reject) => {
+      pendingRequests.push({ resolve, reject });
+    });
+  }
+
+  isRefreshing = true;
+
+  try {
+    const res = await axios.post<{
+      data: { accessToken: string };
+    }>(`${BASE_URL}/auth/refresh`, null, {
+      withCredentials: true,
+      // Presence-only CSRF defense — see server/src/middlewares/csrf.ts.
+      headers: { 'X-CSRF-Token': '1' },
+    });
+
+    const { accessToken } = res.data.data;
+    sessionStorage.setItem('accessToken', accessToken);
+    scheduleProactiveRefresh(accessToken);
+
+    pendingRequests.forEach(({ resolve }) => resolve(accessToken));
+    pendingRequests = [];
+    return accessToken;
+  } catch (err) {
+    pendingRequests.forEach(({ reject }) => reject(err));
+    pendingRequests = [];
+    clearAuthAndRedirect();
+    throw err;
+  } finally {
+    isRefreshing = false;
+  }
 };
 
 // ── Response Interceptor ──────────────────────────────────────────────────────
@@ -81,42 +157,12 @@ apiClient.interceptors.response.use(
 
     originalRequest._retry = true;
 
-    if (isRefreshing) {
-      // Queue requests while a refresh is in progress
-      return new Promise<string>((resolve, reject) => {
-        pendingRequests.push({ resolve, reject });
-      }).then((newToken) => {
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return apiClient(originalRequest);
-      });
-    }
-
-    isRefreshing = true;
-
     try {
-      const res = await axios.post<{
-        data: { accessToken: string };
-      }>(`${BASE_URL}/auth/refresh`, null, {
-        withCredentials: true,
-        // Presence-only CSRF defense — see server/src/middlewares/csrf.ts.
-        headers: { 'X-CSRF-Token': '1' },
-      });
-
-      const { accessToken } = res.data.data;
-      sessionStorage.setItem('accessToken', accessToken);
-
-      pendingRequests.forEach(({ resolve }) => resolve(accessToken));
-      pendingRequests = [];
-
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+      const newToken = await performRefresh();
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return apiClient(originalRequest);
     } catch {
-      pendingRequests.forEach(({ reject }) => reject(error));
-      pendingRequests = [];
-      clearAuthAndRedirect();
       return Promise.reject(error);
-    } finally {
-      isRefreshing = false;
     }
   }
 );

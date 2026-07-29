@@ -161,7 +161,6 @@ function StudentCard({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 dark:text-white/30">Adm: {student.admissionNumber}</p>
             {student.gender && (
               <p className="text-xs text-gray-400 dark:text-white/30 capitalize">{student.gender}</p>
             )}
@@ -300,7 +299,7 @@ export function TeacherStudentListPage() {
             <ArrowLeft className="w-4 h-4 text-gray-600 dark:text-white/60" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Class {cls} – {section}</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">Class {cls} – {section}</h1>
             <p className="text-sm text-gray-500 dark:text-white/40">
               {isLoading ? '…' : `${students.length} students enrolled`}
             </p>
