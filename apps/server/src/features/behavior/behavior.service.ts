@@ -270,12 +270,14 @@ export const behaviorService = {
   async getClassRecords(cls: string, section: string, rawQuery: unknown, ctx: AuthContext): Promise<IBehaviorRecord[]> {
     const { date } = classBehaviorSchema.parse(rawQuery);
     const targetDate = date ?? behaviorRecordRepository.todayString();
+    await assertTeacherCanRecordBehavior(ctx, cls, section);
     return behaviorRecordRepository.findByClassDate(ctx.schoolId, cls, section, targetDate);
   },
 
   async getStudentHistory(studentId: string, rawQuery: unknown, ctx: AuthContext): Promise<PaginatedBehaviorRecords> {
     const student = await studentRepository.findById(studentId, ctx.schoolId);
     if (!student) throw new NotFoundError('Student');
+    await assertTeacherCanRecordBehavior(ctx, student.class, student.section);
 
     const opts = studentBehaviorHistorySchema.parse(rawQuery);
     return behaviorRecordRepository.findByStudent(ctx.schoolId, studentId, opts);

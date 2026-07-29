@@ -26,9 +26,13 @@ router.post('/:id/login',      authorize('admin'), teacherController.createLogin
 router.delete('/:id',          authorize('admin'), teacherController.deleteTeacher);
 
 // ── Teacher Notes ─────────────────────────────────────────────────────────────
-router.get('/:id/notes',              teacherController.listNotes);
-router.post('/:id/notes',             teacherController.createNote);
-router.patch('/:id/notes/:noteId',    teacherController.updateNote);
-router.delete('/:id/notes/:noteId',   teacherController.deleteNote);
+// HR/disciplinary notes about a teacher — same admin/principal/reception bar
+// as profile edits. Without this, any teacher account could read or tamper
+// with notes written about ANY teacher (including notes about themselves).
+const canAccessTeacherNotes = authorize('admin', 'principal', 'reception');
+router.get('/:id/notes',              canAccessTeacherNotes, teacherController.listNotes);
+router.post('/:id/notes',             canAccessTeacherNotes, teacherController.createNote);
+router.patch('/:id/notes/:noteId',    canAccessTeacherNotes, teacherController.updateNote);
+router.delete('/:id/notes/:noteId',   canAccessTeacherNotes, teacherController.deleteNote);
 
 export default router;

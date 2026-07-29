@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Sparkles, Smartphone, Monitor, Loader2, AlertTriangle, CheckCircle2, Send } from 'lucide-react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useExam } from '@/features/marks/hooks/useExams';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
@@ -14,6 +15,11 @@ import { ReportCardMobileView } from '../components/ReportCardMobileView';
 export function ReportCardPreviewPage() {
   const { examId = '', studentId = '' } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Publishing is admin/principal-only on the backend (it's the irreversible,
+  // parent-visible step) — hide the control for teachers rather than let them
+  // hit a 403.
+  const canPublish = user?.role === 'admin' || user?.role === 'principal';
   const [view, setView] = useState<'desktop' | 'mobile'>('desktop');
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
@@ -113,7 +119,7 @@ export function ReportCardPreviewPage() {
         <button type="button" onClick={() => setPrinting(true)} className="h-9 px-3.5 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print / Save PDF
         </button>
-        {resolvedCard.status === 'draft' && (
+        {resolvedCard.status === 'draft' && canPublish && (
           <button
             type="button" onClick={() => publish.mutate()} disabled={publish.isPending}
             className="h-9 px-3.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"

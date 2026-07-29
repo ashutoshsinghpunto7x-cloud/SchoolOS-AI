@@ -33,17 +33,17 @@ export const feeDiscountRequestRepository = {
     return count > 0;
   },
 
-  async markApproved(id: string, reviewedByName: string, reviewNote: string | undefined): Promise<IFeeDiscountRequest | null> {
-    return FeeDiscountRequest.findByIdAndUpdate(
-      id,
+  async markApproved(id: string, schoolId: string, reviewedByName: string, reviewNote: string | undefined): Promise<IFeeDiscountRequest | null> {
+    return FeeDiscountRequest.findOneAndUpdate(
+      { _id: id, schoolId },
       { $set: { status: 'approved', reviewedByName, reviewNote, reviewedAt: new Date() } },
       { new: true },
     ).lean<IFeeDiscountRequest>();
   },
 
-  async markRejected(id: string, reviewedByName: string, reviewNote: string | undefined): Promise<IFeeDiscountRequest | null> {
-    return FeeDiscountRequest.findByIdAndUpdate(
-      id,
+  async markRejected(id: string, schoolId: string, reviewedByName: string, reviewNote: string | undefined): Promise<IFeeDiscountRequest | null> {
+    return FeeDiscountRequest.findOneAndUpdate(
+      { _id: id, schoolId },
       { $set: { status: 'rejected', reviewedByName, reviewNote, reviewedAt: new Date() } },
       { new: true },
     ).lean<IFeeDiscountRequest>();

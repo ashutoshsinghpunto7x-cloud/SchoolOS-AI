@@ -169,6 +169,7 @@ export const attendanceService = {
   async getById(id: string, ctx: AuthContext): Promise<IAttendance> {
     const record = await attendanceRepository.findById(id, ctx.schoolId);
     if (!record) throw new NotFoundError('Attendance record');
+    await assertTeacherCanMarkClass(ctx, record.class, record.section, record.date);
     return record;
   },
 
@@ -178,6 +179,12 @@ export const attendanceService = {
 
     const existing = await attendanceRepository.findById(id, ctx.schoolId);
     if (!existing) throw new NotFoundError('Attendance record');
+
+    // Same rules as marking: only the assigned class teacher/substitute may
+    // edit, and only for today's (still-open) attendance — without this, any
+    // teacher could PATCH another class's record by guessing/enumerating ids.
+    await assertAttendanceEditableForTeacher(ctx, existing.date);
+    await assertTeacherCanMarkClass(ctx, existing.class, existing.section, existing.date);
 
     const record = await attendanceRepository.update(id, ctx.schoolId, data);
     if (!record) throw new NotFoundError('Attendance record');
@@ -223,6 +230,7 @@ export const attendanceService = {
   ): Promise<IAttendance[]> {
     const { date } = classAttendanceSchema.parse(rawQuery);
     const targetDate = date ?? attendanceRepository.todayString();
+    await assertTeacherCanMarkClass(ctx, cls, section, targetDate);
     return attendanceRepository.findByClassDate(ctx.schoolId, cls, section, targetDate);
   },
 
@@ -233,6 +241,10 @@ export const attendanceService = {
   ): Promise<PaginatedAttendance> {
     const student = await studentRepository.findById(studentId, ctx.schoolId);
     if (!student) throw new NotFoundError('Student');
+    // Approximated on the student's current class/section — a teacher may
+    // view history for a student in their assigned class, same as they can
+    // mark attendance for them today.
+    await assertTeacherCanMarkClass(ctx, student.class, student.section, attendanceRepository.todayString());
 
     const opts = studentHistorySchema.parse(rawQuery);
     return attendanceRepository.findByStudent(ctx.schoolId, studentId, {
@@ -246,11 +258,26 @@ export const attendanceService = {
 
   async listAll(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedAttendance> {
     const opts = listAttendanceSchema.parse(rawQuery);
+    // Unlike getClassAttendance/getStudentHistory, this endpoint has no
+    // required class/section in the URL — a teacher could otherwise omit or
+    // swap the class/section query params to pull every class's records.
+    if (ctx.role === 'teacher') {
+      if (!opts.class || !opts.section) {
+        throw new ForbiddenError('Specify a class and section to view attendance — use the class-scoped view.');
+      }
+      await assertTeacherCanMarkClass(ctx, opts.class, opts.section, opts.date ?? attendanceRepository.todayString());
+    }
     return attendanceRepository.findAll(ctx.schoolId, opts);
   },
 
   async getSummary(rawQuery: unknown, ctx: AuthContext): Promise<AttendanceSummary> {
     const opts = summarySchema.parse(rawQuery);
+    if (ctx.role === 'teacher') {
+      if (!opts.class || !opts.section) {
+        throw new ForbiddenError('Specify a class and section to view attendance summary — use the class-scoped view.');
+      }
+      await assertTeacherCanMarkClass(ctx, opts.class, opts.section, attendanceRepository.todayString());
+    }
     return attendanceRepository.getSummary(ctx.schoolId, opts);
   },
 };

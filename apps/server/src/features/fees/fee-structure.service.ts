@@ -224,7 +224,7 @@ export const feeStructureService = {
     if (!request) throw new NotFoundError('Discount request');
     if (request.status !== 'pending') throw new ValidationError('This request has already been reviewed.');
 
-    const updated = await feeDiscountRequestRepository.markApproved(id, ctx.displayName, reviewNote);
+    const updated = await feeDiscountRequestRepository.markApproved(id, ctx.schoolId, ctx.displayName, reviewNote);
     if (!updated) throw new NotFoundError('Discount request');
 
     await studentRepository.updateApprovedDiscount(request.studentId, ctx.schoolId, request.requestedAmount, request.reason);
@@ -261,7 +261,7 @@ export const feeStructureService = {
     if (!request) throw new NotFoundError('Discount request');
     if (request.status !== 'pending') throw new ValidationError('This request has already been reviewed.');
 
-    const updated = await feeDiscountRequestRepository.markRejected(id, ctx.displayName, reviewNote);
+    const updated = await feeDiscountRequestRepository.markRejected(id, ctx.schoolId, ctx.displayName, reviewNote);
     if (!updated) throw new NotFoundError('Discount request');
 
     auditService.log({

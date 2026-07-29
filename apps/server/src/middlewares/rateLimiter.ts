@@ -78,3 +78,23 @@ export const authAccountLimiter = rateLimit({
     (req) => (req.body as { identifier?: string } | undefined)?.identifier,
   ),
 });
+
+// /login-pin has no `identifier` field (it authenticates via `deviceId` +
+// PIN, not email/username), so it was only ever covered by the IP-keyed
+// authLimiter — a low-entropy 4-6 digit PIN can be brute-forced against one
+// known deviceId by spreading attempts across IPs. This keys on deviceId
+// instead, same role as authAccountLimiter but for the PIN login path.
+export const pinLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDevelopment ? 1000 : 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => {
+    const deviceId = (req.body as { deviceId?: string } | undefined)?.deviceId;
+    return typeof deviceId === 'string' ? deviceId.trim() : 'unknown';
+  },
+  handler: makeRateLimitHandler(
+    'Too many PIN attempts for this device. Please try again in 15 minutes.',
+    (req) => (req.body as { deviceId?: string } | undefined)?.deviceId,
+  ),
+});

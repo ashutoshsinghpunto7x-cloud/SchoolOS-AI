@@ -3,7 +3,7 @@ import { authController } from './auth.controller';
 import { recoveryController } from './recovery.controller';
 import { authenticate } from '../../middlewares/authenticate';
 import { authorize } from '../../middlewares/authorize';
-import { authLimiter, authAccountLimiter } from '../../middlewares/rateLimiter';
+import { authLimiter, authAccountLimiter, pinLoginLimiter } from '../../middlewares/rateLimiter';
 import { verifyCsrf } from '../../middlewares/csrf';
 import { env } from '../../config/env';
 
@@ -12,11 +12,12 @@ const router = Router();
 // Public — rate limited. /refresh is cookie-authenticated (the refresh token
 // lives in an httpOnly cookie, not the request body) so it needs the CSRF
 // check — every other route here authenticates via a Bearer header instead.
-// authAccountLimiter only applies here (not /login-pin) — it keys on the
-// `identifier` field this route's body has and login-pin's doesn't.
+// authAccountLimiter keys on the `identifier` field this route's body has;
+// /login-pin has no such field (it's deviceId + PIN) so it gets its own
+// deviceId-keyed pinLoginLimiter instead — same purpose, different key.
 router.post('/login', authLimiter, authAccountLimiter, authController.login);
 router.post('/refresh', authLimiter, verifyCsrf, authController.refresh);
-router.post('/login-pin', authLimiter, recoveryController.loginWithPin);
+router.post('/login-pin', authLimiter, pinLoginLimiter, recoveryController.loginWithPin);
 router.post('/recovery/request', authLimiter, recoveryController.submitRequest);
 
 // Dev-only seed endpoint — not registered at all outside development, so a
