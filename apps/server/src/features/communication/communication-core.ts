@@ -2,6 +2,7 @@ import { schoolSettingsService } from '../school-settings/school-settings.servic
 import { notificationLogRepository } from './notification-log.repository';
 import { messageTemplateRepository } from './message-template.repository';
 import { getProvider } from './providers/provider-registry';
+import { META_TEMPLATE_MAP } from './providers/meta-template-map';
 import { renderTemplate } from './templates/template-engine';
 import { INotificationLog } from './notification-log.model';
 import { NotificationChannel, NotificationType, NOTIFICATION_TYPES } from './notification-types';
@@ -110,6 +111,8 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
     });
   }
 
+  const templateData: Record<string, string | number | undefined> = { school_name: settings.schoolName, ...recipient.templateData };
+
   let templateId: string | undefined;
   let rawBody: string;
   if (input.overrideBody) {
@@ -119,7 +122,7 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
     templateId = template._id.toString();
     rawBody = template.body;
   }
-  const body = renderTemplate(rawBody, { school_name: settings.schoolName, ...recipient.templateData });
+  const body = renderTemplate(rawBody, templateData);
 
   const provider = getProvider(channel);
   if (!provider.isConfigured()) {
@@ -132,7 +135,21 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
     });
   }
 
-  const result = await provider.sendText({ to: recipient.phone, body });
+  // Ad-hoc overrides (broadcasts where the admin typed custom text) always send
+  // as plain text — a Meta-approved template's wording can't be swapped per-send.
+  const metaTemplate = channel === 'whatsapp' && !input.overrideBody ? META_TEMPLATE_MAP[notificationType] : undefined;
+
+  const result = metaTemplate
+    ? await provider.sendTemplate({
+        to: recipient.phone,
+        templateName: metaTemplate.templateName,
+        languageCode: metaTemplate.languageCode,
+        components: [{
+          type: 'body',
+          parameters: metaTemplate.paramKeys.map((key) => ({ type: 'text', text: String(templateData[key] ?? '') })),
+        }],
+      })
+    : await provider.sendText({ to: recipient.phone, body });
 
   return notificationLogRepository.create({
     ...baseLog,

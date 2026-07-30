@@ -1,8 +1,11 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Camera, FileText, Loader2, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useExtractQuestionsFromImage, useExtractQuestionsFromPdf, useConfirmExtractedQuestions } from '../hooks/useQuestionBank';
+import { ArrowLeft, Camera, FileText, Loader2, Trash2, CheckCircle2, AlertTriangle, RotateCw, Image as ImageIcon } from 'lucide-react';
+import {
+  useExtractQuestionsFromImage, useExtractQuestionsFromPdf, useConfirmExtractedQuestions,
+  useQuestionSources, useReExtractSource,
+} from '../hooks/useQuestionBank';
 import type { ExtractedQuestionDraft, QuestionType, QuestionDifficulty, BloomsLevel } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
@@ -13,6 +16,11 @@ function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+type DraftEdit = Omit<ExtractedQuestionDraft, 'marks' | 'estimatedTimeMinutes'> & {
+  marks: number | '';
+  estimatedTimeMinutes: number | '';
+};
+
 export function QuestionUploadPage() {
   const navigate = useNavigate();
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -21,15 +29,29 @@ export function QuestionUploadPage() {
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [drafts, setDrafts] = useState<ExtractedQuestionDraft[] | null>(null);
+  const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
 
   const extractImage = useExtractQuestionsFromImage();
   const extractPdf = useExtractQuestionsFromPdf();
   const confirm = useConfirmExtractedQuestions();
+  const reExtract = useReExtractSource();
 
   const busy = extractImage.isPending || extractPdf.isPending;
   const target = { class: cls.trim(), subject: subject.trim() };
   const targetReady = !!target.class && !!target.subject;
+  const { data: sources } = useQuestionSources(target.class, target.subject);
+
+  async function handleReExtract(sourceId: string) {
+    try {
+      const result = await reExtract.mutateAsync(sourceId);
+      setDrafts((prev) => [...(prev ?? []), ...result.extracted]);
+      setWarnings(result.warnings);
+      if (result.extracted.length === 0) toast.error('No questions found in that saved text');
+      else toast.success(`${result.extracted.length} question(s) re-read — review before saving`);
+    } catch (err) {
+      toast.error('Could not re-extract from that upload', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
 
   async function handleImageFile(file: File) {
     if (!targetReady) { toast.error('Enter class and subject first'); return; }
@@ -57,7 +79,7 @@ export function QuestionUploadPage() {
     }
   }
 
-  function updateDraft(index: number, patch: Partial<ExtractedQuestionDraft>) {
+  function updateDraft(index: number, patch: Partial<DraftEdit>) {
     setDrafts((prev) => prev?.map((d, i) => (i === index ? { ...d, ...patch } : d)) ?? null);
   }
 
@@ -68,7 +90,12 @@ export function QuestionUploadPage() {
   async function handleConfirm() {
     if (!drafts || drafts.length === 0) return;
     try {
-      const saved = await confirm.mutateAsync({ class: target.class, subject: target.subject, questions: drafts });
+      const questions: ExtractedQuestionDraft[] = drafts.map((d) => ({
+        ...d,
+        marks: d.marks === '' ? 0 : d.marks,
+        estimatedTimeMinutes: d.estimatedTimeMinutes === '' ? 0 : d.estimatedTimeMinutes,
+      }));
+      const saved = await confirm.mutateAsync({ class: target.class, subject: target.subject, questions });
       toast.success(`${saved.length} question(s) saved to the bank`);
       navigate('/teacher/question-bank');
     } catch (err) {
@@ -122,6 +149,32 @@ export function QuestionUploadPage() {
         <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePdfFile(f); e.target.value = ''; }} />
 
+        {targetReady && sources && sources.length > 0 && (
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">
+              Previously uploaded — re-extract without re-uploading
+            </p>
+            <div className="space-y-1.5">
+              {sources.map((s) => (
+                <div key={s._id} className="flex items-center gap-2.5 h-10 px-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5">
+                  {s.kind === 'image' ? <ImageIcon className="w-4 h-4 text-gray-400 shrink-0" /> : <FileText className="w-4 h-4 text-gray-400 shrink-0" />}
+                  <span className="flex-1 text-xs text-gray-600 dark:text-white/60 truncate">
+                    {s.fileName || (s.kind === 'image' ? 'Photo upload' : 'PDF upload')}
+                  </span>
+                  <span className="text-[11px] text-gray-400 shrink-0">{new Date(s.createdAt).toLocaleDateString()}</span>
+                  <button
+                    type="button" onClick={() => handleReExtract(s._id)} disabled={reExtract.isPending}
+                    className="shrink-0 h-7 px-2.5 rounded-md text-xs font-semibold text-[#6D4AFF] hover:bg-[#6D4AFF]/10 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {reExtract.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
+                    Re-extract
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {warnings.length > 0 && (
           <div className="rounded-xl p-3.5 bg-amber-50 border border-amber-200 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -160,9 +213,9 @@ export function QuestionUploadPage() {
                     className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs">
                     {BLOOMS_LEVELS.map((t) => <option key={t} value={t}>{labelize(t)}</option>)}
                   </select>
-                  <input type="number" min={0} value={d.marks} onChange={(e) => updateDraft(i, { marks: Number(e.target.value) })}
+                  <input type="number" min={0} value={d.marks} onChange={(e) => updateDraft(i, { marks: e.target.value === '' ? '' : Number(e.target.value) })}
                     placeholder="Marks" className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs" />
-                  <input type="number" min={0} value={d.estimatedTimeMinutes} onChange={(e) => updateDraft(i, { estimatedTimeMinutes: Number(e.target.value) })}
+                  <input type="number" min={0} value={d.estimatedTimeMinutes} onChange={(e) => updateDraft(i, { estimatedTimeMinutes: e.target.value === '' ? '' : Number(e.target.value) })}
                     placeholder="Minutes" className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs" />
                   <input value={d.chapterName} onChange={(e) => updateDraft(i, { chapterName: e.target.value })}
                     placeholder="Chapter" className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs col-span-2" />

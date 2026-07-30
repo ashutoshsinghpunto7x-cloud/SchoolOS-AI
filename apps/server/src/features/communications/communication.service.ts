@@ -17,6 +17,7 @@ import { auditService } from '../audit/audit.service';
 import { automationService } from '../automation/automation.service';
 import { aiService } from '../ai/ai.service';
 import { twilioWhatsAppProvider, isTwilioConfigured } from './providers/twilio-whatsapp.provider';
+import { whatsAppCloudLegacyProvider, isWhatsAppCloudConfigured } from './providers/whatsapp-cloud.provider';
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
@@ -222,14 +223,18 @@ export const communicationService = {
     const student = await Student.findById(studentId).lean<IStudent>();
     if (!student) throw new NotFoundError('Student');
 
-    const useTwilio = isTwilioConfigured();
-    const provider  = useTwilio ? 'twilio' : 'mock';
+    // Meta WhatsApp Cloud API is the real, current channel — prefer it whenever
+    // configured. Twilio is kept only for schools that set it up before the
+    // Meta integration existed; mock is the dev-only last resort.
+    const useMeta   = isWhatsAppCloudConfigured();
+    const useTwilio = !useMeta && isTwilioConfigured();
+    const provider  = useMeta ? 'whatsapp-cloud' : useTwilio ? 'twilio' : 'mock';
 
     const communication = await communicationRepository.create({
       studentId,
       type: 'whatsapp',
-      // Twilio sends async — start as PENDING; mock completes instantly
-      status: useTwilio ? 'PENDING' : 'COMPLETED',
+      // Meta/Twilio send async — start as PENDING; mock completes instantly
+      status: useMeta || useTwilio ? 'PENDING' : 'COMPLETED',
       provider,
       direction: 'outbound',
       title: 'WhatsApp',
@@ -252,7 +257,18 @@ export const communicationService = {
       schoolId: ctx.schoolId,
     });
 
-    if (useTwilio) {
+    if (useMeta) {
+      whatsAppCloudLegacyProvider.trigger({
+        communicationId: commId,
+        studentId,
+        studentName: student.fullName,
+        parentName: student.fatherName ?? '',
+        parentPhone: student.parentPhone ?? '',
+        schoolName: env.SCHOOL_NAME,
+        type: 'whatsapp',
+        message,
+      });
+    } else if (useTwilio) {
       twilioWhatsAppProvider.trigger({
         communicationId: commId,
         studentId,

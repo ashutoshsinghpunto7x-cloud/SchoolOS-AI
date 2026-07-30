@@ -4,8 +4,11 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { chapterRepository } from './chapter.repository';
 import { questionRepository, QuestionListOptions } from './question.repository';
+import { questionSourceRepository } from './question-source.repository';
+import { questionExtractionService } from './question-extraction.service';
 import { IQuestion } from './question.model';
 import { ISyllabusChapter } from './chapter.model';
+import { IQuestionSource } from './question-source.model';
 import {
   ConfirmExtractedQuestionsInput,
   CreateQuestionInput,
@@ -73,14 +76,14 @@ export const questionBankService = {
       topic: data.topic,
       questionText: data.questionText,
       questionType: data.questionType,
-      options: data.options,
-      correctAnswer: data.correctAnswer,
+      options: data.options ?? undefined,
+      correctAnswer: data.correctAnswer ?? undefined,
       difficulty: data.difficulty,
       marks: data.marks,
       estimatedTimeMinutes: data.estimatedTimeMinutes,
       bloomsLevel: data.bloomsLevel,
       keywords: data.keywords,
-      source: data.source,
+      source: data.source ?? undefined,
       createdBy: ctx.userId,
     });
   },
@@ -95,7 +98,8 @@ export const questionBankService = {
     // spellings) all land on one chapter row with a complete topics list.
     const toCreate = [];
     for (const q of data.questions) {
-      const chapter = await chapterRepository.findOrCreate(ctx.schoolId, data.class, data.subject, q.chapterName, q.topic);
+      const topic = q.topic ?? undefined;
+      const chapter = await chapterRepository.findOrCreate(ctx.schoolId, data.class, data.subject, q.chapterName, topic);
 
       toCreate.push({
         schoolId: ctx.schoolId,
@@ -103,17 +107,17 @@ export const questionBankService = {
         subject: data.subject,
         chapterId: String(chapter._id),
         chapterName: chapter.chapterName,
-        topic: q.topic,
+        topic,
         questionText: q.questionText,
         questionType: q.questionType,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
+        options: q.options ?? undefined,
+        correctAnswer: q.correctAnswer ?? undefined,
         difficulty: q.difficulty,
         marks: q.marks,
         estimatedTimeMinutes: q.estimatedTimeMinutes,
         bloomsLevel: q.bloomsLevel,
         keywords: q.keywords,
-        source: q.source,
+        source: q.source ?? undefined,
         createdBy: ctx.userId,
       });
     }
@@ -136,9 +140,38 @@ export const questionBankService = {
       chapterName = chapter.chapterName;
     }
 
-    const updated = await questionRepository.update(id, ctx.schoolId, { ...data, chapterId, chapterName });
+    const updated = await questionRepository.update(id, ctx.schoolId, {
+      ...data,
+      options: data.options ?? undefined,
+      correctAnswer: data.correctAnswer ?? undefined,
+      source: data.source ?? undefined,
+      chapterId,
+      chapterName,
+    });
     if (!updated) throw new NotFoundError('Question');
     return updated;
+  },
+
+  /** Previously-uploaded photos/PDFs whose converted text was saved for reuse. */
+  async listSources(rawQuery: unknown, ctx: AuthContext): Promise<IQuestionSource[]> {
+    const query = rawQuery as { class: string; subject: string };
+    await assertTeacherCanManageQuestionBank(ctx, query.class, query.subject);
+    return questionSourceRepository.findAll(ctx.schoolId, query.class, query.subject);
+  },
+
+  async getSource(id: string, ctx: AuthContext): Promise<IQuestionSource> {
+    const source = await questionSourceRepository.findById(id, ctx.schoolId);
+    if (!source) throw new NotFoundError('Upload');
+    await assertTeacherCanManageQuestionBank(ctx, source.class, source.subject);
+    return source;
+  },
+
+  /** Re-runs AI structuring over a saved upload's converted text, without needing the original file again. */
+  async reExtractSource(id: string, ctx: AuthContext): Promise<{ jobId: string }> {
+    const source = await questionSourceRepository.findById(id, ctx.schoolId);
+    if (!source) throw new NotFoundError('Upload');
+    await assertTeacherCanManageQuestionBank(ctx, source.class, source.subject);
+    return questionExtractionService.enqueueReExtractFromSource(source, ctx);
   },
 
   async deleteQuestion(id: string, ctx: AuthContext): Promise<void> {

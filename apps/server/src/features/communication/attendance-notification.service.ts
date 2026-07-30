@@ -38,6 +38,9 @@ async function buildAbsenteeRecipients(schoolId: string, date: string, cls?: str
         student_name: student.fullName,
         class: record.class,
         section: record.section,
+        // Meta-approved "student_absent_alert" template's {{2}} expects
+        // class + section combined — see providers/meta-template-map.ts.
+        class_section: `${record.class} - ${record.section}`,
         date: record.date,
       },
     });

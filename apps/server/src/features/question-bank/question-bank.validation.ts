@@ -16,16 +16,16 @@ export const extractionTargetSchema = z.object({
 const extractedQuestionDraftSchema = z.object({
   questionText: z.string().min(1),
   questionType: z.enum(QUESTION_TYPES),
-  options: z.array(z.string()).optional(),
-  correctAnswer: z.string().optional(),
+  options: z.array(z.string()).nullish(),
+  correctAnswer: z.string().nullish(),
   difficulty: z.enum(DIFFICULTIES),
   marks: z.number().min(0),
   estimatedTimeMinutes: z.number().min(0),
   bloomsLevel: z.enum(BLOOMS_LEVELS),
   keywords: z.array(z.string()).default([]),
   chapterName: z.string().min(1),
-  topic: z.string().optional(),
-  source: z.string().optional(),
+  topic: z.string().nullish(),
+  source: z.string().nullish(),
 });
 
 export const confirmExtractedQuestionsSchema = z.object({
@@ -43,14 +43,14 @@ export const createQuestionSchema = z.object({
   topic: z.string().optional(),
   questionText: z.string({ required_error: 'questionText is required' }).min(1),
   questionType: z.enum(QUESTION_TYPES),
-  options: z.array(z.string()).optional(),
-  correctAnswer: z.string().optional(),
+  options: z.array(z.string()).nullish(),
+  correctAnswer: z.string().nullish(),
   difficulty: z.enum(DIFFICULTIES),
   marks: z.number().min(0),
   estimatedTimeMinutes: z.number().min(0),
   bloomsLevel: z.enum(BLOOMS_LEVELS),
   keywords: z.array(z.string()).default([]),
-  source: z.string().optional(),
+  source: z.string().nullish(),
 });
 
 export const updateQuestionSchema = createQuestionSchema.partial();

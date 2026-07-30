@@ -23,7 +23,9 @@ export const questionBankController = {
       if (!req.file) throw new ValidationError('An image file is required');
       const target = extractionTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
-      const job = await questionExtractionService.enqueueExtractFromImage(target.class, target.subject, fileToDataUri(req.file), ctx);
+      const job = await questionExtractionService.enqueueExtractFromImage(
+        target.class, target.subject, fileToDataUri(req.file), ctx, req.file.originalname,
+      );
       sendCreated(res, job, 'Reading the page…');
     } catch (err) { next(err); }
   },
@@ -34,7 +36,9 @@ export const questionBankController = {
       if (!req.file) throw new ValidationError('A PDF file is required');
       const target = extractionTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
-      const job = await questionExtractionService.enqueueExtractFromPdf(target.class, target.subject, req.file.buffer, ctx);
+      const job = await questionExtractionService.enqueueExtractFromPdf(
+        target.class, target.subject, req.file.buffer, ctx, req.file.originalname,
+      );
       sendCreated(res, job, 'Reading the document…');
     } catch (err) { next(err); }
   },
@@ -55,6 +59,34 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const questions = await questionBankService.confirmExtractedQuestions(data, ctx);
       sendCreated(res, questions, `${questions.length} question(s) saved to the bank`);
+    } catch (err) { next(err); }
+  },
+
+  /** GET /question-bank/sources?class=8&subject=Science — past uploads whose converted text was saved for reuse */
+  async listSources(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = listChaptersSchema.parse(req.query);
+      const ctx = buildAuthContext(req.user!);
+      const sources = await questionBankService.listSources(query, ctx);
+      sendSuccess(res, sources);
+    } catch (err) { next(err); }
+  },
+
+  /** GET /question-bank/sources/:id */
+  async getSource(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const source = await questionBankService.getSource(req.params.id, ctx);
+      sendSuccess(res, source);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/sources/:id/re-extract — regenerate draft questions from a saved upload's converted text */
+  async reExtractSource(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const job = await questionBankService.reExtractSource(req.params.id, ctx);
+      sendCreated(res, job, 'Re-reading the saved text…');
     } catch (err) { next(err); }
   },
 

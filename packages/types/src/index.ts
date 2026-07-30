@@ -3339,12 +3339,22 @@ export interface QuestionExtractionResult {
   sourceType: 'image' | 'pdf_text';
   extracted: ExtractedQuestionDraft[];
   warnings: string[];
+  sourceId?: string;
 }
 
 export interface ConfirmExtractedQuestionsPayload {
   class: string;
   subject: string;
   questions: ExtractedQuestionDraft[];
+}
+
+/** A previously-uploaded photo/PDF whose converted text was saved so it can be re-extracted without re-uploading. */
+export interface QuestionSource extends BaseEntity {
+  class: string;
+  subject: string;
+  kind: 'image' | 'pdf_text';
+  fileName?: string;
+  extractedText: string;
 }
 
 // ── Paper generation ───────────────────────────────────────────────────────────

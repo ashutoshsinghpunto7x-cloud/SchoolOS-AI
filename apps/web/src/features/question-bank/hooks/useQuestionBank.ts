@@ -14,6 +14,7 @@ export const questionBankKeys = {
   lists:    () => [...questionBankKeys.all, 'list']    as const,
   list:     (o: QuestionListOptions) => [...questionBankKeys.lists(), o] as const,
   detail:   (id: string) => [...questionBankKeys.all, 'detail', id] as const,
+  sources:  (cls: string, subject: string) => [...questionBankKeys.all, 'sources', cls, subject] as const,
 };
 
 export const useChapters = (cls: string, subject: string) =>
@@ -49,12 +50,32 @@ export const useUpdateQuestion = (id: string) => useInvalidatingMutation((payloa
 export const useDeleteQuestion = () => useInvalidatingMutation((id: string) => questionBankApi.deleteQuestion(id));
 export const useConfirmExtractedQuestions = () => useInvalidatingMutation((payload: ConfirmExtractedQuestionsPayload) => questionBankApi.confirmExtracted(payload));
 
-// AI extraction never saves anything, so no query invalidation on success.
-export const useExtractQuestionsFromImage = () =>
-  useMutation({ mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromImage(target, file) });
+// Extraction never saves questions to the bank, but it does save the upload's converted text as a source — invalidate that list.
+export const useExtractQuestionsFromImage = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromImage(target, file),
+    onSuccess:  (_result, { target }) => qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) }),
+  });
+};
 
-export const useExtractQuestionsFromPdf = () =>
-  useMutation({ mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromPdf(target, file) });
+export const useExtractQuestionsFromPdf = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromPdf(target, file),
+    onSuccess:  (_result, { target }) => qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) }),
+  });
+};
+
+export const useQuestionSources = (cls: string, subject: string) =>
+  useQuery({
+    queryKey: questionBankKeys.sources(cls, subject),
+    queryFn:  () => questionBankApi.listSources(cls, subject),
+    enabled:  !!cls && !!subject,
+  });
+
+export const useReExtractSource = () =>
+  useMutation({ mutationFn: (id: string) => questionBankApi.reExtractSource(id) });
 
 export const useGeneratePaper = () =>
   useMutation({ mutationFn: (config: PaperGenerationConfig) => questionBankApi.generatePaper(config) });

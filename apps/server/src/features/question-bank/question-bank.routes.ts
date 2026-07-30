@@ -13,6 +13,10 @@ router.post('/extract/pdf', documentUploadMiddleware, questionBankController.ext
 router.get('/extract/jobs/:id', questionBankController.getExtractionJob);
 router.post('/extract/confirm', questionBankController.confirmExtracted);
 
+router.get('/sources', questionBankController.listSources);
+router.get('/sources/:id', questionBankController.getSource);
+router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
+
 router.get('/chapters', questionBankController.listChapters);
 
 router.post('/papers/generate', questionBankController.generatePaper);

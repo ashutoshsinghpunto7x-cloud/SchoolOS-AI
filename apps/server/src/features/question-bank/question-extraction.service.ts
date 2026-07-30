@@ -5,6 +5,8 @@ import { ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
 import { extractionJobRepository } from './extraction-job.repository';
+import { questionSourceRepository } from './question-source.repository';
+import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
@@ -28,6 +30,8 @@ export interface QuestionExtractionResult {
   sourceType: 'image' | 'pdf_text';
   extracted: ExtractedQuestionDraft[];
   warnings: string[];
+  /** Id of the permanent QuestionSource row this upload's converted text was saved under — pass to re-extraction to reuse it without re-uploading. */
+  sourceId?: string;
 }
 
 // ── Raw shape the model is asked to return ─────────────────────────────────────
@@ -70,15 +74,18 @@ For each question, return:
 - "topic": the specific topic within the chapter, if identifiable
 - "source": where this came from if visible (e.g. "NCERT Page 54", "2024 Half Yearly Paper"), else omit
 
-Return ONLY a valid JSON object: {"questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
+Also return "pageText": the full raw text of everything readable on the page, transcribed verbatim, so it can be cached and re-used later.
+
+Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
 }
 
-function parseQuestions(raw: string): RawExtractedQuestion[] {
+function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageText: string } {
   try {
     const body = JSON.parse(raw);
     const questions = Array.isArray(body) ? body : body.questions;
-    if (!Array.isArray(questions)) return [];
-    return questions;
+    const pageText = typeof body?.pageText === 'string' ? body.pageText : '';
+    if (!Array.isArray(questions)) return { questions: [], pageText };
+    return { questions, pageText };
   } catch (err) {
     logger.error('[QuestionExtraction] Failed to parse AI response', { error: String(err), raw: raw.slice(0, 500) });
     throw new ValidationError('Could not read questions from that upload — try a clearer photo or a different file.');
@@ -128,7 +135,9 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
 // ── Service ────────────────────────────────────────────────────────────────────
 
 export const questionExtractionService = {
-  async extractFromImage(cls: string, subject: string, imageDataUri: string, ctx: AuthContext): Promise<QuestionExtractionResult> {
+  async extractFromImage(
+    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string,
+  ): Promise<QuestionExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
@@ -154,11 +163,20 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const { extracted, warnings } = clean(parseQuestions(result.content));
-    return { sourceType: 'image', extracted, warnings };
+    const { questions, pageText } = parseQuestions(result.content);
+    const { extracted, warnings } = clean(questions);
+
+    const source = await questionSourceRepository.create({
+      schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image', fileName,
+      extractedText: pageText || questions.map((q) => q.questionText ?? '').join('\n'),
+    });
+
+    return { sourceType: 'image', extracted, warnings, sourceId: String(source._id) };
   },
 
-  async extractFromPdf(cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext): Promise<QuestionExtractionResult> {
+  async extractFromPdf(
+    cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
+  ): Promise<QuestionExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
@@ -173,6 +191,28 @@ export const questionExtractionService = {
       );
     }
 
+    const { extracted, warnings } = await questionExtractionService.structureFromText(cls, subject, text, ctx);
+
+    const source = await questionSourceRepository.create({
+      schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'pdf_text', fileName,
+      extractedText: text,
+    });
+
+    return { sourceType: 'pdf_text', extracted, warnings, sourceId: String(source._id) };
+  },
+
+  /** Re-runs AI structuring over previously-saved converted text — no re-upload/re-OCR needed. */
+  async extractFromSourceText(source: IQuestionSource, ctx: AuthContext): Promise<QuestionExtractionResult> {
+    const { extracted, warnings } = await questionExtractionService.structureFromText(
+      source.class, source.subject, source.extractedText, ctx,
+    );
+    return { sourceType: source.kind, extracted, warnings, sourceId: String(source._id) };
+  },
+
+  /** Shared AI call: turns raw page/document text into structured question drafts. */
+  async structureFromText(
+    cls: string, subject: string, text: string, ctx: AuthContext,
+  ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
     const start = Date.now();
     const result = await openaiProvider.complete({
       systemPrompt: buildSystemPrompt(cls, subject),
@@ -193,15 +233,17 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const { extracted, warnings } = clean(parseQuestions(result.content));
-    return { sourceType: 'pdf_text', extracted, warnings };
+    const { questions } = parseQuestions(result.content);
+    return clean(questions);
   },
 
-  async enqueueExtractFromImage(cls: string, subject: string, imageDataUri: string, ctx: AuthContext): Promise<{ jobId: string }> {
+  async enqueueExtractFromImage(
+    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string,
+  ): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'image' });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromImage(cls, subject, imageDataUri, ctx)
+    questionExtractionService.extractFromImage(cls, subject, imageDataUri, ctx, fileName)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background image extraction failed', { jobId, err });
@@ -211,14 +253,31 @@ export const questionExtractionService = {
     return { jobId };
   },
 
-  async enqueueExtractFromPdf(cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext): Promise<{ jobId: string }> {
+  async enqueueExtractFromPdf(
+    cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
+  ): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'pdf_text' });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromPdf(cls, subject, pdfBuffer, ctx)
+    questionExtractionService.extractFromPdf(cls, subject, pdfBuffer, ctx, fileName)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background PDF extraction failed', { jobId, err });
+        extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+      });
+
+    return { jobId };
+  },
+
+  /** Re-extraction job over an already-saved QuestionSource — caller (question-bank.service) has already checked ownership/scope. */
+  async enqueueReExtractFromSource(source: IQuestionSource, ctx: AuthContext): Promise<{ jobId: string }> {
+    const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: source.kind });
+    const jobId = job._id.toString();
+
+    questionExtractionService.extractFromSourceText(source, ctx)
+      .then((result) => extractionJobRepository.markCompleted(jobId, result))
+      .catch((err) => {
+        logger.error('[QuestionExtraction] Background re-extraction failed', { jobId, err });
         extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
       });
 

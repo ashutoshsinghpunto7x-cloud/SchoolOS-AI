@@ -10,6 +10,7 @@ import type {
   PaperGenerationConfig,
   GeneratedPaper,
   PaginatedResponse,
+  QuestionSource,
 } from '@schoolos/types';
 
 const BASE = '/question-bank';
@@ -57,6 +58,20 @@ export const questionBankApi = {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
+      return await pollExtractionJob(res.data.data.jobId);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  listSources: async (cls: string, subject: string): Promise<QuestionSource[]> => {
+    try {
+      const res = await apiClient.get<{ data: QuestionSource[] }>(`${BASE}/sources`, { params: { class: cls, subject } });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  reExtractSource: async (id: string): Promise<QuestionExtractionResult> => {
+    try {
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/sources/${id}/re-extract`);
       return await pollExtractionJob(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

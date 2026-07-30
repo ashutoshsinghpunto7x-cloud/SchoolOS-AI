@@ -18,14 +18,14 @@ export function PaperGeneratorPage() {
   const [examType, setExamType] = useState('Half Yearly');
   const [durationMinutes, setDurationMinutes] = useState<number | ''>('');
   const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
-  const [difficultyMix, setDifficultyMix] = useState({ easy: 0, medium: 0, hard: 0 });
-  const [marksBreakdown, setMarksBreakdown] = useState<PaperMarksBreakdownEntry[]>([{ marks: 1, count: 10 }]);
+  const [difficultyMix, setDifficultyMix] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 0, medium: 0, hard: 0 });
+  const [marksBreakdown, setMarksBreakdown] = useState<{ marks: number | ''; count: number | '' }[]>([{ marks: 1, count: 10 }]);
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set());
 
   const { data: chapters } = useChapters(cls.trim(), subject.trim());
   const generate = useGeneratePaper();
 
-  const totalMarks = marksBreakdown.reduce((sum, e) => sum + e.marks * e.count, 0);
+  const totalMarks = marksBreakdown.reduce((sum, e) => sum + Number(e.marks || 0) * Number(e.count || 0), 0);
 
   function toggleChapter(id: string) {
     setSelectedChapterIds((prev) => {
@@ -43,7 +43,7 @@ export function PaperGeneratorPage() {
     });
   }
 
-  function updateBreakdown(index: number, patch: Partial<PaperMarksBreakdownEntry>) {
+  function updateBreakdown(index: number, patch: Partial<{ marks: number | ''; count: number | '' }>) {
     setMarksBreakdown((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
   }
 
@@ -56,8 +56,15 @@ export function PaperGeneratorPage() {
         examType,
         chapterIds: [...selectedChapterIds],
         totalMarks,
-        difficultyMix,
-        marksBreakdown,
+        difficultyMix: {
+          easy: difficultyMix.easy === '' ? 0 : difficultyMix.easy,
+          medium: difficultyMix.medium === '' ? 0 : difficultyMix.medium,
+          hard: difficultyMix.hard === '' ? 0 : difficultyMix.hard,
+        },
+        marksBreakdown: marksBreakdown.map((e): PaperMarksBreakdownEntry => ({
+          marks: e.marks === '' ? 0 : e.marks,
+          count: e.count === '' ? 0 : e.count,
+        })),
         questionTypes: [...questionTypes],
         durationMinutes: durationMinutes === '' ? undefined : durationMinutes,
       });
@@ -131,7 +138,7 @@ export function PaperGeneratorPage() {
               <div key={level}>
                 <label className="text-xs text-gray-500 dark:text-white/40 capitalize">{level}</label>
                 <input type="number" min={0} value={difficultyMix[level]}
-                  onChange={(e) => setDifficultyMix((prev) => ({ ...prev, [level]: Number(e.target.value) }))}
+                  onChange={(e) => setDifficultyMix((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
                   className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
               </div>
             ))}
@@ -149,10 +156,10 @@ export function PaperGeneratorPage() {
           <div className="space-y-2">
             {marksBreakdown.map((entry, i) => (
               <div key={i} className="flex items-center gap-2">
-                <input type="number" min={0} value={entry.marks} onChange={(e) => updateBreakdown(i, { marks: Number(e.target.value) })}
+                <input type="number" min={0} value={entry.marks} onChange={(e) => updateBreakdown(i, { marks: e.target.value === '' ? '' : Number(e.target.value) })}
                   placeholder="Marks each" className="h-9 flex-1 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
                 <span className="text-xs text-gray-400">×</span>
-                <input type="number" min={0} value={entry.count} onChange={(e) => updateBreakdown(i, { count: Number(e.target.value) })}
+                <input type="number" min={0} value={entry.count} onChange={(e) => updateBreakdown(i, { count: e.target.value === '' ? '' : Number(e.target.value) })}
                   placeholder="Count" className="h-9 flex-1 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
                 <button type="button" onClick={() => setMarksBreakdown((prev) => prev.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500">
                   <Trash2 className="w-4 h-4" />

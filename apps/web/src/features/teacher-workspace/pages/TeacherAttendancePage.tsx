@@ -16,6 +16,7 @@ import {
   Undo2,
   Filter,
   Lock,
+  MessageCircle,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -23,8 +24,7 @@ import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
-// WhatsApp absent-notification sending is temporarily disabled — see AbsenteeOutreach
-// below. Re-import when re-enabling: `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
+import { useSendAttendanceNotifications } from '@/features/communication/hooks/useCommunication';
 import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -466,13 +466,14 @@ function SkeletonRow() {
   );
 }
 
-// ── Absentee outreach (call now; WhatsApp reminder disabled for now) ──────────
+// ── Absentee outreach (call now, or send a WhatsApp reminder to everyone
+// absent) ───────────────────────────────────────────────────────────────────
 //
-// The WhatsApp "send reminder" feature is intentionally disabled below — just
-// the absent students' names + a call-parent shortcut are shown. To re-enable
-// WhatsApp sending later: restore the commented-out state/handler/JSX further
-// down, and re-add `import { useAbsenteeReminder } from '../hooks/useAbsenteeReminder';`
-// at the top of this file.
+// Sending goes through the Meta WhatsApp Cloud API notification engine
+// (POST /communication/attendance/send) — that endpoint resolves absentees,
+// renders the school's ATTENDANCE_ABSENT template, and dispatches to all of
+// them server-side, so there's no per-student selection or free-text editing
+// here (unlike the old Twilio-based per-student loop this replaces).
 
 interface Absentee {
   studentId: string;
@@ -480,40 +481,25 @@ interface Absentee {
   parentPhone?: string;
 }
 
-// const defaultReminderTemplate = (date: string) =>
-//   `Hi, this is to inform you that {name} was marked absent today, ${formatDisplayDate(date)}. Please contact the school if this is unexpected.`;
-
 const telHref = (phone?: string) => {
   if (!phone) return undefined;
   const digits = phone.replace(/\D/g, '');
   return digits.length === 10 ? `tel:+91${digits}` : `tel:${digits}`;
 };
 
-function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: string }) {
-  // const [selected, setSelected] = useState<Set<string>>(new Set(absentees.map((a) => a.studentId)));
-  // const [template, setTemplate] = useState(defaultReminderTemplate(date));
-  // const { sendReminders, isSending, sentCount, failedCount } = useAbsenteeReminder();
-  // const [done, setDone] = useState(false);
-  //
-  // function toggle(studentId: string) {
-  //   setSelected((prev) => {
-  //     const next = new Set(prev);
-  //     if (next.has(studentId)) next.delete(studentId);
-  //     else next.add(studentId);
-  //     return next;
-  //   });
-  // }
-  //
-  // async function handleSend() {
-  //   const targets = absentees.filter((a) => selected.has(a.studentId));
-  //   if (!targets.length) return;
-  //   setDone(false);
-  //   await sendReminders(
-  //     targets.map((t) => ({ studentId: t.studentId, studentName: t.fullName })),
-  //     (name) => template.replace('{name}', name),
-  //   );
-  //   setDone(true);
-  // }
+function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absentee[]; date: string; cls: string; section: string }) {
+  const { mutateAsync: sendNotifications, isPending: isSending } = useSendAttendanceNotifications();
+  const [result, setResult] = useState<{ total: number } | null>(null);
+
+  async function handleSend() {
+    setResult(null);
+    try {
+      const summary = await sendNotifications({ date, class: cls, section });
+      setResult({ total: summary.totalStudents });
+    } catch (err) {
+      toast.error('Failed to send reminders', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
 
   return (
     <div className="w-full max-w-sm mt-6 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5 text-left">
@@ -542,32 +528,21 @@ function AbsenteeOutreach({ absentees, date }: { absentees: Absentee[]; date: st
         })}
       </div>
 
-      {/* ── WhatsApp reminder — disabled for now, restore when ready ──────────
-      <label className="block text-xs font-semibold text-gray-600 mb-1.5 mt-4">WhatsApp reminder message</label>
-      <textarea
-        value={template}
-        onChange={(e) => setTemplate(e.target.value)}
-        rows={3}
-        className="w-full px-3 py-2 mb-3 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
-      />
-      <p className="text-[11px] text-gray-400 mb-3">Use <span className="font-mono">{'{name}'}</span> to insert each student's name.</p>
-
-      {done && (
+      {result && (
         <div className="text-xs font-medium mb-3 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700">
-          Sent to {sentCount} parent{sentCount !== 1 ? 's' : ''}{failedCount > 0 ? ` · ${failedCount} failed` : ''}
+          Reminder dispatched to {result.total} parent{result.total !== 1 ? 's' : ''}
         </div>
       )}
 
       <button
         type="button"
         onClick={handleSend}
-        disabled={isSending || selected.size === 0}
+        disabled={isSending}
         className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
       >
         {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-        {isSending ? `Sending… (${sentCount}/${selected.size})` : `Send WhatsApp Reminder (${selected.size})`}
+        {isSending ? 'Sending…' : `Send WhatsApp Reminder (${absentees.length})`}
       </button>
-      ── */}
     </div>
   );
 }
@@ -630,7 +605,7 @@ function SubmittedScreen({
         </div>
       </div>
 
-      {absentees.length > 0 && <AbsenteeOutreach absentees={absentees} date={date} />}
+      {absentees.length > 0 && <AbsenteeOutreach absentees={absentees} date={date} cls={cls} section={section} />}
 
       {/* Actions */}
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">

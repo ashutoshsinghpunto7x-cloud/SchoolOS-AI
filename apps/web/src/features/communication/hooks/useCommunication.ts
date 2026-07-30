@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { communicationApi } from '../api/communication.api';
+import { communicationEngineApi } from '../api/communication-engine.api';
 import type { CommStatus, CommunicationsQueryOptions, UpdateCommunicationPayload } from '@schoolos/types';
 
 const TERMINAL: CommStatus[] = ['COMPLETED', 'DELIVERED', 'READ', 'FAILED', 'CANCELLED'];
@@ -60,6 +61,14 @@ export const useSendWhatsApp = (studentId: string) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: communicationKeys.byStudent(studentId) }),
   });
 };
+
+/** Sends absent-notification WhatsApp reminders for every absentee matching
+ *  date/class/section via the real Meta Cloud API notification engine. */
+export const useSendAttendanceNotifications = () =>
+  useMutation({
+    mutationFn: (params: { date?: string; class?: string; section?: string }) =>
+      communicationEngineApi.sendAttendanceNotifications(params),
+  });
 
 export const useUpdateCommunication = () => {
   const qc = useQueryClient();
