@@ -2,9 +2,11 @@ import app from './app';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './lib/logger';
+import { startPlannerScheduler } from './features/teacher-planner/planner-notifications.job';
 
 const start = async (): Promise<void> => {
   await connectDatabase();
+  startPlannerScheduler();
 
   const server = app.listen(Number(env.PORT), () => {
     logger.info(`SchoolOS AI Server started`, {

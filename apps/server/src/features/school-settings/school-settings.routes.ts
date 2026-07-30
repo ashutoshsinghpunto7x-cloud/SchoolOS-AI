@@ -12,6 +12,7 @@ router.get('/', schoolSettingsController.getSettings);
 router.post('/logo', authorize('admin', 'principal', 'accountant'), imageUploadMiddleware, schoolSettingsController.uploadLogo);
 router.delete('/logo', authorize('admin', 'principal', 'accountant'), schoolSettingsController.removeLogo);
 router.patch('/attendance-rules', authorize('admin'), schoolSettingsController.updateAttendanceRules);
+router.patch('/academic-year', authorize('admin', 'principal'), schoolSettingsController.updateAcademicYear);
 router.patch('/payroll-config', authorize('admin'), schoolSettingsController.updatePayrollConfig);
 router.patch('/behavior-window', authorize('admin', 'principal'), schoolSettingsController.updateBehaviorWindow);
 router.patch('/attendance-edit-policy', authorize('admin', 'principal'), schoolSettingsController.updateAttendanceEditPolicy);

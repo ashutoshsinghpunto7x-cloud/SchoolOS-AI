@@ -68,6 +68,11 @@ export interface ISchoolSettings extends Document {
   schoolId: string;
   schoolName: string;
   logoUrl?: string;
+  /** Academic-year boundaries — principal-configurable, read by the Teacher
+   *  Planner's teaching-week generation and pace tracker. Undefined until an
+   *  admin/principal sets them (no planner features are usable until then). */
+  academicYearStart?: Date;
+  academicYearEnd?: Date;
   attendanceRules: IAttendanceRules;
   payrollConfig: IPayrollConfig;
   behaviorWindow: IBehaviorWindow;
@@ -183,6 +188,8 @@ const schoolSettingsSchema = new Schema<ISchoolSettings>(
     schoolId:          { type: String, required: true, unique: true },
     schoolName:        { type: String, required: true, trim: true, default: 'FNIC' },
     logoUrl:           { type: String },
+    academicYearStart: { type: Date },
+    academicYearEnd:   { type: Date },
     attendanceRules:   { type: attendanceRulesSchema, default: () => ({ ...DEFAULT_ATTENDANCE_RULES }) },
     payrollConfig:     { type: payrollConfigSchema, default: () => ({ ...DEFAULT_PAYROLL_CONFIG }) },
     behaviorWindow:    { type: behaviorWindowSchema, default: () => ({ ...DEFAULT_BEHAVIOR_WINDOW }) },

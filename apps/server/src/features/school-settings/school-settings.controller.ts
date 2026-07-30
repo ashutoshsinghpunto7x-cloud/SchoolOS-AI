@@ -39,6 +39,14 @@ export const schoolSettingsController = {
     } catch (err) { next(err); }
   },
 
+  async updateAcademicYear(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const settings = await schoolSettingsService.updateAcademicYear(req.body, ctx);
+      sendSuccess(res, settings, 'Academic year updated');
+    } catch (err) { next(err); }
+  },
+
   async updatePayrollConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

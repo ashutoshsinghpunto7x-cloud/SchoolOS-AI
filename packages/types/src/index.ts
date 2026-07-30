@@ -1343,7 +1343,7 @@ export interface StudentLedgerData {
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution';
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution' | 'planner_reminder';
 export type NotificationPriority = 'normal' | 'high';
 
 export interface AppNotification {
@@ -2078,12 +2078,19 @@ export interface SchoolSettings extends BaseEntity {
   schoolId: string;
   schoolName: string;
   logoUrl?: string;
+  academicYearStart?: string;
+  academicYearEnd?: string;
   attendanceRules: AttendanceRules;
   payrollConfig: PayrollConfig;
   behaviorWindow: BehaviorWindow;
   attendanceEditPolicy: AttendanceEditPolicy;
   reportCardBranding: ReportCardBranding;
   updatedBy?: string;
+}
+
+export interface UpdateAcademicYearPayload {
+  academicYearStart: string;
+  academicYearEnd: string;
 }
 
 export interface UpdateReportCardBrandingPayload {
@@ -3227,4 +3234,378 @@ export interface ReportCardVerification {
   promotionStatus: PromotionStatus;
   issuedAt: string;
   schoolId: string;
+}
+
+// ── Question Bank ─────────────────────────────────────────────────────────────
+
+export type QuestionType =
+  | 'mcq'
+  | 'fill_blank'
+  | 'true_false'
+  | 'assertion_reason'
+  | 'very_short'
+  | 'short'
+  | 'long'
+  | 'hots'
+  | 'case_study';
+
+export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+
+export type BloomsLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create';
+
+export interface SyllabusChapter extends BaseEntity {
+  class: string;
+  subject: string;
+  chapterName: string;
+  topics: string[];
+  order?: number;
+}
+
+export interface QuestionUsageEntry {
+  examId?: string;
+  usedAt: string;
+}
+
+export interface Question extends BaseEntity {
+  class: string;
+  subject: string;
+  chapterId: string;
+  chapterName: string; // denormalized for display without an extra lookup
+  topic?: string;
+  questionText: string;
+  questionType: QuestionType;
+  options?: string[];
+  correctAnswer?: string;
+  difficulty: QuestionDifficulty;
+  marks: number;
+  estimatedTimeMinutes: number;
+  bloomsLevel: BloomsLevel;
+  keywords: string[];
+  source?: string;
+  usageHistory: QuestionUsageEntry[];
+  createdBy: string;
+  isDeleted: boolean;
+}
+
+export interface CreateQuestionPayload {
+  class: string;
+  subject: string;
+  chapterName: string;
+  topic?: string;
+  questionText: string;
+  questionType: QuestionType;
+  options?: string[];
+  correctAnswer?: string;
+  difficulty: QuestionDifficulty;
+  marks: number;
+  estimatedTimeMinutes: number;
+  bloomsLevel: BloomsLevel;
+  keywords?: string[];
+  source?: string;
+}
+
+export type UpdateQuestionPayload = Partial<CreateQuestionPayload>;
+
+export interface QuestionListOptions {
+  page?: number;
+  limit?: number;
+  class?: string;
+  subject?: string;
+  chapterId?: string;
+  topic?: string;
+  difficulty?: QuestionDifficulty;
+  questionType?: QuestionType;
+  search?: string;
+}
+
+// ── Question extraction (AI upload → draft → review → confirm) ───────────────
+
+export interface ExtractedQuestionDraft {
+  questionText: string;
+  questionType: QuestionType;
+  options?: string[];
+  correctAnswer?: string;
+  difficulty: QuestionDifficulty;
+  marks: number;
+  estimatedTimeMinutes: number;
+  bloomsLevel: BloomsLevel;
+  keywords: string[];
+  chapterName: string;
+  topic?: string;
+  source?: string;
+}
+
+export interface QuestionExtractionResult {
+  sourceType: 'image' | 'pdf_text';
+  extracted: ExtractedQuestionDraft[];
+  warnings: string[];
+}
+
+export interface ConfirmExtractedQuestionsPayload {
+  class: string;
+  subject: string;
+  questions: ExtractedQuestionDraft[];
+}
+
+// ── Paper generation ───────────────────────────────────────────────────────────
+
+export interface PaperMarksBreakdownEntry {
+  marks: number;
+  count: number;
+}
+
+export interface PaperDifficultyMix {
+  easy: number;
+  medium: number;
+  hard: number;
+}
+
+export interface PaperGenerationConfig {
+  class: string;
+  subject: string;
+  examType: string;
+  chapterIds: string[];
+  totalMarks: number;
+  difficultyMix: PaperDifficultyMix;
+  marksBreakdown: PaperMarksBreakdownEntry[];
+  questionTypes: QuestionType[];
+  durationMinutes?: number;
+}
+
+export interface PaperValidationResult {
+  warnings: string[];
+  suggestions: string[];
+  coveragePercent: number;
+  totalEstimatedTimeMinutes: number;
+}
+
+export interface GeneratedPaperSection {
+  marks: number;
+  questions: Question[];
+}
+
+export interface GeneratedPaper extends BaseEntity {
+  config: PaperGenerationConfig;
+  sections: GeneratedPaperSection[];
+  totalMarksAssembled: number;
+  validation: PaperValidationResult;
+  createdBy: string;
+}
+
+// ── Teacher Planner ─────────────────────────────────────────────────────────
+
+export type PlannerTaskType =
+  | 'explain'
+  | 'activity'
+  | 'worksheet'
+  | 'homework'
+  | 'doubt_session'
+  | 'revision'
+  | 'unit_test'
+  | 'other';
+
+export type PlannerTaskStatus = 'pending' | 'completed';
+
+export interface PlannerTask {
+  taskId: string;
+  title: string;
+  type: PlannerTaskType;
+  dueDate: string;
+  status: PlannerTaskStatus;
+  completedAt?: string;
+}
+
+export interface PlannerWeek {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  chapterId: string;
+  chapterName: string;
+  topic?: string;
+  tasks: PlannerTask[];
+}
+
+export interface TeacherPlanner extends BaseEntity {
+  teacherId: string;
+  class: string;
+  subject: string;
+  academicYearStart: string;
+  academicYearEnd: string;
+  weeks: PlannerWeek[];
+}
+
+export interface PlannerTodayTask {
+  weekNumber: number;
+  task: PlannerTask;
+}
+
+export interface PlannerProgress {
+  yearPercent: number;
+  monthPercent: number;
+  weekPercent: number;
+  todayTasks: PlannerTodayTask[];
+}
+
+export interface PacePosition {
+  expectedWeekNumber: number;
+  actualWeekNumber: number;
+  teachingDaysBehind: number;
+  suggestions: string[];
+}
+
+// ── Planner extraction (AI upload → draft → review → confirm) ────────────────
+
+export interface PlannerDraftTask {
+  title: string;
+  type: PlannerTaskType;
+}
+
+export interface PlannerDraftWeek {
+  weekNumber: number;
+  chapterName: string;
+  topic?: string;
+  tasks: PlannerDraftTask[];
+}
+
+export interface PlannerExtractionResult {
+  sourceType: 'image' | 'pdf_text';
+  totalTeachingWeeks: number;
+  weeks: PlannerDraftWeek[];
+  warnings: string[];
+}
+
+export interface ConfirmPlannerPayload {
+  class: string;
+  subject: string;
+  weeks: PlannerDraftWeek[];
+}
+
+// ── Lesson Planner ─────────────────────────────────────────────────────────────
+
+export interface LessonPlanContent {
+  objective: string;
+  introduction: string;
+  explanation: string;
+  activities: string[];
+  examples: string[];
+  questions: string[];
+  homework: string;
+  assessment: string;
+}
+
+export interface LessonPlanDraft extends LessonPlanContent {
+  class: string;
+  subject: string;
+  chapterName: string;
+  topic?: string;
+  durationMinutes: number;
+}
+
+export interface LessonPlan extends BaseEntity, LessonPlanContent {
+  teacherId: string;
+  class: string;
+  subject: string;
+  chapterId: string;
+  chapterName: string;
+  topic?: string;
+  durationMinutes: number;
+  createdBy: string;
+  isDeleted: boolean;
+}
+
+export interface GenerateLessonPlanPayload {
+  class: string;
+  subject: string;
+  chapterName: string;
+  topic?: string;
+  durationMinutes: number;
+}
+
+export type SaveLessonPlanPayload = LessonPlanDraft;
+
+export type UpdateLessonPlanPayload = Partial<LessonPlanContent> & { durationMinutes?: number };
+
+export interface LessonPlanListOptions {
+  page?: number;
+  limit?: number;
+  class?: string;
+  subject?: string;
+  chapterId?: string;
+}
+
+// ── Worksheet Generator ────────────────────────────────────────────────────────
+
+export type WorksheetType = 'practice' | 'homework' | 'revision' | 'hots' | 'olympiad' | 'remedial';
+
+export interface WorksheetQuestion {
+  questionId?: string;
+  questionText: string;
+  questionType: QuestionType;
+  options?: string[];
+  difficulty: QuestionDifficulty;
+  estimatedTimeMinutes: number;
+  keywords: string[];
+  /** Draft-only client flag — set when this item was AI-authored rather than
+   *  pulled from the bank; stripped (or resolved into a real Question) on save. */
+  isNew?: boolean;
+}
+
+export interface Worksheet extends BaseEntity {
+  teacherId: string;
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  chapterNames: string[];
+  worksheetType: WorksheetType;
+  title: string;
+  questions: WorksheetQuestion[];
+  createdBy: string;
+}
+
+export interface GenerateWorksheetPayload {
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  worksheetType: WorksheetType;
+  questionCount: number;
+}
+
+export interface WorksheetDraft {
+  config: GenerateWorksheetPayload;
+  questions: WorksheetQuestion[];
+}
+
+export interface SaveWorksheetPayload {
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  worksheetType: WorksheetType;
+  title: string;
+  questions: WorksheetQuestion[];
+  addNewToBank: boolean;
+}
+
+export interface WorksheetListOptions {
+  page?: number;
+  limit?: number;
+  class?: string;
+  subject?: string;
+  chapterId?: string;
+  worksheetType?: WorksheetType;
+}
+
+// ── Syllabus Tracker ────────────────────────────────────────────────────────────
+
+export interface SyllabusCoverage {
+  plannerId: string;
+  class: string;
+  subject: string;
+  totalChapters: number;
+  chaptersCompleted: number;
+  percentComplete: number;
+}
+
+export interface SyllabusActivityDay {
+  date: string;
+  count: number;
 }

@@ -513,6 +513,70 @@ const VerifyReportCardPage = lazyPage(
   () => import('@/features/report-cards/pages/VerifyReportCardPage'),
   'VerifyReportCardPage',
 );
+const QuestionBankPage = lazyPage(
+  () => import('@/features/question-bank/pages/QuestionBankPage'),
+  'QuestionBankPage',
+);
+const QuestionUploadPage = lazyPage(
+  () => import('@/features/question-bank/pages/QuestionUploadPage'),
+  'QuestionUploadPage',
+);
+const PaperGeneratorPage = lazyPage(
+  () => import('@/features/question-bank/pages/PaperGeneratorPage'),
+  'PaperGeneratorPage',
+);
+const PaperPreviewPage = lazyPage(
+  () => import('@/features/question-bank/pages/PaperPreviewPage'),
+  'PaperPreviewPage',
+);
+const SyllabusTrackerPage = lazyPage(
+  () => import('@/features/syllabus-tracker/pages/SyllabusTrackerPage'),
+  'SyllabusTrackerPage',
+);
+const WorksheetHubPage = lazyPage(
+  () => import('@/features/worksheet-generator/pages/WorksheetHubPage'),
+  'WorksheetHubPage',
+);
+const WorksheetGeneratePage = lazyPage(
+  () => import('@/features/worksheet-generator/pages/WorksheetGeneratePage'),
+  'WorksheetGeneratePage',
+);
+const WorksheetViewPage = lazyPage(
+  () => import('@/features/worksheet-generator/pages/WorksheetViewPage'),
+  'WorksheetViewPage',
+);
+const WorksheetListPage = lazyPage(
+  () => import('@/features/worksheet-generator/pages/WorksheetListPage'),
+  'WorksheetListPage',
+);
+const LessonPlanHubPage = lazyPage(
+  () => import('@/features/lesson-planner/pages/LessonPlanHubPage'),
+  'LessonPlanHubPage',
+);
+const LessonPlanListPage = lazyPage(
+  () => import('@/features/lesson-planner/pages/LessonPlanListPage'),
+  'LessonPlanListPage',
+);
+const LessonPlanGeneratePage = lazyPage(
+  () => import('@/features/lesson-planner/pages/LessonPlanGeneratePage'),
+  'LessonPlanGeneratePage',
+);
+const LessonPlanViewPage = lazyPage(
+  () => import('@/features/lesson-planner/pages/LessonPlanViewPage'),
+  'LessonPlanViewPage',
+);
+const PlannerHubPage = lazyPage(
+  () => import('@/features/teacher-planner/pages/PlannerHubPage'),
+  'PlannerHubPage',
+);
+const PlannerUploadPage = lazyPage(
+  () => import('@/features/teacher-planner/pages/PlannerUploadPage'),
+  'PlannerUploadPage',
+);
+const PlannerDashboardPage = lazyPage(
+  () => import('@/features/teacher-planner/pages/PlannerDashboardPage'),
+  'PlannerDashboardPage',
+);
 const MarksEntryPage = lazyPage(
   () => import('@/features/marks/pages/MarksEntryPage'),
   'MarksEntryPage',
@@ -770,6 +834,22 @@ export const router = createBrowserRouter([
                       { path: 'teacher/behavior/:cls/:section',                       element: <TeacherBehaviorPage /> },
                       { path: 'teacher/marks',                                        element: <MarksHubPage /> },
                       { path: 'teacher/marks/:cls/:section/:subjectName/:examId',      element: <MarksEntryPage /> },
+                      { path: 'teacher/question-bank',                                element: <QuestionBankPage /> },
+                      { path: 'teacher/question-bank/upload',                         element: <QuestionUploadPage /> },
+                      { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
+                      { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
+                      { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
+                      { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
+                      { path: 'teacher/planner/:cls/:subject/upload',                 element: <PlannerUploadPage /> },
+                      { path: 'teacher/lesson-planner',                               element: <LessonPlanHubPage /> },
+                      { path: 'teacher/lesson-planner/plan/:id',                      element: <LessonPlanViewPage /> },
+                      { path: 'teacher/lesson-planner/:cls/:subject/:chapterId',              element: <LessonPlanListPage /> },
+                      { path: 'teacher/lesson-planner/:cls/:subject/:chapterId/generate',     element: <LessonPlanGeneratePage /> },
+                      { path: 'teacher/syllabus-tracker',                             element: <SyllabusTrackerPage /> },
+                      { path: 'teacher/worksheet-generator',                          element: <WorksheetHubPage /> },
+                      { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },
+                      { path: 'teacher/worksheet-generator/view/:id',                 element: <WorksheetViewPage /> },
+                      { path: 'teacher/worksheet-generator/:cls/:subject',            element: <WorksheetGeneratePage /> },
                       { path: 'teacher/report-cards',                                 element: <ReportCardHubPage /> },
                       { path: 'teacher/report-cards/:examId/:cls/:section',           element: <ReportCardRosterPage /> },
                       { path: 'teacher/report-cards/:examId/student/:studentId',      element: <ReportCardPreviewPage /> },

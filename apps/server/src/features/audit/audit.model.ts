@@ -11,6 +11,7 @@ export type AuditAction =
   | 'auth.pin_reset'
   | 'school_settings.logo_updated'
   | 'school_settings.attendance_rules_updated'
+  | 'school_settings.academic_year_updated'
   | 'school_settings.payroll_config_updated'
   | 'school_settings.behavior_window_updated'
   | 'school_settings.attendance_edit_policy_updated'

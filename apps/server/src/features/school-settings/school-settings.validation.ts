@@ -63,7 +63,18 @@ export const updateCommunicationSettingsSchema = z
     path: ['workingHoursEnd'],
   });
 
+export const updateAcademicYearSchema = z
+  .object({
+    academicYearStart: z.coerce.date(),
+    academicYearEnd:   z.coerce.date(),
+  })
+  .refine((v) => v.academicYearStart < v.academicYearEnd, {
+    message: 'academicYearStart must be before academicYearEnd',
+    path: ['academicYearEnd'],
+  });
+
 export type UpdateAttendanceRulesInput = z.infer<typeof updateAttendanceRulesSchema>;
+export type UpdateAcademicYearInput = z.infer<typeof updateAcademicYearSchema>;
 export type UpdatePayrollConfigInput   = z.infer<typeof updatePayrollConfigSchema>;
 export type UpdateBehaviorWindowInput  = z.infer<typeof updateBehaviorWindowSchema>;
 export type UpdateAttendanceEditPolicyInput = z.infer<typeof updateAttendanceEditPolicySchema>;

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,CalendarClock,BookText,FileEdit,BarChart3,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useTeacherTheme } from '../context/TeacherThemeContext';
@@ -640,6 +640,86 @@ export function TeacherDashboard() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-gray-900 dark:text-white">Marks & Report Cards</p>
             <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Enter marks for your classes</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Teacher Planner ──────────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/planner')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#ECFDF5] dark:bg-[#34D399]/15 flex items-center justify-center shrink-0">
+            <CalendarClock className="w-5 h-5 text-[#059669] dark:text-emerald-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Weekly schedule, progress, and pace tracking</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Lesson Planner ───────────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/lesson-planner')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#FFF7ED] dark:bg-[#FB923C]/15 flex items-center justify-center shrink-0">
+            <BookText className="w-5 h-5 text-[#EA580C] dark:text-orange-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Lesson Planner</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">AI-generated lesson plans for any chapter</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Syllabus Tracker ─────────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/syllabus-tracker')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#F0FDF4] dark:bg-[#4ADE80]/15 flex items-center justify-center shrink-0">
+            <BarChart3 className="w-5 h-5 text-[#16A34A] dark:text-green-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Syllabus Tracker</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Chapter coverage and teaching activity</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Worksheet Generator ──────────────────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/worksheet-generator')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#ECFEFF] dark:bg-[#22D3EE]/15 flex items-center justify-center shrink-0">
+            <FileEdit className="w-5 h-5 text-[#0891B2] dark:text-cyan-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Worksheet Generator</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">One-click practice, homework, HOTS & more</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
+        {/* ── Question Bank & Paper Generator ─────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/question-bank')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#EAF6FF] dark:bg-[#38BDF8]/15 flex items-center justify-center shrink-0">
+            <BookOpen className="w-5 h-5 text-[#0284C7] dark:text-sky-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Question Bank & Papers</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Upload sources, browse questions, generate a paper</p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
         </button>

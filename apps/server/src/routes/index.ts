@@ -44,6 +44,11 @@ import behaviorRouter from '../features/behavior/behavior.routes';
 import opsRouter from '../features/ops-center/ops.routes';
 import performanceTestRouter from '../features/performance-testing/performance-test.routes';
 import communicationEngineRouter from '../features/communication/communication-engine.routes';
+import questionBankRouter from '../features/question-bank/question-bank.routes';
+import teacherPlannerRouter from '../features/teacher-planner/planner.routes';
+import lessonPlannerRouter from '../features/lesson-planner/lesson-plan.routes';
+import worksheetGeneratorRouter from '../features/worksheet-generator/worksheet.routes';
+import syllabusTrackerRouter from '../features/syllabus-tracker/syllabus-tracker.routes';
 
 const router = Router();
 
@@ -92,5 +97,10 @@ router.use('/behavior', behaviorRouter);
 router.use('/ops', opsRouter);
 router.use('/performance-tests', performanceTestRouter);
 router.use('/communication', communicationEngineRouter);
+router.use('/question-bank', questionBankRouter);
+router.use('/teacher-planner', teacherPlannerRouter);
+router.use('/lesson-planner', lessonPlannerRouter);
+router.use('/worksheet-generator', worksheetGeneratorRouter);
+router.use('/syllabus-tracker', syllabusTrackerRouter);
 
 export default router;
