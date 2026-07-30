@@ -11,7 +11,7 @@ import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { User, IUser } from '../users/user.model';
 import { userRepository } from '../users/user.repository';
-import { createTeacherLoginSchema } from '../users/user.validation';
+import { createTeacherLoginSchema, updateTeacherLoginEmailSchema } from '../users/user.validation';
 import { nextSequence } from '../../lib/counter.model';
 import bcrypt from 'bcrypt';
 import { SalaryRecord } from '../salary/salary.model';
@@ -422,6 +422,65 @@ export const teacherService = {
     });
 
     return { teacherId, loginEmail };
+  },
+
+  async updateLoginEmail(teacherId: string, rawInput: unknown, ctx: AuthContext): Promise<{ teacherId: string; loginEmail: string }> {
+    const { loginEmail } = updateTeacherLoginEmailSchema.parse(rawInput);
+
+    const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
+    if (!teacher) throw new NotFoundError('Teacher');
+
+    const currentLoginEmail = teacher.loginEmail ?? teacher.email;
+    if (!currentLoginEmail) throw new ValidationError('This teacher has no login credentials to update.');
+
+    const user = await userRepository.findByEmail(currentLoginEmail);
+    if (!user || user.role !== 'teacher') throw new ValidationError('This teacher has no login credentials to update.');
+
+    if (loginEmail !== currentLoginEmail) {
+      const emailTaken = await userRepository.findByEmail(loginEmail);
+      if (emailTaken) throw new ValidationError('That login email is already in use.');
+    }
+
+    await User.updateOne({ _id: user._id }, { $set: { email: loginEmail } });
+    await Teacher.updateOne({ _id: teacherId, schoolId: ctx.schoolId }, { $set: { loginEmail } });
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'teacher.login_email_updated',
+      resource: 'teachers',
+      resourceId: teacherId,
+      details: { from: currentLoginEmail, to: loginEmail },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return { teacherId, loginEmail };
+  },
+
+  async deleteLogin(teacherId: string, ctx: AuthContext): Promise<void> {
+    const teacher = await teacherRepository.findById(teacherId, ctx.schoolId);
+    if (!teacher) throw new NotFoundError('Teacher');
+
+    const loginEmail = teacher.loginEmail ?? teacher.email;
+    if (!loginEmail) throw new ValidationError('This teacher has no login credentials to delete.');
+
+    const user = await userRepository.findByEmail(loginEmail);
+    if (user && user.role === 'teacher') {
+      await User.deleteOne({ _id: user._id });
+    }
+    await Teacher.updateOne({ _id: teacherId, schoolId: ctx.schoolId }, { $unset: { loginEmail: '' } });
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'teacher.login_deleted',
+      resource: 'teachers',
+      resourceId: teacherId,
+      details: { loginEmail },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
   },
 
   // ── Notes ──────────────────────────────────────────────────────────────────

@@ -47,7 +47,19 @@ import { todayIso } from '../helpers/randomData.js';
 // in apps/server/src/middlewares/rateLimiter.ts (app.set('trust proxy', 1)
 // makes the server honor this header even without a real reverse proxy in
 // front of it locally).
-export function teacherFullWorkflow(teacher, extraHeaders = {}) {
+//
+// pacing (optional) overrides the default ~1.5s-of-sleep-total pacing (built
+// for validate-100-teachers.js's "opening bell rush" — everyone hammers in
+// as fast as the UI allows) with slower, human-scale think-time — built for
+// scripts/ops-live-test.js's "one teacher takes ~N minutes to actually read
+// every name and mark it" scenario. `stepSeconds` is applied at each of the
+// 7 non-marking pauses; `perStudentSeconds` is applied once per roster
+// entry while "marking" (simulates reading a name and clicking present/
+// absent — no network call, matching how the real UI only submits once, on
+// Save, not per checkbox).
+export function teacherFullWorkflow(teacher, extraHeaders = {}, pacing = {}) {
+  const stepSeconds = pacing.stepSeconds ?? 0.25;
+  const perStudentSeconds = pacing.perStudentSeconds ?? 0;
   const start = Date.now();
   const stepsOk = [];
   const record = (ok) => stepsOk.push(!!ok);
@@ -69,7 +81,7 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
     record(ok);
     if (ok) workspace = safeJson(res);
   });
-  sleep(0.3);
+  sleep(stepSeconds);
 
   // 4. Assigned classes (from the workspace payload, not a new request)
   let cls = teacher.class;
@@ -92,7 +104,7 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
     );
     record(assertOk(res, 'GET /attendance/class/:class/:section'));
   });
-  sleep(0.2);
+  sleep(stepSeconds);
 
   // 6. Select today's date
   const date = todayIso();
@@ -111,9 +123,12 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
       roster = (body && body.data) || [];
     }
   });
-  sleep(0.3);
+  sleep(stepSeconds);
 
-  // 8 & 9. Mark + save attendance
+  // 8 & 9. Mark + save attendance — marking itself is client-side (a real
+  // teacher reads each name and taps present/absent with no network call
+  // per student; perStudentSeconds models that per-name think-time), then
+  // one POST fires on Save, matching the real UI.
   let submittedIds = [];
   let submittedByStudent = new Map();
   group('teacher-full: mark + save attendance', () => {
@@ -125,7 +140,10 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
     const records = students
       .map((s) => s._id)
       .filter(Boolean)
-      .map((studentId) => ({ studentId, status: Math.random() < 0.9 ? 'present' : 'absent' }));
+      .map((studentId) => {
+        if (perStudentSeconds > 0) sleep(perStudentSeconds);
+        return { studentId, status: Math.random() < 0.9 ? 'present' : 'absent' };
+      });
     submittedIds = records.map((r) => r.studentId);
     records.forEach((r) => submittedByStudent.set(r.studentId, r.status));
 
@@ -136,7 +154,7 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
     );
     record(assertOk(res, 'POST /attendance/bulk', [200, 201]));
   });
-  sleep(0.2);
+  sleep(stepSeconds);
 
   // 10. Verify attendance saved successfully — no duplicates, nothing
   // missing, nothing partially saved.
@@ -185,7 +203,7 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
 
     record(!dup && !missing && !partial && statusesMatch);
   });
-  sleep(0.2);
+  sleep(stepSeconds);
 
   // 11. Open student profile
   group('teacher-full: student profile', () => {
@@ -197,7 +215,7 @@ export function teacherFullWorkflow(teacher, extraHeaders = {}) {
     const res = http.get(`${env.baseUrl}/students/${studentId}`, { ...opts, tags: { name: 'GET /students/:id' } });
     record(assertOk(res, 'GET /students/:id'));
   });
-  sleep(0.2);
+  sleep(stepSeconds);
 
   // 12. Navigate back — no server request; see file header.
 

@@ -112,6 +112,22 @@ export const teacherController = {
     } catch (err) { next(err); }
   },
 
+  async updateLoginEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await teacherService.updateLoginEmail(req.params.id, req.body, ctx);
+      sendSuccess(res, result, 'Login email updated');
+    } catch (err) { next(err); }
+  },
+
+  async deleteLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await teacherService.deleteLogin(req.params.id, ctx);
+      sendSuccess(res, null, 'Login deleted');
+    } catch (err) { next(err); }
+  },
+
   // ── Notes ──────────────────────────────────────────────────────────────────
 
   async createNote(req: Request, res: Response, next: NextFunction): Promise<void> {

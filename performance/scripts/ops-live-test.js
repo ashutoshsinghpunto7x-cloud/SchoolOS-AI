@@ -1,14 +1,26 @@
 // Parameterized "Teacher Workspace Load Test" driven by the Ops Center
 // Performance Testing dashboard (apps/server/src/features/performance-testing),
-// not run manually. Unlike scripts/validate-100-teachers.js (fixed 100 VUs,
-// exactly one iteration each), this script takes its VU count and duration
-// from env vars set by the backend when it spawns k6, and ramps through three
-// named stages — ramp-up / steady / ramp-down — so the live dashboard's stage
-// indicator reflects real k6 stage data instead of being guessed client-side.
+// not run manually.
 //
-// LIVE_TEST_VUS          target concurrent virtual users (default 10)
-// LIVE_TEST_DURATION_MIN total steady-load minutes, ramp-up/down are fixed
-//                        at 20% of this each, capped at 1 minute (default 2)
+// Models "N teachers each mark and save attendance once, in the same
+// opening-bell window" — NOT a sustained hammering loop. Each of the
+// LIVE_TEST_VUS virtual teachers runs the full login -> dashboard ->
+// attendance -> mark -> save -> verify -> logout workflow exactly ONCE
+// (executor: per-vu-iterations, iterations: 1), all starting together. This
+// used to be a ramping-vus executor that looped the workflow continuously
+// for the whole duration — that modeled 50 teachers hammering the same
+// save endpoint dozens of times a minute (and mostly hitting the app's own
+// "already marked today" rejection on every repeat after the first), not
+// what "50 teachers marking attendance" actually means. See
+// scenarios/teacher-full.js's `pacing` param — LIVE_TEST_DURATION_MIN is
+// now "how long one teacher's own workflow takes" (human-paced think-time
+// between steps, distributed via computePacing() below), not "how long to
+// keep hammering."
+//
+// LIVE_TEST_VUS          concurrent teachers, each running once (default 10)
+// LIVE_TEST_DURATION_MIN target minutes for ONE teacher's full workflow —
+//                        think-time is stretched/compressed to roughly fit
+//                        (default 2)
 // LIVE_TEST_RUN_ID       run id assigned by the backend; used as the
 //                        deterministic report filename suffix
 //                        (performance/reports/live-<id>.*) so the backend
@@ -18,8 +30,7 @@
 // Deliberately NOT named K6_VUS/K6_DURATION/K6_RUN_ID — those are reserved
 // env vars k6 itself reads as shorthand CLI overrides (equivalent to
 // --vus/--duration), which silently replaces this script's `scenarios`
-// config with an implicit single "default" executor and breaks the 3-stage
-// ramp-up/steady/ramp-down profile entirely.
+// config with an implicit single "default" executor.
 import exec from 'k6/execution';
 import { thresholds as baseThresholds, summaryTrendStats } from '../thresholds/performance.js';
 import { buildReportFiles, buildVerdictReport } from '../helpers/report.js';
@@ -30,19 +41,34 @@ const TARGET_VUS = Number(__ENV.LIVE_TEST_VUS) || 10;
 const DURATION_MIN = Number(__ENV.LIVE_TEST_DURATION_MIN) || 2;
 const RUN_ID = __ENV.LIVE_TEST_RUN_ID || 'manual';
 
-const rampMin = Math.min(1, DURATION_MIN * 0.2) || 0.25;
+// A roster is capped at 20 students (teacher-full.js's `students.slice(0,
+// 20)`) and there are 7 non-marking pauses (workspace, attendance
+// workspace, roster load, save, verify, profile, plus one more before
+// logout). Spend 65% of the budget on per-student marking (the dominant
+// real-world cost — reading each name) and the rest split across the fixed
+// pauses. Floors keep short durations from collapsing to 0s pauses.
+const ROSTER_CAP = 20;
+const NON_MARKING_PAUSES = 7;
+function computePacing(durationMin) {
+  const budgetSec = Math.max(5, durationMin * 60);
+  const perStudentSeconds = Math.max(0.1, (budgetSec * 0.65) / ROSTER_CAP);
+  const stepSeconds = Math.max(0.1, (budgetSec * 0.35) / NON_MARKING_PAUSES);
+  return { perStudentSeconds, stepSeconds };
+}
+const PACING = computePacing(DURATION_MIN);
+
+// Generous ceiling, not a target — per-vu-iterations has no ramp/stage
+// concept, so this just guards against a stuck iteration hanging the run
+// forever; real completion happens well before this via the pacing budget.
+const MAX_DURATION_MIN = Math.ceil(DURATION_MIN * 1.5) + 2;
 
 export const options = {
   scenarios: {
     teacherWorkspace: {
-      executor: 'ramping-vus',
-      startVUs: 0,
-      stages: [
-        { duration: `${rampMin}m`, target: TARGET_VUS },
-        { duration: `${DURATION_MIN}m`, target: TARGET_VUS },
-        { duration: `${rampMin}m`, target: 0 },
-      ],
-      gracefulRampDown: '10s',
+      executor: 'per-vu-iterations',
+      vus: TARGET_VUS,
+      iterations: 1,
+      maxDuration: `${MAX_DURATION_MIN}m`,
       exec: 'teacherWorkspace',
     },
   },
@@ -74,7 +100,7 @@ export function teacherWorkspace() {
   const vuId = exec.vu.idInTest;
   const teacher = teacherByIndex(vuId - 1);
   const extraHeaders = SIMULATE_DISTINCT_IPS ? { 'X-Forwarded-For': syntheticIpFor(vuId) } : {};
-  teacherFullWorkflow(teacher, extraHeaders);
+  teacherFullWorkflow(teacher, extraHeaders, PACING);
 }
 
 export function handleSummary(data) {

@@ -39,6 +39,12 @@ export const createTeacherLoginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+/** Changes just the login email of an existing teacher login, keeping the
+ *  same password/account — used to fix a mis-generated login address. */
+export const updateTeacherLoginEmailSchema = z.object({
+  loginEmail: z.string().email('Enter a valid email address').toLowerCase(),
+});
+
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),

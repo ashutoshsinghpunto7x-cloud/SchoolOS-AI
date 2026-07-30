@@ -138,6 +138,26 @@ export const teachersApi = {
     }
   },
 
+  async updateLoginEmail(teacherId: string, loginEmail: string): Promise<{ teacherId: string; loginEmail: string }> {
+    try {
+      const res = await apiClient.patch<ApiResponse<{ teacherId: string; loginEmail: string }>>(
+        `/teachers/${teacherId}/login`,
+        { loginEmail },
+      );
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async deleteLogin(teacherId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/teachers/${teacherId}/login`);
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   // ── Notes ─────────────────────────────────────────────────────────────────
 
   async listNotes(teacherId: string): Promise<TeacherNote[]> {

@@ -23,6 +23,8 @@ router.delete('/:id/photo', authorize('admin', 'reception', 'accountant'), teach
 router.patch('/:id/status',    authorize('admin', 'principal', 'reception'), teacherController.changeStatus);
 router.patch('/:id/link-user', authorize('admin'), teacherController.linkUserAccount);
 router.post('/:id/login',      authorize('admin'), teacherController.createLogin);
+router.patch('/:id/login',     authorize('admin'), teacherController.updateLoginEmail);
+router.delete('/:id/login',    authorize('admin'), teacherController.deleteLogin);
 router.delete('/:id',          authorize('admin'), teacherController.deleteTeacher);
 
 // ── Teacher Notes ─────────────────────────────────────────────────────────────

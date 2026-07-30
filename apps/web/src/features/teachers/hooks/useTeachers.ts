@@ -143,6 +143,23 @@ export const useCreateTeacherLogin = () => {
   });
 };
 
+export const useUpdateTeacherLoginEmail = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ teacherId, loginEmail }: { teacherId: string; loginEmail: string }) =>
+      teachersApi.updateLoginEmail(teacherId, loginEmail),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: teacherKeys.loginStatus() }),
+  });
+};
+
+export const useDeleteTeacherLogin = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (teacherId: string) => teachersApi.deleteLogin(teacherId),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: teacherKeys.loginStatus() }),
+  });
+};
+
 export const useCreateTeacherNote = (teacherId: string) => {
   const qc = useQueryClient();
   return useMutation({

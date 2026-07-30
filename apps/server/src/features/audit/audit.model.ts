@@ -64,6 +64,8 @@ export type AuditAction =
   | 'teacher.note_deleted'
   | 'teacher.linked_user'
   | 'teacher.login_created'
+  | 'teacher.login_email_updated'
+  | 'teacher.login_deleted'
   | 'teacher.employee_mirror_failed'
   | 'attendance.marked'
   | 'attendance.bulk_marked'

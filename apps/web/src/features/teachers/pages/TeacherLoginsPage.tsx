@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { KeyRound, Loader2, CheckCircle2, AlertCircle, X, Eye, EyeOff, Sparkles, Copy, Check } from 'lucide-react';
+import { KeyRound, Loader2, CheckCircle2, AlertCircle, X, Eye, EyeOff, Sparkles, Copy, Check, Trash2, Pencil } from 'lucide-react';
 import type { TeacherLoginStatus } from '@schoolos/types';
-import { useTeacherLoginStatus, useCreateTeacherLogin } from '../hooks/useTeachers';
+import { useTeacherLoginStatus, useCreateTeacherLogin, useDeleteTeacherLogin, useUpdateTeacherLoginEmail } from '../hooks/useTeachers';
 
 // ── Bulk credential generation ────────────────────────────────────────────────
 
@@ -274,6 +274,139 @@ function CreateLoginModal({
   );
 }
 
+function DeleteLoginModal({
+  teacher,
+  onClose,
+}: {
+  teacher: TeacherLoginStatus;
+  onClose: () => void;
+}) {
+  const { mutateAsync, isPending } = useDeleteTeacherLogin();
+  const [error, setError] = useState('');
+
+  async function handleDelete() {
+    setError('');
+    try {
+      await mutateAsync(teacher.teacherId);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete login.');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold text-gray-900">Delete Login</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          This removes the school login <span className="font-mono font-semibold text-gray-800">{teacher.loginEmail ?? teacher.username}</span>
+          {' '}for <span className="font-semibold text-gray-800">{teacher.fullName}</span>. They will no longer be able to sign in with it, and
+          you'll be able to create a fresh login for them right after. This can't be undone.
+        </p>
+        {error && (
+          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2.5 mb-3">
+            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isPending}
+            className="flex-1 h-10 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-sm font-bold text-white flex items-center justify-center gap-2"
+          >
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditEmailModal({
+  teacher,
+  existingLoginEmails,
+  onClose,
+}: {
+  teacher: TeacherLoginStatus;
+  existingLoginEmails: Set<string>;
+  onClose: () => void;
+}) {
+  const { mutateAsync, isPending } = useUpdateTeacherLoginEmail();
+  const [loginEmail, setLoginEmail] = useState(teacher.loginEmail ?? teacher.username ?? '');
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    const next = loginEmail.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(next)) return setError('Enter a valid email address.');
+    if (next !== teacher.loginEmail?.toLowerCase() && existingLoginEmails.has(next)) {
+      return setError('That login email is already in use.');
+    }
+    try {
+      await mutateAsync({ teacherId: teacher.teacherId, loginEmail: next });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update login email.');
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-lg font-bold text-gray-900">Change Login Email</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          For <span className="font-semibold text-gray-800">{teacher.fullName}</span>. The password stays the same — only
+          the sign-in email changes.
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">School Login Email</label>
+            <input
+              type="email"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              className={inputCls}
+            />
+          </div>
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
+          >
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {isPending ? 'Saving…' : 'Save Email'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 type BulkPasswordMode = 'unique' | 'same';
 
 export function TeacherLoginsPage() {
@@ -281,6 +414,8 @@ export function TeacherLoginsPage() {
   const { mutateAsync: createLogin } = useCreateTeacherLogin();
   const [filter, setFilter] = useState<Filter>('all');
   const [creatingFor, setCreatingFor] = useState<TeacherLoginStatus | null>(null);
+  const [deletingFor, setDeletingFor] = useState<TeacherLoginStatus | null>(null);
+  const [editingFor, setEditingFor] = useState<TeacherLoginStatus | null>(null);
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkResults, setBulkResults] = useState<BulkResult[] | null>(null);
   const [showBulkOptions, setShowBulkOptions] = useState(false);
@@ -496,13 +631,28 @@ export function TeacherLoginsPage() {
                     )}
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    {!t.hasLogin && (
+                    {!t.hasLogin ? (
                       <button
                         onClick={() => setCreatingFor(t)}
                         className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#5B21B6] hover:bg-[#4C1D95] text-white"
                       >
                         Create Login
                       </button>
+                    ) : (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setEditingFor(t)}
+                          className="h-8 px-3 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 inline-flex items-center gap-1.5"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Change Email
+                        </button>
+                        <button
+                          onClick={() => setDeletingFor(t)}
+                          className="h-8 px-3 rounded-lg text-xs font-semibold border border-red-200 text-red-600 hover:bg-red-50 inline-flex items-center gap-1.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Delete Login
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -520,6 +670,10 @@ export function TeacherLoginsPage() {
         />
       )}
       {bulkResults && <BulkResultsModal results={bulkResults} onClose={() => setBulkResults(null)} />}
+      {deletingFor && <DeleteLoginModal teacher={deletingFor} onClose={() => setDeletingFor(null)} />}
+      {editingFor && (
+        <EditEmailModal teacher={editingFor} existingLoginEmails={existingLoginEmails} onClose={() => setEditingFor(null)} />
+      )}
     </div>
   );
 }
