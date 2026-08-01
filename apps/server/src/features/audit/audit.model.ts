@@ -214,7 +214,14 @@ export type AuditAction =
   | 'communication_settings.updated'
   | 'message_template.created'
   | 'message_template.updated'
-  | 'message_template.deleted';
+  | 'message_template.deleted'
+  | 'feature_flag.created'
+  | 'feature_flag.updated'
+  | 'feature_flag.deleted'
+  | 'feature_flag.rollback'
+  | 'feature_flag.assignment.created'
+  | 'feature_flag.assignment.removed'
+  | 'feature_flag.tester_flags_updated';
 
 export interface IAuditLog extends Document {
   userId: string;

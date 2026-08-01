@@ -43,6 +43,12 @@ export interface IUser extends Document {
   mustResetPassword?: boolean;
   mustResetPin?: boolean;
   tempPasswordExpiresAt?: Date;
+  /** Feature-flag targeting segments — a school-tenant user (teacher, principal,
+   *  etc.) can be flagged as a developer/internal tester without changing their
+   *  real role, so real accounts can be used for on-device testing of unfinished
+   *  features. Set only via the feature-flags "testers" endpoint. */
+  isDeveloper?: boolean;
+  isInternalTester?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +79,8 @@ const userSchema = new Schema<IUser>(
     mustResetPassword: { type: Boolean, default: false },
     mustResetPin: { type: Boolean, default: false },
     tempPasswordExpiresAt: { type: Date },
+    isDeveloper: { type: Boolean, default: false },
+    isInternalTester: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false }
 );

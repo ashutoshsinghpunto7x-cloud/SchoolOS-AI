@@ -51,6 +51,8 @@ import teacherPlannerRouter from '../features/teacher-planner/planner.routes';
 import lessonPlannerRouter from '../features/lesson-planner/lesson-plan.routes';
 import worksheetGeneratorRouter from '../features/worksheet-generator/worksheet.routes';
 import syllabusTrackerRouter from '../features/syllabus-tracker/syllabus-tracker.routes';
+import featureFlagRouter from '../features/feature-flags/feature-flag.routes';
+import featureFlagPublicRouter from '../features/feature-flags/feature-flag.public.routes';
 
 const router = Router();
 
@@ -106,5 +108,7 @@ router.use('/teacher-planner', teacherPlannerRouter);
 router.use('/lesson-planner', lessonPlannerRouter);
 router.use('/worksheet-generator', worksheetGeneratorRouter);
 router.use('/syllabus-tracker', syllabusTrackerRouter);
+router.use('/ops/feature-flags', featureFlagRouter);
+router.use('/feature-flags', featureFlagPublicRouter);
 
 export default router;

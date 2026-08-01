@@ -23,6 +23,8 @@ export const PERMISSIONS = {
   MARKS_APPROVE: 'marks.approve',
   MARKS_PUBLISH: 'marks.publish',
   OPS_VIEW: 'ops.view',
+  FEATURE_FLAGS_VIEW: 'feature-flags.view',
+  FEATURE_FLAGS_MANAGE: 'feature-flags.manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -40,11 +42,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
   // Internal SchoolOS staff — Ops Center only, no tenant-facing permissions.
-  owner: ['ops.view'],
-  super_admin: ['ops.view'],
-  devops: ['ops.view'],
-  developer: ['ops.view'],
-  support: ['ops.view'],
+  // Feature-flag management (create/delete/rollout/global toggle) is reserved
+  // for owner/super_admin; the rest of Ops staff can only view flag status.
+  owner: ['ops.view', 'feature-flags.view', 'feature-flags.manage'],
+  super_admin: ['ops.view', 'feature-flags.view', 'feature-flags.manage'],
+  devops: ['ops.view', 'feature-flags.view'],
+  developer: ['ops.view', 'feature-flags.view'],
+  support: ['ops.view', 'feature-flags.view'],
 };
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
@@ -83,6 +87,8 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'marks.approve': { label: 'Approve / Publish Marks', category: 'Marks & Report Cards' },
   'marks.publish': { label: 'Publish Report Cards', category: 'Marks & Report Cards' },
   'ops.view': { label: 'View Ops Center', category: 'Ops Center' },
+  'feature-flags.view': { label: 'View Feature Flags', category: 'Feature Flags' },
+  'feature-flags.manage': { label: 'Manage Feature Flags', category: 'Feature Flags' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

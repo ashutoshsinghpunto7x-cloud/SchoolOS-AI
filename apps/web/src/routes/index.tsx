@@ -165,6 +165,14 @@ const OpsUsersPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsUsersPage'),
   'OpsUsersPage',
 );
+const OpsFeatureFlagsPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsFeatureFlagsPage'),
+  'OpsFeatureFlagsPage',
+);
+const OpsFeatureFlagDetailPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsFeatureFlagDetailPage'),
+  'OpsFeatureFlagDetailPage',
+);
 const OpsAlertsPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsAlertsPage'),
   'OpsAlertsPage',
@@ -823,6 +831,8 @@ export const router = createBrowserRouter([
                   { path: 'deployments', element: <OpsDeploymentsPage /> },
                   { path: 'communications', element: <OpsCommunicationsPage /> },
                   { path: 'users', element: <OpsUsersPage /> },
+                  { path: 'feature-flags', element: <OpsFeatureFlagsPage /> },
+                  { path: 'feature-flags/:key', element: <OpsFeatureFlagDetailPage /> },
                   { path: 'alerts', element: <OpsAlertsPage /> },
                   { path: 'settings', element: <OpsSettingsPage /> },
                   { path: 'infrastructure', element: <OpsInfrastructurePage /> },

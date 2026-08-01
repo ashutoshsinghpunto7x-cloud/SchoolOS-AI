@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
+import { FeatureFlagProvider } from '@/lib/featureFlags';
 import type { UserRole } from '@schoolos/types';
 
 interface ProtectedRouteProps {
@@ -34,5 +35,9 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/recovery/reset" replace />;
   }
 
-  return <Outlet />;
+  return (
+    <FeatureFlagProvider>
+      <Outlet />
+    </FeatureFlagProvider>
+  );
 };
