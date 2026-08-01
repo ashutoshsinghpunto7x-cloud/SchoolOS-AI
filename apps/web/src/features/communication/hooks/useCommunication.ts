@@ -70,6 +70,16 @@ export const useSendAttendanceNotifications = () =>
       communicationEngineApi.sendAttendanceNotifications(params),
   });
 
+/** Polls a bulk-send job every 1.5s until it leaves PROCESSING, so callers can
+ *  show the real sent/failed/skipped outcome instead of assuming success. */
+export const useBulkSendJob = (jobId: string | null) =>
+  useQuery({
+    queryKey: ['communication', 'bulkSendJob', jobId ?? ''],
+    queryFn: () => communicationEngineApi.getJob(jobId!),
+    enabled: Boolean(jobId),
+    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 1_500 : false),
+  });
+
 export const useUpdateCommunication = () => {
   const qc = useQueryClient();
   return useMutation({

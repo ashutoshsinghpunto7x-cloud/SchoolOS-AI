@@ -18,7 +18,7 @@ export interface MetaTemplateConfig {
 export const META_TEMPLATE_MAP: Partial<Record<NotificationType, MetaTemplateConfig>> = {
   ATTENDANCE_ABSENT: {
     templateName: 'student_absent_alert',
-    languageCode: 'en_US',
+    languageCode: 'en',
     paramKeys: ['student_name', 'class_section', 'date'],
   },
 };

@@ -24,7 +24,7 @@ import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
-import { useSendAttendanceNotifications } from '@/features/communication/hooks/useCommunication';
+import { useSendAttendanceNotifications, useBulkSendJob } from '@/features/communication/hooks/useCommunication';
 import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -489,17 +489,30 @@ const telHref = (phone?: string) => {
 
 function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absentee[]; date: string; cls: string; section: string }) {
   const { mutateAsync: sendNotifications, isPending: isSending } = useSendAttendanceNotifications();
-  const [result, setResult] = useState<{ total: number } | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const { data: job } = useBulkSendJob(jobId);
 
   async function handleSend() {
-    setResult(null);
+    setJobId(null);
     try {
       const summary = await sendNotifications({ date, class: cls, section });
-      setResult({ total: summary.totalStudents });
+      if (summary.jobId) {
+        setJobId(summary.jobId);
+      } else {
+        toast.info('No absentees to notify');
+      }
     } catch (err) {
       toast.error('Failed to send reminders', { description: err instanceof Error ? err.message : undefined });
     }
   }
+
+  const isPolling = Boolean(jobId) && job?.status === 'PROCESSING';
+  const result =
+    job && job.status !== 'PROCESSING'
+      ? job.failed > 0
+        ? { ok: false as const, sent: job.sent, failed: job.failed, skipped: job.skipped }
+        : { ok: true as const, sent: job.sent, skipped: job.skipped }
+      : null;
 
   return (
     <div className="w-full max-w-sm mt-6 bg-white dark:bg-[#150C29] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5 text-left">
@@ -529,19 +542,25 @@ function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absent
       </div>
 
       {result && (
-        <div className="text-xs font-medium mb-3 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700">
-          Reminder dispatched to {result.total} parent{result.total !== 1 ? 's' : ''}
+        <div
+          className={`text-xs font-medium mb-3 px-3 py-2 rounded-xl ${
+            result.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+          }`}
+        >
+          {result.ok
+            ? `Reminder dispatched to ${result.sent} parent${result.sent !== 1 ? 's' : ''}${result.skipped ? ` (${result.skipped} skipped)` : ''}`
+            : `Failed to deliver to ${result.failed} parent${result.failed !== 1 ? 's' : ''}${result.sent ? `, ${result.sent} sent` : ''} — check WhatsApp setup`}
         </div>
       )}
 
       <button
         type="button"
         onClick={handleSend}
-        disabled={isSending}
+        disabled={isSending || isPolling}
         className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
       >
-        {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-        {isSending ? 'Sending…' : `Send WhatsApp Reminder (${absentees.length})`}
+        {isSending || isPolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
+        {isSending ? 'Sending…' : isPolling ? 'Sending…' : `Send WhatsApp Reminder (${absentees.length})`}
       </button>
     </div>
   );
