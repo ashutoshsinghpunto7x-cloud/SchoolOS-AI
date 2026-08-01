@@ -562,6 +562,19 @@ export const performanceTestRunner = {
       if (run.stderrTail.length > 20) run.stderrTail.shift();
     });
 
+    child.on('error', (err) => {
+      // Spawn itself failed (e.g. the `k6` binary isn't installed / not on
+      // PATH) — this fires instead of 'exit', and without a listener Node
+      // treats it as an uncaught exception and crashes the whole process.
+      if (run.finished) return;
+      void finalizeRun(run, 'failed', `Could not start k6: ${err.message}. Is k6 installed and on PATH (K6_BIN_PATH=${env.K6_BIN_PATH})?`);
+      try {
+        fs.unlinkSync(outputPath);
+      } catch {
+        // best-effort cleanup
+      }
+    });
+
     child.on('exit', (code) => {
       tailOutputFile(run);
       if (run.finished) return;

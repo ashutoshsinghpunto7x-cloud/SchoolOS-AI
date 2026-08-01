@@ -13,10 +13,12 @@
     "seed:replace-class-3a": "tsx src/scripts/replace-class-3a-roster.ts",
     "seed:assign-class-3a-teacher": "tsx src/scripts/assign-class-3a-teacher.ts",
     "seed:demo-workspace": "tsx src/scripts/seed-demo-workspace.ts",
+    "seed:whatsapp-demo": "tsx src/scripts/seed-whatsapp-demo-class.ts",
     "seed:perf-test-data": "tsx src/scripts/seed-perf-test-data.ts",
     "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",
     "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts",
-    "migrate:backfill-teacher-employees": "tsx src/scripts/backfill-teacher-employees.ts"
+    "migrate:backfill-teacher-employees": "tsx src/scripts/backfill-teacher-employees.ts",
+    "cleanup:stuck-perf-tests": "tsx src/scripts/cleanup-stuck-perf-tests.ts"
   },
   "dependencies": {
     "@schoolos/types": "*",
