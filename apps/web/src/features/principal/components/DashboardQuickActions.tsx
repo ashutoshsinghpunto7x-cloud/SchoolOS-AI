@@ -7,7 +7,6 @@ import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 const ACTIONS: { labelKey: PrincipalTranslationKey; path: string }[] = [
   { labelKey: 'quick.attendance', path: '/attendance' },
   { labelKey: 'quick.admissions', path: '/enquiries' },
-  { labelKey: 'quick.feeCollection', path: '/fees' },
   { labelKey: 'quick.teachers', path: '/principal/teachers-summary' },
   { labelKey: 'quick.editRequests', path: '/principal/approvals' },
   { labelKey: 'quick.moreInsights', path: '/principal/insights' },

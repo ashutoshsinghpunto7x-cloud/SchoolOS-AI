@@ -150,6 +150,7 @@ export function AiHeroSection() {
                 onEditField={onEditField}
                 onApprove={onApprove}
                 onCancel={onCancel}
+                onQuickReply={handleSend}
               />
             ))}
             {isLoading && (

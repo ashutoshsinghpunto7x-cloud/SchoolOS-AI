@@ -513,6 +513,30 @@ const VerifyReportCardPage = lazyPage(
   () => import('@/features/report-cards/pages/VerifyReportCardPage'),
   'VerifyReportCardPage',
 );
+const TemplateListPage = lazyPage(
+  () => import('@/features/report-card-templates/pages/TemplateListPage'),
+  'TemplateListPage',
+);
+const TemplateBuilderPage = lazyPage(
+  () => import('@/features/report-card-templates/pages/TemplateBuilderPage'),
+  'TemplateBuilderPage',
+);
+const TermReportCardHubPage = lazyPage(
+  () => import('@/features/term-report-cards/pages/TermReportCardHubPage'),
+  'TermReportCardHubPage',
+);
+const TermReportCardRosterPage = lazyPage(
+  () => import('@/features/term-report-cards/pages/TermReportCardRosterPage'),
+  'TermReportCardRosterPage',
+);
+const TermReportCardPreviewPage = lazyPage(
+  () => import('@/features/term-report-cards/pages/TermReportCardPreviewPage'),
+  'TermReportCardPreviewPage',
+);
+const VerifyTermReportCardPage = lazyPage(
+  () => import('@/features/term-report-cards/pages/VerifyTermReportCardPage'),
+  'VerifyTermReportCardPage',
+);
 const QuestionBankPage = lazyPage(
   () => import('@/features/question-bank/pages/QuestionBankPage'),
   'QuestionBankPage',
@@ -743,6 +767,10 @@ export const router = createBrowserRouter([
     path: '/verify/report-card/:token',
     element: <VerifyReportCardPage />,
   },
+  {
+    path: '/verify/term-report-card/:token',
+    element: <VerifyTermReportCardPage />,
+  },
 
   // ── Auth shell (provides AuthProvider for login + app) ────────────────────
   {
@@ -939,6 +967,7 @@ export const router = createBrowserRouter([
               // Attendance
               { path: 'attendance', element: <AttendanceWorkspace /> },
               { path: 'attendance/class/:cls/:section', element: <ClassAttendancePage /> },
+              { path: 'attendance/take/:cls/:section', element: <TeacherAttendancePage /> },
 
               // Fees
               { path: 'fees', element: <FeeWorkspace /> },
@@ -1011,6 +1040,28 @@ export const router = createBrowserRouter([
                   { path: 'exams', element: <ExamListPage /> },
                   { path: 'exams/new', element: <NewExamPage /> },
                   { path: 'exams/:id/edit', element: <EditExamPage /> },
+                ],
+              },
+
+              // Report Card Templates — admin/principal configure the per-class,
+              // per-year layout (subjects, skill sections, grading key, exam mapping).
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                children: [
+                  { path: 'report-card-templates', element: <TemplateListPage /> },
+                  { path: 'report-card-templates/new', element: <TemplateBuilderPage /> },
+                  { path: 'report-card-templates/:id/edit', element: <TemplateBuilderPage /> },
+                ],
+              },
+
+              // Term Report Cards — the generated two-term CBSE-style cards, same
+              // access bar as the existing single-exam report-cards module.
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal', 'teacher']} />,
+                children: [
+                  { path: 'term-report-cards', element: <TermReportCardHubPage /> },
+                  { path: 'term-report-cards/:cls/:section/:academicYear', element: <TermReportCardRosterPage /> },
+                  { path: 'term-report-cards/:cls/:section/:academicYear/student/:studentId', element: <TermReportCardPreviewPage /> },
                 ],
               },
 

@@ -89,4 +89,22 @@ export const attendanceController = {
       sendSuccess(res, summary);
     } catch (err) { next(err); }
   },
+
+  /** GET /attendance/class-overview — Principal Attendance page, Classes tab */
+  async getClassOverview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx      = buildAuthContext(req.user!);
+      const overview = await attendanceService.getClassOverview(req.query, ctx);
+      sendSuccess(res, overview);
+    } catch (err) { next(err); }
+  },
+
+  /** GET /attendance/teacher-overview — Principal Attendance page, Teachers tab */
+  async getTeacherOverview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx      = buildAuthContext(req.user!);
+      const overview = await attendanceService.getTeacherOverview(req.query, ctx);
+      sendSuccess(res, overview);
+    } catch (err) { next(err); }
+  },
 };

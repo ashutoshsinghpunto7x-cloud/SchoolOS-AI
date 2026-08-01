@@ -19,6 +19,8 @@ const canWriteAttendance = authorize('admin', 'principal', 'teacher');
 // Static routes first — must come before /:id to avoid param conflicts
 router.post('/bulk',                             canWriteAttendance, attendanceController.bulkMark);
 router.get('/summary',                           attendanceController.getSummary);
+router.get('/class-overview',                    attendanceController.getClassOverview);
+router.get('/teacher-overview',                  attendanceController.getTeacherOverview);
 router.get('/class/:class/:section',             attendanceController.getClassAttendance);
 router.get('/student/:studentId',                attendanceController.getStudentHistory);
 

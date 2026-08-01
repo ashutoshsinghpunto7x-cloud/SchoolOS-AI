@@ -56,6 +56,7 @@ export const AssistantPanel = () => {
                 onEditField={onEditField}
                 onApprove={onApprove}
                 onCancel={onCancel}
+                onQuickReply={sendMessage}
               />
             ))}
             {isLoading && (

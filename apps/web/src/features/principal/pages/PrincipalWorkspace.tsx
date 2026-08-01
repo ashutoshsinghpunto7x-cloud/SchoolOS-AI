@@ -5,14 +5,12 @@ import { AiHeroSection } from '../components/AiHeroSection';
 import { RemindersStrip } from '../components/RemindersStrip';
 import { PriorityCenter } from '../components/PriorityCenter';
 import { SchoolHealthCard } from '../components/SchoolHealthCard';
-import { FinancialSnapshotCard } from '../components/FinancialSnapshotCard';
 import { StaffManagementCard } from '../components/StaffManagementCard';
 import { LiveActivityCard } from '../components/LiveActivityCard';
 import { DashboardQuickActions } from '../components/DashboardQuickActions';
 import { DailyBriefingCard } from '../components/DailyBriefingCard';
 import { AlertsPanel } from '../components/AlertsPanel';
 import { AttendanceInsightsCard } from '../components/AttendanceInsightsCard';
-import { FeeInsightsCard } from '../components/FeeInsightsCard';
 import { AdmissionAssistantCard } from '../components/AdmissionAssistantCard';
 import { usePrincipalDashboard, useTeachersSummary } from '../hooks/usePrincipal';
 import { useLanguage } from '@/context/LanguageContext';
@@ -21,14 +19,16 @@ import { useLanguage } from '@/context/LanguageContext';
 // AI Assistant collapses to a slim "Ask AI" bar by default (row 1) rather
 // than sitting open — it expands in place on click. Reminders (row 2) and
 // Today's Briefing (row 3) are full-width strips. Row 4 is the primary
-// at-a-glance grid: Priority Center, School Health, Financial Snapshot, and
-// Recent Activity together. Everything else (Staff Management, Attendance/
-// Fee Insights, Admission Assistant) is real but secondary, so it lives
-// below the fold — "View All Insights" in the briefing scrolls straight to
-// it. Anything the original brief asked for with no backing feature yet
-// (Parent Complaints, Visitors, Buses, Power/CCTV, Purchase/Transport
-// approvals, Reports, Circulars) was left out rather than faked — see each
-// component's own comment for specifics.
+// at-a-glance grid: Priority Center, School Health, and Recent Activity
+// together. Everything else (Staff Management, Attendance Insights,
+// Admission Assistant) is real but secondary, so it lives below the fold —
+// "View All Insights" in the briefing scrolls straight to it. Financial
+// records (fees, discounts, dues) are intentionally absent everywhere on
+// this dashboard — that's the Accountant workspace's concern, not the
+// Principal's. Anything the original brief asked for with no backing
+// feature yet (Parent Complaints, Visitors, Buses, Power/CCTV,
+// Purchase/Transport approvals, Reports, Circulars) was left out rather
+// than faked — see each component's own comment for specifics.
 
 export const PrincipalWorkspace = () => {
   const { data, isLoading, error, refetch } = usePrincipalDashboard();
@@ -61,11 +61,10 @@ export const PrincipalWorkspace = () => {
         {/* Row 3 — Daily Briefing, morning summary strip */}
         <DailyBriefingCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
 
-        {/* Row 4 — Priority Center, School Health, Financial Snapshot, Recent Activity */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-          <PriorityCenter alerts={data?.alerts} overdueFeeCount={data?.fees.overdueCount} isLoading={isLoading} />
+        {/* Row 4 — Priority Center, School Health, Recent Activity */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <PriorityCenter alerts={data?.alerts} isLoading={isLoading} />
           <SchoolHealthCard data={data} teachersSummary={teachersSummary} isLoading={isLoading} />
-          <FinancialSnapshotCard data={data?.fees} isLoading={isLoading} />
           <LiveActivityCard />
         </div>
 
@@ -81,9 +80,8 @@ export const PrincipalWorkspace = () => {
         <div id="more-insights-section" className="flex flex-col gap-5 scroll-mt-4">
           <StaffManagementCard />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
             <AttendanceInsightsCard />
-            <FeeInsightsCard />
             <AdmissionAssistantCard data={data?.admissions} isLoading={isLoading} />
           </div>
         </div>

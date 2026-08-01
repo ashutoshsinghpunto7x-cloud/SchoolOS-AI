@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 /** Teacher Planner, Lesson Planner, Syllabus Tracker, Worksheet Generator, and
  *  Question Bank are still under build/testing — hide their dashboard tiles
  *  until they're ready to ship. Flip back to true to restore. */
-const SHOW_WIP_TEACHER_TOOLS = false;
+const SHOW_WIP_TEACHER_TOOLS = true;
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 

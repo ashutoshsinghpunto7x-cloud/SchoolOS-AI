@@ -5,7 +5,7 @@ import { principalAssistantApi, ActionPreview } from '../api/principal-assistant
 export type ActionPreviewStatus = 'pending' | 'editing' | 'executing' | 'error';
 
 export type AssistantMessage =
-  | { id: string; role: 'user' | 'assistant'; type: 'text'; content: string }
+  | { id: string; role: 'user' | 'assistant'; type: 'text'; content: string; quickReplies?: string[] }
   | {
       id: string;
       role: 'assistant';
@@ -36,7 +36,10 @@ export const usePrincipalAssistant = () => {
       mutation.mutate(trimmed, {
         onSuccess: (result) => {
           if (result.type === 'text') {
-            setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: result.reply }]);
+            setMessages((prev) => [
+              ...prev,
+              { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: result.reply, quickReplies: result.quickReplies },
+            ]);
             return;
           }
           setMessages((prev) => [

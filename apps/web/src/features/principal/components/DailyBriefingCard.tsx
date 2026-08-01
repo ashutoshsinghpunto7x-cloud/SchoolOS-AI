@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Sparkles, Loader2, UserX, CalendarCheck2, ClipboardList, Wallet, UserPlus, CalendarClock } from 'lucide-react';
+import { Sparkles, Loader2, UserX, CalendarCheck2, ClipboardList, UserPlus, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { PrincipalDashboardData, TeachersSummaryData } from '@schoolos/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBriefingSummary } from '../hooks/usePrincipal';
 import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
-import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { extractErrorMessage } from '@/services/api';
 
@@ -29,10 +28,9 @@ export function DailyBriefingCard({ data, teachersSummary, isLoading }: DailyBri
   const { mutate: summarize, data: summaryResult, isPending, error } = useBriefingSummary();
   const [showSummary, setShowSummary] = useState(false);
   const { data: leave } = usePendingLeaveRequests();
-  const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
 
-  const pendingApprovals = (leave?.length ?? 0) + (discounts?.length ?? 0) + (changeRequests?.length ?? 0);
+  const pendingApprovals = (leave?.length ?? 0) + (changeRequests?.length ?? 0);
   const teachersAbsent = teachersSummary ? teachersSummary.total - teachersSummary.presentCount : undefined;
 
   const tiles = [
@@ -58,14 +56,6 @@ export function DailyBriefingCard({ data, teachersSummary, isLoading }: DailyBri
       icon: ClipboardList,
       linkLabel: t('briefing.reviewNow'),
       onClick: () => navigate('/principal/approvals'),
-    },
-    {
-      label: t('briefing.overdueFees'),
-      value: data ? String(data.fees.overdueCount) : '—',
-      danger: (data?.fees.overdueCount ?? 0) > 0,
-      icon: Wallet,
-      linkLabel: t('briefing.viewDetails'),
-      onClick: () => navigate('/fees'),
     },
     {
       label: t('briefing.newAdmissions'),

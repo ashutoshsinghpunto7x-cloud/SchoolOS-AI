@@ -10,6 +10,8 @@
     "seed:teachers": "tsx src/scripts/seed-teachers.ts",
     "seed:ops-user": "tsx src/scripts/seed-ops-user.ts",
     "seed:reset-students": "tsx src/scripts/reset-and-seed-students.ts",
+    "seed:replace-class-3a": "tsx src/scripts/replace-class-3a-roster.ts",
+    "seed:assign-class-3a-teacher": "tsx src/scripts/assign-class-3a-teacher.ts",
     "seed:demo-workspace": "tsx src/scripts/seed-demo-workspace.ts",
     "seed:perf-test-data": "tsx src/scripts/seed-perf-test-data.ts",
     "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",

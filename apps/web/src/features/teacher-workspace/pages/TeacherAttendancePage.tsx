@@ -665,6 +665,10 @@ export function TeacherAttendancePage() {
 
   // ── Smart draft (client-side autosave + crash recovery) ───────────────────
   const { user } = useAuth();
+  // Principal/admin can also reach this page (to take attendance for any
+  // class), so the post-submit navigation targets can't be hardcoded to the
+  // teacher-only routes below the /teacher prefix.
+  const isTeacherRole = user?.role === 'teacher';
   const draftKey = user && cls && section
     ? buildDraftKey({ schoolId: user.schoolId, teacherId: user.userId, module: 'attendance', classId: cls, section, date })
     : null;
@@ -934,8 +938,8 @@ export function TeacherAttendancePage() {
         absentCount={absentCount}
         absentees={absentees}
         onEdit={() => { setSubmitted(false); setEditMode(true); }}
-        onViewStudents={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
-        onDashboard={() => navigate('/teacher')}
+        onViewStudents={() => navigate(isTeacherRole ? `/teacher/classes/${cls}/${section}/students` : '/students')}
+        onDashboard={() => navigate(isTeacherRole ? '/teacher' : '/attendance')}
       />
     );
   }
@@ -1237,7 +1241,7 @@ export function TeacherAttendancePage() {
                 <Users className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-500 dark:text-white/50">No students in this class</p>
                 <button
-                  onClick={() => navigate(`/teacher/classes/${cls}/${section}/add-student`)}
+                  onClick={() => navigate(isTeacherRole ? `/teacher/classes/${cls}/${section}/add-student` : '/students/new')}
                   className="mt-4 h-10 px-5 bg-[#5B21B6] text-white rounded-xl text-sm font-semibold hover:bg-[#4C1D95] transition-colors"
                 >
                   Add Students

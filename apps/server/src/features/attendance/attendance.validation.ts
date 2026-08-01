@@ -77,6 +77,12 @@ export const classAttendanceSchema = z.object({
   date: isoDate.optional(),   // defaults to today
 });
 
+// ── Class / teacher overview (Principal Attendance page) ──────────────────────
+
+export const overviewSchema = z.object({
+  date: isoDate.optional(),   // defaults to today
+});
+
 // ── Summary query ─────────────────────────────────────────────────────────────
 
 export const summarySchema = z.object({
@@ -96,3 +102,4 @@ export type ListAttendanceInput    = z.infer<typeof listAttendanceSchema>;
 export type StudentHistoryInput    = z.infer<typeof studentHistorySchema>;
 export type ClassAttendanceInput   = z.infer<typeof classAttendanceSchema>;
 export type SummaryInput           = z.infer<typeof summarySchema>;
+export type OverviewInput          = z.infer<typeof overviewSchema>;

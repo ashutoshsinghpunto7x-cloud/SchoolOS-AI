@@ -26,6 +26,8 @@ export const attendanceKeys = {
   studentHistory:(id: string, o: StudentHistoryOptions) =>
                    [...attendanceKeys.all, 'student', id, o] as const,
   summary:       (o: AttendanceSummaryOptions) => [...attendanceKeys.all, 'summary', o] as const,
+  classOverview:   (date?: string) => [...attendanceKeys.all, 'class-overview', date ?? 'today'] as const,
+  teacherOverview: (date?: string) => [...attendanceKeys.all, 'teacher-overview', date ?? 'today'] as const,
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -64,6 +66,20 @@ export const useAttendanceSummary = (opts: AttendanceSummaryOptions = {}, enable
     queryKey: attendanceKeys.summary(opts),
     queryFn:  () => attendanceApi.getSummary(opts),
     enabled,
+  });
+
+export const useClassAttendanceOverview = (date?: string) =>
+  useQuery({
+    queryKey: attendanceKeys.classOverview(date),
+    queryFn:  () => attendanceApi.getClassOverview(date),
+    placeholderData: keepPreviousData,
+  });
+
+export const useTeacherAttendanceOverview = (date?: string) =>
+  useQuery({
+    queryKey: attendanceKeys.teacherOverview(date),
+    queryFn:  () => attendanceApi.getTeacherOverview(date),
+    placeholderData: keepPreviousData,
   });
 
 // ── Mutations ─────────────────────────────────────────────────────────────────

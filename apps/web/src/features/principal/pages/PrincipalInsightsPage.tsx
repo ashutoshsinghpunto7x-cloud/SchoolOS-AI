@@ -5,8 +5,6 @@ import { SectionHeader } from '@/components/workspace/SectionHeader';
 import { AlertsPanel } from '../components/AlertsPanel';
 import { QuickActions } from '../components/QuickActions';
 import { AttendanceWidget } from '../components/AttendanceWidget';
-import { FeeWidget } from '../components/FeeWidget';
-import { ClassFeeOverviewWidget } from '../components/ClassFeeOverviewWidget';
 import { AdmissionsWidget } from '../components/AdmissionsWidget';
 import { CalendarWidget } from '../components/CalendarWidget';
 import { AcademicWidget } from '../components/AcademicWidget';
@@ -32,21 +30,9 @@ export const PrincipalInsightsPage = () => {
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 min-w-0 flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title={t('insights.attendanceOverview')} subtitle={t('insights.attendanceOverviewSub')} />
-                <AttendanceWidget data={data?.attendance} isLoading={isLoading} />
-              </WorkspaceSection>
-
-              <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <SectionHeader title={t('insights.feeCollection')} subtitle={t('insights.feeCollectionSub')} />
-                <FeeWidget data={data?.fees} isLoading={isLoading} />
-              </WorkspaceSection>
-            </div>
-
             <WorkspaceSection className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <SectionHeader title={t('insights.feesByClass')} subtitle={t('insights.feesByClassSub')} />
-              <ClassFeeOverviewWidget />
+              <SectionHeader title={t('insights.attendanceOverview')} subtitle={t('insights.attendanceOverviewSub')} />
+              <AttendanceWidget data={data?.attendance} isLoading={isLoading} />
             </WorkspaceSection>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

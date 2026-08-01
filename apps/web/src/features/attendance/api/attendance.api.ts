@@ -9,6 +9,8 @@ import type {
   StudentHistoryOptions,
   AttendanceSummaryOptions,
   PaginatedResponse,
+  ClassAttendanceOverview,
+  TeacherAttendanceOverview,
 } from '@schoolos/types';
 
 const BASE = '/attendance';
@@ -81,6 +83,24 @@ export const attendanceApi = {
   getSummary: async (opts: AttendanceSummaryOptions = {}): Promise<AttendanceSummary> => {
     try {
       const res = await apiClient.get<{ data: AttendanceSummary }>(`${BASE}/summary`, { params: opts });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getClassOverview: async (date?: string): Promise<ClassAttendanceOverview> => {
+    try {
+      const res = await apiClient.get<{ data: ClassAttendanceOverview }>(
+        `${BASE}/class-overview`, { params: date ? { date } : {} },
+      );
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getTeacherOverview: async (date?: string): Promise<TeacherAttendanceOverview> => {
+    try {
+      const res = await apiClient.get<{ data: TeacherAttendanceOverview }>(
+        `${BASE}/teacher-overview`, { params: date ? { date } : {} },
+      );
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

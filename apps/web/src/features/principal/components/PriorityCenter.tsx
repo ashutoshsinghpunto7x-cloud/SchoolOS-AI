@@ -1,35 +1,29 @@
 import { useNavigate } from 'react-router-dom';
 import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
-import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAlert } from '@schoolos/types';
 
 interface PriorityCenterProps {
   alerts?: PrincipalAlert[];
-  overdueFeeCount?: number;
   isLoading?: boolean;
 }
 
-// Single source of truth for "what needs my decision" — replaces the old
-// Attention Required / Pending Approvals / Insights / Overdue Fees cards,
-// which all rendered overlapping subsets of the same four counts. Structured
-// rows cover the four real approvable/actionable categories; anything else
-// server-computed (low attendance, upcoming events, follow-ups) rides below
-// as a plain list, with the duplicate 'overdue_fees' alert type filtered out
-// since the fee row above already surfaces that count.
-export function PriorityCenter({ alerts, overdueFeeCount, isLoading }: PriorityCenterProps) {
+// Single source of truth for "what needs my decision" — non-financial
+// approvable/actionable categories only; fee approvals and overdue-fee
+// counts belong to the Accountant workspace, not the Principal's. Anything
+// else server-computed (low attendance, upcoming events, follow-ups) rides
+// below as a plain list, with the 'overdue_fees' alert type filtered out
+// since fee data has no place on this dashboard.
+export function PriorityCenter({ alerts, isLoading }: PriorityCenterProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { data: leave } = usePendingLeaveRequests();
-  const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
 
   const rows = [
     { label: t('priority.leaveRequests'), count: leave?.length ?? 0, path: '/principal/leave-approvals' },
     { label: t('priority.editRequests'), count: changeRequests?.length ?? 0, path: '/principal/approvals' },
-    { label: t('priority.discountApprovals'), count: discounts?.length ?? 0, path: '/principal/discount-approvals' },
-    { label: t('priority.overdueFees'), count: overdueFeeCount ?? 0, path: '/fees' },
   ];
 
   const otherAlerts = (alerts ?? []).filter((a) => a.type !== 'overdue_fees');

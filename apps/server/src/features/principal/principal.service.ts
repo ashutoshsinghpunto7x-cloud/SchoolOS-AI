@@ -43,18 +43,6 @@ function buildAlerts(data: Omit<PrincipalDashboardData, 'alerts' | 'generatedAt'
     }
   }
 
-  // Overdue fees
-  if (data.fees.overdueCount > 0) {
-    alerts.push({
-      id: 'alert_overdue_fees',
-      type: 'overdue_fees',
-      severity: data.fees.overdueCount >= 10 ? 'critical' : 'warning',
-      title: 'Overdue Fee Payments',
-      message: `${data.fees.overdueCount} fee record${data.fees.overdueCount > 1 ? 's are' : ' is'} overdue.`,
-      actionUrl: '/fees',
-    });
-  }
-
   // Pending follow-ups in admissions
   if (data.admissions.pendingFollowUp > 0) {
     alerts.push({
@@ -154,7 +142,6 @@ export const principalService = {
       teachersAbsent: Math.max(0, teachers.total - teachers.presentCount),
       teachersTotal: teachers.total,
       attendanceRate: dashboard.attendance.today.attendanceRate,
-      overdueFees: dashboard.fees.overdueCount,
       pendingAdmissionFollowUps: dashboard.admissions.pendingFollowUp,
       newAdmissionsThisMonth: dashboard.admissions.newThisMonth,
       upcomingEvents: dashboard.upcomingEvents.slice(0, 3).map((e) => ({ title: e.title, startDate: e.startDate })),

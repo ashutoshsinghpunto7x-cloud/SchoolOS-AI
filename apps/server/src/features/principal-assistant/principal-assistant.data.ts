@@ -31,6 +31,19 @@ export interface ClassExtremes {
 
 export type FullAttendanceSummary = StudentCounts & TeacherCounts & ClassExtremes;
 
+export interface ClassAttendanceListItem {
+  class: string;
+  section: string;
+  present: number;
+  absent: number;
+  total: number;
+}
+
+export interface ClassAttendanceList {
+  date: string;
+  classes: ClassAttendanceListItem[];
+}
+
 export const principalAssistantData = {
   async getStudentCounts(ctx: AuthContext): Promise<StudentCounts> {
     const today = attendanceRepository.todayString();
@@ -76,6 +89,21 @@ export const principalAssistantData = {
       lowestAttendanceClass: lowest
         ? { class: lowest.class, section: lowest.section, percentage: lowest.attendanceRate }
         : null,
+    };
+  },
+
+  /** Class-by-class present/absent breakdown for today — used to answer the
+   *  "students" branch of the attendance-scope follow-up question tersely,
+   *  without an LLM formatting pass. */
+  async getClassAttendanceList(ctx: AuthContext): Promise<ClassAttendanceList> {
+    const today = attendanceRepository.todayString();
+    const breakdown = (await attendanceRepository.getClassBreakdown(ctx.schoolId, today)).filter((c) => c.total > 0);
+
+    return {
+      date: today,
+      classes: breakdown
+        .map((b) => ({ class: b.class, section: b.section, present: b.present, absent: b.total - b.present, total: b.total }))
+        .sort((a, b) => a.class.localeCompare(b.class, undefined, { numeric: true }) || a.section.localeCompare(b.section)),
     };
   },
 

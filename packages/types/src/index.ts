@@ -1300,6 +1300,46 @@ export interface ClassSectionSummary {
   teacherName?: string;
 }
 
+/** One row of the Principal's Attendance → Classes tab table. */
+export interface ClassAttendanceOverviewRow {
+  class: string;
+  section: string;
+  classTeacherName?: string;
+  totalStudents: number;
+  present: number;
+  absent: number;
+}
+
+export interface ClassAttendanceOverview {
+  date: string;
+  classes: ClassAttendanceOverviewRow[];
+  totals: {
+    totalClasses: number;
+    totalStudents: number;
+    totalPresent: number;
+    totalAbsent: number;
+  };
+}
+
+/** One row of the Principal's Attendance → Teachers tab table. */
+export interface TeacherAttendanceOverviewRow {
+  teacherId: string;
+  employeeId: string;
+  fullName: string;
+  department?: string;
+  status: 'present' | 'late' | 'half_day' | 'absent';
+}
+
+export interface TeacherAttendanceOverview {
+  date: string;
+  teachers: TeacherAttendanceOverviewRow[];
+  totals: {
+    totalTeachers: number;
+    present: number;
+    absent: number;
+  };
+}
+
 export interface UpsertClassTeacherPayload {
   class: string;
   section: string;
@@ -3230,6 +3270,196 @@ export interface ReportCardVerification {
   class: string;
   section: string;
   examName: string;
+  overallGrade?: string;
+  promotionStatus: PromotionStatus;
+  issuedAt: string;
+  schoolId: string;
+}
+
+// ── Report Card Templates (per-class, per-year configurable CBSE-style layout) ─
+
+export type ReportCardTemplateStatus = 'draft' | 'published';
+export type SkillGrade = 'A' | 'B' | 'C' | 'D';
+
+export interface TemplateSubjectRow {
+  /** Absent for a row not yet saved to the server — set once persisted, and
+   *  stable across renames (survives regenerating a subject's name). */
+  _id?: string;
+  name: string;
+  evaluationType: SubjectEvaluationType;
+  order: number;
+  unitTestMaxMarks: number;
+  mainExamMaxMarks: number;
+}
+
+export interface TemplateSkillRow {
+  _id?: string;
+  label: string;
+  order: number;
+}
+
+export interface TemplateSkillSection {
+  _id?: string;
+  name: string;
+  order: number;
+  rows: TemplateSkillRow[];
+}
+
+export interface TemplateGradingKeyEntry {
+  label: string;
+  description: string;
+  order: number;
+}
+
+export interface TemplateExamSlot {
+  unitTest1ExamId?: string;
+  unitTest2ExamId?: string;
+  mainExamId?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface TemplateExamSlots {
+  firstTerm: TemplateExamSlot;
+  finalTerm: TemplateExamSlot;
+}
+
+export interface ReportCardTemplate extends BaseEntity {
+  class: string;
+  academicYear: string;
+  status: ReportCardTemplateStatus;
+  subjects: TemplateSubjectRow[];
+  skillSections: TemplateSkillSection[];
+  gradingKey: TemplateGradingKeyEntry[];
+  examSlots: TemplateExamSlots;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface CreateReportCardTemplatePayload {
+  class: string;
+  academicYear: string;
+  subjects?: TemplateSubjectRow[];
+  skillSections?: TemplateSkillSection[];
+  gradingKey?: TemplateGradingKeyEntry[];
+  examSlots?: TemplateExamSlots;
+}
+
+export type UpdateReportCardTemplatePayload = Partial<Omit<CreateReportCardTemplatePayload, 'class' | 'academicYear'>>;
+
+export interface CloneReportCardTemplatePayload {
+  fromAcademicYear: string;
+  toAcademicYear: string;
+}
+
+export interface ReportCardTemplateListOptions {
+  class?: string;
+  academicYear?: string;
+}
+
+// ── Term Report Cards (two-term CBSE-style generated card) ─────────────────────
+
+export interface TermReportCardSubjectRow {
+  subjectId: string;
+  subjectName: string;
+  evaluationType: SubjectEvaluationType;
+  unitTestMaxMarks: number;
+  mainExamMaxMarks: number;
+  unitTest1Score?: number;
+  unitTest2Score?: number;
+  bestUnitTestScore?: number;
+  mainExamScore?: number;
+  termTotal?: number;
+  termMaxMarks: number;
+  grade?: string;
+  result: MarksResultStatus;
+}
+
+export interface TermReportCardTermBlock {
+  unitTest1ExamId?: string;
+  unitTest2ExamId?: string;
+  mainExamId?: string;
+  subjectRows: TermReportCardSubjectRow[];
+  attendance: ReportCardAttendance;
+  termTotalObtained: number;
+  termTotalMax: number;
+  termPercentage: number;
+}
+
+export interface TermReportCardSkillEntry {
+  sectionId: string;
+  sectionName: string;
+  rowId: string;
+  rowLabel: string;
+  firstTermGrade?: SkillGrade;
+  finalTermGrade?: SkillGrade;
+}
+
+export interface TermReportCardSummary {
+  rank?: number;
+  classSize?: number;
+  promotionStatus: PromotionStatus;
+}
+
+export interface TermReportCard extends BaseEntity {
+  studentId: string;
+  class: string;
+  section: string;
+  academicYear: string;
+  templateId: string;
+  firstTerm: TermReportCardTermBlock;
+  finalTerm: TermReportCardTermBlock;
+  grandTotalObtained: number;
+  grandTotalMax: number;
+  grandAveragePercent: number;
+  overallGrade?: string;
+  skills: TermReportCardSkillEntry[];
+  summary: TermReportCardSummary;
+  teacherRemark?: string;
+  principalRemark?: string;
+  parentFeedback?: string;
+  warnings: string[];
+  verificationToken: string;
+  status: ReportCardStatus;
+  generatedById: string;
+  generatedByName: string;
+  generatedAt: string;
+}
+
+export interface GenerateTermReportCardPayload {
+  studentId: string;
+  academicYear: string;
+}
+
+export interface UpdateTermReportCardPayload {
+  teacherRemark?: string;
+  principalRemark?: string;
+  parentFeedback?: string;
+}
+
+export interface UpdateTermReportCardSkillsPayload {
+  skills: { rowId: string; firstTermGrade?: SkillGrade; finalTermGrade?: SkillGrade }[];
+}
+
+export interface TermReportCardRosterRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  photoUrl?: string;
+  hasReportCard: boolean;
+  warningsCount: number;
+}
+
+export interface TermReportCardRoster {
+  template: ReportCardTemplate;
+  rows: TermReportCardRosterRow[];
+}
+
+export interface TermReportCardVerification {
+  studentName: string;
+  class: string;
+  section: string;
+  academicYear: string;
   overallGrade?: string;
   promotionStatus: PromotionStatus;
   issuedAt: string;

@@ -8,6 +8,7 @@ import {
   studentHistorySchema,
   classAttendanceSchema,
   summarySchema,
+  overviewSchema,
 } from './attendance.validation';
 import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
@@ -17,9 +18,12 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { substituteRepository } from '../timetable/timetable.substitute.repository';
 import { classTeacherRepository } from '../classes/class-teacher.repository';
+import { schoolClassRepository } from '../school-classes/school-class.repository';
+import { StaffAttendanceRecord, StaffAttendanceStatus } from '../staff-attendance/staff-attendance.model';
 import { schoolSettingsService } from '../school-settings/school-settings.service';
 import { attendanceNotificationService } from '../communication/attendance-notification.service';
 import { logger } from '../../lib/logger';
+import type { ClassAttendanceOverview, TeacherAttendanceOverview } from '@schoolos/types';
 
 // Teachers may only mark/edit attendance for the current day — past dates are
 // permanently view-only (no backfilling forgotten days) and future dates are
@@ -279,5 +283,96 @@ export const attendanceService = {
       await assertTeacherCanMarkClass(ctx, opts.class, opts.section, attendanceRepository.todayString());
     }
     return attendanceRepository.getSummary(ctx.schoolId, opts);
+  },
+
+  /** Principal/Admin Attendance page — Classes tab. Every class+section defined
+   *  in the SchoolClass catalog (the accountant/admin's source of truth), with
+   *  its assigned class teacher and present/absent counts for the given date —
+   *  so this always reflects whatever classes actually exist in the school,
+   *  not a hardcoded list. */
+  async getClassOverview(rawQuery: unknown, ctx: AuthContext): Promise<ClassAttendanceOverview> {
+    const { date } = overviewSchema.parse(rawQuery);
+    const targetDate = date ?? attendanceRepository.todayString();
+
+    const [classes, studentCounts, assignments, breakdown] = await Promise.all([
+      schoolClassRepository.findAll(ctx.schoolId),
+      studentRepository.getClassSectionCounts(ctx.schoolId),
+      classTeacherRepository.findAll(ctx.schoolId),
+      attendanceRepository.getClassBreakdown(ctx.schoolId, targetDate),
+    ]);
+
+    const key = (cls: string, section: string) => `${cls.toLowerCase()}||${section.toLowerCase()}`;
+    const countMap   = new Map(studentCounts.map((c) => [key(c.class, c.section), c.count]));
+    const teacherMap = new Map(assignments.map((a) => [key(a.class, a.section), a.teacherName]));
+    const presentMap = new Map(breakdown.map((b) => [key(b.class, b.section), b.present]));
+
+    const rows = classes.flatMap((cls) =>
+      cls.sections.map((section) => {
+        const totalStudents = countMap.get(key(cls.name, section)) ?? 0;
+        const present = presentMap.get(key(cls.name, section)) ?? 0;
+        return {
+          class: cls.name,
+          section,
+          classTeacherName: teacherMap.get(key(cls.name, section)),
+          totalStudents,
+          present,
+          absent: Math.max(totalStudents - present, 0),
+        };
+      })
+    );
+
+    rows.sort((a, b) => a.class.localeCompare(b.class, undefined, { numeric: true }) || a.section.localeCompare(b.section));
+
+    const totals = rows.reduce(
+      (acc, r) => {
+        acc.totalClasses += 1;
+        acc.totalStudents += r.totalStudents;
+        acc.totalPresent += r.present;
+        acc.totalAbsent += r.absent;
+        return acc;
+      },
+      { totalClasses: 0, totalStudents: 0, totalPresent: 0, totalAbsent: 0 },
+    );
+
+    return { date: targetDate, classes: rows, totals };
+  },
+
+  /** Principal/Admin Attendance page — Teachers tab. Every active teacher in
+   *  the roster, cross-referenced against the staff QR check-in log for the
+   *  given date (same "present" definition used elsewhere — see
+   *  principalRepository.countPresentTeachersToday). Teachers with no
+   *  check-in record for the date read as absent. */
+  async getTeacherOverview(rawQuery: unknown, ctx: AuthContext): Promise<TeacherAttendanceOverview> {
+    const { date } = overviewSchema.parse(rawQuery);
+    const targetDate = date ?? attendanceRepository.todayString();
+
+    const [teachers, records] = await Promise.all([
+      Teacher.find({ schoolId: ctx.schoolId, isDeleted: false })
+        .select('employeeId fullName department')
+        .lean<{ _id: unknown; employeeId: string; fullName: string; department?: string }[]>(),
+      StaffAttendanceRecord.find({ schoolId: ctx.schoolId, date: targetDate })
+        .select('employeeId status')
+        .lean<{ employeeId: string; status: StaffAttendanceStatus }[]>(),
+    ]);
+
+    const statusByEmployeeId = new Map(records.map((r) => [r.employeeId, r.status]));
+
+    const rows = teachers
+      .map((t) => ({
+        teacherId: String(t._id),
+        employeeId: t.employeeId,
+        fullName: t.fullName,
+        department: t.department,
+        status: statusByEmployeeId.get(t.employeeId) ?? ('absent' as const),
+      }))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    const present = rows.filter((r) => r.status === 'present' || r.status === 'late' || r.status === 'half_day').length;
+
+    return {
+      date: targetDate,
+      teachers: rows,
+      totals: { totalTeachers: rows.length, present, absent: rows.length - present },
+    };
   },
 };
