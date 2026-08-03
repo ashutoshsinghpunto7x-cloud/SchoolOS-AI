@@ -139,7 +139,6 @@ function StudentRow({
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
             {row.fullName}
           </p>
-          {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
         </div>
         {row.workflowStatus && (
           <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full shrink-0', WORKFLOW_BADGE[row.workflowStatus].className)}>

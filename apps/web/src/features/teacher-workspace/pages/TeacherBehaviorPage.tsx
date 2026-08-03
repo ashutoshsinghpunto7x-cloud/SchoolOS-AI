@@ -135,7 +135,6 @@ function AddCustomOptionForm({ onClose, onCreated }: { onClose: () => void; onCr
 function StudentRow({
   studentId,
   fullName,
-  rollNumber,
   photoUrl,
   options,
   todayMarks,
@@ -143,7 +142,6 @@ function StudentRow({
 }: {
   studentId: string;
   fullName: string;
-  rollNumber?: string;
   photoUrl?: string;
   options: BehaviorOption[];
   todayMarks: { optionLabel: string; category: string }[];
@@ -184,7 +182,6 @@ function StudentRow({
         <StudentAvatar studentId={studentId} fullName={fullName} photoUrl={photoUrl} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{fullName}</p>
-          {rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {rollNumber}</p>}
         </div>
         {todayMarks.length > 0 && (
           <div className="flex items-center gap-1 shrink-0">
@@ -366,7 +363,6 @@ export function TeacherBehaviorPage() {
                 key={s._id}
                 studentId={s._id}
                 fullName={s.fullName}
-                rollNumber={s.rollNumber}
                 photoUrl={s.photoUrl}
                 options={activeOptions}
                 todayMarks={marksByStudent.get(s._id) ?? []}

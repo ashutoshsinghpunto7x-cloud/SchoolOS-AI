@@ -311,9 +311,6 @@ function ActiveCard({
         <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} />
         <div className="flex-1 min-w-0">
           <p className="text-base font-bold text-gray-900 dark:text-white truncate">{row.fullName}</p>
-          {row.rollNumber && (
-            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Roll No: {row.rollNumber}</p>
-          )}
         </div>
         <div className="flex flex-col items-end gap-0.5 shrink-0">
           <GripVertical className="w-4 h-4 text-gray-300 dark:text-white/20" />
@@ -378,7 +375,6 @@ function CompactRow({
           <StudentAvatar studentId={row.studentId} fullName={row.fullName} photoUrl={row.photoUrl} size="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{row.fullName}</p>
-            {row.rollNumber && <p className="text-[11px] text-gray-400 dark:text-white/30">Roll No: {row.rollNumber}</p>}
           </div>
         </button>
 
