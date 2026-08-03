@@ -48,6 +48,16 @@ const allowedOrigins = Array.from(new Set([...baselineOrigins, ...envOrigins]));
 const isLocalhostOrigin = (origin: string): boolean =>
   env.NODE_ENV !== 'production' && /^https?:\/\/localhost:\d+$/.test(origin);
 
+// ── Keep-Alive Health Check ───────────────────────────────────────────────────
+// Dedicated endpoint for uptime pingers (e.g. UptimeRobot) so Render's free
+// tier doesn't spin the instance down after 15 min of inactivity. Deliberately
+// placed before helmet/rate-limiting/DB checks: it must always answer fast and
+// with 200, so a slow DB or a burst of API traffic never makes the pinger
+// think the service is down.
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ status: 'ok', uptime: Math.floor(process.uptime()) });
+});
+
 app.use(helmet());
 app.use(compression());
 app.use(
