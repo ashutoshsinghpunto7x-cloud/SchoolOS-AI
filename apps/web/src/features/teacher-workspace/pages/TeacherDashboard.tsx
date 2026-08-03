@@ -10,10 +10,7 @@ import { useMyLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequ
 import type { TodayClass } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
-/** Teacher Planner, Lesson Planner, Syllabus Tracker, Worksheet Generator,
- *  Question Bank, and Behaviour Marking are still under build/testing — hide
- *  their dashboard tiles until they're ready to ship. Flip back to true to restore. */
-const SHOW_WIP_TEACHER_TOOLS = false;
+const SHOW_WIP_TEACHER_TOOLS = true;
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 

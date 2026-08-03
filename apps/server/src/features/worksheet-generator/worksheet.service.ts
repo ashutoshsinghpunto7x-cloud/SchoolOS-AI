@@ -56,7 +56,7 @@ export const worksheetService = {
           chapterName: primaryChapter.chapterName,
           questionText: q.questionText,
           questionType: q.questionType,
-          options: q.options,
+          options: q.options ?? undefined,
           difficulty: q.difficulty,
           marks: 1,
           estimatedTimeMinutes: q.estimatedTimeMinutes,
@@ -70,12 +70,13 @@ export const worksheetService = {
 
     let newIdx = 0;
     const questions = data.questions.map((q) => {
+      const base = { ...q, options: q.options ?? undefined, isNew: undefined };
       if (q.isNew && data.addNewToBank) {
         const id = savedNewIds[newIdx];
         newIdx += 1;
-        return { ...q, questionId: id, isNew: undefined };
+        return { ...base, questionId: id };
       }
-      return q;
+      return base;
     });
 
     return worksheetRepository.create({
