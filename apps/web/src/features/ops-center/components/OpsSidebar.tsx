@@ -13,6 +13,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', path: '/ops' },
   { label: 'Feature Management', path: '/ops/feature-flags' },
+  { label: 'Maintenance Mode', path: '/ops/maintenance' },
   { label: 'Infrastructure', path: '/ops/infrastructure' },
   { label: 'Applications', path: '/ops/applications' },
   { label: 'Schools', path: '/ops/schools' },

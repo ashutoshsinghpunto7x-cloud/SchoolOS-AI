@@ -173,6 +173,10 @@ const OpsFeatureFlagDetailPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsFeatureFlagDetailPage'),
   'OpsFeatureFlagDetailPage',
 );
+const OpsMaintenancePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsMaintenancePage'),
+  'OpsMaintenancePage',
+);
 const OpsAlertsPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsAlertsPage'),
   'OpsAlertsPage',
@@ -742,6 +746,10 @@ const SystemStatus = lazyPage(
   () => import('@/pages/SystemStatus'),
   'SystemStatus',
 );
+const UnderMaintenance = lazyPage(
+  () => import('@/pages/UnderMaintenance'),
+  'UnderMaintenance',
+);
 const NotFound = lazyPage(
   () => import('@/pages/NotFound'),
   'NotFound',
@@ -770,6 +778,10 @@ export const router = createBrowserRouter([
   {
     path: '/forbidden',
     element: <Forbidden />,
+  },
+  {
+    path: '/under-maintenance',
+    element: <UnderMaintenance />,
   },
   {
     path: '/verify/report-card/:token',
@@ -833,6 +845,7 @@ export const router = createBrowserRouter([
                   { path: 'users', element: <OpsUsersPage /> },
                   { path: 'feature-flags', element: <OpsFeatureFlagsPage /> },
                   { path: 'feature-flags/:key', element: <OpsFeatureFlagDetailPage /> },
+                  { path: 'maintenance', element: <OpsMaintenancePage /> },
                   { path: 'alerts', element: <OpsAlertsPage /> },
                   { path: 'settings', element: <OpsSettingsPage /> },
                   { path: 'infrastructure', element: <OpsInfrastructurePage /> },

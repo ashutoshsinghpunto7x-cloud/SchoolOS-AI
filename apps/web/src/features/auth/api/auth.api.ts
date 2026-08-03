@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, ApiError } from '@/services/api';
 import type { ApiResponse, LoginPayload, LoginResponse, AuthUser, ChangePasswordPayload } from '@schoolos/types';
 
 export const authApi = {
@@ -7,7 +7,7 @@ export const authApi = {
       const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', payload);
       return res.data.data!;
     } catch (err) {
-      throw new Error(extractErrorMessage(err));
+      throw new ApiError(err);
     }
   },
 

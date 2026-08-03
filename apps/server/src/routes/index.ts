@@ -53,6 +53,8 @@ import worksheetGeneratorRouter from '../features/worksheet-generator/worksheet.
 import syllabusTrackerRouter from '../features/syllabus-tracker/syllabus-tracker.routes';
 import featureFlagRouter from '../features/feature-flags/feature-flag.routes';
 import featureFlagPublicRouter from '../features/feature-flags/feature-flag.public.routes';
+import maintenanceRouter from '../features/maintenance/maintenance.routes';
+import maintenancePublicRouter from '../features/maintenance/maintenance.public.routes';
 
 const router = Router();
 
@@ -110,5 +112,7 @@ router.use('/worksheet-generator', worksheetGeneratorRouter);
 router.use('/syllabus-tracker', syllabusTrackerRouter);
 router.use('/ops/feature-flags', featureFlagRouter);
 router.use('/feature-flags', featureFlagPublicRouter);
+router.use('/ops/maintenance', maintenanceRouter);
+router.use('/maintenance', maintenancePublicRouter);
 
 export default router;

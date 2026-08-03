@@ -2,11 +2,22 @@ import { notificationRepository } from './notification.repository';
 import { sendPushToUsers } from './push.sender';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { userRepository } from '../users/user.repository';
+import { User } from '../users/user.model';
 import { NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { sendMessageToTeachersSchema } from './notification.validation';
 import type { NotificationType, NotificationPriority } from './notification.model';
 import type { NotificationListResult, SendMessageToTeachersResult } from '@schoolos/types';
+
+interface BroadcastToStaffInput {
+  type: NotificationType;
+  title: string;
+  body: string;
+  payload?: Record<string, unknown>;
+  priority?: NotificationPriority;
+  senderUserId: string;
+  senderName: string;
+}
 
 interface SendToTeachersInput {
   teacherIds: string[];
@@ -200,6 +211,47 @@ export const notificationService = {
         }),
       ),
     );
+  },
+
+  /**
+   * Platform-wide broadcast — every active tenant-facing staff account
+   * (admin/principal/teacher/reception/accountant) across every school,
+   * skipping internal Ops roles (owner/super_admin/devops/developer/support)
+   * since they're the ones sending the notice, not receiving it. Used by
+   * Maintenance Mode; unlike sendToAdmins/sendToApprovers this isn't scoped
+   * to a single ctx.schoolId, so it reads schoolId per-user rather than
+   * from ctx.
+   */
+  async broadcastToStaff(input: BroadcastToStaffInput): Promise<{ sent: number }> {
+    const staffRoles = ['admin', 'principal', 'reception', 'teacher', 'accountant'];
+    const staff = await User.find({ role: { $in: staffRoles }, status: 'active', deletedAt: { $exists: false } })
+      .select('_id schoolId')
+      .lean<{ _id: unknown; schoolId: string }[]>();
+
+    if (staff.length === 0) return { sent: 0 };
+
+    await notificationRepository.createMany(
+      staff.map((u) => ({
+        recipientUserId: String(u._id),
+        schoolId: u.schoolId,
+        type: input.type,
+        title: input.title,
+        body: input.body,
+        payload: input.payload,
+        priority: input.priority,
+        senderUserId: input.senderUserId,
+        senderName: input.senderName,
+      })),
+    );
+
+    await sendPushToUsers({
+      userIds: staff.map((u) => String(u._id)),
+      title: input.title,
+      body: input.body,
+      priority: input.priority,
+    });
+
+    return { sent: staff.length };
   },
 
   async broadcastToTeachers(rawInput: unknown, ctx: AuthContext): Promise<SendMessageToTeachersResult> {

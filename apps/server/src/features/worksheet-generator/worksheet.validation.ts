@@ -18,7 +18,7 @@ const worksheetQuestionSchema = z.object({
   questionId: z.string().optional(),
   questionText: z.string().min(1),
   questionType: z.enum(QUESTION_TYPES),
-  options: z.array(z.string()).optional(),
+  options: z.array(z.string()).nullable().optional(),
   difficulty: z.enum(DIFFICULTIES),
   estimatedTimeMinutes: z.number().min(0),
   keywords: z.array(z.string()).default([]),

@@ -1383,7 +1383,7 @@ export interface StudentLedgerData {
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution' | 'planner_reminder';
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution' | 'planner_reminder' | 'maintenance_scheduled' | 'maintenance_toggled';
 export type NotificationPriority = 'normal' | 'high';
 
 export interface AppNotification {

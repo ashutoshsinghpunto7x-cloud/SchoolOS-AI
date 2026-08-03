@@ -6,7 +6,9 @@ import { getHomePathForRole } from '../utils/roleHome';
 import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
 import { PinSetupPrompt } from '../components/PinSetupPrompt';
-import { pingServerAwake } from '../../../services/api';
+import { pingServerAwake, ApiError } from '../../../services/api';
+
+const isMaintenanceModeError = (err: unknown): boolean => err instanceof ApiError && err.code === 'MAINTENANCE_MODE';
 import fnicLogo from '../../../assets/illustrations/fnic-logo.webp';
 
 // Module-level cache: the chroma-keyed result only ever depends on the
@@ -145,6 +147,10 @@ export const LoginPage = () => {
         goHome(loggedInUser.role);
       }
     } catch (err) {
+      if (isMaintenanceModeError(err)) {
+        navigate('/under-maintenance', { replace: true });
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
@@ -165,6 +171,10 @@ export const LoginPage = () => {
       const loggedInUser = await loginWithPin(device.deviceId, pin);
       goHome(loggedInUser.role);
     } catch (err) {
+      if (isMaintenanceModeError(err)) {
+        navigate('/under-maintenance', { replace: true });
+        return;
+      }
       setError(err instanceof Error ? err.message : 'PIN sign-in failed. Please try again.');
     } finally {
       setIsLoading(false);

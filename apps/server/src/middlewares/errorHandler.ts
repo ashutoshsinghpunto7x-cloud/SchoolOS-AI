@@ -46,6 +46,12 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class MaintenanceModeError extends AppError {
+  constructor(message = 'SchoolOS is undergoing scheduled maintenance. Please check back shortly.') {
+    super(message, 503, 'MAINTENANCE_MODE');
+  }
+}
+
 export const notFoundHandler = (req: Request, res: Response): void => {
   sendError(res, `Route not found: ${req.method} ${req.path}`, 404, 'ROUTE_NOT_FOUND');
 };

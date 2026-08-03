@@ -2,15 +2,24 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
 import { FeatureFlagProvider } from '@/lib/featureFlags';
+import { useMaintenanceStatus } from '@/features/ops-center/hooks/useMaintenance';
 import type { UserRole } from '@schoolos/types';
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
 }
 
+// Same allow-list as maintenanceService.isRoleExempt on the server — kept in
+// sync manually since this is the client-side safety net for a tab that was
+// already authenticated (with a still-valid token) when maintenance was
+// toggled on mid-session. The server-side login check is what stops a
+// blocked role from ever getting a session in the first place.
+const MAINTENANCE_EXEMPT_ROLES: UserRole[] = ['admin', 'principal', 'owner', 'super_admin', 'devops', 'developer', 'support'];
+
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuthContext();
   const location = useLocation();
+  const { data: maintenanceStatus } = useMaintenanceStatus(isAuthenticated);
 
   if (isLoading) {
     return (
@@ -26,6 +35,10 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/forbidden" replace />;
+  }
+
+  if (user && maintenanceStatus?.isActive && !MAINTENANCE_EXEMPT_ROLES.includes(user.role)) {
+    return <Navigate to="/under-maintenance" replace />;
   }
 
   // Account recovery isn't complete — block every other route until both the

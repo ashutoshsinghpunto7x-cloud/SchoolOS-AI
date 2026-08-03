@@ -1,4 +1,4 @@
-import { apiClient, extractErrorMessage } from '@/services/api';
+import { apiClient, extractErrorMessage, ApiError } from '@/services/api';
 import type {
   ApiResponse, SubmitRecoveryRequestPayload, RecoveryRequest, RejectRecoveryRequestPayload,
   ApproveRecoveryResult, SetNewPasswordPayload, SetPinPayload, SetupPinPayload, LoginWithPinPayload,
@@ -79,7 +79,7 @@ export const recoveryApi = {
       const res = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/login-pin', payload);
       return res.data.data!;
     } catch (err) {
-      throw new Error(extractErrorMessage(err));
+      throw new ApiError(err);
     }
   },
 

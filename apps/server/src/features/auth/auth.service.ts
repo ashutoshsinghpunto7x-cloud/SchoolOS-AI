@@ -2,10 +2,11 @@ import bcrypt from 'bcrypt';
 import { User } from '../users/user.model';
 import { userRepository } from '../users/user.repository';
 import { tokenService, AccessTokenPayload } from './token.service';
-import { UnauthorizedError, ValidationError } from '../../middlewares/errorHandler';
+import { UnauthorizedError, ValidationError, MaintenanceModeError } from '../../middlewares/errorHandler';
 import { loginSchema, changePasswordSchema } from '../users/user.validation';
 import { logger } from '../../lib/logger';
 import { auditService } from '../audit/audit.service';
+import { maintenanceService } from '../maintenance/maintenance.service';
 
 // Cost 10, not 12: still above OWASP's minimum bcrypt cost recommendation,
 // but ~4x faster to compute — bcrypt.compare() at cost 12 was the measured
@@ -58,6 +59,26 @@ export const authService = {
     if (!isMatch) {
       logger.warn('Login failed: wrong password', { identifier, ip });
       throw new UnauthorizedError('Invalid credentials');
+    }
+
+    // Checked only after credentials are confirmed valid, so an unauthenticated
+    // probe can't use this to learn whether maintenance is active. Ops staff and
+    // admin/principal (who need to be able to get in and resolve an incident)
+    // are exempt — see maintenanceService.isRoleExempt.
+    const maintenance = await maintenanceService.getStatus();
+    if (maintenance.isActive && !maintenanceService.isRoleExempt(user.role)) {
+      logger.warn('Login blocked: maintenance mode active', { identifier, role: user.role, ip });
+      auditService.log({
+        userId: user._id.toString(),
+        userDisplayName: `${user.firstName} ${user.lastName}`,
+        action: 'auth.login_blocked_maintenance',
+        resource: 'auth',
+        resourceId: user._id.toString(),
+        details: { role: user.role },
+        ip,
+        schoolId: user.schoolId,
+      });
+      throw new MaintenanceModeError(maintenance.message || undefined);
     }
 
     // Fire-and-forget: not needed for the response, and shouldn't block login latency

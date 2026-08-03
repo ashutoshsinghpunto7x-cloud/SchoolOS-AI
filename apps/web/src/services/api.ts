@@ -175,3 +175,22 @@ export const extractErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   return 'An unexpected error occurred';
 };
+
+const extractErrorCode = (error: unknown): string | undefined => {
+  if (!(error instanceof AxiosError)) return undefined;
+  const data = error.response?.data as { error?: { code?: string } } | undefined;
+  return data?.error?.code;
+};
+
+/** Thrown by api.ts callers in place of a plain Error so a caller can branch
+ *  on the server's error code (e.g. MAINTENANCE_MODE) without depending on
+ *  message text — the plain-Error-with-just-a-message convention elsewhere
+ *  in this codebase loses that code, which login blocking needs. */
+export class ApiError extends Error {
+  readonly code?: string;
+  constructor(error: unknown) {
+    super(extractErrorMessage(error));
+    this.code = extractErrorCode(error);
+    this.name = 'ApiError';
+  }
+}

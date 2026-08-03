@@ -25,6 +25,8 @@ export const PERMISSIONS = {
   OPS_VIEW: 'ops.view',
   FEATURE_FLAGS_VIEW: 'feature-flags.view',
   FEATURE_FLAGS_MANAGE: 'feature-flags.manage',
+  MAINTENANCE_VIEW: 'maintenance.view',
+  MAINTENANCE_MANAGE: 'maintenance.manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -44,11 +46,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   // Internal SchoolOS staff — Ops Center only, no tenant-facing permissions.
   // Feature-flag management (create/delete/rollout/global toggle) is reserved
   // for owner/super_admin; the rest of Ops staff can only view flag status.
-  owner: ['ops.view', 'feature-flags.view', 'feature-flags.manage'],
-  super_admin: ['ops.view', 'feature-flags.view', 'feature-flags.manage'],
-  devops: ['ops.view', 'feature-flags.view'],
-  developer: ['ops.view', 'feature-flags.view'],
-  support: ['ops.view', 'feature-flags.view'],
+  owner: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage'],
+  super_admin: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage'],
+  devops: ['ops.view', 'feature-flags.view', 'maintenance.view'],
+  developer: ['ops.view', 'feature-flags.view', 'maintenance.view'],
+  support: ['ops.view', 'feature-flags.view', 'maintenance.view'],
 };
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
@@ -89,6 +91,8 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'ops.view': { label: 'View Ops Center', category: 'Ops Center' },
   'feature-flags.view': { label: 'View Feature Flags', category: 'Feature Flags' },
   'feature-flags.manage': { label: 'Manage Feature Flags', category: 'Feature Flags' },
+  'maintenance.view': { label: 'View Maintenance Mode', category: 'Maintenance' },
+  'maintenance.manage': { label: 'Manage Maintenance Mode', category: 'Maintenance' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

@@ -10,11 +10,12 @@ import {
 } from './recovery.validation';
 import { IRecoveryRequest } from './recovery-request.model';
 import { tokenService, AccessTokenPayload } from './token.service';
-import { NotFoundError, ValidationError, UnauthorizedError } from '../../middlewares/errorHandler';
+import { NotFoundError, ValidationError, UnauthorizedError, MaintenanceModeError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { automationService } from '../automation/automation.service';
 import { logger } from '../../lib/logger';
+import { maintenanceService } from '../maintenance/maintenance.service';
 
 const SALT_ROUNDS = 12;
 const TEMP_PASSWORD_VALID_HOURS = 24;
@@ -293,6 +294,11 @@ export const recoveryService = {
 
     const isMatch = await bcrypt.compare(pin, user.pinHash);
     if (!isMatch) throw new UnauthorizedError('Incorrect PIN');
+
+    const maintenance = await maintenanceService.getStatus();
+    if (maintenance.isActive && !maintenanceService.isRoleExempt(user.role)) {
+      throw new MaintenanceModeError(maintenance.message || undefined);
+    }
 
     device.lastUsedAt = new Date();
     await device.save();
