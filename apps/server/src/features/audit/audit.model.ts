@@ -9,6 +9,8 @@ export type AuditAction =
   | 'auth.recovery_rejected'
   | 'auth.temp_password_generated'
   | 'auth.pin_reset'
+  | 'auth.passkey_registered'
+  | 'auth.passkey_removed'
   | 'auth.login_blocked_maintenance'
   | 'maintenance.scheduled'
   | 'maintenance.schedule_cancelled'

@@ -20,6 +20,7 @@ import {
   Headphones,
   MessageCircle,
   Moon,
+  Fingerprint,
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -280,6 +281,7 @@ export function TeacherProfilePage() {
             <MenuRow icon={CreditCard} label="My ID Card"     onClick={() => navigate('/teacher/id-card')} />
             <MenuRow icon={ScanLine} label="My Attendance"    onClick={() => navigate('/teacher/my-attendance')} />
             <MenuRow icon={KeyRound} label="Change Password"  onClick={() => navigate('/teacher/change-password')} />
+            <MenuRow icon={Fingerprint} label="Fingerprint Sign-In" onClick={() => navigate('/teacher/passkeys')} />
 
             {/* Contact support — tapping the row calls the school office;
                 the WhatsApp icon opens a chat with the same number directly. */}

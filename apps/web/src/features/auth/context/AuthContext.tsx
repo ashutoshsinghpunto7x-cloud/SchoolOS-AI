@@ -14,6 +14,12 @@ export interface AuthContextValue {
   loginWithPin: (deviceId: string, pin: string) => Promise<AuthUser>;
   /** Self-service: sets a PIN for the current account and remembers this browser/device. */
   setupPin: (pin: string, deviceLabel?: string) => Promise<{ deviceId: string }>;
+  /** True once the browser has confirmed it can talk to a platform authenticator (Windows Hello, Touch ID, Android fingerprint). Checked async on mount, starts false. */
+  isPasskeyAvailable: boolean;
+  /** Quick sign-in via a previously registered passkey — discoverable/usernameless, triggers the OS biometric prompt directly. */
+  loginWithPasskey: () => Promise<AuthUser>;
+  /** Self-service: registers this device's platform authenticator as a passkey for the current account. */
+  registerPasskey: (deviceLabel?: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

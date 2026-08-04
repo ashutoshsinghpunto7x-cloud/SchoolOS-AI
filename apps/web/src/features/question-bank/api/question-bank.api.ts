@@ -6,6 +6,7 @@ import type {
   CreateQuestionPayload,
   UpdateQuestionPayload,
   QuestionExtractionResult,
+  TextExtractionResult,
   ConfirmExtractedQuestionsPayload,
   PaperGenerationConfig,
   GeneratedPaper,
@@ -15,9 +16,9 @@ import type {
 
 const BASE = '/question-bank';
 
-interface ExtractionJobStatus {
+interface ExtractionJobStatus<T> {
   status: 'processing' | 'completed' | 'failed';
-  result?: QuestionExtractionResult;
+  result?: T;
   error?: string;
 }
 
@@ -25,10 +26,10 @@ const EXTRACTION_POLL_INTERVAL_MS = 1500;
 const EXTRACTION_POLL_TIMEOUT_MS = 120_000;
 
 /** Extraction is backgrounded (OCR + vision/text call can take a while) — poll instead of holding the request open. */
-async function pollExtractionJob(jobId: string): Promise<QuestionExtractionResult> {
+async function pollExtractionJob<T>(jobId: string): Promise<T> {
   const deadline = Date.now() + EXTRACTION_POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const res = await apiClient.get<{ data: ExtractionJobStatus }>(`${BASE}/extract/jobs/${jobId}`);
+    const res = await apiClient.get<{ data: ExtractionJobStatus<T> }>(`${BASE}/extract/jobs/${jobId}`);
     const job = res.data.data;
     if (job.status === 'completed' && job.result) return job.result;
     if (job.status === 'failed') throw new Error(job.error || 'AI extraction failed');
@@ -38,7 +39,8 @@ async function pollExtractionJob(jobId: string): Promise<QuestionExtractionResul
 }
 
 export const questionBankApi = {
-  extractFromImage: async (target: { class: string; subject: string }, file: File): Promise<QuestionExtractionResult> => {
+  /** Upload only transcribes + stores the page's text (no question drafts yet) — see reExtractSource to generate questions from it. */
+  extractFromImage: async (target: { class: string; subject: string }, file: File): Promise<TextExtractionResult> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -46,11 +48,11 @@ export const questionBankApi = {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return await pollExtractionJob(res.data.data.jobId);
+      return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  extractFromPdf: async (target: { class: string; subject: string }, file: File): Promise<QuestionExtractionResult> => {
+  extractFromPdf: async (target: { class: string; subject: string }, file: File): Promise<TextExtractionResult> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -58,7 +60,7 @@ export const questionBankApi = {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      return await pollExtractionJob(res.data.data.jobId);
+      return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
@@ -69,10 +71,18 @@ export const questionBankApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
+  getSource: async (id: string): Promise<QuestionSource> => {
+    try {
+      const res = await apiClient.get<{ data: QuestionSource }>(`${BASE}/sources/${id}`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Generates a fresh batch of question drafts from a stored source's text — repeatable any number of times. */
   reExtractSource: async (id: string): Promise<QuestionExtractionResult> => {
     try {
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/sources/${id}/re-extract`);
-      return await pollExtractionJob(res.data.data.jobId);
+      return await pollExtractionJob<QuestionExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

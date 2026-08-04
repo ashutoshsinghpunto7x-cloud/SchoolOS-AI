@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
 import { recoveryController } from './recovery.controller';
+import { webauthnController } from './webauthn.controller';
 import { authenticate } from '../../middlewares/authenticate';
 import { authorize } from '../../middlewares/authorize';
-import { authLimiter, authAccountLimiter, pinLoginLimiter } from '../../middlewares/rateLimiter';
+import { authLimiter, authAccountLimiter, pinLoginLimiter, webauthnLoginLimiter } from '../../middlewares/rateLimiter';
 import { verifyCsrf } from '../../middlewares/csrf';
 import { env } from '../../config/env';
 
@@ -19,6 +20,10 @@ router.post('/login', authLimiter, authAccountLimiter, authController.login);
 router.post('/refresh', authLimiter, verifyCsrf, authController.refresh);
 router.post('/login-pin', authLimiter, pinLoginLimiter, recoveryController.loginWithPin);
 router.post('/recovery/request', authLimiter, recoveryController.submitRequest);
+
+// Passkey (fingerprint/Face ID) login — public, discoverable credential, no identifier in the body.
+router.post('/webauthn/login/options', authLimiter, webauthnLoginLimiter, webauthnController.getLoginOptions);
+router.post('/webauthn/login/verify', authLimiter, webauthnLoginLimiter, webauthnController.verifyLogin);
 
 // Dev-only seed endpoint — not registered at all outside development, so a
 // misconfigured NODE_ENV in prod can't fall through to the controller's own
@@ -39,6 +44,12 @@ router.post('/complete-pin-reset', authenticate, recoveryController.completePinR
 // PIN + remember-device (self-service, additive to the existing login)
 router.post('/setup-pin', authenticate, recoveryController.setupPin);
 router.delete('/devices/:deviceId', authenticate, recoveryController.forgetDevice);
+
+// Passkey registration + management (self-service, additive to the existing login)
+router.post('/webauthn/register/options', authenticate, webauthnController.getRegistrationOptions);
+router.post('/webauthn/register/verify', authenticate, webauthnController.verifyRegistration);
+router.get('/webauthn/credentials', authenticate, webauthnController.listCredentials);
+router.delete('/webauthn/credentials/:id', authenticate, webauthnController.deleteCredential);
 
 // Admin recovery-request queue
 router.get('/recovery/requests', authenticate, authorize('admin'), recoveryController.list);

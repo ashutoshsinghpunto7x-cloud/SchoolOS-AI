@@ -1,5 +1,5 @@
 import { ExtractionJob, IExtractionJob, ExtractionJobKind } from './extraction-job.model';
-import type { QuestionExtractionResult } from './question-extraction.service';
+import type { QuestionExtractionResult, TextExtractionResult } from './question-extraction.service';
 
 export const extractionJobRepository = {
   async create(data: { schoolId: string; userId: string; kind: ExtractionJobKind }): Promise<IExtractionJob> {
@@ -10,7 +10,7 @@ export const extractionJobRepository = {
     return ExtractionJob.findOne({ _id: id, schoolId }).lean<IExtractionJob>();
   },
 
-  async markCompleted(id: string, result: QuestionExtractionResult): Promise<void> {
+  async markCompleted(id: string, result: QuestionExtractionResult | TextExtractionResult): Promise<void> {
     await ExtractionJob.updateOne({ _id: id }, { $set: { status: 'completed', result } });
   },
 

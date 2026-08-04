@@ -98,3 +98,15 @@ export const pinLoginLimiter = rateLimit({
     (req) => (req.body as { deviceId?: string } | undefined)?.deviceId,
   ),
 });
+
+// Passkey login is discoverable/usernameless — there's no identifier field in the request body at
+// all (not even a deviceId, unlike /login-pin), so this can only be keyed on IP (the library's
+// default keyGenerator). Kept as its own bucket rather than folding into authLimiter so a burst of
+// failed passkey attempts can't also lock a user out of password/PIN login from the same IP.
+export const webauthnLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDevelopment ? 1000 : 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: makeRateLimitHandler('Too many passkey sign-in attempts. Please try again in 15 minutes.'),
+});

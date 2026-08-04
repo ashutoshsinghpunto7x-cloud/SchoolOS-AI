@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { startRegistration, startAuthentication, browserSupportsWebAuthn, platformAuthenticatorIsAvailable } from '@simplewebauthn/browser';
 import { authApi } from '../api/auth.api';
 import { recoveryApi } from '../api/recovery.api';
+import { webauthnApi } from '../api/webauthn.api';
 import { resetAuthRefreshState, scheduleProactiveRefresh } from '@/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AuthContext } from '../context/AuthContext';
@@ -14,7 +16,15 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasskeyAvailable, setIsPasskeyAvailable] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!browserSupportsWebAuthn()) return;
+    platformAuthenticatorIsAvailable()
+      .then(setIsPasskeyAvailable)
+      .catch(() => setIsPasskeyAvailable(false));
+  }, []);
 
   // Validate existing session on mount. Session lives in sessionStorage so each
   // browser tab has its own isolated token — on shared front-office computers,
@@ -72,6 +82,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return recoveryApi.setupPin({ pin, deviceLabel });
   }, []);
 
+  const loginWithPasskey = useCallback(async (): Promise<AuthUser> => {
+    const options = await webauthnApi.getLoginOptions();
+    const response = await startAuthentication({ optionsJSON: options });
+    const tokens = await webauthnApi.verifyLogin(response, options.challenge);
+    queryClient.clear();
+    sessionStorage.setItem('accessToken', tokens.accessToken);
+    scheduleProactiveRefresh(tokens.accessToken);
+    const data = await authApi.me();
+    setUser(data);
+    return data;
+  }, []);
+
+  const registerPasskey = useCallback(async (deviceLabel?: string): Promise<void> => {
+    const options = await webauthnApi.getRegistrationOptions();
+    const response = await startRegistration({ optionsJSON: options });
+    await webauthnApi.verifyRegistration(response, deviceLabel);
+  }, []);
+
   const logout = useCallback(async (): Promise<void> => {
     await authApi.logout();
     sessionStorage.removeItem('accessToken');
@@ -92,6 +120,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         refreshUser,
         loginWithPin,
         setupPin,
+        isPasskeyAvailable,
+        loginWithPasskey,
+        registerPasskey,
       }}
     >
       {children}

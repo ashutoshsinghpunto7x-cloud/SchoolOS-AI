@@ -557,6 +557,10 @@ const QuestionUploadPage = lazyPage(
   () => import('@/features/question-bank/pages/QuestionUploadPage'),
   'QuestionUploadPage',
 );
+const QuestionSourceDetailPage = lazyPage(
+  () => import('@/features/question-bank/pages/QuestionSourceDetailPage'),
+  'QuestionSourceDetailPage',
+);
 const PaperGeneratorPage = lazyPage(
   () => import('@/features/question-bank/pages/PaperGeneratorPage'),
   'PaperGeneratorPage',
@@ -628,6 +632,10 @@ const TeacherWorkspaceProfilePage = lazyPage(
 const TeacherChangePasswordPage = lazyPage(
   () => import('@/features/teacher-workspace/pages/TeacherChangePasswordPage'),
   'TeacherChangePasswordPage',
+);
+const PasskeyManagePage = lazyPage(
+  () => import('@/features/auth/pages/PasskeyManagePage'),
+  'PasskeyManagePage',
 );
 const AccountantLayout = lazyPage(
   () => import('@/features/accountant-workspace/components/AccountantLayout'),
@@ -887,6 +895,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/marks/:cls/:section/:subjectName/:examId',      element: <MarksEntryPage /> },
                       { path: 'teacher/question-bank',                                element: <QuestionBankPage /> },
                       { path: 'teacher/question-bank/upload',                         element: <QuestionUploadPage /> },
+                      { path: 'teacher/question-bank/sources/:sourceId',               element: <QuestionSourceDetailPage /> },
                       { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
@@ -908,6 +917,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/timetable',                                    element: <TeacherWorkspaceTimetablePage /> },
                       { path: 'teacher/profile',                                      element: <TeacherWorkspaceProfilePage /> },
                       { path: 'teacher/change-password',                              element: <TeacherChangePasswordPage /> },
+                      { path: 'teacher/passkeys',                                     element: <PasskeyManagePage /> },
                       { path: 'teacher/id-card',                                      element: <TeacherIdCardPage /> },
                       { path: 'teacher/my-attendance',                                element: <TeacherMyAttendancePage /> },
                       { path: 'teacher/my-payslips',                                  element: <TeacherMyPayslipsPage /> },

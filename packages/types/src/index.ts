@@ -3572,6 +3572,15 @@ export interface QuestionExtractionResult {
   sourceId?: string;
 }
 
+/** Result of an upload that only transcribes/stores text — no question drafts yet. Generating drafts is a separate, repeatable step (see QuestionSource re-extract). */
+export interface TextExtractionResult {
+  sourceId: string;
+  sourceType: 'image' | 'pdf_text';
+  fileName?: string;
+  extractedText: string;
+  warnings: string[];
+}
+
 export interface ConfirmExtractedQuestionsPayload {
   class: string;
   subject: string;

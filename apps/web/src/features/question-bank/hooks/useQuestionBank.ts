@@ -15,6 +15,7 @@ export const questionBankKeys = {
   list:     (o: QuestionListOptions) => [...questionBankKeys.lists(), o] as const,
   detail:   (id: string) => [...questionBankKeys.all, 'detail', id] as const,
   sources:  (cls: string, subject: string) => [...questionBankKeys.all, 'sources', cls, subject] as const,
+  source:   (id: string) => [...questionBankKeys.all, 'source', id] as const,
 };
 
 export const useChapters = (cls: string, subject: string) =>
@@ -74,6 +75,14 @@ export const useQuestionSources = (cls: string, subject: string) =>
     enabled:  !!cls && !!subject,
   });
 
+export const useSource = (id: string) =>
+  useQuery({
+    queryKey: questionBankKeys.source(id),
+    queryFn:  () => questionBankApi.getSource(id),
+    enabled:  !!id,
+  });
+
+/** Generates a fresh batch of question drafts from a stored source's text — safe to call repeatedly. */
 export const useReExtractSource = () =>
   useMutation({ mutationFn: (id: string) => questionBankApi.reExtractSource(id) });
 

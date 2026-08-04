@@ -34,6 +34,15 @@ export interface QuestionExtractionResult {
   sourceId?: string;
 }
 
+/** Result of an upload that only transcribes/stores text — no question structuring happens yet. */
+export interface TextExtractionResult {
+  sourceId: string;
+  sourceType: 'image' | 'pdf_text';
+  fileName?: string;
+  extractedText: string;
+  warnings: string[];
+}
+
 // ── Raw shape the model is asked to return ─────────────────────────────────────
 
 interface RawExtractedQuestion {
@@ -79,6 +88,13 @@ Also return "pageText": the full raw text of everything readable on the page, tr
 Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
 }
 
+/** Transcription-only prompt used on upload — cheaper/faster than buildSystemPrompt since it skips question structuring entirely; that happens later, on demand, via structureFromText. */
+function buildTranscribePrompt(): string {
+  return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.
+
+Return ONLY a valid JSON object: {"pageText": "..."}. No markdown, no explanation, no commentary — just the transcribed text.`;
+}
+
 function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageText: string } {
   try {
     const body = JSON.parse(raw);
@@ -89,6 +105,16 @@ function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageT
   } catch (err) {
     logger.error('[QuestionExtraction] Failed to parse AI response', { error: String(err), raw: raw.slice(0, 500) });
     throw new ValidationError('Could not read questions from that upload — try a clearer photo or a different file.');
+  }
+}
+
+function parseTranscription(raw: string): string {
+  try {
+    const body = JSON.parse(raw);
+    return typeof body?.pageText === 'string' ? body.pageText : '';
+  } catch (err) {
+    logger.error('[QuestionExtraction] Failed to parse transcription response', { error: String(err), raw: raw.slice(0, 500) });
+    throw new ValidationError('Could not read that photo — try a clearer picture.');
   }
 }
 
@@ -135,19 +161,20 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
 // ── Service ────────────────────────────────────────────────────────────────────
 
 export const questionExtractionService = {
+  /** Upload → transcribe + store text only. Question structuring is a separate, repeatable step — see structureFromText/enqueueReExtractFromSource. */
   async extractFromImage(
     cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string,
-  ): Promise<QuestionExtractionResult> {
+  ): Promise<TextExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
 
     const start = Date.now();
     const result = await openaiProvider.complete({
-      systemPrompt: buildSystemPrompt(cls, subject),
-      userPrompt: 'Read every question on this page and extract them.',
+      systemPrompt: buildTranscribePrompt(),
+      userPrompt: 'Transcribe everything readable on this page.',
       imageDataUri,
-      temperature: 0.2,
+      temperature: 0.1,
       maxTokens: 4000,
       jsonResponse: true,
     });
@@ -163,24 +190,25 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const { questions, pageText } = parseQuestions(result.content);
-    const { extracted, warnings } = clean(questions);
+    const pageText = parseTranscription(result.content);
+    if (!pageText.trim()) {
+      // QuestionSource.extractedText is a required field — an empty string still fails Mongoose's
+      // required check, so this has to be rejected here rather than saved as a blank source.
+      throw new ValidationError('No readable text was found on that page — try a clearer photo.');
+    }
 
     const source = await questionSourceRepository.create({
       schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image', fileName,
-      extractedText: pageText || questions.map((q) => q.questionText ?? '').join('\n'),
+      extractedText: pageText,
     });
 
-    return { sourceType: 'image', extracted, warnings, sourceId: String(source._id) };
+    return { sourceId: String(source._id), sourceType: 'image', fileName, extractedText: pageText, warnings: [] };
   },
 
+  /** Upload → extract + store text only (local PDF text layer, no AI call). Question structuring is a separate, repeatable step. */
   async extractFromPdf(
     cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
-  ): Promise<QuestionExtractionResult> {
-    if (!openaiProvider.isAvailable()) {
-      throw new ValidationError('AI extraction is not configured on this server.');
-    }
-
+  ): Promise<TextExtractionResult> {
     const parser = new PDFParse({ data: pdfBuffer });
     const { text } = await parser.getText();
     await parser.destroy();
@@ -191,14 +219,12 @@ export const questionExtractionService = {
       );
     }
 
-    const { extracted, warnings } = await questionExtractionService.structureFromText(cls, subject, text, ctx);
-
     const source = await questionSourceRepository.create({
       schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'pdf_text', fileName,
       extractedText: text,
     });
 
-    return { sourceType: 'pdf_text', extracted, warnings, sourceId: String(source._id) };
+    return { sourceId: String(source._id), sourceType: 'pdf_text', fileName, extractedText: text, warnings: [] };
   },
 
   /** Re-runs AI structuring over previously-saved converted text — no re-upload/re-OCR needed. */
@@ -284,7 +310,9 @@ export const questionExtractionService = {
     return { jobId };
   },
 
-  async getExtractionJob(jobId: string, ctx: AuthContext) {
+  async getExtractionJob(
+    jobId: string, ctx: AuthContext,
+  ): Promise<{ status: string; result?: TextExtractionResult | QuestionExtractionResult; error?: string }> {
     const job = await extractionJobRepository.findById(jobId, ctx.schoolId);
     if (!job) throw new ValidationError('Extraction job not found or expired');
     if (job.userId !== ctx.userId) throw new ValidationError('Extraction job not found or expired');

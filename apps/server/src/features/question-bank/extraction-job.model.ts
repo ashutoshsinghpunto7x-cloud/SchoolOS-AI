@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import type { QuestionExtractionResult } from './question-extraction.service';
+import type { QuestionExtractionResult, TextExtractionResult } from './question-extraction.service';
 
 export type ExtractionJobStatus = 'processing' | 'completed' | 'failed';
 export type ExtractionJobKind = 'image' | 'pdf_text';
@@ -15,7 +15,7 @@ export interface IExtractionJob extends Document {
   userId: string;
   kind: ExtractionJobKind;
   status: ExtractionJobStatus;
-  result?: QuestionExtractionResult;
+  result?: QuestionExtractionResult | TextExtractionResult;
   error?: string;
   createdAt: Date;
   updatedAt: Date;

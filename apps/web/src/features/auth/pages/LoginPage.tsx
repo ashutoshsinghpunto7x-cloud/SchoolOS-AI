@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo, memo, FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, Lock, KeyRound, Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { User, Lock, KeyRound, Loader2, Eye, EyeOff, ArrowRight, Fingerprint } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleHome';
 import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
-import { PinSetupPrompt } from '../components/PinSetupPrompt';
+import { PasskeySetupPrompt, wasPasskeyPromptDismissed } from '../components/PasskeySetupPrompt';
+import { webauthnApi } from '../api/webauthn.api';
 import { pingServerAwake, ApiError } from '../../../services/api';
 
 const isMaintenanceModeError = (err: unknown): boolean => err instanceof ApiError && err.code === 'MAINTENANCE_MODE';
@@ -65,7 +66,7 @@ const DotGrid = memo(({ className = '' }: { className?: string }) => (
 ));
 
 export const LoginPage = () => {
-  const { login, loginWithPin, isAuthenticated, user } = useAuthContext();
+  const { login, loginWithPin, loginWithPasskey, isPasskeyAvailable, isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const transparentLogo = useChromaKeyedLogo(fnicLogo);
@@ -79,8 +80,9 @@ export const LoginPage = () => {
   const [selectedDeviceEmail, setSelectedDeviceEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
   const [slowLoading, setSlowLoading] = useState(false);
-  const [pinPrompt, setPinPrompt] = useState<{ email: string } | null>(null);
+  const [passkeyPrompt, setPasskeyPrompt] = useState<{ email: string } | null>(null);
 
   // Read once per mount, not on every keystroke — the list only changes via
   // saveRememberedDevice (in PinSetupPrompt), which always navigates away
@@ -120,16 +122,16 @@ export const LoginPage = () => {
   };
 
   // Redirect if already logged in (e.g. navigating back to /login manually) —
-  // suppressed while the post-login PIN setup prompt is showing, since `user`
-  // becomes non-null the instant login() resolves, which would otherwise race
-  // this redirect ahead of the prompt.
+  // suppressed while the post-login passkey setup prompt is showing, since
+  // `user` becomes non-null the instant login() resolves, which would
+  // otherwise race this redirect ahead of the prompt.
   useEffect(() => {
-    if (pinPrompt) return;
+    if (passkeyPrompt) return;
     if (isAuthenticated && user) {
       goHome(user.role);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, pinPrompt]);
+  }, [isAuthenticated, user, passkeyPrompt]);
 
   const handlePasswordSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -140,12 +142,14 @@ export const LoginPage = () => {
 
     try {
       const loggedInUser = await login(email.trim(), password);
-      const alreadyRemembered = rememberedDevices.some((d) => d.email === loggedInUser.email.toLowerCase());
-      if (rememberMe && !alreadyRemembered) {
-        setPinPrompt({ email: loggedInUser.email });
-      } else {
-        goHome(loggedInUser.role);
+      if (isPasskeyAvailable && !wasPasskeyPromptDismissed(loggedInUser.email)) {
+        const existing = await webauthnApi.listCredentials().catch(() => []);
+        if (existing.length === 0) {
+          setPasskeyPrompt({ email: loggedInUser.email });
+          return;
+        }
       }
+      goHome(loggedInUser.role);
     } catch (err) {
       if (isMaintenanceModeError(err)) {
         navigate('/under-maintenance', { replace: true });
@@ -154,6 +158,23 @@ export const LoginPage = () => {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasskeySubmit = async () => {
+    setError('');
+    setIsPasskeyLoading(true);
+    try {
+      const loggedInUser = await loginWithPasskey();
+      goHome(loggedInUser.role);
+    } catch (err) {
+      if (isMaintenanceModeError(err)) {
+        navigate('/under-maintenance', { replace: true });
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Fingerprint sign-in failed. Please try again.');
+    } finally {
+      setIsPasskeyLoading(false);
     }
   };
 
@@ -372,6 +393,18 @@ export const LoginPage = () => {
                   )}
                 </button>
 
+                {isPasskeyAvailable && (
+                  <button
+                    type="button"
+                    onClick={handlePasskeySubmit}
+                    disabled={isPasskeyLoading}
+                    className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                  >
+                    {isPasskeyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Fingerprint className="w-3.5 h-3.5" />}
+                    Sign in with fingerprint / Face ID
+                  </button>
+                )}
+
                 {rememberedDevices.length > 0 && (
                   <button
                     type="button"
@@ -466,12 +499,12 @@ export const LoginPage = () => {
         </div>
       </main>
 
-      {pinPrompt && (
-        <PinSetupPrompt
-          email={pinPrompt.email}
+      {passkeyPrompt && (
+        <PasskeySetupPrompt
+          email={passkeyPrompt.email}
           onDone={() => {
             const role = user?.role;
-            setPinPrompt(null);
+            setPasskeyPrompt(null);
             if (role) goHome(role);
           }}
         />
