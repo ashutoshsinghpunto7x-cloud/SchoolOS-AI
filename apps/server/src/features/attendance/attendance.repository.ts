@@ -275,6 +275,15 @@ export const attendanceRepository = {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
   },
 
+  /** YYYY-MM-DD, `n` days before today, in IST — for windows like "last 7 days"
+   *  that must line up with todayString() (no DST in India, so a plain day
+   *  shift is safe even though it's computed via the host's local clock). */
+  daysAgoString(n: number): string {
+    const d = new Date(`${this.todayString()}T00:00:00+05:30`);
+    d.setDate(d.getDate() - n);
+    return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  },
+
   /** Per-class attendance rate for a single date — used to find the highest/lowest
    * attendance class (Principal Assistant, class-wise attendance widgets). */
   async getClassBreakdown(

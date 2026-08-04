@@ -2,11 +2,14 @@ import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBeh
 import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateAttendanceEditPolicySchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema, updateAcademicYearSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { isKnownTestSchoolId } from '../../lib/test-tenant';
 
 export const schoolSettingsService = {
   async getSettings(schoolId: string): Promise<ISchoolSettings> {
     const existing = await SchoolSettings.findOne({ schoolId });
-    if (!existing) return SchoolSettings.create({ schoolId, schoolName: 'FNIC' });
+    if (!existing) {
+      return SchoolSettings.create({ schoolId, schoolName: 'FNIC', isTestTenant: isKnownTestSchoolId(schoolId) });
+    }
 
     // Documents created before the behaviorWindow field existed on the schema
     // never got the default backfilled — heal it in place on first read.

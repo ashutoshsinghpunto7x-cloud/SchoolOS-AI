@@ -18,8 +18,12 @@ export const usePrincipalDashboard = (enabled = true) =>
   useQuery<PrincipalDashboardData, Error>({
     queryKey: principalKeys.dashboard(),
     queryFn: principalApi.getDashboard,
-    staleTime: 2 * 60 * 1000,   // 2 minutes — refresh on tab focus after 2 min
+    staleTime: 30 * 1000,        // 30s — matches the polling cadence below
     refetchOnWindowFocus: true,
+    // Attendance is marked by teachers throughout the morning while a principal
+    // may keep this dashboard open and focused the whole time — refetchOnWindowFocus
+    // alone never fires without a blur/focus cycle, so poll to stay live.
+    refetchInterval: 30 * 1000,
     enabled,
   });
 

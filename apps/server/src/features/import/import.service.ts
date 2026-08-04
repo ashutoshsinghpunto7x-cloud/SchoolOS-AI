@@ -15,6 +15,7 @@ import {
 } from './import.validation';
 import { listTemplates, generateTemplateBuffer } from './templates/template.registry';
 import { schoolClassRepository } from '../school-classes/school-class.repository';
+import { classNameKey } from '../../lib/class-name';
 import { getValidator } from './validators/validator.registry';
 import { getProcessor } from './processors/processor.registry';
 
@@ -264,7 +265,7 @@ export const importService = {
       }
       const existingClasses = await schoolClassRepository.findAll(ctx.schoolId);
       for (const [className, sections] of byClass) {
-        let cls = existingClasses.find((c) => c.name.toLowerCase() === className.toLowerCase());
+        let cls = existingClasses.find((c) => classNameKey(c.name) === classNameKey(className));
         if (!cls) {
           cls = await schoolClassRepository.create(ctx.schoolId, className, ctx.displayName);
         }

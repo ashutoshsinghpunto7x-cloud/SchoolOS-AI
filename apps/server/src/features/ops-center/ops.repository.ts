@@ -124,7 +124,7 @@ async function getSchoolTrend(schoolId: string, days: number): Promise<OpsDayTre
 
 export const opsRepository = {
   async listSchools(): Promise<OpsSchoolRow[]> {
-    const settings = await SchoolSettings.find().lean();
+    const settings = await SchoolSettings.find({ isTestTenant: { $ne: true } }).lean();
     return Promise.all(settings.map((s) => getSchoolRow(s.schoolId, s.schoolName)));
   },
 
@@ -164,14 +164,16 @@ export const opsRepository = {
   },
 
   async getDashboardTotals() {
-    const [studentTotal, teacherTotal, schoolCount, internalActiveUsers] = await Promise.all([
-      Student.countDocuments({ isDeleted: false }),
-      Teacher.countDocuments({ isDeleted: false }),
-      SchoolSettings.countDocuments(),
+    const realSchoolIds = (await SchoolSettings.find({ isTestTenant: { $ne: true } }).select('schoolId').lean())
+      .map((s) => s.schoolId);
+
+    const [studentTotal, teacherTotal, internalActiveUsers] = await Promise.all([
+      Student.countDocuments({ schoolId: { $in: realSchoolIds }, isDeleted: false }),
+      Teacher.countDocuments({ schoolId: { $in: realSchoolIds }, isDeleted: false }),
       User.countDocuments({ role: { $in: OPS_ROLES }, lastLoginAt: { $gte: new Date(Date.now() - ACTIVE_WINDOW_MS) } }),
     ]);
 
-    return { studentTotal, teacherTotal, schoolCount, internalActiveUsers };
+    return { studentTotal, teacherTotal, schoolCount: realSchoolIds.length, internalActiveUsers };
   },
 
   /** Live-probes what the current Atlas tier actually allows, rather than

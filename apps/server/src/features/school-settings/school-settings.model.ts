@@ -67,6 +67,10 @@ export interface ICommunicationSettings {
 export interface ISchoolSettings extends Document {
   schoolId: string;
   schoolName: string;
+  /** Seed/perf-test/internal tenants that share the DB but aren't a real
+   *  customer school — Ops Center excludes these from its school list and
+   *  aggregate counts. Defaults false for every real school. */
+  isTestTenant: boolean;
   logoUrl?: string;
   /** Academic-year boundaries — principal-configurable, read by the Teacher
    *  Planner's teaching-week generation and pace tracker. Undefined until an
@@ -187,6 +191,7 @@ const schoolSettingsSchema = new Schema<ISchoolSettings>(
   {
     schoolId:          { type: String, required: true, unique: true },
     schoolName:        { type: String, required: true, trim: true, default: 'FNIC' },
+    isTestTenant:      { type: Boolean, required: true, default: false },
     logoUrl:           { type: String },
     academicYearStart: { type: Date },
     academicYearEnd:   { type: Date },

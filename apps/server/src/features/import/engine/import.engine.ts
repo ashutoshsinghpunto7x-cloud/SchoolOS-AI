@@ -9,6 +9,7 @@ import { IProcessor } from '../processors/processor.interface';
 import { HeuristicMapper, ColumnMappingSuggestion } from '../ai-mapper/ai-mapper.interface';
 import { OpenAiMapper } from '../ai-mapper/openai-mapper';
 import { schoolClassRepository } from '../../school-classes/school-class.repository';
+import { classNameKey } from '../../../lib/class-name';
 
 const BATCH_SIZE = 50;
 const BATCH_DELAY_MS = 50; // breathing room for small VPS
@@ -104,14 +105,14 @@ async function detectNewClasses(
     const klass = typeof data.class === 'string' ? data.class.trim() : '';
     const section = typeof data.section === 'string' ? data.section.trim() : '';
     if (!klass || !section) continue;
-    distinct.set(`${klass.toLowerCase()}||${section.toLowerCase()}`, { class: klass, section });
+    distinct.set(`${classNameKey(klass)}||${section.toLowerCase()}`, { class: klass, section });
   }
   if (!distinct.size) return [];
 
   const existingClasses = await schoolClassRepository.findAll(schoolId);
   const detected: IDetectedClass[] = [];
   for (const { class: klass, section } of distinct.values()) {
-    const existing = existingClasses.find((c) => c.name.toLowerCase() === klass.toLowerCase());
+    const existing = existingClasses.find((c) => classNameKey(c.name) === classNameKey(klass));
     const sectionExists = !!existing?.sections.some((s) => s.toLowerCase() === section.toLowerCase());
     if (!existing || !sectionExists) {
       detected.push({ class: klass, section, classExists: !!existing });
@@ -135,6 +136,15 @@ export const validateRows = async (
   let duplicateRows = 0;
   const cleanRows: Record<string, unknown>[] = [];
 
+  // Roman-numeral vs digit class names ("IX" vs "9") must land on the same
+  // catalog entry, not spawn a duplicate class — rewrite each row's class to
+  // whatever spelling is already in this school's catalog before it's persisted.
+  const classCanonical = new Map<string, string>();
+  if (importType === 'students') {
+    const existingClasses = await schoolClassRepository.findAll(schoolId);
+    for (const c of existingClasses) classCanonical.set(classNameKey(c.name), c.name);
+  }
+
   const rowDocs = await Promise.all(rows.map(async (row) => {
     const mappedData = applyMapping(row.data, mapping);
     const result = validator.validate(mappedData);
@@ -148,6 +158,10 @@ export const validateRows = async (
     // (lowercased gender, tags array, inferred section, etc). Using raw mappedData
     // here caused valid/warning rows to fail silently during processing.
     const persistedData = result.status === 'error' ? mappedData : result.cleanData;
+    if (result.status !== 'error' && typeof persistedData.class === 'string') {
+      const canonical = classCanonical.get(classNameKey(persistedData.class));
+      if (canonical) persistedData.class = canonical;
+    }
     if (result.status !== 'error') cleanRows.push(persistedData);
 
     // Duplicate check is read-only and only meaningful for rows that will

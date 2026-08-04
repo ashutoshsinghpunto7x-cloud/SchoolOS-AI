@@ -87,11 +87,7 @@ export const principalService = {
         principalRepository.countTeachersRoster(schoolId),
         attendanceRepository.getSummary(schoolId, { dateFrom: today, dateTo: today }),
         attendanceRepository.getSummary(schoolId, {
-          dateFrom: (() => {
-            const d = new Date();
-            d.setDate(d.getDate() - 6);
-            return d.toISOString().split('T')[0];
-          })(),
+          dateFrom: attendanceRepository.daysAgoString(6),
           dateTo: today,
         }),
         feeRepository.getSummary(schoolId),
