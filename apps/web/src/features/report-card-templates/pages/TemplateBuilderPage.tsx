@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
@@ -13,6 +13,7 @@ import { SubjectMarksEditor } from '../components/SubjectMarksEditor';
 import { SkillSectionsEditor } from '../components/SkillSectionsEditor';
 import { GradingKeyEditor } from '../components/GradingKeyEditor';
 import { ExamSlotPicker } from '../components/ExamSlotPicker';
+import { DEFAULT_TEMPLATE_SUBJECTS, DEFAULT_TEMPLATE_SKILL_SECTIONS, DEFAULT_TEMPLATE_GRADING_KEY } from '../data/defaultTemplateBlueprint';
 import type { TemplateSubjectRow, TemplateSkillSection, TemplateGradingKeyEntry, TemplateExamSlots } from '@schoolos/types';
 
 const TABS = ['Subjects', 'Skill Sections', 'Grading Key', 'Exam Mapping'] as const;
@@ -124,18 +125,35 @@ export const TemplateBuilderPage = () => {
       />
 
       {!isEdit && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div>
-            <label className="text-sm font-bold text-gray-700 tracking-wide block mb-2">Class</label>
-            <select value={cls} onChange={(e) => setCls(e.target.value)} className={cn(inputCls, 'cursor-pointer')}>
-              <option value="">Select class…</option>
-              {(schoolClasses ?? []).map((c) => <option key={c._id} value={c.name}>Class {c.name}</option>)}
-            </select>
+        <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="text-sm font-bold text-gray-700 tracking-wide block mb-2">Class</label>
+              <select value={cls} onChange={(e) => setCls(e.target.value)} className={cn(inputCls, 'cursor-pointer')}>
+                <option value="">Select class…</option>
+                {(schoolClasses ?? []).map((c) => <option key={c._id} value={c.name}>Class {c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-bold text-gray-700 tracking-wide block mb-2">Academic Year</label>
+              <input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="e.g. 2026-27" className={inputCls} />
+            </div>
           </div>
-          <div>
-            <label className="text-sm font-bold text-gray-700 tracking-wide block mb-2">Academic Year</label>
-            <input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="e.g. 2026-27" className={inputCls} />
-          </div>
+
+          {subjects.length === 0 && skillSections.length === 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSubjects(DEFAULT_TEMPLATE_SUBJECTS);
+                setSkillSections(DEFAULT_TEMPLATE_SKILL_SECTIONS);
+                setGradingKey(DEFAULT_TEMPLATE_GRADING_KEY);
+                toast.success('Standard layout loaded — adjust subjects if this class differs, then map exam slots.');
+              }}
+              className="mt-5 w-full h-11 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-sm font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 transition-colors"
+            >
+              <Wand2 className="w-4 h-4" /> Load Standard School Layout
+            </button>
+          )}
         </div>
       )}
 

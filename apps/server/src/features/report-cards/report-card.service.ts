@@ -12,7 +12,7 @@ import { marksRepository } from '../marks/marks.repository';
 import { IMarks } from '../marks/marks.model';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { openaiProvider } from '../ai/providers/llm/openai.provider';
-import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { logger } from '../../lib/logger';
@@ -343,6 +343,67 @@ export const reportCardService = {
     const data = updateReportCardSchema.parse(rawInput);
     const card = await reportCardRepository.findById(id, ctx.schoolId);
     if (!card) throw new NotFoundError('Report card');
+
+    // A teacher may only correct marks directly on the card — everything else (remarks,
+    // co-scholastic grades, AI remark edits) is a leadership-only structural/content change.
+    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal';
+    if (!isLeadership) {
+      const attemptedNonMarksFields = Object.keys(data).filter((k) => k !== 'subjectMarks');
+      if (attemptedNonMarksFields.length > 0) {
+        throw new ForbiddenError('Teachers can only correct subject marks on a report card — other changes require a principal.');
+      }
+    }
+
+    if (data.subjectMarks !== undefined && data.subjectMarks.length > 0) {
+      const exam = await examRepository.findById(card.examId, ctx.schoolId);
+      if (!exam) throw new NotFoundError('Exam');
+
+      for (const correction of data.subjectMarks) {
+        const row = card.subjects.find((r) => r.subjectName === correction.subjectName);
+        if (!row) throw new ValidationError(`"${correction.subjectName}" is not a subject on this report card`);
+
+        if (correction.marksObtained !== undefined) {
+          if (typeof row.maxMarks === 'number' && correction.marksObtained > row.maxMarks) {
+            throw new ValidationError(`${correction.subjectName}: marks obtained (${correction.marksObtained}) cannot exceed maximum (${row.maxMarks})`);
+          }
+          row.marksObtained = correction.marksObtained;
+          row.percentage = typeof row.maxMarks === 'number' && row.maxMarks > 0
+            ? Math.round((correction.marksObtained / row.maxMarks) * 10000) / 100
+            : row.percentage;
+          if (typeof row.percentage === 'number') {
+            const minPercent = exam.subjectWiseMinPercent ?? 0;
+            row.result = row.percentage >= minPercent ? 'pass' : 'fail';
+          }
+        }
+        if (correction.grade !== undefined) row.grade = correction.grade;
+      }
+      card.markModified('subjects');
+
+      // Recompute the card's totals/summary from the corrected rows, same rule as generation:
+      // only marks/both subjects count toward the overall total.
+      let totalObtained = 0;
+      let totalMaxMarks = 0;
+      for (const row of card.subjects) {
+        if (countsTowardTotal(row.evaluationType) && typeof row.marksObtained === 'number' && typeof row.maxMarks === 'number') {
+          totalObtained += row.marksObtained;
+          totalMaxMarks += row.maxMarks;
+        }
+      }
+      const percentage = totalMaxMarks > 0 ? Math.round((totalObtained / totalMaxMarks) * 10000) / 100 : 0;
+      const overallGrade = gradeForPercentage(exam, percentage);
+      const promotionStatus = derivePromotionStatus(exam, percentage);
+
+      const { percentages, classSize } = await computeClassStats(ctx.schoolId, exam, card.class, card.section);
+      const rank = totalMaxMarks > 0 ? percentages.filter((p) => p > percentage).length + 1 : card.summary.rank;
+
+      card.summary.totalObtained = totalObtained;
+      card.summary.totalMaxMarks = totalMaxMarks;
+      card.summary.percentage = percentage;
+      card.summary.overallGrade = overallGrade;
+      card.summary.promotionStatus = promotionStatus;
+      card.summary.rank = rank;
+      card.summary.classSize = classSize;
+    }
 
     if (data.aiRemarkText !== undefined) {
       card.aiRemark = { text: data.aiRemarkText, edited: true, generatedAt: card.aiRemark?.generatedAt, model: card.aiRemark?.model };

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { questionBankApi } from '../api/question-bank.api';
 import type {
   QuestionListOptions,
+  QuestionGroupListOptions,
   CreateQuestionPayload,
   UpdateQuestionPayload,
   ConfirmExtractedQuestionsPayload,
@@ -12,12 +13,19 @@ import type {
 export const questionBankKeys = {
   all:      ['question-bank']                        as const,
   chapters: (cls: string, subject: string) => [...questionBankKeys.all, 'chapters', cls, subject] as const,
+  groups:   (o: QuestionGroupListOptions = {}) => [...questionBankKeys.all, 'groups', o] as const,
   lists:    () => [...questionBankKeys.all, 'list']    as const,
   list:     (o: QuestionListOptions) => [...questionBankKeys.lists(), o] as const,
   detail:   (id: string) => [...questionBankKeys.all, 'detail', id] as const,
   sources:  (cls?: string, subject?: string) => [...questionBankKeys.all, 'sources', cls ?? '', subject ?? ''] as const,
   source:   (id: string) => [...questionBankKeys.all, 'source', id] as const,
 };
+
+export const useQuestionGroups = (opts: QuestionGroupListOptions = {}) =>
+  useQuery({
+    queryKey: questionBankKeys.groups(opts),
+    queryFn:  () => questionBankApi.listQuestionGroups(opts),
+  });
 
 export const useChapters = (cls: string, subject: string) =>
   useQuery({

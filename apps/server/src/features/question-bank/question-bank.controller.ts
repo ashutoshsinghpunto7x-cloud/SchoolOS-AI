@@ -12,6 +12,7 @@ import {
   createQuestionSchema,
   updateQuestionSchema,
   listQuestionsSchema,
+  listQuestionGroupsSchema,
   listChaptersSchema,
   listSourcesSchema,
   updateSourceSchema,
@@ -119,6 +120,16 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const result = await questionBankService.listQuestions(query, ctx);
       sendPaginated(res, result.questions, { page: result.page, limit: result.limit, total: result.total });
+    } catch (err) { next(err); }
+  },
+
+  /** GET /question-bank/questions/groups — chapter-grouped counts for the Question Bank landing view */
+  async listQuestionGroups(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = listQuestionGroupsSchema.parse(req.query);
+      const ctx = buildAuthContext(req.user!);
+      const groups = await questionBankService.listQuestionGroups(query, ctx);
+      sendSuccess(res, groups);
     } catch (err) { next(err); }
   },
 

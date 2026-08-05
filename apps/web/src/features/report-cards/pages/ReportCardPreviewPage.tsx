@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Sparkles, Smartphone, Monitor, Loader2, AlertTriangle, CheckCircle2, Send } from 'lucide-react';
+import { ArrowLeft, Printer, Sparkles, Smartphone, Monitor, Loader2, AlertTriangle, CheckCircle2, Send, Pencil } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useExam } from '@/features/marks/hooks/useExams';
@@ -16,13 +16,15 @@ export function ReportCardPreviewPage() {
   const { examId = '', studentId = '' } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Publishing is admin/principal-only on the backend (it's the irreversible,
-  // parent-visible step) — hide the control for teachers rather than let them
-  // hit a 403.
+  // Publishing — and every other field except subject marks — is admin/principal-only on the
+  // backend (see report-card.service.ts's update()); teachers can only correct marks directly on
+  // the card, so remark editing and publishing are hidden for them here rather than 403ing.
   const canPublish = user?.role === 'admin' || user?.role === 'principal';
+  const isLeadership = canPublish;
   const [view, setView] = useState<'desktop' | 'mobile'>('desktop');
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
+  const [editingMarks, setEditingMarks] = useState(false);
   const printAreaId = `report-card-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: student, isLoading: studentLoading } = useStudent(studentId);
@@ -149,43 +151,57 @@ export function ReportCardPreviewPage() {
         </div>
       )}
 
-      {/* AI remark editor — screen only */}
+      {/* Marks correction — screen only, available to teachers and leadership alike; every other
+          edit below this is leadership-only (see isLeadership gating). */}
       <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
-        <div className="bg-white rounded-2xl border border-gray-100 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#6D4AFF]" /> AI Remark
-            </p>
-            <button
-              type="button"
-              onClick={() => regenerateRemark.mutate()}
-              disabled={regenerateRemark.isPending}
-              className="text-xs font-semibold text-[#6D4AFF] disabled:opacity-50"
-            >
-              {regenerateRemark.isPending ? 'Regenerating…' : 'Regenerate'}
-            </button>
-          </div>
-          <textarea
-            className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#6D4AFF]/30"
-            rows={3}
-            value={remarkDraft ?? resolvedCard.aiRemark?.text ?? ''}
-            onChange={(e) => setRemarkDraft(e.target.value)}
-          />
-          {remarkDraft !== null && remarkDraft !== resolvedCard.aiRemark?.text && (
-            <div className="flex justify-end gap-2 mt-2">
-              <button type="button" onClick={() => setRemarkDraft(null)} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+        <MarksCorrectionPanel
+          card={resolvedCard}
+          editing={editingMarks}
+          onToggle={() => setEditingMarks((v) => !v)}
+          onSave={(subjectMarks) => { updateCard.mutate({ subjectMarks }); setEditingMarks(false); }}
+          saving={updateCard.isPending}
+        />
+      </div>
+
+      {/* AI remark editor — screen only, leadership-only (teachers can't touch remarks) */}
+      {isLeadership && (
+        <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+          <div className="bg-white rounded-2xl border border-gray-100 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#6D4AFF]" /> AI Remark
+              </p>
               <button
                 type="button"
-                onClick={() => { updateCard.mutate({ aiRemarkText: remarkDraft }); setRemarkDraft(null); }}
-                disabled={updateCard.isPending}
-                className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+                onClick={() => regenerateRemark.mutate()}
+                disabled={regenerateRemark.isPending}
+                className="text-xs font-semibold text-[#6D4AFF] disabled:opacity-50"
               >
-                Save remark
+                {regenerateRemark.isPending ? 'Regenerating…' : 'Regenerate'}
               </button>
             </div>
-          )}
+            <textarea
+              className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#6D4AFF]/30"
+              rows={3}
+              value={remarkDraft ?? resolvedCard.aiRemark?.text ?? ''}
+              onChange={(e) => setRemarkDraft(e.target.value)}
+            />
+            {remarkDraft !== null && remarkDraft !== resolvedCard.aiRemark?.text && (
+              <div className="flex justify-end gap-2 mt-2">
+                <button type="button" onClick={() => setRemarkDraft(null)} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+                <button
+                  type="button"
+                  onClick={() => { updateCard.mutate({ aiRemarkText: remarkDraft }); setRemarkDraft(null); }}
+                  disabled={updateCard.isPending}
+                  className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+                >
+                  Save remark
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Document */}
       <div className="py-8 overflow-x-auto">
@@ -206,6 +222,112 @@ export function ReportCardPreviewPage() {
         <div id={printAreaId} className="hidden print:block">
           <ReportCardDocument reportCard={resolvedCard} student={student} exam={exam} schoolSettings={schoolSettings} qrDataUri={qr?.dataUri} hideWarnings />
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Lets a teacher fix a wrong mark/grade directly on the generated card, without going back
+ * through the marks-entry flow — the one edit teachers are allowed to make (everything else on
+ * the card is leadership-only, see report-card.service.ts's update()).
+ */
+function MarksCorrectionPanel({
+  card, editing, onToggle, onSave, saving,
+}: {
+  card: import('@schoolos/types').ReportCard;
+  editing: boolean;
+  onToggle: () => void;
+  onSave: (subjectMarks: import('@schoolos/types').SubjectMarkCorrection[]) => void;
+  saving: boolean;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, { marksObtained: string; grade: string }>>({});
+
+  function startEditing() {
+    const initial: Record<string, { marksObtained: string; grade: string }> = {};
+    for (const s of card.subjects) {
+      initial[s.subjectName] = { marksObtained: s.marksObtained?.toString() ?? '', grade: s.grade ?? '' };
+    }
+    setDrafts(initial);
+    onToggle();
+  }
+
+  function save() {
+    const subjectMarks: import('@schoolos/types').SubjectMarkCorrection[] = [];
+    for (const s of card.subjects) {
+      const draft = drafts[s.subjectName];
+      if (!draft) continue;
+      const showMarks = s.evaluationType === 'marks' || s.evaluationType === 'both';
+      const showGrade = s.evaluationType === 'grade' || s.evaluationType === 'both';
+      const marksObtained = showMarks && draft.marksObtained.trim() !== '' ? Number(draft.marksObtained) : undefined;
+      const grade = showGrade && draft.grade.trim() !== '' ? draft.grade.trim() : undefined;
+      if (marksObtained === undefined && grade === undefined) continue;
+      const correction: import('@schoolos/types').SubjectMarkCorrection = { subjectName: s.subjectName };
+      if (marksObtained !== undefined) correction.marksObtained = marksObtained;
+      if (grade !== undefined) correction.grade = grade;
+      subjectMarks.push(correction);
+    }
+    onSave(subjectMarks);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5 text-[#1C2B4A]" /> Correct Marks
+        </p>
+        {!editing && (
+          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#6D4AFF]">
+            Fix a mark
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <p className="text-xs text-gray-400">Entered a mark wrong? Click "Fix a mark" to correct it right here — no need to redo the marks-entry flow.</p>
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            {card.subjects.map((s) => {
+              const showMarks = s.evaluationType === 'marks' || s.evaluationType === 'both';
+              const showGrade = s.evaluationType === 'grade' || s.evaluationType === 'both';
+              const draft = drafts[s.subjectName] ?? { marksObtained: '', grade: '' };
+              return (
+                <div key={s.subjectName} className="flex items-center gap-2.5">
+                  <span className="flex-1 text-xs text-gray-700 truncate">{s.subjectName}</span>
+                  {showMarks && (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number" min={0} max={s.maxMarks}
+                        value={draft.marksObtained}
+                        onChange={(e) => setDrafts((d) => ({ ...d, [s.subjectName]: { ...draft, marksObtained: e.target.value } }))}
+                        className="h-8 w-16 px-2 rounded-md border border-gray-200 text-xs text-right"
+                      />
+                      <span className="text-[10px] text-gray-400">/ {s.maxMarks ?? '—'}</span>
+                    </div>
+                  )}
+                  {showGrade && (
+                    <input
+                      value={draft.grade}
+                      onChange={(e) => setDrafts((d) => ({ ...d, [s.subjectName]: { ...draft, grade: e.target.value } }))}
+                      placeholder="Grade"
+                      className="h-8 w-14 px-2 rounded-md border border-gray-200 text-xs text-center"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-end gap-2 mt-3">
+            <button type="button" onClick={onToggle} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+            <button
+              type="button" onClick={save} disabled={saving}
+              className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Save corrections'}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

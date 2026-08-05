@@ -1,15 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, Trash2, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check } from 'lucide-react';
-import { useQuestions, useDeleteQuestion, useAllQuestionSources, useUpdateSourceChapter } from '../hooks/useQuestionBank';
-import type { QuestionDifficulty } from '@schoolos/types';
-
-const DIFFICULTY_BADGE: Record<QuestionDifficulty, string> = {
-  easy: 'bg-emerald-50 text-emerald-700',
-  medium: 'bg-amber-50 text-amber-700',
-  hard: 'bg-red-50 text-red-600',
-};
+import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen } from 'lucide-react';
+import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter } from '../hooks/useQuestionBank';
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
   const navigate = useNavigate();
@@ -66,17 +59,12 @@ export function QuestionBankPage() {
   const [subject, setSubject] = useState('');
   const [search, setSearch] = useState('');
 
-  const { data, isLoading } = useQuestions({ class: cls || undefined, subject: subject || undefined, search: search || undefined, limit: 50 });
+  const { data: groups, isLoading } = useQuestionGroups({ class: cls || undefined, subject: subject || undefined, search: search || undefined });
   const { data: sources } = useAllQuestionSources();
-  const deleteQuestion = useDeleteQuestion();
 
-  async function handleDelete(id: string) {
-    try {
-      await deleteQuestion.mutateAsync(id);
-      toast.success('Question deleted');
-    } catch (err) {
-      toast.error('Could not delete', { description: err instanceof Error ? err.message : undefined });
-    }
+  function openChapter(g: NonNullable<typeof groups>[number]) {
+    const params = new URLSearchParams({ class: g.class, subject: g.subject, chapterName: g.chapterName });
+    navigate(`/teacher/question-bank/chapters/${g.chapterId}?${params.toString()}`);
   }
 
   return (
@@ -123,29 +111,30 @@ export function QuestionBankPage() {
 
         {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
 
-        {!isLoading && data && data.data.length === 0 && (!sources || sources.length === 0) && (
+        {!isLoading && groups && groups.length === 0 && (!sources || sources.length === 0) && (
           <div className="text-center py-16">
             <Sparkles className="w-8 h-8 text-gray-300 mx-auto mb-2" />
             <p className="text-sm text-gray-500">No questions yet — upload a textbook page or past paper to get started.</p>
           </div>
         )}
 
-        <div className="space-y-2.5">
-          {data?.data.map((q) => (
-            <div key={q._id} className="bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800 dark:text-white/80">{q.questionText}</p>
-                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${DIFFICULTY_BADGE[q.difficulty]}`}>{q.difficulty}</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{q.marks} mark(s)</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{q.chapterName}</span>
-                  <span className="text-[10px] text-gray-400">{q.class} · {q.subject}</span>
-                </div>
+        <div className="space-y-2">
+          {groups?.map((g) => (
+            <button
+              key={`${g.class}-${g.subject}-${g.chapterId}`}
+              type="button"
+              onClick={() => openChapter(g)}
+              className="w-full flex items-center gap-3 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 text-left hover:border-gray-200 dark:hover:border-white/20 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-white/10 flex items-center justify-center shrink-0">
+                <BookOpen className="w-4 h-4 text-indigo-500 dark:text-white/70" />
               </div>
-              <button type="button" onClick={() => handleDelete(q._id)} className="text-gray-300 hover:text-red-500 shrink-0">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{g.chapterName}</p>
+                <p className="text-[11px] text-gray-400">Class {g.class} · {g.subject} · {g.count} question{g.count === 1 ? '' : 's'}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+            </button>
           ))}
         </div>
       </div>

@@ -19,6 +19,14 @@ export interface PaginatedQuestions {
   limit: number;
 }
 
+export interface QuestionGroup {
+  class: string;
+  subject: string;
+  chapterId: string;
+  chapterName: string;
+  count: number;
+}
+
 export interface CreateQuestionData {
   schoolId: string;
   class: string;
@@ -72,6 +80,34 @@ export const questionRepository = {
     ]);
 
     return { questions, total, page, limit };
+  },
+
+  /** Chapter-grouped counts for the Question Bank landing view, optionally narrowed by class/subject/search. */
+  async findGroups(schoolId: string, opts: Pick<QuestionListOptions, 'class' | 'subject' | 'search'> = {}): Promise<QuestionGroup[]> {
+    const match: Record<string, unknown> = { schoolId, isDeleted: false };
+    if (opts.class) match.class = opts.class;
+    if (opts.subject) match.subject = opts.subject;
+    if (opts.search?.trim()) {
+      const regex = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      match.$or = [{ questionText: regex }, { keywords: regex }, { topic: regex }];
+    }
+
+    const rows = await Question.aggregate<{
+      _id: { class: string; subject: string; chapterId: string; chapterName: string };
+      count: number;
+    }>([
+      { $match: match },
+      { $group: { _id: { class: '$class', subject: '$subject', chapterId: '$chapterId', chapterName: '$chapterName' }, count: { $sum: 1 } } },
+      { $sort: { '_id.class': 1, '_id.subject': 1, '_id.chapterName': 1 } },
+    ]);
+
+    return rows.map((r) => ({
+      class: r._id.class,
+      subject: r._id.subject,
+      chapterId: r._id.chapterId,
+      chapterName: r._id.chapterName,
+      count: r.count,
+    }));
   },
 
   async findById(id: string, schoolId: string): Promise<IQuestion | null> {

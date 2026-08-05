@@ -1,9 +1,8 @@
-import { useState, useEffect, useMemo, memo, FormEvent } from 'react';
+import { useState, useEffect, memo, FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, Lock, KeyRound, Loader2, Eye, EyeOff, ArrowRight, Fingerprint } from 'lucide-react';
+import { User, Lock, Loader2, Eye, EyeOff, ArrowRight, Fingerprint } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleHome';
-import { getRememberedDevices } from '../utils/rememberedDevices';
 import type { UserRole } from '@schoolos/types';
 import { PasskeySetupPrompt, wasPasskeyPromptDismissed } from '../components/PasskeySetupPrompt';
 import { webauthnApi } from '../api/webauthn.api';
@@ -66,35 +65,20 @@ const DotGrid = memo(({ className = '' }: { className?: string }) => (
 ));
 
 export const LoginPage = () => {
-  const { login, loginWithPin, loginWithPasskey, isPasskeyAvailable, isAuthenticated, user } = useAuthContext();
+  const { login, loginWithPasskey, isPasskeyAvailable, isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const transparentLogo = useChromaKeyedLogo(fnicLogo);
 
-  const [mode, setMode] = useState<'password' | 'pin'>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [pin, setPin] = useState('');
-  const [selectedDeviceEmail, setSelectedDeviceEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
   const [slowLoading, setSlowLoading] = useState(false);
   const [passkeyPrompt, setPasskeyPrompt] = useState<{ email: string } | null>(null);
-
-  // Read once per mount, not on every keystroke — the list only changes via
-  // saveRememberedDevice (in PinSetupPrompt), which always navigates away
-  // afterwards, so LoginPage never needs to see an updated list mid-session.
-  const rememberedDevices = useMemo(() => getRememberedDevices(), []);
-
-  useEffect(() => {
-    if (rememberedDevices.length > 0 && !selectedDeviceEmail) {
-      setSelectedDeviceEmail(rememberedDevices[rememberedDevices.length - 1].email);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // The backend runs on a free-tier host that spins down when idle, so the
   // first request after inactivity can take 30-50s to wake it. Ping it the
@@ -178,30 +162,6 @@ export const LoginPage = () => {
     }
   };
 
-  const handlePinSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    const device = rememberedDevices.find((d) => d.email === selectedDeviceEmail);
-    if (!device || !/^\d{4}$/.test(pin)) {
-      setError('Enter your 4-digit PIN.');
-      return;
-    }
-
-    setError('');
-    setIsLoading(true);
-    try {
-      const loggedInUser = await loginWithPin(device.deviceId, pin);
-      goHome(loggedInUser.role);
-    } catch (err) {
-      if (isMaintenanceModeError(err)) {
-        navigate('/under-maintenance', { replace: true });
-        return;
-      }
-      setError(err instanceof Error ? err.message : 'PIN sign-in failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen w-full bg-[#050505] lg:flex text-white selection:bg-orange-500/30 selection:text-white font-sans relative overflow-hidden">
       {/* Single canonical page heading — the visible wordmark below is
@@ -275,8 +235,7 @@ export const LoginPage = () => {
               <p className="mt-1 text-sm text-zinc-400">Sign in to access your school account</p>
             </div>
 
-            {mode === 'password' ? (
-              <form onSubmit={handlePasswordSubmit} noValidate className="space-y-3">
+            <form onSubmit={handlePasswordSubmit} noValidate className="space-y-3">
 
                 {/* Email or Username */}
                 <div>
@@ -393,100 +352,36 @@ export const LoginPage = () => {
                   )}
                 </button>
 
-                {isPasskeyAvailable && (
+              </form>
+
+              {isPasskeyAvailable && (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <div className="flex w-full items-center gap-3 text-xs font-medium text-zinc-600">
+                    <div className="h-px flex-1 bg-white/[0.08]" />
+                    or
+                    <div className="h-px flex-1 bg-white/[0.08]" />
+                  </div>
                   <button
                     type="button"
                     onClick={handlePasskeySubmit}
                     disabled={isPasskeyLoading}
-                    className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                    aria-label="Sign in with fingerprint or Face ID"
+                    className="mt-1 flex h-20 w-20 items-center justify-center rounded-full border-2 border-orange-500/70
+                               bg-[#131419] text-orange-500 shadow-[0_0_35px_rgba(249,115,22,0.25)]
+                               transition-all duration-150 hover:bg-[#181a20] hover:shadow-[0_0_45px_rgba(249,115,22,0.4)]
+                               active:scale-95 disabled:opacity-50 disabled:active:scale-100"
                   >
-                    {isPasskeyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Fingerprint className="w-3.5 h-3.5" />}
-                    Sign in with fingerprint / Face ID
+                    {isPasskeyLoading ? (
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                    ) : (
+                      <Fingerprint className="h-9 w-9" />
+                    )}
                   </button>
-                )}
-
-                {rememberedDevices.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => { setError(''); setMode('pin'); }}
-                    className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-colors"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" /> Sign in with PIN instead
-                  </button>
-                )}
-              </form>
-            ) : (
-              <form onSubmit={handlePinSubmit} noValidate className="space-y-5">
-                {rememberedDevices.length > 1 && (
-                  <div>
-                    <label className="block text-sm font-semibold text-zinc-350 mb-2">Account</label>
-                    <select
-                      value={selectedDeviceEmail}
-                      onChange={(e) => setSelectedDeviceEmail(e.target.value)}
-                      className="w-full h-12 px-3.5 rounded-xl border border-white/[0.06] bg-[#131419] text-base text-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                    >
-                      {rememberedDevices.map((d) => (
-                        <option key={d.deviceId} value={d.email} className="bg-[#0E0E12] text-white">{d.email}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label htmlFor="pin" className="block text-sm font-semibold text-zinc-355 mb-2">4-Digit PIN</label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-505 pointer-events-none" />
-                    <input
-                      id="pin"
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={4}
-                      autoFocus
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-                      placeholder="••••"
-                      className="w-full h-12 pl-10 pr-4 rounded-xl border border-white/[0.06] bg-[#131419]
-                                 text-base text-white tracking-[0.5em] placeholder-zinc-600
-                                 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500
-                                 transition-all duration-150"
-                    />
-                  </div>
+                  <p className="text-sm font-semibold text-zinc-400">
+                    {isPasskeyLoading ? 'Verifying…' : 'Tap to sign in'}
+                  </p>
                 </div>
-
-                {error && (
-                  <div className="rounded-xl bg-red-950/40 border border-red-900/30 px-4 py-3">
-                    <p className="text-sm font-medium text-red-400">{error}</p>
-                  </div>
-                )}
-
-                {slowLoading && (
-                  <div className="rounded-xl bg-orange-950/30 border border-orange-900/30 px-4 py-3">
-                    <p className="text-sm font-medium text-orange-400">
-                      Waking up the server — this can take up to a minute the first time today.
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading || pin.length !== 4}
-                  className="w-full h-12 rounded-xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700
-                             text-base font-bold text-white flex items-center justify-center gap-2
-                             transition-all duration-200 shadow-md shadow-orange-600/10 hover:shadow-orange-500/25
-                             disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setError(''); setPin(''); setMode('password'); }}
-                  className="w-full text-center text-sm font-semibold text-zinc-400 hover:text-zinc-200 transition-colors"
-                >
-                  Use email and password instead
-                </button>
-              </form>
-            )}
+              )}
 
             {/* Need help footer */}
             <div className="border-t border-white/[0.08] my-3" />

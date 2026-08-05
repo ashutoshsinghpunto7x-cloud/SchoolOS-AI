@@ -10,12 +10,23 @@ const coScholasticEntrySchema = z.object({
   grade:    z.string().trim().max(5),
 });
 
+// A direct correction to one subject's marks on an already-generated card — lets a teacher fix a
+// typo'd score without re-running the whole marks-entry flow. `grade` only applies to grade/both
+// subjects; `marksObtained` only to marks/both subjects, but both are optional so either can be
+// corrected independently.
+const subjectMarkCorrectionSchema = z.object({
+  subjectName:   z.string().min(1),
+  marksObtained: z.number().min(0).optional(),
+  grade:         z.string().trim().max(10).optional(),
+});
+
 export const updateReportCardSchema = z.object({
   aiRemarkText:    z.string().trim().max(1000).optional(),
   teacherRemark:   z.string().trim().max(1000).optional(),
   principalRemark: z.string().trim().max(1000).optional(),
   parentFeedback:  z.string().trim().max(1000).optional(),
   coScholastic:    z.array(coScholasticEntrySchema).optional(),
+  subjectMarks:    z.array(subjectMarkCorrectionSchema).optional(),
 });
 
 export const rosterQuerySchema = z.object({

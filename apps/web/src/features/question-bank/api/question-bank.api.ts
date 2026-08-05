@@ -3,6 +3,8 @@ import type {
   Question,
   SyllabusChapter,
   QuestionListOptions,
+  QuestionGroup,
+  QuestionGroupListOptions,
   CreateQuestionPayload,
   UpdateQuestionPayload,
   QuestionExtractionResult,
@@ -105,6 +107,14 @@ export const questionBankApi = {
   listChapters: async (cls: string, subject: string): Promise<SyllabusChapter[]> => {
     try {
       const res = await apiClient.get<{ data: SyllabusChapter[] }>(`${BASE}/chapters`, { params: { class: cls, subject } });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Chapter-grouped counts for the Question Bank landing view — one row per class/subject/chapter. */
+  listQuestionGroups: async (opts: QuestionGroupListOptions = {}): Promise<QuestionGroup[]> => {
+    try {
+      const res = await apiClient.get<{ data: QuestionGroup[] }>(`${BASE}/questions/groups`, { params: opts });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

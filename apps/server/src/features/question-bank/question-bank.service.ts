@@ -12,6 +12,7 @@ import {
   CreateQuestionInput,
   UpdateQuestionInput,
   ListQuestionsInput,
+  ListQuestionGroupsInput,
   ListSourcesInput,
 } from './question-bank.validation';
 
@@ -24,6 +25,11 @@ export const questionBankService = {
   async listQuestions(query: ListQuestionsInput, ctx: AuthContext) {
     const opts: QuestionListOptions = query;
     return questionRepository.findAll(ctx.schoolId, opts);
+  },
+
+  /** Chapter-grouped counts backing the Question Bank landing view (one row per class/subject/chapter). */
+  async listQuestionGroups(query: ListQuestionGroupsInput, ctx: AuthContext) {
+    return questionRepository.findGroups(ctx.schoolId, query);
   },
 
   async getQuestion(id: string, ctx: AuthContext): Promise<IQuestion> {

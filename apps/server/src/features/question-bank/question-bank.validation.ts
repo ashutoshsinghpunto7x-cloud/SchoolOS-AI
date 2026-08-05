@@ -67,6 +67,12 @@ export const listQuestionsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(20),
 });
 
+export const listQuestionGroupsSchema = z.object({
+  class: z.string().optional(),
+  subject: z.string().optional(),
+  search: z.string().optional(),
+});
+
 export const listChaptersSchema = z.object({
   class: z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
@@ -108,6 +114,7 @@ export type ConfirmExtractedQuestionsInput = z.infer<typeof confirmExtractedQues
 export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
 export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>;
 export type ListQuestionsInput = z.infer<typeof listQuestionsSchema>;
+export type ListQuestionGroupsInput = z.infer<typeof listQuestionGroupsSchema>;
 export type ListChaptersInput = z.infer<typeof listChaptersSchema>;
 export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
 export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;

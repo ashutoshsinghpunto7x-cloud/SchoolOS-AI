@@ -3243,12 +3243,20 @@ export interface GenerateReportCardPayload {
   studentId: string;
 }
 
+/** A direct correction to one subject's marks/grade on an already-generated card. */
+export interface SubjectMarkCorrection {
+  subjectName: string;
+  marksObtained?: number;
+  grade?: string;
+}
+
 export interface UpdateReportCardPayload {
   aiRemarkText?: string;
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;
   coScholastic?: CoScholasticEntry[];
+  subjectMarks?: SubjectMarkCorrection[];
 }
 
 export interface ReportCardRosterRow {
@@ -3431,10 +3439,21 @@ export interface GenerateTermReportCardPayload {
   academicYear: string;
 }
 
+/** A direct correction to one subject's scores for a given term on an already-generated card. */
+export interface TermSubjectMarkCorrection {
+  term: 'firstTerm' | 'finalTerm';
+  subjectName: string;
+  unitTest1Score?: number;
+  unitTest2Score?: number;
+  mainExamScore?: number;
+  grade?: string;
+}
+
 export interface UpdateTermReportCardPayload {
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;
+  subjectMarks?: TermSubjectMarkCorrection[];
 }
 
 export interface UpdateTermReportCardSkillsPayload {
@@ -3545,6 +3564,21 @@ export interface QuestionListOptions {
   topic?: string;
   difficulty?: QuestionDifficulty;
   questionType?: QuestionType;
+  search?: string;
+}
+
+/** One row per class/subject/chapter — backs the Question Bank landing view. */
+export interface QuestionGroup {
+  class: string;
+  subject: string;
+  chapterId: string;
+  chapterName: string;
+  count: number;
+}
+
+export interface QuestionGroupListOptions {
+  class?: string;
+  subject?: string;
   search?: string;
 }
 

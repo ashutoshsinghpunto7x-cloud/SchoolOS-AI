@@ -88,6 +88,29 @@ Also return "pageText": the full raw text of everything readable on the page, tr
 Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
 }
 
+/**
+ * Asks the model to write brand-new questions for a chapter, rather than extract them from a page.
+ * Used by the paper generator when the bank doesn't have enough questions at a requested marks
+ * value — the model must never refuse for "not enough content"; it should combine/extend the
+ * chapter's concepts (multi-part, detailed-answer, etc.) to legitimately reach the requested marks.
+ */
+function buildSynthesisPrompt(cls: string, subject: string, chapterName: string, marks: number, count: number, questionType?: QuestionType): string {
+  return `You are writing ${count} new, original exam question(s) for Class ${cls} ${subject}, chapter "${chapterName}", each worth exactly ${marks} mark(s)${questionType ? ` and of question type "${questionType}"` : ''}.
+
+Use the reference material below (existing questions and/or textbook excerpts from this chapter) as your syllabus content — do not invent facts outside it. You must always produce exactly ${count} question(s) worth ${marks} marks each, no matter how little reference material is given. Never refuse or claim there isn't enough content for the requested mark value: if the chapter's material is thin for a high-mark question, write a multi-part or detailed-answer question (e.g. "Explain X. Give two examples. What is its significance?") that legitimately deserves ${marks} marks by combining and extending the chapter's concepts.
+
+For each question, return the same JSON shape used for extraction:
+- "questionText", "questionType", "options" (only for mcq), "correctAnswer" (if applicable)
+- "difficulty": one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}
+- "marks": must be exactly ${marks}
+- "estimatedTimeMinutes", "bloomsLevel": one of ${BLOOMS_LEVELS.map((b) => `"${b}"`).join(', ')}
+- "keywords": 2-5 key terms
+- "chapterName": "${chapterName}"
+- "topic": the specific topic within the chapter, if identifiable
+
+Return ONLY a valid JSON object: {"questions": [...]}. No markdown, no explanation.`;
+}
+
 /** Transcription-only prompt used on upload — cheaper/faster than buildSystemPrompt since it skips question structuring entirely; that happens later, on demand, via structureFromText. */
 function buildTranscribePrompt(): string {
   return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.
@@ -266,6 +289,49 @@ export const questionExtractionService = {
 
     const { questions } = parseQuestions(result.content);
     return clean(questions);
+  },
+
+  /**
+   * Writes brand-new questions for a chapter/marks-value gap the bank can't fill from existing
+   * content — see buildSynthesisPrompt. Called by the paper generator, never blocks on "not enough
+   * content"; returns [] only if AI isn't configured or the call itself fails, letting the caller
+   * decide how to degrade further rather than hard-failing paper generation.
+   */
+  async synthesizeQuestions(
+    req: { class: string; subject: string; chapterName: string; marks: number; count: number; questionType?: QuestionType; contextText: string },
+    ctx: AuthContext,
+  ): Promise<ExtractedQuestionDraft[]> {
+    if (!openaiProvider.isAvailable() || req.count <= 0) return [];
+
+    const start = Date.now();
+    const result = await openaiProvider.complete({
+      systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, req.count, req.questionType),
+      userPrompt: `Reference material for this chapter:\n\n${req.contextText.slice(0, 6000) || '(no prior questions or uploads yet for this chapter — use general syllabus knowledge for this class/subject/chapter)'}`,
+      temperature: 0.4,
+      maxTokens: 4000,
+      jsonResponse: true,
+    });
+
+    aiUsageRepository.record({
+      provider: 'openai',
+      aiModel: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+      durationMs: Date.now() - start,
+      schoolId: ctx.schoolId,
+    });
+
+    const { questions } = parseQuestions(result.content);
+    const { extracted } = clean(questions);
+    // The model is asked for exact marks/chapter/type, but normalize here too in case it drifts.
+    return extracted.slice(0, req.count).map((q) => ({
+      ...q,
+      marks: req.marks,
+      chapterName: req.chapterName,
+      questionType: req.questionType ?? q.questionType,
+    }));
   },
 
   async enqueueExtractFromImage(

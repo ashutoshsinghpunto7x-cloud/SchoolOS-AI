@@ -15,7 +15,7 @@ import { Student } from '../students/student.model';
 import { marksRepository } from '../marks/marks.repository';
 import { IMarks } from '../marks/marks.model';
 import { attendanceRepository } from '../attendance/attendance.repository';
-import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { PromotionStatus } from '../report-cards/report-card.model';
@@ -147,6 +147,27 @@ async function computeClassStats(
   }
 
   return { averages, classSize: students.length };
+}
+
+/** Re-derives a term block's totals from its (possibly just-corrected) subject rows — same
+ *  best-of-two-unit-tests + evaluationType rules as buildTermBlock, but operating on rows already
+ *  stored on the document instead of pulling fresh Marks records. */
+function recomputeTermBlockTotals(block: ITermBlock): void {
+  let termTotalObtained = 0;
+  let termTotalMax = 0;
+  for (const row of block.subjectRows) {
+    row.bestUnitTestScore = row.unitTest1Score != null && row.unitTest2Score != null
+      ? Math.max(row.unitTest1Score, row.unitTest2Score)
+      : row.unitTest1Score ?? row.unitTest2Score ?? undefined;
+    row.termTotal = row.bestUnitTestScore != null && row.mainExamScore != null ? row.bestUnitTestScore + row.mainExamScore : undefined;
+    if (row.termTotal != null && (row.evaluationType === 'marks' || row.evaluationType === 'both')) {
+      termTotalObtained += row.termTotal;
+      termTotalMax += row.termMaxMarks;
+    }
+  }
+  block.termTotalObtained = termTotalObtained;
+  block.termTotalMax = termTotalMax;
+  block.termPercentage = termTotalMax > 0 ? Math.round((termTotalObtained / termTotalMax) * 10000) / 100 : 0;
 }
 
 function reconcileSkills(template: IReportCardTemplate, existing: ITermReportCardSkillEntry[]): ITermReportCardSkillEntry[] {
@@ -293,6 +314,67 @@ export const termReportCardService = {
     const data = updateTermReportCardSchema.parse(rawInput);
     const card = await termReportCardRepository.findById(id, ctx.schoolId);
     if (!card) throw new NotFoundError('Term report card');
+
+    // A teacher may correct subject marks and write their own class-teacher remark; the
+    // principal's remark and parent feedback fields are leadership-only.
+    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal';
+    if (!isLeadership) {
+      const leadershipOnlyFields = Object.keys(data).filter((k) => k === 'principalRemark' || k === 'parentFeedback');
+      if (leadershipOnlyFields.length > 0) {
+        throw new ForbiddenError('Only a principal can set the principal\'s remark or parent feedback.');
+      }
+    }
+
+    if (data.subjectMarks !== undefined && data.subjectMarks.length > 0) {
+      for (const correction of data.subjectMarks) {
+        const block = correction.term === 'firstTerm' ? card.firstTerm : card.finalTerm;
+        const row = block.subjectRows.find((r) => r.subjectName === correction.subjectName);
+        if (!row) throw new ValidationError(`"${correction.subjectName}" is not a subject on this report card's ${correction.term === 'firstTerm' ? 'First' : 'Final'} Term`);
+
+        if (correction.unitTest1Score !== undefined) {
+          if (correction.unitTest1Score > row.unitTestMaxMarks) {
+            throw new ValidationError(`${correction.subjectName}: Unit Test 1 score cannot exceed maximum (${row.unitTestMaxMarks})`);
+          }
+          row.unitTest1Score = correction.unitTest1Score;
+        }
+        if (correction.unitTest2Score !== undefined) {
+          if (correction.unitTest2Score > row.unitTestMaxMarks) {
+            throw new ValidationError(`${correction.subjectName}: Unit Test 2 score cannot exceed maximum (${row.unitTestMaxMarks})`);
+          }
+          row.unitTest2Score = correction.unitTest2Score;
+        }
+        if (correction.mainExamScore !== undefined) {
+          if (correction.mainExamScore > row.mainExamMaxMarks) {
+            throw new ValidationError(`${correction.subjectName}: main exam score cannot exceed maximum (${row.mainExamMaxMarks})`);
+          }
+          row.mainExamScore = correction.mainExamScore;
+        }
+        if (correction.grade !== undefined) row.grade = correction.grade;
+      }
+      card.markModified('firstTerm');
+      card.markModified('finalTerm');
+
+      recomputeTermBlockTotals(card.firstTerm);
+      recomputeTermBlockTotals(card.finalTerm);
+
+      card.grandTotalObtained = card.firstTerm.termTotalObtained + card.finalTerm.termTotalObtained;
+      card.grandTotalMax = card.firstTerm.termTotalMax + card.finalTerm.termTotalMax;
+      card.grandAveragePercent = card.grandTotalMax > 0
+        ? Math.round((card.grandTotalObtained / card.grandTotalMax) * 10000) / 100
+        : 0;
+
+      const template = await reportCardTemplateRepository.findById(card.templateId, ctx.schoolId);
+      if (template) {
+        const hasFinalTermData = card.finalTerm.termTotalMax > 0;
+        card.summary.promotionStatus = derivePromotionStatus(hasFinalTermData, 33, card.grandAveragePercent);
+
+        const { averages, classSize } = await computeClassStats(ctx.schoolId, template, card.class, card.section);
+        card.summary.rank = card.grandTotalMax > 0
+          ? averages.filter((a) => a > card.grandAveragePercent).length + 1
+          : card.summary.rank;
+        card.summary.classSize = classSize;
+      }
+    }
 
     if (data.teacherRemark !== undefined) card.teacherRemark = data.teacherRemark;
     if (data.principalRemark !== undefined) card.principalRemark = data.principalRemark;

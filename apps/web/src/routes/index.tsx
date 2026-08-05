@@ -561,6 +561,10 @@ const QuestionSourceDetailPage = lazyPage(
   () => import('@/features/question-bank/pages/QuestionSourceDetailPage'),
   'QuestionSourceDetailPage',
 );
+const QuestionChapterPage = lazyPage(
+  () => import('@/features/question-bank/pages/QuestionChapterPage'),
+  'QuestionChapterPage',
+);
 const PaperGeneratorPage = lazyPage(
   () => import('@/features/question-bank/pages/PaperGeneratorPage'),
   'PaperGeneratorPage',
@@ -880,6 +884,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/question-bank',                                element: <QuestionBankPage /> },
                       { path: 'teacher/question-bank/upload',                         element: <QuestionUploadPage /> },
                       { path: 'teacher/question-bank/sources/:sourceId',               element: <QuestionSourceDetailPage /> },
+                      { path: 'teacher/question-bank/chapters/:chapterId',             element: <QuestionChapterPage /> },
                       { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },

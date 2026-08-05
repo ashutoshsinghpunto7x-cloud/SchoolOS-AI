@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send, Pencil } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
@@ -18,6 +18,7 @@ export function TermReportCardPreviewPage() {
   const canPublish = user?.role === 'admin' || user?.role === 'principal';
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
+  const [editingMarks, setEditingMarks] = useState(false);
   const printAreaId = `term-report-card-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: student, isLoading: studentLoading } = useStudent(studentId);
@@ -126,6 +127,18 @@ export function TermReportCardPreviewPage() {
         </div>
       )}
 
+      {/* Marks correction — screen only, available to teachers and leadership alike. Every other
+          field (principal remark, parent feedback, template structure) is leadership-only. */}
+      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+        <MarksCorrectionPanel
+          card={resolvedCard}
+          editing={editingMarks}
+          onToggle={() => setEditingMarks((v) => !v)}
+          onSave={(subjectMarks) => { updateCard.mutate({ subjectMarks }); setEditingMarks(false); }}
+          saving={updateCard.isPending}
+        />
+      </div>
+
       <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Class Teacher's Remark</p>
@@ -165,6 +178,150 @@ export function TermReportCardPreviewPage() {
           <TermReportCardDocument reportCard={resolvedCard} template={template} student={student} schoolSettings={schoolSettings} qrDataUri={qr?.dataUri} hideWarnings />
         </div>
       )}
+    </div>
+  );
+}
+
+type DraftRow = { unitTest1Score: string; unitTest2Score: string; mainExamScore: string; grade: string };
+type TermKey = 'firstTerm' | 'finalTerm';
+const TERM_LABEL: Record<TermKey, string> = { firstTerm: 'First Term', finalTerm: 'Final Term' };
+
+/**
+ * Lets a teacher fix a wrong score directly on the generated term card, without going back
+ * through the marks-entry flow — the one edit teachers are allowed to make on either term block.
+ */
+function MarksCorrectionPanel({
+  card, editing, onToggle, onSave, saving,
+}: {
+  card: import('@schoolos/types').TermReportCard;
+  editing: boolean;
+  onToggle: () => void;
+  onSave: (subjectMarks: import('@schoolos/types').TermSubjectMarkCorrection[]) => void;
+  saving: boolean;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, DraftRow>>({});
+
+  function keyFor(term: TermKey, subjectName: string) { return `${term}::${subjectName}`; }
+
+  function startEditing() {
+    const initial: Record<string, DraftRow> = {};
+    (['firstTerm', 'finalTerm'] as TermKey[]).forEach((term) => {
+      for (const row of card[term].subjectRows) {
+        initial[keyFor(term, row.subjectName)] = {
+          unitTest1Score: row.unitTest1Score?.toString() ?? '',
+          unitTest2Score: row.unitTest2Score?.toString() ?? '',
+          mainExamScore: row.mainExamScore?.toString() ?? '',
+          grade: row.grade ?? '',
+        };
+      }
+    });
+    setDrafts(initial);
+    onToggle();
+  }
+
+  function save() {
+    const subjectMarks: import('@schoolos/types').TermSubjectMarkCorrection[] = [];
+    (['firstTerm', 'finalTerm'] as TermKey[]).forEach((term) => {
+      for (const row of card[term].subjectRows) {
+        const draft = drafts[keyFor(term, row.subjectName)];
+        if (!draft) continue;
+        const showMarks = row.evaluationType === 'marks' || row.evaluationType === 'both';
+        const showGrade = row.evaluationType === 'grade' || row.evaluationType === 'both';
+        const unitTest1Score = showMarks && draft.unitTest1Score.trim() !== '' ? Number(draft.unitTest1Score) : undefined;
+        const unitTest2Score = showMarks && draft.unitTest2Score.trim() !== '' ? Number(draft.unitTest2Score) : undefined;
+        const mainExamScore = showMarks && draft.mainExamScore.trim() !== '' ? Number(draft.mainExamScore) : undefined;
+        const grade = showGrade && draft.grade.trim() !== '' ? draft.grade.trim() : undefined;
+        if (unitTest1Score === undefined && unitTest2Score === undefined && mainExamScore === undefined && grade === undefined) continue;
+        const correction: import('@schoolos/types').TermSubjectMarkCorrection = { term, subjectName: row.subjectName };
+        if (unitTest1Score !== undefined) correction.unitTest1Score = unitTest1Score;
+        if (unitTest2Score !== undefined) correction.unitTest2Score = unitTest2Score;
+        if (mainExamScore !== undefined) correction.mainExamScore = mainExamScore;
+        if (grade !== undefined) correction.grade = grade;
+        subjectMarks.push(correction);
+      }
+    });
+    onSave(subjectMarks);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5 text-[#1C2B4A]" /> Correct Marks
+        </p>
+        {!editing && (
+          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#6D4AFF]">
+            Fix a mark
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <p className="text-xs text-gray-400">Entered a score wrong? Click "Fix a mark" to correct it right here — no need to redo the marks-entry flow.</p>
+      ) : (
+        <>
+          {(['firstTerm', 'finalTerm'] as TermKey[]).map((term) => (
+            <div key={term} className="mb-4 last:mb-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{TERM_LABEL[term]}</p>
+              <div className="space-y-1.5">
+                {card[term].subjectRows.map((row) => {
+                  const showMarks = row.evaluationType === 'marks' || row.evaluationType === 'both';
+                  const showGrade = row.evaluationType === 'grade' || row.evaluationType === 'both';
+                  const k = keyFor(term, row.subjectName);
+                  const draft = drafts[k] ?? { unitTest1Score: '', unitTest2Score: '', mainExamScore: '', grade: '' };
+                  return (
+                    <div key={k} className="flex items-center gap-2 flex-wrap">
+                      <span className="w-28 shrink-0 text-xs text-gray-700 truncate">{row.subjectName}</span>
+                      {showMarks && (
+                        <>
+                          <LabeledScoreInput label="UT1" value={draft.unitTest1Score} max={row.unitTestMaxMarks}
+                            onChange={(v) => setDrafts((d) => ({ ...d, [k]: { ...draft, unitTest1Score: v } }))} />
+                          <LabeledScoreInput label="UT2" value={draft.unitTest2Score} max={row.unitTestMaxMarks}
+                            onChange={(v) => setDrafts((d) => ({ ...d, [k]: { ...draft, unitTest2Score: v } }))} />
+                          <LabeledScoreInput label="Main" value={draft.mainExamScore} max={row.mainExamMaxMarks}
+                            onChange={(v) => setDrafts((d) => ({ ...d, [k]: { ...draft, mainExamScore: v } }))} />
+                        </>
+                      )}
+                      {showGrade && (
+                        <input
+                          value={draft.grade}
+                          onChange={(e) => setDrafts((d) => ({ ...d, [k]: { ...draft, grade: e.target.value } }))}
+                          placeholder="Grade"
+                          className="h-8 w-14 px-2 rounded-md border border-gray-200 text-xs text-center"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end gap-2 mt-3">
+            <button type="button" onClick={onToggle} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+            <button
+              type="button" onClick={save} disabled={saving}
+              className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Save corrections'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LabeledScoreInput({ label, value, max, onChange }: { label: string; value: string; max: number; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-[9px] text-gray-400 w-8">{label}</span>
+      <input
+        type="number" min={0} max={max}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 w-14 px-2 rounded-md border border-gray-200 text-xs text-right"
+      />
+      <span className="text-[9px] text-gray-400">/{max}</span>
     </div>
   );
 }

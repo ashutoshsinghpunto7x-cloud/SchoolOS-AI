@@ -1,11 +1,15 @@
 import { GeneratedPaper, GeneratedPaperSection, PaperGenerationConfig, Question as QuestionDto } from '@schoolos/types';
 import { AuthContext } from '../../lib/auth-context';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { logger } from '../../lib/logger';
 import { chapterRepository } from './chapter.repository';
 import { questionRepository } from './question.repository';
+import { questionSourceRepository } from './question-source.repository';
+import { questionExtractionService } from './question-extraction.service';
 import { paperRepository } from './paper.repository';
 import { paperValidationService } from './paper-validation.service';
 import { IQuestion, QuestionDifficulty } from './question.model';
+import { ISyllabusChapter } from './chapter.model';
 
 function toDto(q: IQuestion): QuestionDto {
   return {
@@ -68,17 +72,102 @@ function selectQuestions(pool: IQuestion[], config: PaperGenerationConfig): IQue
   return selected;
 }
 
+/**
+ * Fills any marks-bucket the pool couldn't satisfy exactly by asking the AI to write new
+ * questions for it (see questionExtractionService.synthesizeQuestions) — the requested marks
+ * value is never treated as a reason to come back empty; only a fully unconfigured/unavailable
+ * AI provider does, and even then paper generation itself doesn't hard-fail unless the pool is
+ * also completely empty.
+ */
+async function fillMarksGapsWithAi(
+  pool: IQuestion[],
+  selected: IQuestion[],
+  chapters: ISyllabusChapter[],
+  config: PaperGenerationConfig,
+  ctx: AuthContext,
+): Promise<IQuestion[]> {
+  const actualByMarks = new Map<number, number>();
+  for (const q of selected) actualByMarks.set(q.marks, (actualByMarks.get(q.marks) ?? 0) + 1);
+
+  const sources = await questionSourceRepository.findAll(ctx.schoolId, config.class, config.subject).catch(() => []);
+  const created: IQuestion[] = [];
+
+  for (const entry of config.marksBreakdown) {
+    const have = actualByMarks.get(entry.marks) ?? 0;
+    const short = entry.count - have;
+    if (short <= 0) continue;
+
+    // Attribute new questions to whichever requested chapter is least covered so far —
+    // keeps the AI-filled gap spread across the paper's actual chapter selection.
+    const marksByChapter = new Map<string, number>();
+    for (const q of selected) marksByChapter.set(q.chapterId, (marksByChapter.get(q.chapterId) ?? 0) + 1);
+    const chapter = [...chapters].sort((a, b) => (marksByChapter.get(String(a._id)) ?? 0) - (marksByChapter.get(String(b._id)) ?? 0))[0];
+    if (!chapter) continue;
+
+    const contextQuestions = pool.filter((q) => q.chapterId === String(chapter._id)).map((q) => q.questionText).slice(0, 10);
+    const contextSourceText = sources.filter((s) => s.chapterName === chapter.chapterName).map((s) => s.extractedText).join('\n\n');
+    const contextText = [...contextQuestions, contextSourceText].filter(Boolean).join('\n\n')
+      || `Chapter topics: ${chapter.topics.join(', ') || chapter.chapterName}`;
+
+    const questionType = config.questionTypes.length === 1 ? config.questionTypes[0] : undefined;
+
+    try {
+      const drafts = await questionExtractionService.synthesizeQuestions(
+        { class: config.class, subject: config.subject, chapterName: chapter.chapterName, marks: entry.marks, count: short, questionType, contextText },
+        ctx,
+      );
+      if (drafts.length === 0) continue;
+
+      const newQuestions = await questionRepository.createMany(drafts.map((d) => ({
+        schoolId: ctx.schoolId,
+        class: config.class,
+        subject: config.subject,
+        chapterId: String(chapter._id),
+        chapterName: chapter.chapterName,
+        topic: d.topic,
+        questionText: d.questionText,
+        questionType: d.questionType,
+        options: d.options,
+        correctAnswer: d.correctAnswer,
+        difficulty: d.difficulty,
+        marks: entry.marks,
+        estimatedTimeMinutes: d.estimatedTimeMinutes,
+        bloomsLevel: d.bloomsLevel,
+        keywords: d.keywords,
+        source: 'AI-generated to complete a paper request',
+        createdBy: ctx.userId,
+      })));
+
+      created.push(...newQuestions);
+      selected.push(...newQuestions);
+      pool.push(...newQuestions);
+      actualByMarks.set(entry.marks, have + newQuestions.length);
+    } catch (err) {
+      // AI synthesis failing shouldn't take down paper generation — the pre-existing shortfall
+      // warning from paper-validation.service still surfaces to the teacher either way.
+      logger.error('[PaperGenerator] AI question synthesis failed for a marks gap', {
+        schoolId: ctx.schoolId, chapterId: String(chapter._id), marks: entry.marks, error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return created;
+}
+
 export const paperGeneratorService = {
   async generate(config: PaperGenerationConfig, ctx: AuthContext): Promise<GeneratedPaper> {
     const chapters = await chapterRepository.findByIds(ctx.schoolId, config.chapterIds);
     if (chapters.length === 0) throw new ValidationError('No matching chapters found for this class/subject');
 
     const pool = await questionRepository.findEligible(ctx.schoolId, config.class, config.subject, config.chapterIds);
-    if (pool.length === 0) {
-      throw new ValidationError('No questions in the bank for the selected class/subject/chapters yet — upload sources first.');
-    }
 
     const selected = selectQuestions(pool, config);
+    await fillMarksGapsWithAi(pool, selected, chapters, config, ctx);
+
+    if (selected.length === 0) {
+      throw new ValidationError('No questions in the bank for the selected class/subject/chapters yet, and AI question generation is not configured on this server — upload sources first.');
+    }
+
     const validation = paperValidationService.validate(config, chapters, selected);
 
     const sectionsByMarks = new Map<number, IQuestion[]>();
