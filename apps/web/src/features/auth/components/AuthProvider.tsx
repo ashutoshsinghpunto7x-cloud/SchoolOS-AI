@@ -84,7 +84,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const loginWithPasskey = useCallback(async (): Promise<AuthUser> => {
     const options = await webauthnApi.getLoginOptions();
-    const response = await startAuthentication({ optionsJSON: options });
+    // startAuthentication throws the raw browser/DOMException message (e.g.
+    // "The operation either timed out or was not allowed. See: https://
+    // www.w3.org/TR/webauthn-2/...") on cancel, timeout, or no matching
+    // credential on this device. That's not something to surface to a user —
+    // normalize it to one friendly message here so callers' catch blocks
+    // never have to see the raw text.
+    let response;
+    try {
+      response = await startAuthentication({ optionsJSON: options });
+    } catch {
+      throw new Error('Fingerprint / Face ID sign-in was cancelled or is not set up on this device.');
+    }
     const tokens = await webauthnApi.verifyLogin(response, options.challenge);
     queryClient.clear();
     sessionStorage.setItem('accessToken', tokens.accessToken);
@@ -96,7 +107,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const registerPasskey = useCallback(async (deviceLabel?: string): Promise<void> => {
     const options = await webauthnApi.getRegistrationOptions();
-    const response = await startRegistration({ optionsJSON: options });
+    // Same rationale as loginWithPasskey above — normalize the raw browser
+    // WebAuthn error instead of letting it reach the UI verbatim.
+    let response;
+    try {
+      response = await startRegistration({ optionsJSON: options });
+    } catch {
+      throw new Error('Fingerprint / Face ID setup was cancelled or is not supported on this device.');
+    }
     await webauthnApi.verifyRegistration(response, deviceLabel);
   }, []);
 
