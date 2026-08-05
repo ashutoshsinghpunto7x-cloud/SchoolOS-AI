@@ -10,11 +10,15 @@ function meta(req: Request) {
   return { ip: req.ip ?? req.socket.remoteAddress, userAgent: req.headers['user-agent'] };
 }
 
+function origin(req: Request): string | undefined {
+  return req.headers.origin;
+}
+
 export const webauthnController = {
   async getRegistrationOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
-      const options = await webauthnService.getRegistrationOptions(ctx);
+      const options = await webauthnService.getRegistrationOptions(ctx, origin(req));
       sendSuccess(res, options);
     } catch (err) { next(err); }
   },
@@ -24,7 +28,7 @@ export const webauthnController = {
       const { response, deviceLabel } = req.body as { response?: RegistrationResponseJSON; deviceLabel?: string };
       if (!response) throw new ValidationError('A registration response is required');
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
-      await webauthnService.verifyRegistration(ctx, response, deviceLabel);
+      await webauthnService.verifyRegistration(ctx, response, deviceLabel, origin(req));
       sendCreated(res, null, 'Passkey added — you can now sign in with it on this device.');
     } catch (err) { next(err); }
   },
@@ -45,9 +49,9 @@ export const webauthnController = {
     } catch (err) { next(err); }
   },
 
-  async getLoginOptions(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getLoginOptions(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const options = await webauthnService.getLoginOptions();
+      const options = await webauthnService.getLoginOptions(origin(req));
       sendSuccess(res, options);
     } catch (err) { next(err); }
   },
@@ -56,7 +60,7 @@ export const webauthnController = {
     try {
       const { response, challenge } = req.body as { response?: AuthenticationResponseJSON; challenge?: string };
       if (!response || !challenge) throw new ValidationError('A login response and challenge are required');
-      const { refreshToken, ...result } = await webauthnService.verifyLogin(response, challenge, meta(req));
+      const { refreshToken, ...result } = await webauthnService.verifyLogin(response, challenge, meta(req), origin(req));
       setAuthCookies(res, refreshToken);
       sendCreated(res, result, 'Login successful');
     } catch (err) { next(err); }

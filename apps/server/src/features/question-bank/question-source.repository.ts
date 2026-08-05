@@ -13,11 +13,19 @@ export const questionSourceRepository = {
     return QuestionSource.create(data);
   },
 
-  async findAll(schoolId: string, cls: string, subject: string): Promise<IQuestionSource[]> {
-    return QuestionSource.find({ schoolId, class: cls, subject }).sort({ createdAt: -1 }).lean<IQuestionSource[]>();
+  /** cls/subject omitted → every stored upload for the school (used by the "pending uploads" view, which isn't scoped to one class/subject). */
+  async findAll(schoolId: string, cls?: string, subject?: string): Promise<IQuestionSource[]> {
+    const filter: Record<string, string> = { schoolId };
+    if (cls) filter.class = cls;
+    if (subject) filter.subject = subject;
+    return QuestionSource.find(filter).sort({ createdAt: -1 }).lean<IQuestionSource[]>();
   },
 
   async findById(id: string, schoolId: string): Promise<IQuestionSource | null> {
     return QuestionSource.findOne({ _id: id, schoolId }).lean<IQuestionSource>();
+  },
+
+  async updateChapterName(id: string, schoolId: string, chapterName: string): Promise<IQuestionSource | null> {
+    return QuestionSource.findOneAndUpdate({ _id: id, schoolId }, { chapterName }, { new: true }).lean<IQuestionSource>();
   },
 };

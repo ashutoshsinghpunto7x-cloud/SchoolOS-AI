@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Loader2, CalendarClock, TrendingUp, TrendingDown, CheckCircle2, Circle, ChevronDown, ChevronUp, Lightbulb, BookText } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, CalendarClock, TrendingUp, TrendingDown, CheckCircle2, Circle, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
 import { useMyPlanner, usePlannerProgress, usePlannerPace, useToggleTask } from '../hooks/useTeacherPlanner';
 
 function ProgressBar({ label, percent }: { label: string; percent: number }) {
@@ -186,13 +186,6 @@ export function PlannerDashboardPage() {
                         </span>
                       </button>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/teacher/lesson-planner/${cls}/${encodeURIComponent(subject)}/${w.chapterId}/generate?chapterName=${encodeURIComponent(w.chapterName)}`)}
-                      className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg text-xs font-semibold text-[#EA580C] hover:bg-orange-50 dark:hover:bg-orange-500/10"
-                    >
-                      <BookText className="w-3.5 h-3.5" /> Generate Lesson Plan for this chapter
-                    </button>
                   </div>
                 )}
               </div>

@@ -15,6 +15,7 @@ router.post('/extract/confirm', questionBankController.confirmExtracted);
 
 router.get('/sources', questionBankController.listSources);
 router.get('/sources/:id', questionBankController.getSource);
+router.patch('/sources/:id', questionBankController.updateSource);
 router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 
 router.get('/chapters', questionBankController.listChapters);

@@ -48,7 +48,6 @@ import performanceTestRouter from '../features/performance-testing/performance-t
 import communicationEngineRouter from '../features/communication/communication-engine.routes';
 import questionBankRouter from '../features/question-bank/question-bank.routes';
 import teacherPlannerRouter from '../features/teacher-planner/planner.routes';
-import lessonPlannerRouter from '../features/lesson-planner/lesson-plan.routes';
 import worksheetGeneratorRouter from '../features/worksheet-generator/worksheet.routes';
 import syllabusTrackerRouter from '../features/syllabus-tracker/syllabus-tracker.routes';
 import featureFlagRouter from '../features/feature-flags/feature-flag.routes';
@@ -107,7 +106,6 @@ router.use('/performance-tests', performanceTestRouter);
 router.use('/communication', communicationEngineRouter);
 router.use('/question-bank', questionBankRouter);
 router.use('/teacher-planner', teacherPlannerRouter);
-router.use('/lesson-planner', lessonPlannerRouter);
 router.use('/worksheet-generator', worksheetGeneratorRouter);
 router.use('/syllabus-tracker', syllabusTrackerRouter);
 router.use('/ops/feature-flags', featureFlagRouter);

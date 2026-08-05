@@ -589,22 +589,6 @@ const WorksheetListPage = lazyPage(
   () => import('@/features/worksheet-generator/pages/WorksheetListPage'),
   'WorksheetListPage',
 );
-const LessonPlanHubPage = lazyPage(
-  () => import('@/features/lesson-planner/pages/LessonPlanHubPage'),
-  'LessonPlanHubPage',
-);
-const LessonPlanListPage = lazyPage(
-  () => import('@/features/lesson-planner/pages/LessonPlanListPage'),
-  'LessonPlanListPage',
-);
-const LessonPlanGeneratePage = lazyPage(
-  () => import('@/features/lesson-planner/pages/LessonPlanGeneratePage'),
-  'LessonPlanGeneratePage',
-);
-const LessonPlanViewPage = lazyPage(
-  () => import('@/features/lesson-planner/pages/LessonPlanViewPage'),
-  'LessonPlanViewPage',
-);
 const PlannerHubPage = lazyPage(
   () => import('@/features/teacher-planner/pages/PlannerHubPage'),
   'PlannerHubPage',
@@ -901,10 +885,6 @@ export const router = createBrowserRouter([
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
                       { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
                       { path: 'teacher/planner/:cls/:subject/upload',                 element: <PlannerUploadPage /> },
-                      { path: 'teacher/lesson-planner',                               element: <LessonPlanHubPage /> },
-                      { path: 'teacher/lesson-planner/plan/:id',                      element: <LessonPlanViewPage /> },
-                      { path: 'teacher/lesson-planner/:cls/:subject/:chapterId',              element: <LessonPlanListPage /> },
-                      { path: 'teacher/lesson-planner/:cls/:subject/:chapterId/generate',     element: <LessonPlanGeneratePage /> },
                       { path: 'teacher/syllabus-tracker',                             element: <SyllabusTrackerPage /> },
                       { path: 'teacher/worksheet-generator',                          element: <WorksheetHubPage /> },
                       { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },

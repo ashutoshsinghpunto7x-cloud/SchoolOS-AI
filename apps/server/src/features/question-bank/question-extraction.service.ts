@@ -232,7 +232,12 @@ export const questionExtractionService = {
     const { extracted, warnings } = await questionExtractionService.structureFromText(
       source.class, source.subject, source.extractedText, ctx,
     );
-    return { sourceType: source.kind, extracted, warnings, sourceId: String(source._id) };
+    // A teacher-assigned chapter on the source overrides the AI's per-question guess —
+    // it's a more reliable signal than inferring the chapter from page content alone.
+    const withChapter = source.chapterName
+      ? extracted.map((q) => ({ ...q, chapterName: source.chapterName! }))
+      : extracted;
+    return { sourceType: source.kind, extracted: withChapter, warnings, sourceId: String(source._id) };
   },
 
   /** Shared AI call: turns raw page/document text into structured question drafts. */

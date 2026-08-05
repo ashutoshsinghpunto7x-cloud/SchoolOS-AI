@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle } from 'lucide-react';
-import { useSource, useReExtractSource, useConfirmExtractedQuestions } from '../hooks/useQuestionBank';
+import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle, Pencil, Check } from 'lucide-react';
+import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter } from '../hooks/useQuestionBank';
 import { ExtractedDraftsReview, type DraftEdit } from '../components/ExtractedDraftsReview';
 import type { ExtractedQuestionDraft } from '@schoolos/types';
 
@@ -12,9 +12,24 @@ export function QuestionSourceDetailPage() {
   const { data: source, isLoading, isError, error } = useSource(sourceId ?? '');
   const generate = useReExtractSource();
   const confirm = useConfirmExtractedQuestions();
+  const updateChapter = useUpdateSourceChapter();
 
   const [warnings, setWarnings] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
+  const [editingChapter, setEditingChapter] = useState(false);
+  const [chapterName, setChapterName] = useState('');
+
+  useEffect(() => { setChapterName(source?.chapterName ?? ''); }, [source?.chapterName]);
+
+  async function saveChapter() {
+    if (!sourceId || !chapterName.trim()) { setEditingChapter(false); return; }
+    try {
+      await updateChapter.mutateAsync({ id: sourceId, payload: { chapterName: chapterName.trim() } });
+      setEditingChapter(false);
+    } catch (err) {
+      toast.error('Could not update chapter', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
 
   async function handleGenerate() {
     if (!sourceId) return;
@@ -86,6 +101,28 @@ export function QuestionSourceDetailPage() {
                   Class {source.class} · {source.subject} · {new Date(source.createdAt).toLocaleDateString()}
                 </span>
               </div>
+
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Chapter</span>
+                {editingChapter ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      autoFocus value={chapterName} onChange={(e) => setChapterName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveChapter()}
+                      placeholder="e.g. Force and Motion"
+                      className="h-7 px-2 rounded-md border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                    />
+                    <button type="button" onClick={saveChapter} disabled={updateChapter.isPending} className="text-emerald-500">
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setEditingChapter(true)} className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-white/60 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10">
+                    {source.chapterName || 'Assign chapter'} <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Extracted text</p>
               <div className="max-h-72 overflow-y-auto rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/10 p-3">
                 <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap">{source.extractedText}</p>

@@ -3594,6 +3594,12 @@ export interface QuestionSource extends BaseEntity {
   kind: 'image' | 'pdf_text';
   fileName?: string;
   extractedText: string;
+  /** Teacher-assigned chapter for this upload — pre-fills every question drafted from it, overriding the AI's per-question guess. */
+  chapterName?: string;
+}
+
+export interface UpdateQuestionSourcePayload {
+  chapterName: string;
 }
 
 // ── Paper generation ───────────────────────────────────────────────────────────
@@ -3727,59 +3733,6 @@ export interface ConfirmPlannerPayload {
   class: string;
   subject: string;
   weeks: PlannerDraftWeek[];
-}
-
-// ── Lesson Planner ─────────────────────────────────────────────────────────────
-
-export interface LessonPlanContent {
-  objective: string;
-  introduction: string;
-  explanation: string;
-  activities: string[];
-  examples: string[];
-  questions: string[];
-  homework: string;
-  assessment: string;
-}
-
-export interface LessonPlanDraft extends LessonPlanContent {
-  class: string;
-  subject: string;
-  chapterName: string;
-  topic?: string;
-  durationMinutes: number;
-}
-
-export interface LessonPlan extends BaseEntity, LessonPlanContent {
-  teacherId: string;
-  class: string;
-  subject: string;
-  chapterId: string;
-  chapterName: string;
-  topic?: string;
-  durationMinutes: number;
-  createdBy: string;
-  isDeleted: boolean;
-}
-
-export interface GenerateLessonPlanPayload {
-  class: string;
-  subject: string;
-  chapterName: string;
-  topic?: string;
-  durationMinutes: number;
-}
-
-export type SaveLessonPlanPayload = LessonPlanDraft;
-
-export type UpdateLessonPlanPayload = Partial<LessonPlanContent> & { durationMinutes?: number };
-
-export interface LessonPlanListOptions {
-  page?: number;
-  limit?: number;
-  class?: string;
-  subject?: string;
-  chapterId?: string;
 }
 
 // ── Worksheet Generator ────────────────────────────────────────────────────────

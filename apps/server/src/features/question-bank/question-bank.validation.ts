@@ -72,6 +72,16 @@ export const listChaptersSchema = z.object({
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
 });
 
+// class/subject optional — omitting both lists every stored upload for the school (the "pending uploads" view).
+export const listSourcesSchema = z.object({
+  class: z.string().trim().optional(),
+  subject: z.string().trim().optional(),
+});
+
+export const updateSourceSchema = z.object({
+  chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
+});
+
 // ── Paper generation ───────────────────────────────────────────────────────────
 
 export const paperGenerationConfigSchema = z.object({
@@ -99,4 +109,6 @@ export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
 export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>;
 export type ListQuestionsInput = z.infer<typeof listQuestionsSchema>;
 export type ListChaptersInput = z.infer<typeof listChaptersSchema>;
+export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
+export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;
 export type PaperGenerationConfigInput = z.infer<typeof paperGenerationConfigSchema>;

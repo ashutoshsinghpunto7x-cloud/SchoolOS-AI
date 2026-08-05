@@ -21,7 +21,7 @@ import { NotFoundError, UnauthorizedError, ValidationError, MaintenanceModeError
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { maintenanceService } from '../maintenance/maintenance.service';
-import { webauthnRpId, webauthnRpName, webauthnExpectedOrigins } from '../../config/webauthn';
+import { webauthnRpName, webauthnExpectedOrigins, resolveRpId } from '../../config/webauthn';
 
 interface RequestMeta {
   ip?: string;
@@ -40,7 +40,7 @@ function toWebAuthnCredential(doc: IWebAuthnCredential): WebAuthnCredential {
 export const webauthnService = {
   // ── Registration (authenticated: add a passkey to the current account) ────
 
-  async getRegistrationOptions(ctx: AuthContext): Promise<PublicKeyCredentialCreationOptionsJSON> {
+  async getRegistrationOptions(ctx: AuthContext, requestOrigin?: string): Promise<PublicKeyCredentialCreationOptionsJSON> {
     const user = await User.findById(ctx.userId);
     if (!user) throw new UnauthorizedError('User not found');
 
@@ -48,7 +48,7 @@ export const webauthnService = {
 
     const options = await generateRegistrationOptions({
       rpName: webauthnRpName,
-      rpID: webauthnRpId,
+      rpID: resolveRpId(requestOrigin),
       userName: user.email,
       userDisplayName: `${user.firstName} ${user.lastName}`,
       userID: new Uint8Array(Buffer.from(ctx.userId, 'utf8')),
@@ -63,7 +63,7 @@ export const webauthnService = {
     return options;
   },
 
-  async verifyRegistration(ctx: AuthContext, response: RegistrationResponseJSON, deviceLabel?: string): Promise<void> {
+  async verifyRegistration(ctx: AuthContext, response: RegistrationResponseJSON, deviceLabel?: string, requestOrigin?: string): Promise<void> {
     const stored = await WebAuthnChallenge.findOne({ userId: ctx.userId, purpose: 'register' }).sort({ createdAt: -1 });
     if (!stored) throw new ValidationError('Registration expired — please try again.');
     await WebAuthnChallenge.deleteOne({ _id: stored._id });
@@ -72,7 +72,7 @@ export const webauthnService = {
       response,
       expectedChallenge: stored.challenge,
       expectedOrigin: webauthnExpectedOrigins,
-      expectedRPID: webauthnRpId,
+      expectedRPID: resolveRpId(requestOrigin),
     });
 
     if (!verification.verified || !verification.registrationInfo) {
@@ -118,9 +118,9 @@ export const webauthnService = {
 
   // ── Login (public: discoverable/usernameless credential) ──────────────────
 
-  async getLoginOptions(): Promise<PublicKeyCredentialRequestOptionsJSON> {
+  async getLoginOptions(requestOrigin?: string): Promise<PublicKeyCredentialRequestOptionsJSON> {
     const options = await generateAuthenticationOptions({
-      rpID: webauthnRpId,
+      rpID: resolveRpId(requestOrigin),
       userVerification: 'required',
     });
 
@@ -130,7 +130,7 @@ export const webauthnService = {
   },
 
   async verifyLogin(
-    response: AuthenticationResponseJSON, challenge: string, meta: RequestMeta,
+    response: AuthenticationResponseJSON, challenge: string, meta: RequestMeta, requestOrigin?: string,
   ): Promise<{ accessToken: string; refreshToken: string; user: AccessTokenPayload }> {
     const credentialDoc = await WebAuthnCredentialModel.findOne({ credentialId: response.id });
     if (!credentialDoc) throw new UnauthorizedError('This passkey is not registered on this device.');
@@ -146,7 +146,7 @@ export const webauthnService = {
       response,
       expectedChallenge: challengeDoc.challenge,
       expectedOrigin: webauthnExpectedOrigins,
-      expectedRPID: webauthnRpId,
+      expectedRPID: resolveRpId(requestOrigin),
       credential: toWebAuthnCredential(credentialDoc),
     });
 

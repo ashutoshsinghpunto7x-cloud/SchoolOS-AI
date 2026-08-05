@@ -13,6 +13,8 @@ import {
   updateQuestionSchema,
   listQuestionsSchema,
   listChaptersSchema,
+  listSourcesSchema,
+  updateSourceSchema,
   paperGenerationConfigSchema,
 } from './question-bank.validation';
 
@@ -62,10 +64,10 @@ export const questionBankController = {
     } catch (err) { next(err); }
   },
 
-  /** GET /question-bank/sources?class=8&subject=Science — past uploads whose converted text was saved for reuse */
+  /** GET /question-bank/sources[?class=8&subject=Science] — past uploads whose converted text was saved for reuse; omit class/subject for the full pending-uploads list */
   async listSources(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const query = listChaptersSchema.parse(req.query);
+      const query = listSourcesSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
       const sources = await questionBankService.listSources(query, ctx);
       sendSuccess(res, sources);
@@ -87,6 +89,16 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const job = await questionBankService.reExtractSource(req.params.id, ctx);
       sendCreated(res, job, 'Re-reading the saved text…');
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /question-bank/sources/:id — assign/rename the chapter this upload belongs to */
+  async updateSource(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = updateSourceSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const source = await questionBankService.updateSourceChapter(req.params.id, data.chapterName, ctx);
+      sendSuccess(res, source, 'Chapter updated');
     } catch (err) { next(err); }
   },
 

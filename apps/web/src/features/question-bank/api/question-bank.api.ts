@@ -12,6 +12,7 @@ import type {
   GeneratedPaper,
   PaginatedResponse,
   QuestionSource,
+  UpdateQuestionSourcePayload,
 } from '@schoolos/types';
 
 const BASE = '/question-bank';
@@ -64,9 +65,10 @@ export const questionBankApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  listSources: async (cls: string, subject: string): Promise<QuestionSource[]> => {
+  /** Omit cls/subject to list every stored upload for the school (the "pending uploads" view). */
+  listSources: async (cls?: string, subject?: string): Promise<QuestionSource[]> => {
     try {
-      const res = await apiClient.get<{ data: QuestionSource[] }>(`${BASE}/sources`, { params: { class: cls, subject } });
+      const res = await apiClient.get<{ data: QuestionSource[] }>(`${BASE}/sources`, { params: cls && subject ? { class: cls, subject } : {} });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
@@ -74,6 +76,13 @@ export const questionBankApi = {
   getSource: async (id: string): Promise<QuestionSource> => {
     try {
       const res = await apiClient.get<{ data: QuestionSource }>(`${BASE}/sources/${id}`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  updateSource: async (id: string, payload: UpdateQuestionSourcePayload): Promise<QuestionSource> => {
+    try {
+      const res = await apiClient.patch<{ data: QuestionSource }>(`${BASE}/sources/${id}`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

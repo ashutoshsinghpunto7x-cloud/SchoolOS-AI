@@ -16,6 +16,8 @@ export interface IQuestionSource extends Document {
   kind: QuestionSourceKind;
   fileName?: string;
   extractedText: string;
+  /** Teacher-assigned chapter for this upload — pre-fills every question drafted from it, overriding the AI's per-question guess. */
+  chapterName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,6 +31,7 @@ const questionSourceSchema = new Schema<IQuestionSource>(
     kind:          { type: String, enum: ['image', 'pdf_text'], required: true },
     fileName:      { type: String },
     extractedText: { type: String, required: true },
+    chapterName:   { type: String },
   },
   { timestamps: true, versionKey: false },
 );
