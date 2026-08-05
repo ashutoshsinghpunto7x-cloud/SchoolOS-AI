@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { avatarColorFor } from '../utils/avatarColor';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isWhatsAppSendAllowed } from '@/lib/whatsapp-test-gate';
 import { useSmartDraft } from '@/hooks/useSmartDraft';
 import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
 import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
@@ -484,6 +485,8 @@ const telHref = (phone?: string) => {
 };
 
 function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absentee[]; date: string; cls: string; section: string }) {
+  const { user } = useAuth();
+  const whatsAppAllowed = isWhatsAppSendAllowed(user?.schoolId);
   const { mutateAsync: sendNotifications, isPending: isSending } = useSendAttendanceNotifications();
   const [jobId, setJobId] = useState<string | null>(null);
   const { data: job } = useBulkSendJob(jobId);
@@ -552,12 +555,18 @@ function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absent
       <button
         type="button"
         onClick={handleSend}
-        disabled={isSending || isPolling}
+        disabled={isSending || isPolling || !whatsAppAllowed}
+        title={whatsAppAllowed ? undefined : 'WhatsApp sending is in testing and only enabled on the demo workspace'}
         className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
       >
         {isSending || isPolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
         {isSending ? 'Sending…' : isPolling ? 'Sending…' : `Send WhatsApp Reminder (${absentees.length})`}
       </button>
+      {!whatsAppAllowed && (
+        <p className="mt-2 text-xs text-center text-gray-400 dark:text-white/30">
+          WhatsApp sending is in testing — only available on the demo workspace.
+        </p>
+      )}
     </div>
   );
 }
@@ -897,14 +906,14 @@ export function TeacherAttendancePage() {
     if (!isAllPresent) setPresentBurst((n) => n + 1);
   }
 
-  async function handleSave() {
+  async function handleSave(sourceRows: Row[] = rows) {
     if (!cls || !section) return;
     try {
       await bulkMark({
         class:   cls,
         section: section,
         date,
-        records: rows
+        records: sourceRows
           .filter((r): r is Row & { status: AttendanceStatus } => r.status !== 'unmarked')
           .map((r) => ({ studentId: r.studentId, status: r.status })),
       });
@@ -924,6 +933,19 @@ export function TeacherAttendancePage() {
     } finally {
       setShowSaveConfirm(false);
     }
+  }
+
+  /** Shortcut for the common case: a handful of absences were swiped and
+   *  everyone else is left unmarked. Rather than making the teacher swipe
+   *  through the whole remaining roll, this fills every unmarked student in
+   *  as present and submits in one tap. */
+  function handleMarkRemainingPresentAndSave() {
+    const updated = rows.map((r) =>
+      r.status === 'unmarked' ? { ...r, status: 'present' as const, markedSeq: markCounterRef.current++ } : r,
+    );
+    setRows(updated);
+    setDirty(true);
+    void handleSave(updated);
   }
 
   const isLoading = studentsLoading || attendanceLoading;
@@ -1390,15 +1412,21 @@ export function TeacherAttendancePage() {
               title="Submit Attendance?"
               description={
                 unmarkedCount > 0
-                  ? `${unmarkedCount} student${unmarkedCount === 1 ? '' : 's'} ${unmarkedCount === 1 ? 'is' : 'are'} still unmarked. Would you like to submit the attendance now?`
+                  ? `${unmarkedCount} student${unmarkedCount === 1 ? '' : 's'} ${unmarkedCount === 1 ? 'is' : 'are'} still unmarked. Submit as-is (unmarked students won't be recorded), or mark them all present in one tap.`
                   : 'Would you like to submit the attendance for this class?'
               }
               variant="warning"
               confirmLabel="Yes, Submit"
               cancelLabel="Cancel"
               isLoading={isPending}
-              onConfirm={handleSave}
+              onConfirm={() => handleSave()}
               onCancel={() => setShowSaveConfirm(false)}
+              extraActionLabel={
+                unmarkedCount > 0
+                  ? `Mark remaining ${unmarkedCount} Present & Submit`
+                  : undefined
+              }
+              onExtraAction={unmarkedCount > 0 ? handleMarkRemainingPresentAndSave : undefined}
             />
           )}
         </>

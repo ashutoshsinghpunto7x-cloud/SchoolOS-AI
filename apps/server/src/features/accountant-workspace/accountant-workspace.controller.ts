@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { accountantWorkspaceService } from './accountant-workspace.service';
 import { sendSuccess } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { assertWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 
 export const accountantWorkspaceController = {
   async getDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -67,6 +68,7 @@ export const accountantWorkspaceController = {
   async sendLedgerWhatsAppReminder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      assertWhatsAppSendAllowed(ctx.schoolId);
       await accountantWorkspaceService.sendLedgerWhatsAppReminder(req.params, ctx);
       sendSuccess(res, null, 'WhatsApp reminder sent');
     } catch (err) {

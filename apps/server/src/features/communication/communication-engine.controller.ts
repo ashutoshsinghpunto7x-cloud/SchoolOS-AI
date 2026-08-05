@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
+import { assertWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 import { sendSuccess } from '../../lib/response';
 import { NotFoundError } from '../../middlewares/errorHandler';
 import { attendanceNotificationService } from './attendance-notification.service';
@@ -18,6 +19,7 @@ export const communicationEngineController = {
   async sendAttendanceNotifications(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      assertWhatsAppSendAllowed(ctx.schoolId);
       const result = await attendanceNotificationService.sendAbsentNotifications(req.body, ctx);
       sendSuccess(res, result, 'Absent notifications dispatched');
     } catch (err) { next(err); }
@@ -26,6 +28,7 @@ export const communicationEngineController = {
   async sendFeeReminders(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      assertWhatsAppSendAllowed(ctx.schoolId);
       const result = await feeNotificationService.sendFeeReminders(req.body, ctx);
       sendSuccess(res, result, 'Fee reminders dispatched');
     } catch (err) { next(err); }

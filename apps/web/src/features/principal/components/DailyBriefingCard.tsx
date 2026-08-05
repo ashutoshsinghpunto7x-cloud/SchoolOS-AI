@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Sparkles, Loader2, UserX, CalendarCheck2, ClipboardList, UserPlus, CalendarClock } from 'lucide-react';
+import { Sparkles, Loader2, CalendarCheck2, ClipboardList, CalendarClock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { PrincipalDashboardData, TeachersSummaryData } from '@schoolos/types';
+import type { PrincipalDashboardData } from '@schoolos/types';
 import { useLanguage } from '@/context/LanguageContext';
 import { useBriefingSummary } from '../hooks/usePrincipal';
 import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
-import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { extractErrorMessage } from '@/services/api';
 
 interface DailyBriefingCardProps {
   data?: PrincipalDashboardData;
-  teachersSummary?: TeachersSummaryData;
   isLoading?: boolean;
 }
 
@@ -22,26 +20,16 @@ interface DailyBriefingCardProps {
 // uses for its pending-approvals total, deduped by react-query) — zero new
 // backend surface for this view. The optional "Summarize with AI" button is
 // the only part that hits the network again, and only on click.
-export function DailyBriefingCard({ data, teachersSummary, isLoading }: DailyBriefingCardProps) {
+export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { mutate: summarize, data: summaryResult, isPending, error } = useBriefingSummary();
   const [showSummary, setShowSummary] = useState(false);
   const { data: leave } = usePendingLeaveRequests();
-  const { data: changeRequests } = usePendingChangeRequests();
 
-  const pendingApprovals = (leave?.length ?? 0) + (changeRequests?.length ?? 0);
-  const teachersAbsent = teachersSummary ? teachersSummary.total - teachersSummary.presentCount : undefined;
+  const leaveRequests = leave?.length ?? 0;
 
   const tiles = [
-    {
-      label: t('briefing.teachersAbsent'),
-      value: teachersAbsent !== undefined ? String(teachersAbsent) : '—',
-      danger: (teachersAbsent ?? 0) > 0,
-      icon: UserX,
-      linkLabel: t('briefing.viewDetails'),
-      onClick: () => navigate('/principal/teachers-summary'),
-    },
     {
       label: t('briefing.attendanceToday'),
       value: data ? `${data.attendance.today.attendanceRate}%` : '—',
@@ -50,19 +38,12 @@ export function DailyBriefingCard({ data, teachersSummary, isLoading }: DailyBri
       onClick: () => navigate('/attendance'),
     },
     {
-      label: t('briefing.pendingApprovals'),
-      value: pendingApprovals !== undefined ? String(pendingApprovals) : '—',
-      danger: (pendingApprovals ?? 0) > 0,
+      label: t('briefing.leaveRequests'),
+      value: String(leaveRequests),
+      danger: leaveRequests > 0,
       icon: ClipboardList,
       linkLabel: t('briefing.reviewNow'),
       onClick: () => navigate('/principal/approvals'),
-    },
-    {
-      label: t('briefing.newAdmissions'),
-      value: data ? String(data.admissions.newThisMonth) : '—',
-      icon: UserPlus,
-      linkLabel: t('briefing.viewEnquiries'),
-      onClick: () => navigate('/enquiries'),
     },
     {
       label: t('briefing.nextEvent'),
@@ -118,9 +99,9 @@ export function DailyBriefingCard({ data, teachersSummary, isLoading }: DailyBri
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {isLoading ? (
-          [1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)
+          [1, 2, 3].map((i) => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />)
         ) : (
           tiles.map((tile) => (
             <button

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { communicationService } from './communication.service';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
+import { assertWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 
 export const communicationController = {
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -76,6 +77,7 @@ export const communicationController = {
   async sendWhatsApp(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      assertWhatsAppSendAllowed(ctx.schoolId);
       const communication = await communicationService.sendWhatsApp(req.body, ctx);
       sendCreated(res, communication, 'WhatsApp recorded');
     } catch (err) {

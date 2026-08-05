@@ -10,6 +10,11 @@ interface ConfirmDialogProps {
   isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  /** Optional secondary action rendered to the left of Confirm/Cancel —
+   *  e.g. a shortcut that does a bit more than the plain confirm (used by
+   *  attendance save to also fill in unmarked students as present). */
+  extraActionLabel?: string;
+  onExtraAction?: () => void;
 }
 
 export const ConfirmDialog = ({
@@ -21,6 +26,8 @@ export const ConfirmDialog = ({
   isLoading = false,
   onConfirm,
   onCancel,
+  extraActionLabel,
+  onExtraAction,
 }: ConfirmDialogProps) => {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
@@ -79,6 +86,21 @@ export const ConfirmDialog = ({
           {title}
         </h2>
         <p className="text-base text-gray-500 dark:text-white/50 mb-6">{description}</p>
+
+        {/* Extra action — a full-width shortcut sitting above the main row so it
+            doesn't compete for space on narrow screens. */}
+        {extraActionLabel && onExtraAction && (
+          <button
+            onClick={onExtraAction}
+            disabled={isLoading}
+            className="mb-3 h-11 w-full rounded-xl bg-violet-600 hover:bg-violet-700 active:bg-violet-800
+                       dark:bg-violet-500 dark:hover:bg-violet-600 dark:active:bg-violet-700
+                       text-sm font-bold text-white transition-colors disabled:opacity-50"
+            type="button"
+          >
+            {isLoading ? 'Please wait…' : extraActionLabel}
+          </button>
+        )}
 
         {/* Actions */}
         <div className="flex items-center gap-3 justify-end">

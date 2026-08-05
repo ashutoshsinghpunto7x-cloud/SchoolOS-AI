@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { X, MessageCircle, Loader2 } from 'lucide-react';
+import { X, MessageCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isWhatsAppSendAllowed } from '@/lib/whatsapp-test-gate';
 import type { Student } from '@schoolos/types';
 
 const buildTemplate = (student: Student): string =>
@@ -25,6 +27,8 @@ interface WhatsAppModalProps {
 }
 
 export const WhatsAppModal = ({ student, onClose, onSend }: WhatsAppModalProps) => {
+  const { user } = useAuth();
+  const whatsAppAllowed = isWhatsAppSendAllowed(user?.schoolId);
   const [message, setMessage] = useState(() => buildTemplate(student));
   const [isLoading, setIsLoading] = useState(false);
 
@@ -64,6 +68,14 @@ export const WhatsAppModal = ({ student, onClose, onSend }: WhatsAppModalProps) 
 
         {/* Message editor */}
         <div className="px-6 py-4">
+          {!whatsAppAllowed && (
+            <div className="flex items-start gap-2 mb-4 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <p className="text-xs font-medium leading-relaxed">
+                WhatsApp sending is currently in testing and only enabled on the demo workspace. This message can be drafted but won't be sent.
+              </p>
+            </div>
+          )}
           <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">
             Message
           </label>
@@ -93,7 +105,8 @@ export const WhatsAppModal = ({ student, onClose, onSend }: WhatsAppModalProps) 
           </button>
           <button
             onClick={handleSend}
-            disabled={isLoading || !message.trim()}
+            disabled={isLoading || !message.trim() || !whatsAppAllowed}
+            title={whatsAppAllowed ? undefined : 'WhatsApp sending is in testing and only enabled on the demo workspace'}
             className={cn(
               'flex-1 h-12 rounded-xl flex items-center justify-center gap-2',
               'text-sm font-bold text-white transition-colors',

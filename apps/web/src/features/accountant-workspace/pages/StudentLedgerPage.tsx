@@ -16,6 +16,7 @@ import { useCreateDiscountRequest, useStudentDiscounts } from '@/features/fees/h
 import { useUploadStudentPhoto, useRemoveStudentPhoto } from '@/features/students/hooks/useStudents';
 import { useCreateChangeRequest, usePendingChangeRequestsForStudent } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isWhatsAppSendAllowed } from '@/lib/whatsapp-test-gate';
 import type { AdmissionStatus, FeePayment, FeeRecord } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
@@ -451,6 +452,8 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
   onRequestDiscount: () => void;
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const whatsAppAllowed = isWhatsAppSendAllowed(user?.schoolId);
   const { student, feeRecords, summary } = ledger;
   const { mutateAsync: sendWhatsApp, isPending: sendingWhatsApp } = useSendLedgerWhatsAppReminder();
   const { mutateAsync: sendEmail, isPending: sendingEmail } = useSendLedgerStatementEmail();
@@ -537,7 +540,8 @@ function TotalAmountPanel({ ledger, month, onCollect, onRequestDiscount }: {
         </button>
         <button
           onClick={handleWhatsApp}
-          disabled={!student.parentPhone || !hasDues || sendingWhatsApp}
+          disabled={!student.parentPhone || !hasDues || sendingWhatsApp || !whatsAppAllowed}
+          title={whatsAppAllowed ? undefined : 'WhatsApp sending is in testing and only enabled on the demo workspace'}
           className="w-full h-10 flex items-center gap-2.5 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 text-xs font-semibold transition-colors"
         >
           {sendingWhatsApp ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageCircle className="w-3.5 h-3.5" />}
