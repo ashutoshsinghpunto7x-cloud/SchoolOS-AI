@@ -34,6 +34,10 @@ export interface IStudent extends Document {
   fullName: string;
   admissionNumber: string;
   rollNumber?: string;
+  /** 1-based position in the class register as provided by the class teacher —
+   *  independent of rollNumber, used to preserve "as given" list order as the
+   *  default attendance/roster display order until a roll-number sort is applied. */
+  rosterOrder?: number;
   class: string;
   section: string;
   gender?: Gender;
@@ -82,6 +86,7 @@ const studentSchema = new Schema<IStudent>(
     fullName: { type: String, required: true, trim: true },
     admissionNumber: { type: String, required: true, trim: true },
     rollNumber: { type: String, trim: true },
+    rosterOrder: { type: Number },
     class: { type: String, required: true, trim: true },
     section: { type: String, required: true, trim: true },
     gender: { type: String, enum: ['male', 'female', 'other'] },

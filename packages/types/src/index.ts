@@ -303,6 +303,10 @@ export interface Student extends BaseEntity {
   fullName: string;
   admissionNumber: string;
   rollNumber?: string;
+  /** 1-based position in the class register as provided by the class teacher —
+   *  independent of rollNumber, used to preserve "as given" list order as the
+   *  default attendance/roster display order until a roll-number sort is applied. */
+  rosterOrder?: number;
   class: string;
   section: string;
   gender: Gender;

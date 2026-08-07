@@ -17,6 +17,7 @@ import {
   Filter,
   Lock,
   MessageCircle,
+  ArrowUpDown,
 } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, useAnimationControls, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -216,6 +217,7 @@ interface Row {
   studentId:  string;
   fullName:   string;
   rollNumber?: string;
+  rosterOrder?: number;
   photoUrl?: string;
   status:     RowStatus;
   /** Set the moment a row is marked present/absent — lets the list push marked
@@ -235,12 +237,20 @@ function compareRollNumber(a?: string, b?: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
-/** Ascending alphabetical-by-name sort — the default class register order
- *  (schools conventionally seat/number students alphabetically), roll
- *  numbers included as a tiebreaker for same-name edge cases. */
+/** Ascending alphabetical-by-name sort — fallback register order for classes
+ *  with no explicit roster order recorded, roll numbers included as a
+ *  tiebreaker for same-name edge cases. */
 function compareByName(a: { fullName: string; rollNumber?: string }, b: { fullName: string; rollNumber?: string }): number {
   const byName = a.fullName.localeCompare(b.fullName, undefined, { sensitivity: 'base' });
   return byName !== 0 ? byName : compareRollNumber(a.rollNumber, b.rollNumber);
+}
+
+/** Default list order: the class register "as given" (rosterOrder), falling
+ *  back to alphabetical-by-name for classes that don't have a rosterOrder
+ *  set on their students. */
+function compareDefault(a: { fullName: string; rollNumber?: string; rosterOrder?: number }, b: { fullName: string; rollNumber?: string; rosterOrder?: number }): number {
+  if (a.rosterOrder != null && b.rosterOrder != null) return a.rosterOrder - b.rosterOrder;
+  return compareByName(a, b);
 }
 
 // ── Active (swipeable) card ───────────────────────────────────────────────────
@@ -672,9 +682,10 @@ export function TeacherAttendancePage() {
   const [swipeMode,   setSwipeMode]   = useState(true);
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  // Alphabetical by name is the default — schools conventionally seat and
-  // number students alphabetically, so this mirrors the register order a
-  // teacher already knows instead of raw database roll-number order.
+  // Default ('name') actually resolves to compareDefault — the class
+  // register's rosterOrder ("as given" by the class teacher) when the class
+  // has one set, else alphabetical by name. "roll" switches to roll-number
+  // order; toggling it off returns here.
   const [sortMode, setSortMode] = useState<'roll' | 'name' | 'present' | 'absent'>('name');
   const [filterMenuOpen, setFilterMenuOpen] = useState(false);
   // A stack (not a single slot) so the teacher can undo several marks in a row
@@ -803,22 +814,22 @@ export function TeacherAttendancePage() {
     new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) > cutoffTime;
   const editLocked = isPastDate || cutoffPassed;
 
-  // Populate rows when data loads — sorted alphabetically by name by default
-  // so the swipe queue and list both follow the class register order schools
-  // conventionally use.
+  // Populate rows when data loads — default order is the class register "as
+  // given" (rosterOrder), falling back to alphabetical for classes with no
+  // rosterOrder set on their students.
   useEffect(() => {
     if (!students.length) return;
     const existMap = new Map(
       (existingAttendance ?? []).map((a) => [a.studentId, a.status as AttendanceStatus]),
     );
-    const sorted = [...students].sort((a, b) => compareByName(a, b));
+    const sorted = [...students].sort((a, b) => compareDefault(a, b));
     let seq = 0;
     setRows(
       sorted.map((s) => {
         const existing = existMap.get(s._id);
         const status: RowStatus = existing === 'present' ? 'present' : existing === 'absent' ? 'absent' : 'unmarked';
         return {
-          studentId: s._id, fullName: s.fullName, rollNumber: s.rollNumber, photoUrl: s.photoUrl, status,
+          studentId: s._id, fullName: s.fullName, rollNumber: s.rollNumber, rosterOrder: s.rosterOrder, photoUrl: s.photoUrl, status,
           markedSeq: status !== 'unmarked' ? seq++ : undefined,
         };
       }),
@@ -843,7 +854,7 @@ export function TeacherAttendancePage() {
     ? rows.filter((r) => r.fullName.toLowerCase().includes(searchQuery.trim().toLowerCase()))
     : rows;
   function compareBySortMode(a: Row, b: Row): number {
-    return sortMode === 'roll' ? compareRollNumber(a.rollNumber, b.rollNumber) : compareByName(a, b);
+    return sortMode === 'roll' ? compareRollNumber(a.rollNumber, b.rollNumber) : compareDefault(a, b);
   }
   const useSwipeFlow = swipeMode && !isSearching;
 
@@ -1253,6 +1264,20 @@ export function TeacherAttendancePage() {
                       >
                         <X className="w-3.5 h-3.5" /> Absent First
                       </button>
+                      <button
+                        type="button"
+                        // Clicking again while active reverts to the default
+                        // (as-given / register) order.
+                        onClick={() => { setSortMode((m) => (m === 'roll' ? 'name' : 'roll')); setFilterMenuOpen(false); }}
+                        className={cn(
+                          'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
+                          sortMode === 'roll'
+                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
+                        )}
+                      >
+                        <ArrowUpDown className="w-3.5 h-3.5" /> Roll Number
+                      </button>
                     </div>
                   </>
                 )}
@@ -1301,7 +1326,7 @@ export function TeacherAttendancePage() {
                   if (sortMode === 'present' || sortMode === 'absent') {
                     const aMatches = a.status === sortMode ? 0 : 1;
                     const bMatches = b.status === sortMode ? 0 : 1;
-                    return aMatches !== bMatches ? aMatches - bMatches : compareByName(a, b);
+                    return aMatches !== bMatches ? aMatches - bMatches : compareDefault(a, b);
                   }
                   if (a.status === 'unmarked' && b.status === 'unmarked') return compareBySortMode(a, b);
                   if (a.status === 'unmarked') return -1;
