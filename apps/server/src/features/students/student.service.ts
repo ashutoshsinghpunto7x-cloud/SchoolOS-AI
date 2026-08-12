@@ -4,24 +4,50 @@ import { studentNoteRepository } from './student.note.repository';
 import {
   createStudentSchema, updateStudentSchema, changeStatusSchema,
   listStudentsSchema, createNoteSchema, updateNoteSchema, updateRollNumberSchema,
-  updateFeeProfileSchema,
+  updateFeeProfileSchema, updateNameSchema,
 } from './student.validation';
 import { IStudent } from './student.model';
 import { IStudentNote } from './student.note.model';
-import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { User } from '../users/user.model';
+import { Teacher } from '../teachers/teacher.model';
+import { classTeacherRepository } from '../classes/class-teacher.repository';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const isDuplicateKeyError = (err: unknown): boolean =>
   typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
 
+// Teachers may only add or rename students in a class/section they are the
+// assigned class teacher for — mirrors assertTeacherCanMarkClass in
+// attendance.service.ts. No-op for non-teacher roles (admin/principal/
+// reception/accountant already have school-wide authority here).
+async function assertTeacherCanManageClass(ctx: AuthContext, cls: string, section: string): Promise<void> {
+  if (ctx.role !== 'teacher') return;
+
+  const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
+  if (!user?.email) throw new ForbiddenError('Your account has no email — cannot verify class assignment');
+
+  const teacher = await Teacher.findOne({ schoolId: ctx.schoolId, email: user.email, isDeleted: false })
+    .select('_id')
+    .lean() as { _id: unknown } | null;
+  if (!teacher) throw new ForbiddenError('Teacher profile not found');
+
+  const teacherId = String(teacher._id);
+  const assignment = await classTeacherRepository.findOne(ctx.schoolId, cls, section);
+  if (!assignment || assignment.teacherId !== teacherId) {
+    throw new ForbiddenError('You are not the class teacher for this class — only the assigned class teacher can add or rename students here');
+  }
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const studentService = {
   async createStudent(rawInput: unknown, ctx: AuthContext, session?: ClientSession): Promise<IStudent> {
     const data = createStudentSchema.parse(rawInput);
+    await assertTeacherCanManageClass(ctx, data.class, data.section);
     const admissionYear = new Date().getFullYear();
 
     // The import pipeline supplies an existing admission number from the source
@@ -160,6 +186,36 @@ export const studentService = {
       resource: 'students',
       resourceId: id,
       details: { fields: ['rollNumber'] },
+      ip: ctx.ip,
+      schoolId: ctx.schoolId,
+    });
+
+    return student;
+  },
+
+  /** Low-risk quick-edit field (typo fixes), exempt from the change-request approval
+   * flow — but unlike roll number, scoped to the teacher's own assigned class, since
+   * a student's name is a more sensitive field than a display-order number. */
+  async updateStudentName(id: string, rawInput: unknown, ctx: AuthContext): Promise<IStudent> {
+    const { fullName } = updateNameSchema.parse(rawInput);
+
+    const existing = await studentRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Student');
+    await assertTeacherCanManageClass(ctx, existing.class, existing.section);
+
+    const student = await studentRepository.update(id, ctx.schoolId, {
+      fullName,
+      updatedBy: ctx.displayName,
+    });
+    if (!student) throw new NotFoundError('Student');
+
+    auditService.log({
+      userId: ctx.userId,
+      userDisplayName: ctx.displayName,
+      action: 'student.updated',
+      resource: 'students',
+      resourceId: id,
+      details: { fields: ['fullName'], previousFullName: existing.fullName },
       ip: ctx.ip,
       schoolId: ctx.schoolId,
     });

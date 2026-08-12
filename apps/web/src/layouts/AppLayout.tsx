@@ -10,6 +10,9 @@ import { TeacherThemeProvider, useTeacherTheme } from '@/features/teacher-worksp
 import { LanguageProvider } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useModuleAccessStatus } from '@/features/ops-center/hooks/useModuleAccess';
+import { getActiveRestriction } from '@/lib/moduleAccess';
+import { ModuleRestrictedNotice } from '@/components/ModuleRestrictedNotice';
 
 // Inner layout — rendered inside TeacherThemeProvider so it can read the theme
 function AppLayoutInner() {
@@ -30,6 +33,12 @@ function AppLayoutInner() {
   // Settings also flips it here.
   const { theme } = useTeacherTheme();
   const isDark = theme === 'dark';
+
+  // Ops Center > Module Access — if the current page's module is currently
+  // restricted, swap only the page content for a notice; sidebar/topbar and
+  // every other module stay exactly as they were.
+  const { data: moduleRestrictedStatus } = useModuleAccessStatus();
+  const activeRestriction = getActiveRestriction(location.pathname, moduleRestrictedStatus);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -97,13 +106,17 @@ function AppLayoutInner() {
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col">
-          <Suspense fallback={
-            <div className="flex flex-1 items-center justify-center py-24">
-              <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
-            </div>
-          }>
-            <Outlet />
-          </Suspense>
+          {activeRestriction ? (
+            <ModuleRestrictedNotice restriction={activeRestriction} />
+          ) : (
+            <Suspense fallback={
+              <div className="flex flex-1 items-center justify-center py-24">
+                <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
+          )}
         </main>
       </div>
     </div>

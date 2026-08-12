@@ -49,6 +49,12 @@ export const updateRollNumberSchema = z.object({
   rollNumber: z.string().max(20).trim().optional().or(z.literal('')),
 });
 
+/** Low-risk quick-edit — same shape/spirit as roll number, but for the name field
+ * (typo fixes by the class teacher), exempt from the change-request approval flow. */
+export const updateNameSchema = z.object({
+  fullName: z.string({ required_error: 'Full name is required' }).min(2).max(100).trim(),
+});
+
 // Fields the accountant workspace's Collect Fee card manages directly — roll number,
 // class/section placement, and the monthly tuition amount that drives fee generation.
 export const updateFeeProfileSchema = z.object({

@@ -102,6 +102,54 @@ export type UserRole =
 export const OPS_ROLES: UserRole[] = ['owner', 'super_admin', 'devops', 'developer', 'support'];
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
+// ── Module Access Catalog ────────────────────────────────────────────────────
+// The fixed list of top-level dashboard features Ops Center can temporarily
+// restrict (see project_module_access memory / Ops Center > Module Access).
+// `routePrefixes` are matched against the web app's route paths — a path is
+// considered part of a module if it equals a prefix or starts with
+// `${prefix}/`. Deliberately excludes each role's own home/dashboard route,
+// Settings, Messages, and auth/recovery screens — those can never be
+// restricted, so no module list mistake can lock a role out of the app.
+export interface ModuleCatalogEntry {
+  key: string;
+  label: string;
+  routePrefixes: string[];
+}
+
+export const MODULE_CATALOG: ModuleCatalogEntry[] = [
+  { key: 'students', label: 'Students', routePrefixes: ['/students'] },
+  { key: 'teachers', label: 'Teachers Directory', routePrefixes: ['/teachers'] },
+  { key: 'teacher-logins', label: 'Teacher Logins', routePrefixes: ['/teacher-logins'] },
+  { key: 'attendance', label: 'Attendance', routePrefixes: ['/attendance', '/teacher/attendance'] },
+  { key: 'fees', label: 'Fees', routePrefixes: ['/fees', '/accountant/collect-fee', '/accountant/pending-fees', '/accountant/fee-records', '/accountant/fee-structure', '/accountant/student-ledger'] },
+  { key: 'timetable', label: 'Timetable', routePrefixes: ['/timetable'] },
+  { key: 'enquiries', label: 'Admissions / Enquiries', routePrefixes: ['/enquiries'] },
+  { key: 'calendar', label: 'Calendar & Events', routePrefixes: ['/calendar'] },
+  { key: 'communication', label: 'Communication', routePrefixes: ['/communication'] },
+  { key: 'reports', label: 'Reports & Analytics', routePrefixes: ['/reports'] },
+  { key: 'automation', label: 'Automation', routePrefixes: ['/automation'] },
+  { key: 'import', label: 'Data Import', routePrefixes: ['/import'] },
+  { key: 'integrations', label: 'Integrations', routePrefixes: ['/integrations'] },
+  { key: 'administration', label: 'Administration', routePrefixes: ['/administration'] },
+  { key: 'exams', label: 'Exam Configuration', routePrefixes: ['/exams'] },
+  { key: 'report-card-templates', label: 'Report Card Templates', routePrefixes: ['/report-card-templates'] },
+  { key: 'report-cards', label: 'Report Cards', routePrefixes: ['/term-report-cards', '/teacher/report-cards'] },
+  { key: 'classes', label: 'Classes & Sections', routePrefixes: ['/classes'] },
+  { key: 'reception', label: 'Reception Desk', routePrefixes: ['/reception'] },
+  { key: 'employees-hr', label: 'Employees & ID Cards', routePrefixes: ['/admin/employees', '/admin/id-cards', '/admin/qr-management'] },
+  { key: 'staff-attendance-qr', label: 'Staff Attendance (QR)', routePrefixes: ['/admin/attendance-qr'] },
+  { key: 'payroll', label: 'Payroll & Salary', routePrefixes: ['/admin/payroll', '/accountant/salary'] },
+  { key: 'expenses', label: 'Expenses', routePrefixes: ['/accountant/expenses'] },
+  { key: 'accountant-reports', label: 'Accountant Reports', routePrefixes: ['/accountant/reports'] },
+  { key: 'principal-approvals', label: 'Principal Approvals', routePrefixes: ['/principal/approvals', '/principal/leave-approvals', '/principal/discount-approvals'] },
+  { key: 'principal-insights', label: 'Principal Insights', routePrefixes: ['/principal/insights'] },
+  { key: 'marks', label: 'Marks Entry', routePrefixes: ['/teacher/marks'] },
+  { key: 'question-bank', label: 'Question Bank', routePrefixes: ['/teacher/question-bank'] },
+  { key: 'worksheet-generator', label: 'Worksheet Generator', routePrefixes: ['/teacher/worksheet-generator'] },
+  { key: 'planner', label: 'Teacher Planner', routePrefixes: ['/teacher/planner'] },
+  { key: 'syllabus-tracker', label: 'Syllabus Tracker', routePrefixes: ['/teacher/syllabus-tracker'] },
+];
+
 // ── User ──────────────────────────────────────────────────────────────────────
 
 export interface User extends BaseEntity {
@@ -1734,6 +1782,57 @@ export interface CreateEnquiryNotePayload {
 export interface UpdateEnquiryNotePayload {
   content?: string;
   type?: 'general' | 'pinned' | 'private';
+}
+
+// ── Front Desk / Visitor Log ──────────────────────────────────────────────────
+
+export type VisitorPurpose =
+  | 'meet_student'
+  | 'meet_staff'
+  | 'admission_enquiry'
+  | 'fee_payment'
+  | 'delivery'
+  | 'vendor'
+  | 'interview'
+  | 'other';
+
+export interface Visitor extends BaseEntity {
+  name: string;
+  contactNumber: string;
+  purpose: VisitorPurpose;
+  purposeNote?: string;
+  personToVisit: string;
+  checkInTime: string;
+  checkOutTime?: string;
+  recordedById: string;
+  recordedByName: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface CreateVisitorPayload {
+  name: string;
+  contactNumber: string;
+  purpose: VisitorPurpose;
+  purposeNote?: string;
+  personToVisit: string;
+  checkInTime?: string;
+}
+
+export interface CheckOutVisitorPayload {
+  checkOutTime?: string;
+}
+
+export interface VisitorListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  purpose?: VisitorPurpose;
+  onlyOnSite?: boolean;
+  date?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 // ── Timetable & Academic Scheduling ──────────────────────────────────────────

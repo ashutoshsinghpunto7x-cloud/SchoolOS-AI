@@ -1,8 +1,8 @@
 /**
  * Seeds a fully self-contained demo workspace: 5 teacher logins + 1 principal
- * login, each teacher owning a class/section of 20 fake students, with
- * attendance, fee, and admissions-pipeline data so every dashboard widget has
- * something real to render.
+ * login + 1 reception login, each teacher owning a class/section of 20 fake
+ * students, with attendance, fee, and admissions-pipeline data so every
+ * dashboard widget has something real to render.
  *
  * Isolation: everything here is scoped to schoolId = 'DEMO_SCHOOL'. Every
  * collection in this app (User, Student, Teacher, Attendance, FeeRecord,
@@ -67,6 +67,13 @@ const DEMO_PRINCIPAL = {
   username: 'demoprincipal',
   firstName: 'Meera',
   lastName: 'Kapoor',
+};
+
+const DEMO_RECEPTION = {
+  email: 'demoreception@demo.schoolos.ai',
+  username: 'demoreception',
+  firstName: 'Kavita',
+  lastName: 'Rao',
 };
 
 // ── Name pools (kept small and clearly fictional) ──────────────────────────
@@ -180,6 +187,23 @@ async function main() {
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
   console.log(`+ Principal login ready: ${DEMO_PRINCIPAL.email} / ${PASSWORD}`);
+
+  // ── 3b. Reception User login (front desk — no Teacher profile) ─────────────
+  await User.findOneAndUpdate(
+    { email: DEMO_RECEPTION.email },
+    {
+      firstName: DEMO_RECEPTION.firstName,
+      lastName: DEMO_RECEPTION.lastName,
+      email: DEMO_RECEPTION.email,
+      username: DEMO_RECEPTION.username,
+      passwordHash,
+      role: 'reception',
+      schoolId: SCHOOL_ID,
+      status: 'active',
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log(`+ Reception login ready: ${DEMO_RECEPTION.email} / ${PASSWORD}`);
 
   // ── 4. Class-teacher assignments ────────────────────────────────────────────
   for (const { plan, teacherId, teacherName } of teacherProfiles) {
@@ -378,6 +402,7 @@ async function main() {
     console.log(`  ${plan.email}  (or username "${plan.username}")  /  ${PASSWORD}   — class ${plan.classLevel}${plan.section}, ${STUDENTS_PER_TEACHER} students`);
   }
   console.log(`  ${DEMO_PRINCIPAL.email}  (or username "${DEMO_PRINCIPAL.username}")  /  ${PASSWORD}   — principal dashboard`);
+  console.log(`  ${DEMO_RECEPTION.email}  (or username "${DEMO_RECEPTION.username}")  /  ${PASSWORD}   — reception dashboard`);
 
   await mongoose.disconnect();
   console.log('\nDone.');

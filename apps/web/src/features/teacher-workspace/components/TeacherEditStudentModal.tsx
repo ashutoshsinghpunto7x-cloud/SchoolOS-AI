@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { StudentForm, StudentFormValues } from '@/features/students/components/StudentForm';
 import { useCreateChangeRequest } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { useUpdateStudentName } from '@/features/students/hooks/useStudents';
 import type { Student } from '@schoolos/types';
 
 interface Props {
@@ -50,7 +51,9 @@ function diffChanges(values: StudentFormValues, student: Student): Record<string
 }
 
 export function TeacherEditStudentModal({ student, onClose }: Props) {
-  const { mutateAsync, isPending } = useCreateChangeRequest();
+  const { mutateAsync, isPending: isSendingRequest } = useCreateChangeRequest();
+  const { mutateAsync: updateName, isPending: isSavingName } = useUpdateStudentName(student._id);
+  const isPending = isSendingRequest || isSavingName;
 
   async function handleSubmit(values: StudentFormValues) {
     const changes = diffChanges(values, student);
@@ -60,14 +63,26 @@ export function TeacherEditStudentModal({ student, onClose }: Props) {
       return;
     }
 
+    // Name typo fixes apply immediately (no admin approval needed) — everything
+    // else still goes through the change-request review flow.
+    const { fullName: nameChange, ...otherChanges } = changes;
+
     try {
-      await mutateAsync({ studentId: student._id, changes });
-      toast.success('Change request sent', {
-        description: 'A school admin will review it before it applies.',
-      });
+      if (nameChange !== undefined) {
+        await updateName(nameChange as string);
+      }
+
+      if (Object.keys(otherChanges).length > 0) {
+        await mutateAsync({ studentId: student._id, changes: otherChanges });
+        toast.success(nameChange !== undefined ? 'Name updated. Other changes sent for approval.' : 'Change request sent', {
+          description: 'A school admin will review the remaining changes before they apply.',
+        });
+      } else {
+        toast.success('Name updated');
+      }
       onClose();
     } catch (err) {
-      toast.error('Failed to send change request', {
+      toast.error(nameChange !== undefined ? 'Failed to update name' : 'Failed to send change request', {
         description: err instanceof Error ? err.message : 'Please try again.',
       });
     }
@@ -79,7 +94,7 @@ export function TeacherEditStudentModal({ student, onClose }: Props) {
         <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
           <div>
             <h3 className="text-base font-bold text-gray-900">Edit Student</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Changes go to a school admin for approval before applying.</p>
+            <p className="text-xs text-gray-400 mt-0.5">Name updates apply immediately. Other changes go to a school admin for approval.</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100" type="button">
             <X className="w-4 h-4 text-gray-500" />
@@ -91,7 +106,7 @@ export function TeacherEditStudentModal({ student, onClose }: Props) {
             initialData={student}
             onSubmit={handleSubmit}
             isLoading={isPending}
-            submitLabel="Send for Approval"
+            submitLabel="Save Changes"
             showMonthlyFee={false}
           />
         </div>

@@ -27,6 +27,9 @@ export const PERMISSIONS = {
   FEATURE_FLAGS_MANAGE: 'feature-flags.manage',
   MAINTENANCE_VIEW: 'maintenance.view',
   MAINTENANCE_MANAGE: 'maintenance.manage',
+  MODULE_ACCESS_VIEW: 'module-access.view',
+  MODULE_ACCESS_MANAGE: 'module-access.manage',
+  VISITORS_MANAGE: 'visitors.manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -40,17 +43,18 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'students.update',
     'communications.view',
     'communications.create',
+    'visitors.manage',
   ],
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
   // Internal SchoolOS staff — Ops Center only, no tenant-facing permissions.
   // Feature-flag management (create/delete/rollout/global toggle) is reserved
   // for owner/super_admin; the rest of Ops staff can only view flag status.
-  owner: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage'],
-  super_admin: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage'],
-  devops: ['ops.view', 'feature-flags.view', 'maintenance.view'],
-  developer: ['ops.view', 'feature-flags.view', 'maintenance.view'],
-  support: ['ops.view', 'feature-flags.view', 'maintenance.view'],
+  owner: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage', 'module-access.view', 'module-access.manage'],
+  super_admin: ['ops.view', 'feature-flags.view', 'feature-flags.manage', 'maintenance.view', 'maintenance.manage', 'module-access.view', 'module-access.manage'],
+  devops: ['ops.view', 'feature-flags.view', 'maintenance.view', 'module-access.view'],
+  developer: ['ops.view', 'feature-flags.view', 'maintenance.view', 'module-access.view'],
+  support: ['ops.view', 'feature-flags.view', 'maintenance.view', 'module-access.view'],
 };
 
 export const ROLE_META: Record<UserRole, { label: string; description: string }> = {
@@ -93,6 +97,9 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'feature-flags.manage': { label: 'Manage Feature Flags', category: 'Feature Flags' },
   'maintenance.view': { label: 'View Maintenance Mode', category: 'Maintenance' },
   'maintenance.manage': { label: 'Manage Maintenance Mode', category: 'Maintenance' },
+  'module-access.view': { label: 'View Module Access', category: 'Module Access' },
+  'module-access.manage': { label: 'Manage Module Access', category: 'Module Access' },
+  'visitors.manage': { label: 'Manage Visitor Log', category: 'Front Desk' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

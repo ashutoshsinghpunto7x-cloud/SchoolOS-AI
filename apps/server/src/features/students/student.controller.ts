@@ -60,6 +60,14 @@ export const studentController = {
     } catch (err) { next(err); }
   },
 
+  async updateName(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const student = await studentService.updateStudentName(req.params.id, req.body, ctx);
+      sendSuccess(res, student, 'Name updated');
+    } catch (err) { next(err); }
+  },
+
   async updateFeeProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);

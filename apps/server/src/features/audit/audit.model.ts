@@ -117,6 +117,9 @@ export type AuditAction =
   | 'enquiry.stage_changed'
   | 'enquiry.converted'
   | 'enquiry.deleted'
+  | 'visitor.checked_in'
+  | 'visitor.checked_out'
+  | 'visitor.deleted'
   | 'timetable.created'
   | 'timetable.updated'
   | 'timetable.published'
@@ -228,7 +231,9 @@ export type AuditAction =
   | 'feature_flag.rollback'
   | 'feature_flag.assignment.created'
   | 'feature_flag.assignment.removed'
-  | 'feature_flag.tester_flags_updated';
+  | 'feature_flag.tester_flags_updated'
+  | 'module_access.restricted'
+  | 'module_access.restored';
 
 export interface IAuditLog extends Document {
   userId: string;

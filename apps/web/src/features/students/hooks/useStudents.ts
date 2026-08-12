@@ -92,6 +92,17 @@ export const useUpdateRollNumber = (id: string) => {
   });
 };
 
+export const useUpdateStudentName = (id: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (fullName: string) => studentsApi.updateName(id, fullName),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.all });
+      queryClient.setQueryData(studentKeys.detail(id), updated);
+    },
+  });
+};
+
 /** Assigns roll numbers 1..N to a set of students in the given order (e.g.
  * alphabetical by name) — the same order teachers already use by hand, just
  * applied in one action instead of editing each student individually. */

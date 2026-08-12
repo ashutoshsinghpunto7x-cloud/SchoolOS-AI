@@ -45,6 +45,20 @@ const ACTION_CARDS = [
     buttonLabel: 'Open Messages',
     accent: 'emerald' as const,
   },
+  {
+    id: 'visitors',
+    title: 'Visitor Log',
+    description: 'Record a visitor check-in with their purpose of visit, and check them out.',
+    buttonLabel: 'Open Visitor Log',
+    accent: 'blue' as const,
+  },
+  {
+    id: 'attendance',
+    title: 'Attendance Records',
+    description: "View any class's attendance and print or save it as a PDF for offline records.",
+    buttonLabel: 'View Attendance',
+    accent: 'amber' as const,
+  },
 ] as const;
 
 const TIMELINE_ENTRIES: TimelineEntry[] = [
@@ -91,6 +105,8 @@ const ACTION_ROUTES: Record<string, string> = {
   followups: '/communication',
   call: '/communication',
   whatsapp: '/communication',
+  visitors: '/reception/visitors',
+  attendance: '/reception/attendance',
 };
 
 // ── ReceptionWorkspace ───────────────────────────────────────────────────────

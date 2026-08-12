@@ -74,6 +74,17 @@ export const studentsApi = {
     }
   },
 
+  /** Low-risk quick-edit — name typo fixes, exempt from the change-request approval
+   * flow, but server-scoped to the teacher's own assigned class. */
+  async updateName(id: string, fullName: string): Promise<Student> {
+    try {
+      const res = await apiClient.patch<ApiResponse<Student>>(`/students/${id}/name`, { fullName });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   /** Roll No./Class/Section/Monthly Tuition Fee — used by the accountant workspace's Collect Fee card. */
   async updateFeeProfile(id: string, payload: UpdateFeeProfilePayload): Promise<Student> {
     try {

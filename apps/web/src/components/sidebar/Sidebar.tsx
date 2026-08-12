@@ -42,6 +42,19 @@ import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSet
 import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
+// Reception gets its own dedicated nav, focused on front-desk tasks — not
+// the full admin operational toolbox.
+const NAV_ITEMS_RECEPTION = [
+  { label: 'Dashboard',           icon: LayoutDashboard, path: '/reception',            end: true  },
+  { label: 'Visitor Log',         icon: UserPlus,        path: '/reception/visitors',   end: false },
+  { label: 'Attendance Records',  icon: CalendarCheck,   path: '/reception/attendance', end: false },
+  { label: 'Students',            icon: GraduationCap,   path: '/students',             end: false },
+  { label: 'Admissions',          icon: ClipboardList,   path: '/enquiries',            end: false },
+  { label: 'Teachers',            icon: Users,           path: '/teachers',             end: false },
+  { label: 'Communication',       icon: MessageSquare,   path: '/communication',        end: false },
+  { label: 'Messages',            icon: Mail,            path: '/messages',             end: false },
+] as const;
+
 const NAV_ITEMS_ALL = [
   { label: 'Reception',      icon: LayoutDashboard, path: '/reception' },
   { label: 'Students',       icon: GraduationCap,   path: '/students' },
@@ -279,6 +292,21 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
               Principal Portal
             </p>
             {NAV_ITEMS_PRINCIPAL.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                to={item.path}
+                icon={item.icon}
+                label={item.label}
+                end={item.end}
+              />
+            ))}
+          </>
+        ) : user?.role === 'reception' ? (
+          <>
+            <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Reception Portal
+            </p>
+            {NAV_ITEMS_RECEPTION.map((item) => (
               <SidebarNavItem
                 key={item.path}
                 to={item.path}

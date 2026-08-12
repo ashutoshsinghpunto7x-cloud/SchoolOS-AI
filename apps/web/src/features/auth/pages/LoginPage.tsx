@@ -1,11 +1,9 @@
 import { useState, useEffect, memo, FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, Lock, Loader2, Eye, EyeOff, ArrowRight, Fingerprint } from 'lucide-react';
+import { User, Lock, Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleHome';
 import type { UserRole } from '@schoolos/types';
-import { PasskeySetupPrompt, wasPasskeyPromptDismissed } from '../components/PasskeySetupPrompt';
-import { webauthnApi } from '../api/webauthn.api';
 import { pingServerAwake, ApiError } from '../../../services/api';
 
 const isMaintenanceModeError = (err: unknown): boolean => err instanceof ApiError && err.code === 'MAINTENANCE_MODE';
@@ -65,7 +63,7 @@ const DotGrid = memo(({ className = '' }: { className?: string }) => (
 ));
 
 export const LoginPage = () => {
-  const { login, loginWithPasskey, isPasskeyAvailable, isAuthenticated, user } = useAuthContext();
+  const { login, isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const transparentLogo = useChromaKeyedLogo(fnicLogo);
@@ -76,9 +74,7 @@ export const LoginPage = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
   const [slowLoading, setSlowLoading] = useState(false);
-  const [passkeyPrompt, setPasskeyPrompt] = useState<{ email: string } | null>(null);
 
   // The backend runs on a free-tier host that spins down when idle, so the
   // first request after inactivity can take 30-50s to wake it. Ping it the
@@ -105,17 +101,13 @@ export const LoginPage = () => {
     navigate(from, { replace: true });
   };
 
-  // Redirect if already logged in (e.g. navigating back to /login manually) —
-  // suppressed while the post-login passkey setup prompt is showing, since
-  // `user` becomes non-null the instant login() resolves, which would
-  // otherwise race this redirect ahead of the prompt.
+  // Redirect if already logged in (e.g. navigating back to /login manually).
   useEffect(() => {
-    if (passkeyPrompt) return;
     if (isAuthenticated && user) {
       goHome(user.role);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user, passkeyPrompt]);
+  }, [isAuthenticated, user]);
 
   const handlePasswordSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -126,13 +118,6 @@ export const LoginPage = () => {
 
     try {
       const loggedInUser = await login(email.trim(), password);
-      if (isPasskeyAvailable && !wasPasskeyPromptDismissed(loggedInUser.email)) {
-        const existing = await webauthnApi.listCredentials().catch(() => []);
-        if (existing.length === 0) {
-          setPasskeyPrompt({ email: loggedInUser.email });
-          return;
-        }
-      }
       goHome(loggedInUser.role);
     } catch (err) {
       if (isMaintenanceModeError(err)) {
@@ -142,23 +127,6 @@ export const LoginPage = () => {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handlePasskeySubmit = async () => {
-    setError('');
-    setIsPasskeyLoading(true);
-    try {
-      const loggedInUser = await loginWithPasskey();
-      goHome(loggedInUser.role);
-    } catch (err) {
-      if (isMaintenanceModeError(err)) {
-        navigate('/under-maintenance', { replace: true });
-        return;
-      }
-      setError(err instanceof Error ? err.message : 'Fingerprint sign-in failed. Please try again.');
-    } finally {
-      setIsPasskeyLoading(false);
     }
   };
 
@@ -354,35 +322,6 @@ export const LoginPage = () => {
 
               </form>
 
-              {isPasskeyAvailable && (
-                <div className="mt-4 flex flex-col items-center gap-2">
-                  <div className="flex w-full items-center gap-3 text-xs font-medium text-zinc-600">
-                    <div className="h-px flex-1 bg-white/[0.08]" />
-                    or
-                    <div className="h-px flex-1 bg-white/[0.08]" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePasskeySubmit}
-                    disabled={isPasskeyLoading}
-                    aria-label="Sign in with fingerprint or Face ID"
-                    className="mt-1 flex h-20 w-20 items-center justify-center rounded-full border-2 border-orange-500/70
-                               bg-[#131419] text-orange-500 shadow-[0_0_35px_rgba(249,115,22,0.25)]
-                               transition-all duration-150 hover:bg-[#181a20] hover:shadow-[0_0_45px_rgba(249,115,22,0.4)]
-                               active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-                  >
-                    {isPasskeyLoading ? (
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                    ) : (
-                      <Fingerprint className="h-9 w-9" />
-                    )}
-                  </button>
-                  <p className="text-sm font-semibold text-zinc-400">
-                    {isPasskeyLoading ? 'Verifying…' : 'Tap to sign in'}
-                  </p>
-                </div>
-              )}
-
             {/* Need help footer */}
             <div className="border-t border-white/[0.08] my-3" />
 
@@ -393,17 +332,6 @@ export const LoginPage = () => {
           </div>
         </div>
       </main>
-
-      {passkeyPrompt && (
-        <PasskeySetupPrompt
-          email={passkeyPrompt.email}
-          onDone={() => {
-            const role = user?.role;
-            setPasskeyPrompt(null);
-            if (role) goHome(role);
-          }}
-        />
-      )}
     </div>
   );
 };

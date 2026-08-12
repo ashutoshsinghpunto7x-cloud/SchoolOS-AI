@@ -85,6 +85,14 @@ const ReceptionWorkspace = lazyPage(
   () => import('@/features/reception/pages/ReceptionWorkspace'),
   'ReceptionWorkspace',
 );
+const VisitorLogPage = lazyPage(
+  () => import('@/features/reception/pages/VisitorLogPage'),
+  'VisitorLogPage',
+);
+const ReceptionAttendancePage = lazyPage(
+  () => import('@/features/reception/pages/ReceptionAttendancePage'),
+  'ReceptionAttendancePage',
+);
 const StudentListPage = lazyPage(
   () => import('@/features/students/pages/StudentListPage'),
   'StudentListPage',
@@ -176,6 +184,10 @@ const OpsFeatureFlagDetailPage = lazyPage(
 const OpsMaintenancePage = lazyPage(
   () => import('@/features/ops-center/pages/OpsMaintenancePage'),
   'OpsMaintenancePage',
+);
+const OpsModuleAccessPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsModuleAccessPage'),
+  'OpsModuleAccessPage',
 );
 const OpsAlertsPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsAlertsPage'),
@@ -842,6 +854,7 @@ export const router = createBrowserRouter([
                   { path: 'feature-flags', element: <OpsFeatureFlagsPage /> },
                   { path: 'feature-flags/:key', element: <OpsFeatureFlagDetailPage /> },
                   { path: 'maintenance', element: <OpsMaintenancePage /> },
+                  { path: 'module-access', element: <OpsModuleAccessPage /> },
                   { path: 'alerts', element: <OpsAlertsPage /> },
                   { path: 'settings', element: <OpsSettingsPage /> },
                   { path: 'infrastructure', element: <OpsInfrastructurePage /> },
@@ -974,6 +987,8 @@ export const router = createBrowserRouter([
 
               // Reception
               { path: 'reception', element: <ReceptionWorkspace /> },
+              { path: 'reception/visitors', element: <VisitorLogPage /> },
+              { path: 'reception/attendance', element: <ReceptionAttendancePage /> },
 
               // Students
               { path: 'students', element: <StudentListPage /> },

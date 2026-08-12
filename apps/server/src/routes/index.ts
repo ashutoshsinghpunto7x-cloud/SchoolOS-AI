@@ -11,6 +11,7 @@ import attendanceRouter from '../features/attendance/attendance.routes';
 import feeRouter from '../features/fees/fee.routes';
 import eventRouter from '../features/events/event.routes';
 import enquiryRouter from '../features/enquiries/enquiry.routes';
+import visitorRouter from '../features/visitors/visitor.routes';
 import timetableRouter from '../features/timetable/timetable.routes';
 import teacherTimetableRouter from '../features/teacher-timetable/teacher-timetable.routes';
 import principalRouter from '../features/principal/principal.routes';
@@ -54,6 +55,8 @@ import featureFlagRouter from '../features/feature-flags/feature-flag.routes';
 import featureFlagPublicRouter from '../features/feature-flags/feature-flag.public.routes';
 import maintenanceRouter from '../features/maintenance/maintenance.routes';
 import maintenancePublicRouter from '../features/maintenance/maintenance.public.routes';
+import moduleAccessRouter from '../features/module-access/module-restriction.routes';
+import moduleAccessPublicRouter from '../features/module-access/module-restriction.public.routes';
 
 const router = Router();
 
@@ -66,6 +69,7 @@ router.use('/attendance', attendanceRouter);
 router.use('/fees', feeRouter);
 router.use('/events', eventRouter);
 router.use('/enquiries', enquiryRouter);
+router.use('/visitors', visitorRouter);
 router.use('/timetable', timetableRouter);
 router.use('/teacher-timetable', teacherTimetableRouter);
 router.use('/principal', principalRouter);
@@ -112,5 +116,7 @@ router.use('/ops/feature-flags', featureFlagRouter);
 router.use('/feature-flags', featureFlagPublicRouter);
 router.use('/ops/maintenance', maintenanceRouter);
 router.use('/maintenance', maintenancePublicRouter);
+router.use('/ops/module-access', moduleAccessRouter);
+router.use('/module-access', moduleAccessPublicRouter);
 
 export default router;
