@@ -1193,10 +1193,9 @@ export function TeacherAttendancePage() {
               <button
                 type="button"
                 onClick={() => setSwipeMode((v) => !v)}
-                className="h-11 px-3 flex items-center gap-2 bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0"
+                className="h-11 w-11 flex items-center justify-center bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0"
                 title="Toggle swipe mode"
               >
-                <span className="text-xs font-semibold text-gray-500 dark:text-white/50">Swipe</span>
                 <span
                   className={cn(
                     'relative w-9 h-5 rounded-full transition-colors shrink-0',
