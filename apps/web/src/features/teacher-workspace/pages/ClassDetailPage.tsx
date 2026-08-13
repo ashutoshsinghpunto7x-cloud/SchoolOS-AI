@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, CalendarCheck, Loader2, AlertCircle, SmilePlus } from 'lucide-react';
+import { ArrowLeft, BookOpen, CalendarCheck, Loader2, AlertCircle, SmilePlus, Users } from 'lucide-react';
 import { useTimetables, usePeriodSlots } from '@/features/timetable/hooks/useTimetable';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
@@ -62,7 +62,7 @@ export function ClassDetailPage() {
           </div>
         </div>
         {(isClassTeacher || subjectsTaught.length > 0) && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isClassTeacher && (
               <button
                 onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
@@ -79,6 +79,15 @@ export function ClassDetailPage() {
               >
                 <SmilePlus className="w-3.5 h-3.5" />
                 Mark Behaviour
+              </button>
+            )}
+            {isClassTeacher && (
+              <button
+                onClick={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
+                className="flex-1 h-10 px-3 bg-white dark:bg-white/5 border border-[#5B21B6]/20 dark:border-violet-400/20 text-[#5B21B6] dark:text-violet-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#F5F3FF] dark:hover:bg-white/10 transition-colors"
+              >
+                <Users className="w-3.5 h-3.5" />
+                Manage Students
               </button>
             )}
           </div>

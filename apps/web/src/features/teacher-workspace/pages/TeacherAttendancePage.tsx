@@ -1282,6 +1282,16 @@ export function TeacherAttendancePage() {
                   </>
                 )}
               </div>
+              {isTeacherRole && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
+                  className="w-11 h-11 flex items-center justify-center bg-white dark:bg-[#150C29] border border-gray-200 dark:border-white/10 rounded-xl shrink-0 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  title="Manage students"
+                >
+                  <Users className="w-4 h-4 text-gray-500 dark:text-white/50" />
+                </button>
+              )}
             </div>
           )}
 

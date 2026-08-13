@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Search,
   UserPlus,
-  Trash2,
   GraduationCap,
   AlertCircle,
   Users,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import {
   useStudentsPaginated,
-  useDeleteStudent,
   useUpdateRollNumber,
   useUploadStudentPhoto,
   useAutoAssignRollNumbers,
@@ -77,16 +75,13 @@ function RollNumberEditor({ student }: { student: Student }) {
 function StudentCard({
   student,
   index,
-  onDelete,
   onEdit,
 }: {
   student: Student;
   index: number;
-  onDelete: (id: string) => void;
   onEdit: (student: Student) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: uploadPhoto, isPending: uploadingPhoto } = useUploadStudentPhoto(student._id);
 
@@ -180,44 +175,17 @@ function StudentCard({
             {student.admissionStatus}
           </span>
 
-          {/* Edit + Delete */}
-          {confirmDelete ? (
-            <div className="flex gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => { onDelete(student._id); setConfirmDelete(false); }}
-                className="h-8 px-2.5 bg-red-500 text-white rounded-xl text-xs font-bold hover:bg-red-600 transition-colors"
-              >
-                Yes
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="h-8 px-2.5 bg-gray-100 text-gray-600 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
-              >
-                No
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => onEdit(student)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#A855F7]/10 hover:text-[#5B21B6] transition-colors"
-                title="Request an edit"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-red-50 hover:text-red-500 transition-colors"
-                title="Remove student"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+          {/* Edit — deleting a student is admin-only, so no delete action here */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => onEdit(student)}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-300 hover:bg-[#A855F7]/10 hover:text-[#5B21B6] transition-colors"
+              title="Request an edit"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -254,7 +222,6 @@ export function TeacherStudentListPage() {
     limit: 300,
   });
 
-  const { mutate: deleteStudent } = useDeleteStudent();
   const { mutateAsync: autoAssignRollNumbers, isPending: assigningRollNumbers } = useAutoAssignRollNumbers();
 
   const students: Student[] = data?.data ?? [];
@@ -375,7 +342,6 @@ export function TeacherStudentListPage() {
               key={s._id}
               student={s}
               index={i}
-              onDelete={(id) => deleteStudent(id)}
               onEdit={setEditingStudent}
             />
           ))
