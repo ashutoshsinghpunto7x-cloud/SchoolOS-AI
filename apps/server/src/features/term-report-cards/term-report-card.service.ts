@@ -350,6 +350,7 @@ export const termReportCardService = {
           row.mainExamScore = correction.mainExamScore;
         }
         if (correction.grade !== undefined) row.grade = correction.grade;
+        if (correction.evaluationType !== undefined) row.evaluationType = correction.evaluationType;
       }
       card.markModified('firstTerm');
       card.markModified('finalTerm');

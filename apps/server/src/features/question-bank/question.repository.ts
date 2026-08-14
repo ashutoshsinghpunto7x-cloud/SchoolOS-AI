@@ -1,4 +1,4 @@
-import { Question, IQuestion, QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
+import { Question, IQuestion, QuestionType, QuestionDifficulty, BloomsLevel, IQuestionSourceRef } from './question.model';
 
 export interface QuestionListOptions {
   page?: number;
@@ -45,6 +45,7 @@ export interface CreateQuestionData {
   keywords: string[];
   source?: string;
   createdBy: string;
+  sourceRef?: IQuestionSourceRef;
 }
 
 export const questionRepository = {

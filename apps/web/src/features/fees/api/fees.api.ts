@@ -17,6 +17,17 @@ import type {
 
 const BASE = '/fees';
 
+export interface WhatsappReceiptStatus {
+  _id: string;
+  status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED' | 'SKIPPED';
+  phoneNumber?: string;
+  sentAt?: string;
+  deliveredAt?: string;
+  readAt?: string;
+  errorMessage?: string;
+  retryCount: number;
+}
+
 export const feesApi = {
   create: async (payload: CreateFeeRecordPayload): Promise<FeeRecord> => {
     try {
@@ -93,6 +104,29 @@ export const feesApi = {
     try {
       const res = await apiClient.get<{ data: FeeRecord[] }>(`${BASE}/student/${studentId}`, { params: opts });
       return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Poll target — reflects Meta webhook status updates as they arrive (SENT → DELIVERED → READ), or null before the auto-trigger has written a log yet. */
+  getWhatsappReceiptStatus: async (paymentId: string): Promise<WhatsappReceiptStatus | null> => {
+    try {
+      const res = await apiClient.get<{ data: WhatsappReceiptStatus | null }>(`${BASE}/payments/${paymentId}/whatsapp-receipt`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  retryWhatsappReceipt: async (paymentId: string): Promise<WhatsappReceiptStatus> => {
+    try {
+      const res = await apiClient.post<{ data: WhatsappReceiptStatus }>(`${BASE}/payments/${paymentId}/whatsapp-receipt/retry`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Real server-generated PDF — same generator used for the WhatsApp attachment. */
+  downloadReceiptPdf: async (paymentId: string): Promise<Blob> => {
+    try {
+      const res = await apiClient.get(`${BASE}/payments/${paymentId}/receipt.pdf`, { responseType: 'blob' });
+      return res.data as Blob;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 };

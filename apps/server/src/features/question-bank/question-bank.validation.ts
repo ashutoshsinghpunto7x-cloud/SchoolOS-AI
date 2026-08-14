@@ -13,6 +13,12 @@ export const extractionTargetSchema = z.object({
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
 });
 
+const sourceRefSchema = z.object({
+  sourceId: z.string().min(1),
+  pageNumber: z.number().int().min(1).optional(),
+  blockIndex: z.number().int().min(0).optional(),
+});
+
 const extractedQuestionDraftSchema = z.object({
   questionText: z.string().min(1),
   questionType: z.enum(QUESTION_TYPES),
@@ -26,6 +32,7 @@ const extractedQuestionDraftSchema = z.object({
   chapterName: z.string().min(1),
   topic: z.string().nullish(),
   source: z.string().nullish(),
+  sourceRef: sourceRefSchema.nullish(),
 });
 
 export const confirmExtractedQuestionsSchema = z.object({
@@ -84,8 +91,58 @@ export const listSourcesSchema = z.object({
   subject: z.string().trim().optional(),
 });
 
+// ── Structured chapter capture (layout-aware OCR) ─────────────────────────────
+// `.nullish()` (not just `.optional()`) throughout this section: these blocks
+// round-trip through ExtractionJob's `Schema.Types.Mixed` result field between
+// enqueue and save, and MongoDB's driver serializes JS `undefined` object
+// properties as BSON null on write — so a field that was never set comes back
+// as `null`, not simply absent, and validation has to accept both.
+
+const listBlockItemSchema: z.ZodType<{ text: string; items?: { text: string; items?: unknown[] }[] | null }> = z.lazy(() =>
+  z.object({ text: z.string().min(1), items: z.array(listBlockItemSchema).nullish() }),
+);
+
+const blockConfidenceSchema = z.enum(['high', 'review', 'low']).nullish();
+
+const contentBlockSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('heading'), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), text: z.string().min(1), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('paragraph'), text: z.string().min(1), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('list'), ordered: z.boolean(), items: z.array(listBlockItemSchema).min(1), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('table'), caption: z.string().nullish(), headers: z.array(z.string()), rows: z.array(z.array(z.string())), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('equation'), latex: z.string().min(1), displayText: z.string().nullish(), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('figure'), figureNumber: z.string().nullish(), caption: z.string().nullish(), labels: z.array(z.string()).nullish(), confidence: blockConfidenceSchema }),
+  z.object({ type: z.enum(['note', 'quote']), text: z.string().min(1), confidence: blockConfidenceSchema }),
+]);
+
+const chapterPageSchema = z.object({
+  pageNumber: z.number().int().min(1),
+  blocks: z.array(contentBlockSchema),
+  confidence: z.enum(['high', 'review', 'low']).nullish(),
+  pageError: z.string().nullish(),
+});
+
 export const updateSourceSchema = z.object({
-  chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
+  chapterName: z.string().min(1).trim().optional(),
+  documentTitle: z.string().trim().optional(),
+  pages: z.array(chapterPageSchema).optional(),
+  reviewStatus: z.enum(['ready_for_review', 'saved']).optional(),
+}).refine((d) => d.chapterName !== undefined || d.documentTitle !== undefined || d.pages !== undefined || d.reviewStatus !== undefined, {
+  message: 'At least one field is required',
+});
+
+export const retryPageParamsSchema = z.object({
+  id: z.string().min(1),
+  pageNumber: z.coerce.number().int().min(1),
+});
+
+export const saveChapterSourceSchema = z.object({
+  class: z.string({ required_error: 'class is required' }).min(1).trim(),
+  subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+  documentTitle: z.string().trim().optional(),
+  language: z.string().trim().optional(),
+  chapterName: z.string().trim().optional(),
+  fileName: z.string().optional(),
+  pages: z.array(chapterPageSchema).min(1, 'At least one page is required'),
 });
 
 // ── Paper generation ───────────────────────────────────────────────────────────
@@ -119,3 +176,5 @@ export type ListChaptersInput = z.infer<typeof listChaptersSchema>;
 export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
 export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;
 export type PaperGenerationConfigInput = z.infer<typeof paperGenerationConfigSchema>;
+export type RetryPageParamsInput = z.infer<typeof retryPageParamsSchema>;
+export type SaveChapterSourceInput = z.infer<typeof saveChapterSourceSchema>;

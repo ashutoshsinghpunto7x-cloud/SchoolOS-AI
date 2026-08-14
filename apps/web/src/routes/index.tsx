@@ -149,6 +149,10 @@ const OpsApplicationsPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsApplicationsPage'),
   'OpsApplicationsPage',
 );
+const OpsChapterCaptureUsagePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsChapterCaptureUsagePage'),
+  'OpsChapterCaptureUsagePage',
+);
 const OpsSchoolDetailPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsSchoolDetailPage'),
   'OpsSchoolDetailPage',
@@ -573,6 +577,14 @@ const QuestionSourceDetailPage = lazyPage(
   () => import('@/features/question-bank/pages/QuestionSourceDetailPage'),
   'QuestionSourceDetailPage',
 );
+const ChapterCapturePage = lazyPage(
+  () => import('@/features/question-bank/pages/ChapterCapturePage'),
+  'ChapterCapturePage',
+);
+const ChapterReviewPage = lazyPage(
+  () => import('@/features/question-bank/pages/ChapterReviewPage'),
+  'ChapterReviewPage',
+);
 const QuestionChapterPage = lazyPage(
   () => import('@/features/question-bank/pages/QuestionChapterPage'),
   'QuestionChapterPage',
@@ -862,6 +874,7 @@ export const router = createBrowserRouter([
                   { path: 'logs', element: <OpsLogsPage /> },
                   { path: 'audit-trail', element: <OpsAuditTrailPage /> },
                   { path: 'applications', element: <OpsApplicationsPage /> },
+                  { path: 'chapter-capture-usage', element: <OpsChapterCaptureUsagePage /> },
                   { path: 'performance', element: <OpsPerformancePage /> },
                 ],
               },
@@ -897,6 +910,8 @@ export const router = createBrowserRouter([
                       { path: 'teacher/question-bank',                                element: <QuestionBankPage /> },
                       { path: 'teacher/question-bank/upload',                         element: <QuestionUploadPage /> },
                       { path: 'teacher/question-bank/sources/:sourceId',               element: <QuestionSourceDetailPage /> },
+                      { path: 'teacher/question-bank/capture',                        element: <ChapterCapturePage /> },
+                      { path: 'teacher/question-bank/capture/:jobId/review',           element: <ChapterReviewPage /> },
                       { path: 'teacher/question-bank/chapters/:chapterId',             element: <QuestionChapterPage /> },
                       { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },

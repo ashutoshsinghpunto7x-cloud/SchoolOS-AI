@@ -20,6 +20,12 @@ export interface IQuestionUsageEntry {
   usedAt: Date;
 }
 
+export interface IQuestionSourceRef {
+  sourceId: string;
+  pageNumber?: number;
+  blockIndex?: number;
+}
+
 export interface IQuestion extends Document {
   schoolId: string;
   class: string;
@@ -41,6 +47,8 @@ export interface IQuestion extends Document {
   createdBy: string;
   isDeleted: boolean;
   deletedAt?: Date;
+  /** Traceability back to the structured chapter capture this question was drafted from, if any — powers "Show source". */
+  sourceRef?: IQuestionSourceRef;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +61,11 @@ const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyz
 
 const usageEntrySchema = new Schema<IQuestionUsageEntry>(
   { examId: { type: String }, usedAt: { type: Date, required: true } },
+  { _id: false },
+);
+
+const sourceRefSchema = new Schema<IQuestionSourceRef>(
+  { sourceId: { type: String, required: true }, pageNumber: { type: Number }, blockIndex: { type: Number } },
   { _id: false },
 );
 
@@ -78,6 +91,7 @@ const questionSchema = new Schema<IQuestion>(
     createdBy:            { type: String, required: true },
     isDeleted:            { type: Boolean, default: false },
     deletedAt:            { type: Date },
+    sourceRef:            { type: sourceRefSchema },
   },
   { timestamps: true, versionKey: false },
 );

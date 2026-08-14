@@ -31,6 +31,7 @@ export interface CreateLogInput {
   errorMessage?: string;
   payload: Record<string, unknown>;
   bulkJobId?: string;
+  sourceId?: string;
   createdBy: string;
 }
 
@@ -45,6 +46,11 @@ export const notificationLogRepository = {
 
   async findByMetaMessageId(metaMessageId: string): Promise<INotificationLog | null> {
     return NotificationLog.findOne({ metaMessageId });
+  },
+
+  /** Idempotency lookup — see the sourceId field/index on the NotificationLog model. */
+  async findBySource(schoolId: string, notificationType: NotificationType, sourceId: string): Promise<INotificationLog | null> {
+    return NotificationLog.findOne({ schoolId, notificationType, sourceId });
   },
 
   async findAll(schoolId: string, opts: FindLogsOptions = {}): Promise<PaginatedLogs> {
@@ -86,6 +92,29 @@ export const notificationLogRepository = {
     return NotificationLog.findByIdAndUpdate(
       id,
       { $set: { status: 'FAILED', errorMessage }, $inc: { retryCount: 1 } },
+      { new: true },
+    );
+  },
+
+  /** Records the outcome of a re-attempted send (e.g. FeeReceiptNotificationService's
+   *  retry, which regenerates the attachment/media rather than replaying a stale
+   *  payload) — always increments retryCount, and merges extra fields (mediaId,
+   *  templateName, providerMessageId) into payload for audit visibility. */
+  async recordRetryAttempt(
+    id: string,
+    outcome: { success: boolean; providerMessageId?: string; errorMessage?: string; payload?: Record<string, unknown> },
+  ): Promise<INotificationLog | null> {
+    return NotificationLog.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          status: outcome.success ? 'SENT' : 'FAILED',
+          ...(outcome.success ? { sentAt: new Date(), metaMessageId: outcome.providerMessageId } : {}),
+          errorMessage: outcome.errorMessage,
+          ...(outcome.payload ? { payload: outcome.payload } : {}),
+        },
+        $inc: { retryCount: 1 },
+      },
       { new: true },
     );
   },

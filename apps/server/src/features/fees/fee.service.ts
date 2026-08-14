@@ -16,6 +16,10 @@ import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { studentRepository } from '../students/student.repository';
+import { schoolSettingsService } from '../school-settings/school-settings.service';
+import { feeReceiptNotificationService } from '../communication/fee-receipt-notification.service';
+import { generateReceiptPdf } from './fee-receipt-pdf.service';
+import { logger } from '../../lib/logger';
 
 // ── Academic-year month helpers (Indian school year: April → March) ────────────
 
@@ -65,6 +69,21 @@ async function ensureOverdueMarked(): Promise<void> {
   if (now - lastOverdueSweep < 60 * 60 * 1000) return;
   lastOverdueSweep = now;
   await feeRepository.markOverdue(new Date()).catch(() => {});
+}
+
+// ── Automatic WhatsApp receipt delivery ─────────────────────────────────────
+// Fired after a payment is committed, never awaited by the caller — WhatsApp/
+// Meta latency must never make fee collection feel slow, and a delivery
+// failure must never touch the (already-successful) fee transaction. See
+// FeeReceiptNotificationService for the send/idempotency/retry logic itself.
+async function triggerFeeReceiptWhatsApp(record: IFeeRecord, payment: IFeePayment, ctx: AuthContext): Promise<void> {
+  try {
+    const settings = await schoolSettingsService.getSettings(ctx.schoolId);
+    if (!settings.communicationSettings.whatsappEnabled) return;
+    await feeReceiptNotificationService.sendReceipt(record, payment, ctx);
+  } catch (err) {
+    logger.error('[FeeService] Auto WhatsApp receipt trigger failed', { paymentId: payment._id.toString(), err });
+  }
 }
 
 // ── Service ───────────────────────────────────────────────────────────────────
@@ -309,6 +328,11 @@ export const feeService = {
       await feeService.rollForwardTuitionFee(updatedRecord, ctx).catch(() => {});
     }
 
+    // Fire-and-forget: Collect Fee → Payment Saved → Receipt Generated →
+    // WhatsApp Receipt Automatically Sent. The accountant's response (below)
+    // never waits on this.
+    triggerFeeReceiptWhatsApp(updatedRecord, payment, ctx).catch(() => {});
+
     return { record: updatedRecord, payment };
   },
 
@@ -449,6 +473,10 @@ export const feeService = {
       // 'pending' record, which the ledger shows only by month name (no year)
       // — reading as "April is pending again" right after April was paid.
       results.push({ record: updatedRecord, payment });
+
+      // One WhatsApp receipt per month paid in this batch — each carries its
+      // own receipt number/PDF, same as if they'd been collected one at a time.
+      triggerFeeReceiptWhatsApp(updatedRecord, payment, ctx).catch(() => {});
     }
 
     auditService.log({
@@ -494,5 +522,40 @@ export const feeService = {
     if (!record) throw new NotFoundError('Fee record');
 
     return { record, payment };
+  },
+
+  /** Loads a payment + its fee record, schoolId-scoped — the shared lookup behind
+   *  the WhatsApp receipt status/retry endpoints and the PDF download route. */
+  async getPaymentWithRecord(paymentId: string, ctx: AuthContext): Promise<{ record: IFeeRecord; payment: IFeePayment }> {
+    const payment = await feePaymentRepository.findById(paymentId, ctx.schoolId);
+    if (!payment) throw new NotFoundError('Payment');
+
+    const record = await feeRepository.findById(payment.feeRecordId, ctx.schoolId);
+    if (!record) throw new NotFoundError('Fee record');
+
+    return { record, payment };
+  },
+
+  /** GET /fees/payments/:id/whatsapp-receipt — poll target for the accountant's post-collection screen. */
+  async getWhatsappReceiptStatus(paymentId: string, ctx: AuthContext) {
+    await feeService.getPaymentWithRecord(paymentId, ctx); // ownership/existence check
+    return feeReceiptNotificationService.getStatus(paymentId, ctx);
+  },
+
+  /** POST /fees/payments/:id/whatsapp-receipt/retry */
+  async retryWhatsappReceipt(paymentId: string, ctx: AuthContext) {
+    const { record, payment } = await feeService.getPaymentWithRecord(paymentId, ctx);
+    return feeReceiptNotificationService.retrySend(record, payment, ctx);
+  },
+
+  /** GET /fees/payments/:id/receipt.pdf — same generator used for the WhatsApp attachment. */
+  async getReceiptPdf(paymentId: string, ctx: AuthContext): Promise<{ buffer: Buffer; filename: string }> {
+    const { record, payment } = await feeService.getPaymentWithRecord(paymentId, ctx);
+    const student = await studentRepository.findById(record.studentId, ctx.schoolId);
+    if (!student) throw new NotFoundError('Student');
+
+    const settings = await schoolSettingsService.getSettings(ctx.schoolId);
+    const buffer = await generateReceiptPdf(record, payment, student, settings);
+    return { buffer, filename: `Receipt-${payment.receiptNumber || paymentId}.pdf` };
   },
 };

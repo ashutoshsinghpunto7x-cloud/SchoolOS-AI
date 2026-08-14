@@ -7,6 +7,13 @@ export interface SendResult {
   errorMessage?: string;
 }
 
+export interface UploadMediaResult {
+  success: boolean;
+  /** Meta media id — reference this (not a URL) in a subsequent template/document send. */
+  mediaId?: string;
+  errorMessage?: string;
+}
+
 export interface SendTextParams {
   to: string;
   body: string;
@@ -65,4 +72,10 @@ export interface ICommunicationChannelProvider {
   // future email/SMS provider isn't forced to implement a no-op.
   sendButtons?(params: SendButtonsParams): Promise<SendResult>;
   sendInteractiveList?(params: SendInteractiveListParams): Promise<SendResult>;
+
+  /** Uploads a document/media buffer to the provider ahead of a template/media
+   *  send (Meta's Cloud API media endpoint) so it can be referenced by id
+   *  instead of a publicly-hosted URL. Optional — only channels that support
+   *  attachments (WhatsApp) implement it. */
+  uploadMedia?(buffer: Buffer, mimeType: string, filename: string): Promise<UploadMediaResult>;
 }

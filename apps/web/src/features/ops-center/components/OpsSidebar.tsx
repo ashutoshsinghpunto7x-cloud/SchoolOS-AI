@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Module Access', path: '/ops/module-access' },
   { label: 'Infrastructure', path: '/ops/infrastructure' },
   { label: 'Applications', path: '/ops/applications' },
+  { label: 'Chapter Capture Usage', path: '/ops/chapter-capture-usage' },
   { label: 'Schools', path: '/ops/schools' },
   { label: 'Database', path: '/ops/database' },
   { label: 'Communications', path: '/ops/communications' },

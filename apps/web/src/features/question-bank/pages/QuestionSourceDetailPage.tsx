@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle, Pencil, Check } from 'lucide-react';
 import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter } from '../hooks/useQuestionBank';
 import { ExtractedDraftsReview, type DraftEdit } from '../components/ExtractedDraftsReview';
+import { BlockEditor } from '../components/ChapterCapture/BlockEditor';
 import type { ExtractedQuestionDraft } from '@schoolos/types';
 
 export function QuestionSourceDetailPage() {
@@ -123,9 +124,24 @@ export function QuestionSourceDetailPage() {
                 )}
               </div>
 
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Extracted text</p>
-              <div className="max-h-72 overflow-y-auto rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/10 p-3">
-                <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap">{source.extractedText}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">
+                {source.pages?.length ? 'Structured content' : 'Extracted text'}
+              </p>
+              <div className="max-h-96 overflow-y-auto rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/10 p-3">
+                {source.pages?.length ? (
+                  <div className="space-y-6">
+                    {source.pages.map((page) => (
+                      <div key={page.pageNumber}>
+                        {source.pages!.length > 1 && (
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Page {page.pageNumber}</p>
+                        )}
+                        <BlockEditor blocks={page.blocks} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700 dark:text-white/70 whitespace-pre-wrap">{source.extractedText}</p>
+                )}
               </div>
             </div>
 

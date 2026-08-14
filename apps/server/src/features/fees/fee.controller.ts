@@ -77,6 +77,35 @@ export const feeController = {
     } catch (err) { next(err); }
   },
 
+  /** GET /fees/payments/:id/whatsapp-receipt — delivery status poll for the post-collection screen */
+  async getWhatsappReceiptStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await feeService.getWhatsappReceiptStatus(req.params.id, ctx);
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /fees/payments/:id/whatsapp-receipt/retry */
+  async retryWhatsappReceipt(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await feeService.retryWhatsappReceipt(req.params.id, ctx);
+      sendSuccess(res, result, 'WhatsApp receipt resent');
+    } catch (err) { next(err); }
+  },
+
+  /** GET /fees/payments/:id/receipt.pdf — same PDF generator used for the WhatsApp attachment */
+  async downloadReceiptPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const { buffer, filename } = await feeService.getReceiptPdf(req.params.id, ctx);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } catch (err) { next(err); }
+  },
+
   /** GET /fees/:id — fee record with payments */
   async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

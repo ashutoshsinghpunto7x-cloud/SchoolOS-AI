@@ -33,6 +33,15 @@ export const DEFAULT_TEMPLATE_BODIES: Record<NotificationType, string> = {
     'Please clear the outstanding balance at the earliest to avoid any inconvenience.\n\n' +
     'Regards,\n{{school_name}}',
 
+  FEE_PAYMENT_RECEIPT:
+    'Dear Parent,\n\n' +
+    'The school fee payment for {{student_name}} has been successfully received.\n\n' +
+    'Amount Paid: ₹{{amount}}\n' +
+    'Receipt No: {{receipt_number}}\n' +
+    'Payment Date: {{payment_date}}\n\n' +
+    'Please find the payment receipt attached with this message.\n\n' +
+    'Regards,\n{{school_name}}',
+
   BIRTHDAY:
     'Dear Parent,\n\n' +
     'Wishing {{student_name}} of Class {{class}}-{{section}} a very Happy Birthday! We hope this year brings joy and success.\n\n' +

@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import type { ContentBlock, ChapterPage } from '@schoolos/types';
 
 export type QuestionSourceKind = 'image' | 'pdf_text';
 
@@ -7,6 +8,12 @@ export type QuestionSourceKind = 'image' | 'pdf_text';
  * from ExtractionJob (which auto-expires after 6h and exists only for the
  * upload → poll flow). Lets a teacher re-run AI structuring on a page they
  * already uploaded without re-scanning/re-uploading it.
+ *
+ * `pages` (layout-aware chapter capture) is optional and additive — plain
+ * single-image/PDF uploads via extractFromImage/extractFromPdf never set it,
+ * and `extractedText` stays the required, always-present field (derived from
+ * `pages` via flattenBlocksToText when present, so downstream consumers like
+ * paper-generator's context slicing keep working unchanged either way).
  */
 export interface IQuestionSource extends Document {
   schoolId: string;
@@ -18,9 +25,25 @@ export interface IQuestionSource extends Document {
   extractedText: string;
   /** Teacher-assigned chapter for this upload — pre-fills every question drafted from it, overriding the AI's per-question guess. */
   chapterName?: string;
+  documentTitle?: string;
+  language?: string;
+  pages?: ChapterPage[];
+  reviewStatus?: 'ready_for_review' | 'saved';
   createdAt: Date;
   updatedAt: Date;
 }
+
+const contentBlockSchema = new Schema<ContentBlock>({}, { strict: false, _id: false });
+
+const chapterPageSchema = new Schema<ChapterPage>(
+  {
+    pageNumber: { type: Number, required: true },
+    blocks:     { type: [contentBlockSchema], default: [] },
+    confidence: { type: String, enum: ['high', 'review', 'low'] },
+    pageError:  { type: String },
+  },
+  { _id: false },
+);
 
 const questionSourceSchema = new Schema<IQuestionSource>(
   {
@@ -32,6 +55,10 @@ const questionSourceSchema = new Schema<IQuestionSource>(
     fileName:      { type: String },
     extractedText: { type: String, required: true },
     chapterName:   { type: String },
+    documentTitle: { type: String },
+    language:      { type: String },
+    pages:         { type: [chapterPageSchema], default: undefined },
+    reviewStatus:  { type: String, enum: ['ready_for_review', 'saved'] },
   },
   { timestamps: true, versionKey: false },
 );

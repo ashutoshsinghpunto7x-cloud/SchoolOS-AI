@@ -129,3 +129,25 @@ export const useReceiptLookup = () =>
   useMutation({
     mutationFn: (receiptNumber: string) => feesApi.getPaymentByReceipt(receiptNumber),
   });
+
+// ── WhatsApp receipt delivery ────────────────────────────────────────────────
+// Fee collection never waits on WhatsApp (see fee.service.ts's fire-and-forget
+// trigger) — this poll is how the post-collection screen finds out what
+// happened, short-interval while still in flight, stopping once terminal.
+const IN_FLIGHT_STATUSES = new Set(['QUEUED', undefined]);
+
+export const useWhatsappReceiptStatus = (paymentId: string | undefined) =>
+  useQuery({
+    queryKey: ['fees', 'whatsapp-receipt', paymentId],
+    queryFn: () => feesApi.getWhatsappReceiptStatus(paymentId!),
+    enabled: !!paymentId,
+    refetchInterval: (query) => (IN_FLIGHT_STATUSES.has(query.state.data?.status) ? 2500 : false),
+  });
+
+export const useRetryWhatsappReceipt = (paymentId: string | undefined) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => feesApi.retryWhatsappReceipt(paymentId!),
+    onSuccess: (data) => qc.setQueryData(['fees', 'whatsapp-receipt', paymentId], data),
+  });
+};

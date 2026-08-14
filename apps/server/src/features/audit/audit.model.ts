@@ -218,6 +218,8 @@ export type AuditAction =
   | 'notification.bulk_job_completed'
   | 'notification.retried'
   | 'notification.webhook_received'
+  | 'notification.fee_receipt_sent'
+  | 'notification.fee_receipt_retried'
   | 'ai_action.previewed'
   | 'ai_action.executed'
   | 'ai_action.failed'

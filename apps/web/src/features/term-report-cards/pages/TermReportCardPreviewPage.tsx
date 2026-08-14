@@ -182,9 +182,17 @@ export function TermReportCardPreviewPage() {
   );
 }
 
-type DraftRow = { unitTest1Score: string; unitTest2Score: string; mainExamScore: string; grade: string };
+type DraftRow = {
+  unitTest1Score: string; unitTest2Score: string; mainExamScore: string; grade: string;
+  evaluationType: import('@schoolos/types').SubjectEvaluationType;
+};
 type TermKey = 'firstTerm' | 'finalTerm';
 const TERM_LABEL: Record<TermKey, string> = { firstTerm: 'First Term', finalTerm: 'Final Term' };
+const EVAL_TYPE_OPTIONS: { value: import('@schoolos/types').SubjectEvaluationType; label: string }[] = [
+  { value: 'marks', label: 'Marks' },
+  { value: 'grade', label: 'Grade only' },
+  { value: 'both', label: 'Marks + Grade' },
+];
 
 /**
  * Lets a teacher fix a wrong score directly on the generated term card, without going back
@@ -212,6 +220,7 @@ function MarksCorrectionPanel({
           unitTest2Score: row.unitTest2Score?.toString() ?? '',
           mainExamScore: row.mainExamScore?.toString() ?? '',
           grade: row.grade ?? '',
+          evaluationType: row.evaluationType,
         };
       }
     });
@@ -225,18 +234,20 @@ function MarksCorrectionPanel({
       for (const row of card[term].subjectRows) {
         const draft = drafts[keyFor(term, row.subjectName)];
         if (!draft) continue;
-        const showMarks = row.evaluationType === 'marks' || row.evaluationType === 'both';
-        const showGrade = row.evaluationType === 'grade' || row.evaluationType === 'both';
+        const showMarks = draft.evaluationType === 'marks' || draft.evaluationType === 'both';
+        const showGrade = draft.evaluationType === 'grade' || draft.evaluationType === 'both';
         const unitTest1Score = showMarks && draft.unitTest1Score.trim() !== '' ? Number(draft.unitTest1Score) : undefined;
         const unitTest2Score = showMarks && draft.unitTest2Score.trim() !== '' ? Number(draft.unitTest2Score) : undefined;
         const mainExamScore = showMarks && draft.mainExamScore.trim() !== '' ? Number(draft.mainExamScore) : undefined;
         const grade = showGrade && draft.grade.trim() !== '' ? draft.grade.trim() : undefined;
-        if (unitTest1Score === undefined && unitTest2Score === undefined && mainExamScore === undefined && grade === undefined) continue;
+        const evaluationTypeChanged = draft.evaluationType !== row.evaluationType;
+        if (unitTest1Score === undefined && unitTest2Score === undefined && mainExamScore === undefined && grade === undefined && !evaluationTypeChanged) continue;
         const correction: import('@schoolos/types').TermSubjectMarkCorrection = { term, subjectName: row.subjectName };
         if (unitTest1Score !== undefined) correction.unitTest1Score = unitTest1Score;
         if (unitTest2Score !== undefined) correction.unitTest2Score = unitTest2Score;
         if (mainExamScore !== undefined) correction.mainExamScore = mainExamScore;
         if (grade !== undefined) correction.grade = grade;
+        if (evaluationTypeChanged) correction.evaluationType = draft.evaluationType;
         subjectMarks.push(correction);
       }
     });
@@ -265,13 +276,24 @@ function MarksCorrectionPanel({
               <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{TERM_LABEL[term]}</p>
               <div className="space-y-1.5">
                 {card[term].subjectRows.map((row) => {
-                  const showMarks = row.evaluationType === 'marks' || row.evaluationType === 'both';
-                  const showGrade = row.evaluationType === 'grade' || row.evaluationType === 'both';
                   const k = keyFor(term, row.subjectName);
-                  const draft = drafts[k] ?? { unitTest1Score: '', unitTest2Score: '', mainExamScore: '', grade: '' };
+                  const draft = drafts[k] ?? { unitTest1Score: '', unitTest2Score: '', mainExamScore: '', grade: '', evaluationType: row.evaluationType };
+                  const showMarks = draft.evaluationType === 'marks' || draft.evaluationType === 'both';
+                  const showGrade = draft.evaluationType === 'grade' || draft.evaluationType === 'both';
                   return (
                     <div key={k} className="flex items-center gap-2 flex-wrap">
                       <span className="w-28 shrink-0 text-xs text-gray-700 truncate">{row.subjectName}</span>
+                      <select
+                        value={draft.evaluationType}
+                        onChange={(e) => setDrafts((d) => ({
+                          ...d,
+                          [k]: { ...draft, evaluationType: e.target.value as import('@schoolos/types').SubjectEvaluationType },
+                        }))}
+                        className="h-8 px-1.5 rounded-md border border-gray-200 text-xs text-gray-600"
+                        title="How this subject is scored for this student"
+                      >
+                        {EVAL_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                      </select>
                       {showMarks && (
                         <>
                           <LabeledScoreInput label="UT1" value={draft.unitTest1Score} max={row.unitTestMaxMarks}

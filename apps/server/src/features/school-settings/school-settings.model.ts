@@ -62,6 +62,10 @@ export interface ICommunicationSettings {
   dailyLimit: number;
   /** Automatic retry attempts for a failed send before it's left as FAILED. */
   retryCount: number;
+  /** Meta-approved WhatsApp template name used for automatic fee-payment receipt
+   *  delivery — configurable so a school can switch to a differently-named
+   *  approved template later without a code change. */
+  feeReceiptWhatsappTemplate: string;
 }
 
 export interface ISchoolSettings extends Document {
@@ -123,6 +127,7 @@ export const DEFAULT_COMMUNICATION_SETTINGS: ICommunicationSettings = {
   workingHoursEnd: '20:00',
   dailyLimit: 5000,
   retryCount: 3,
+  feeReceiptWhatsappTemplate: 'fee_payment_receipt',
 };
 
 const attendanceRulesSchema = new Schema<IAttendanceRules>(
@@ -183,6 +188,7 @@ const communicationSettingsSchema = new Schema<ICommunicationSettings>(
     workingHoursEnd:       { type: String, required: true, default: DEFAULT_COMMUNICATION_SETTINGS.workingHoursEnd },
     dailyLimit:            { type: Number, required: true, min: 1, default: DEFAULT_COMMUNICATION_SETTINGS.dailyLimit },
     retryCount:            { type: Number, required: true, min: 0, max: 10, default: DEFAULT_COMMUNICATION_SETTINGS.retryCount },
+    feeReceiptWhatsappTemplate: { type: String, required: true, trim: true, default: DEFAULT_COMMUNICATION_SETTINGS.feeReceiptWhatsappTemplate },
   },
   { _id: false },
 );

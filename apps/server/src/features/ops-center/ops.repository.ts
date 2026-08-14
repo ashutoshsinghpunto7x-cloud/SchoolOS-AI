@@ -8,6 +8,7 @@ import { FeePayment } from '../fees/fee.payment.model';
 import { User } from '../users/user.model';
 import { Communication } from '../communications/communication.model';
 import { Notification } from '../notifications/notification.model';
+import { NotificationLog } from '../communication/notification-log.model';
 import { OPS_ROLES } from '@schoolos/types';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { getMetricsSnapshot } from '../../middlewares/metrics';
@@ -271,6 +272,72 @@ export const opsRepository = {
         readRatePercent: notificationTotal30d > 0 ? Math.round((notificationReadTotal30d / notificationTotal30d) * 100) : 0,
         note: 'Read rate reflects in-app read state — there is no device delivery-confirmation webhook wired up yet, so this is not the same as "delivered".',
       },
+    };
+  },
+
+  /** Fee Receipt WhatsApp Analytics (Ops Centre) — aggregates NotificationLog
+   *  rows for the FEE_PAYMENT_RECEIPT type, filterable by school/date range/
+   *  accountant/student/status. */
+  async getFeeReceiptWhatsappAnalytics(filters: {
+    schoolId?: string; studentId?: string; createdBy?: string; status?: string; from?: string; to?: string;
+  }) {
+    const match: Record<string, unknown> = { notificationType: 'FEE_PAYMENT_RECEIPT' };
+    if (filters.schoolId) match.schoolId = filters.schoolId;
+    if (filters.studentId) match.studentId = filters.studentId;
+    if (filters.createdBy) match.createdBy = filters.createdBy;
+    if (filters.status) match.status = filters.status;
+    if (filters.from || filters.to) {
+      const range: Record<string, Date> = {};
+      if (filters.from) range.$gte = new Date(filters.from);
+      if (filters.to) range.$lte = new Date(filters.to);
+      match.createdAt = range;
+    }
+
+    const [byStatus, bySchool, byDate, retrySum, total] = await Promise.all([
+      NotificationLog.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      NotificationLog.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: '$schoolId', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 50 },
+      ]),
+      NotificationLog.aggregate<{ _id: string; count: number }>([
+        { $match: match },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Kolkata' } }, count: { $sum: 1 } } },
+        { $sort: { _id: -1 } },
+        { $limit: 60 },
+      ]),
+      NotificationLog.aggregate<{ _id: null; totalRetries: number }>([
+        { $match: match },
+        { $group: { _id: null, totalRetries: { $sum: '$retryCount' } } },
+      ]),
+      NotificationLog.countDocuments(match),
+    ]);
+
+    const statusCounts: Record<string, number> = { QUEUED: 0, SENT: 0, DELIVERED: 0, READ: 0, FAILED: 0, SKIPPED: 0 };
+    for (const row of byStatus) statusCounts[row._id] = row.count;
+
+    const delivered = statusCounts.DELIVERED + statusCounts.READ;
+    const attempted = total - statusCounts.SKIPPED;
+    const successRatePercent = attempted > 0
+      ? Math.round(((statusCounts.SENT + statusCounts.DELIVERED + statusCounts.READ) / attempted) * 100)
+      : 0;
+
+    return {
+      totalGenerated: total,
+      totalSent: statusCounts.SENT + statusCounts.DELIVERED + statusCounts.READ,
+      delivered,
+      read: statusCounts.READ,
+      failed: statusCounts.FAILED,
+      pending: statusCounts.QUEUED,
+      skipped: statusCounts.SKIPPED,
+      totalRetries: retrySum[0]?.totalRetries ?? 0,
+      successRatePercent,
+      bySchool: bySchool.map((r) => ({ schoolId: r._id, count: r.count })),
+      byDate: byDate.map((r) => ({ date: r._id, count: r.count })),
     };
   },
 

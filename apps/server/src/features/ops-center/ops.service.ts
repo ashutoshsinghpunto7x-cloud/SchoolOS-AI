@@ -9,8 +9,9 @@ import { getRenderDeploys } from '../../lib/render-client';
 import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_META, PERMISSION_META } from '../../lib/permissions';
 import { AlertState, AlertStatus } from './alert-state.model';
 import { runConsistencyChecks } from './consistency-checks';
+import { usageEventRepository } from '../../lib/usage-event.repository';
 import { env } from '../../config/env';
-import type { AuditTrailQuery } from './ops.validation';
+import type { AuditTrailQuery, ChapterCaptureUsageQuery, FeeReceiptWhatsappQuery } from './ops.validation';
 import type { UserRole } from '../users/user.model';
 
 export const opsService = {
@@ -53,6 +54,27 @@ export const opsService = {
 
   async getApplicationHealth() {
     return getFeatureHealth();
+  },
+
+  /**
+   * Chapter Capture feature-usage screen — server-authoritative accounting (see usage-event.model.ts,
+   * never computed from frontend state). Overview totals + per-user breakdown, filterable by school/
+   * teacher/date, same shape/pattern as getErrorsByModule above.
+   */
+  async getChapterCaptureUsage(query: ChapterCaptureUsageQuery) {
+    const filter = {
+      schoolId: query.schoolId,
+      userId: query.userId,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    };
+
+    const [overview, byUser] = await Promise.all([
+      usageEventRepository.getChapterCaptureOverview(filter),
+      usageEventRepository.getChapterCaptureByUser(filter),
+    ]);
+
+    return { overview, byUser };
   },
 
   async getSchoolDetail(schoolId: string) {
@@ -143,6 +165,10 @@ export const opsService = {
 
   async getCommunications() {
     return opsRepository.getCommunicationsStats();
+  },
+
+  async getFeeReceiptWhatsappAnalytics(query: FeeReceiptWhatsappQuery) {
+    return opsRepository.getFeeReceiptWhatsappAnalytics(query);
   },
 
   async getUsersScreen() {

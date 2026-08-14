@@ -29,12 +29,83 @@ export interface SendOneInput {
    *  used for ad-hoc broadcasts where the admin types the message per-send
    *  rather than editing a stored template. */
   overrideBody?: string;
+  /** Ties this send to the business record that triggered it (e.g. a
+   *  FeePayment id) — see NotificationLog#sourceId. Callers that pass this
+   *  should check notificationLogRepository.findBySource first; sendOne itself
+   *  doesn't dedupe, it only records the id so a duplicate insert 11000s. */
+  sourceId?: string;
+  /** A document to attach to a WhatsApp template send whose Meta template has
+   *  a document header (see META_TEMPLATE_MAP#hasDocumentHeader) — e.g. the
+   *  fee receipt PDF. Ignored for channels/templates that don't support it. */
+  attachment?: { buffer: Buffer; mimeType: string; filename: string };
 }
 
 /** IST HH:mm "now", string-comparable against SchoolSettings' HH:mm fields —
  *  same convention as attendanceRules/behaviorWindow. */
 function nowIstHHmm(): string {
   return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' });
+}
+
+export interface AttachmentTemplateResult {
+  success: boolean;
+  errorMessage?: string;
+  providerMessageId?: string;
+  mediaId?: string;
+  templateName?: string;
+}
+
+/**
+ * Sends a Meta-approved WhatsApp template that carries a document header
+ * (uploads the attachment to Meta first, then references it by media id).
+ * Shared by sendOne's first-attempt path and FeeReceiptNotificationService's
+ * retry path (which regenerates the PDF rather than replaying a stale one —
+ * Meta media ids aren't durable long-term, so a real retry needs a fresh
+ * upload either way).
+ */
+export async function sendWhatsAppAttachmentTemplate(
+  schoolId: string,
+  notificationType: NotificationType,
+  phone: string,
+  templateData: Record<string, string | number | undefined>,
+  attachment: { buffer: Buffer; mimeType: string; filename: string },
+): Promise<AttachmentTemplateResult> {
+  const metaTemplate = META_TEMPLATE_MAP[notificationType];
+  if (!metaTemplate?.hasDocumentHeader) {
+    return { success: false, errorMessage: `${notificationType} has no configured document-header WhatsApp template` };
+  }
+
+  const settings = await schoolSettingsService.getSettings(schoolId);
+  const templateName = notificationType === 'FEE_PAYMENT_RECEIPT'
+    ? (settings.communicationSettings.feeReceiptWhatsappTemplate || metaTemplate.templateName)
+    : metaTemplate.templateName;
+
+  const provider = getProvider('whatsapp');
+  if (!provider.isConfigured()) {
+    return { success: false, errorMessage: 'whatsapp is enabled but its provider is not configured — check environment variables' };
+  }
+  if (!provider.uploadMedia) {
+    return { success: false, errorMessage: 'whatsapp provider does not support document attachments' };
+  }
+
+  const upload = await provider.uploadMedia(attachment.buffer, attachment.mimeType, attachment.filename);
+  if (!upload.success || !upload.mediaId) {
+    return { success: false, errorMessage: upload.errorMessage ?? 'Media upload failed' };
+  }
+
+  const result = await provider.sendTemplate({
+    to: phone,
+    templateName,
+    languageCode: metaTemplate.languageCode,
+    components: [
+      { type: 'header', parameters: [{ type: 'document', document: { id: upload.mediaId, filename: attachment.filename } }] },
+      {
+        type: 'body',
+        parameters: metaTemplate.paramKeys.map((key) => ({ type: 'text', text: String(templateData[key] ?? '') })),
+      },
+    ],
+  });
+
+  return { success: result.success, errorMessage: result.errorMessage, providerMessageId: result.providerMessageId, mediaId: upload.mediaId, templateName };
 }
 
 /**
@@ -69,6 +140,7 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
     phoneNumber: recipient.phone,
     createdBy,
     bulkJobId,
+    sourceId: input.sourceId,
   };
 
   if (!channelEnabled[channel]) {
@@ -139,29 +211,54 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
   // as plain text — a Meta-approved template's wording can't be swapped per-send.
   const metaTemplate = channel === 'whatsapp' && !input.overrideBody ? META_TEMPLATE_MAP[notificationType] : undefined;
 
-  const result = metaTemplate
-    ? await provider.sendTemplate({
-        to: recipient.phone,
-        templateName: metaTemplate.templateName,
-        languageCode: metaTemplate.languageCode,
-        components: [{
-          type: 'body',
-          parameters: metaTemplate.paramKeys.map((key) => ({ type: 'text', text: String(templateData[key] ?? '') })),
-        }],
-      })
-    : await provider.sendText({ to: recipient.phone, body });
+  let result: { success: boolean; errorMessage?: string; providerMessageId?: string };
+  let mediaId: string | undefined;
+  let templateName: string | undefined;
+
+  if (metaTemplate?.hasDocumentHeader && input.attachment) {
+    const attempt = await sendWhatsAppAttachmentTemplate(schoolId, notificationType, recipient.phone, templateData, input.attachment);
+    result = attempt;
+    mediaId = attempt.mediaId;
+    templateName = attempt.templateName;
+  } else if (metaTemplate) {
+    templateName = metaTemplate.templateName;
+    result = await provider.sendTemplate({
+      to: recipient.phone,
+      templateName: metaTemplate.templateName,
+      languageCode: metaTemplate.languageCode,
+      components: [{
+        type: 'body',
+        parameters: metaTemplate.paramKeys.map((key) => ({ type: 'text', text: String(templateData[key] ?? '') })),
+      }],
+    });
+  } else {
+    result = await provider.sendText({ to: recipient.phone, body });
+  }
 
   return notificationLogRepository.create({
     ...baseLog,
     status: result.success ? 'SENT' : 'FAILED',
     sentAt: result.success ? new Date() : undefined,
     errorMessage: result.errorMessage,
-    payload: { body, templateId, providerMessageId: result.providerMessageId },
+    payload: { body, templateId, templateName, mediaId, providerMessageId: result.providerMessageId },
   });
 }
 
 /** Re-attempts a FAILED log entry using the same rendered body it already sent (no re-render, no template drift). */
 export async function retryOne(log: INotificationLog): Promise<INotificationLog> {
+  // Attachment-carrying sends (currently only FEE_PAYMENT_RECEIPT) can't be
+  // replayed generically — a plain-text resend would silently drop the
+  // receipt PDF the parent is expecting. Those go through
+  // FeeReceiptNotificationService.retrySend (POST /fees/payments/:id/whatsapp-receipt/retry),
+  // which regenerates the PDF and re-uploads it, instead of this generic path.
+  if (META_TEMPLATE_MAP[log.notificationType]?.hasDocumentHeader) {
+    const updated = await notificationLogRepository.markFailed(
+      log._id.toString(),
+      'This notification carries a document attachment — use the fee receipt retry action instead of the generic retry.',
+    );
+    return updated ?? log;
+  }
+
   const provider = getProvider(log.channel);
   if (!provider.isConfigured()) {
     const updated = await notificationLogRepository.markFailed(log._id.toString(), `${log.channel} provider is still not configured`);

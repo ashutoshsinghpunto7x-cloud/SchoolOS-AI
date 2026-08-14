@@ -57,6 +57,7 @@ export const updateCommunicationSettingsSchema = z
     workingHoursEnd:       hhmm,
     dailyLimit:            z.coerce.number().int().min(1).max(100000),
     retryCount:            z.coerce.number().int().min(0).max(10),
+    feeReceiptWhatsappTemplate: z.string().trim().min(1).max(200).default('fee_payment_receipt'),
   })
   .refine((v) => v.workingHoursStart < v.workingHoursEnd, {
     message: 'workingHoursStart must be before workingHoursEnd',

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate';
-import { aiImageUploadMiddleware, documentUploadMiddleware } from '../../lib/image-upload';
+import { aiImageUploadMiddleware, chapterImagesUploadMiddleware, documentUploadMiddleware } from '../../lib/image-upload';
 import { questionBankController } from './question-bank.controller';
 
 const router = Router();
@@ -10,11 +10,14 @@ router.use(authenticate);
 // Extraction — static routes before /:id-style routes
 router.post('/extract/image', aiImageUploadMiddleware, questionBankController.extractFromImage);
 router.post('/extract/pdf', documentUploadMiddleware, questionBankController.extractFromPdf);
+router.post('/extract/chapter', chapterImagesUploadMiddleware, questionBankController.extractChapter);
 router.get('/extract/jobs/:id', questionBankController.getExtractionJob);
+router.post('/extract/jobs/:id/pages/:pageNumber/retry', aiImageUploadMiddleware, questionBankController.retryChapterPage);
 router.post('/extract/confirm', questionBankController.confirmExtracted);
 
 router.get('/sources', questionBankController.listSources);
 router.get('/sources/:id', questionBankController.getSource);
+router.post('/sources', questionBankController.saveChapterSource);
 router.patch('/sources/:id', questionBankController.updateSource);
 router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 

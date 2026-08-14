@@ -1,6 +1,7 @@
 import { PDFParse } from 'pdf-parse';
 import { openaiProvider, estimateCost } from '../ai/providers/llm/openai.provider';
 import { aiUsageRepository } from '../ai/ai.repository';
+import { usageEventRepository } from '../../lib/usage-event.repository';
 import { ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
@@ -8,6 +9,7 @@ import { extractionJobRepository } from './extraction-job.repository';
 import { questionSourceRepository } from './question-source.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
+import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence } from '@schoolos/types';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
 
@@ -116,6 +118,197 @@ function buildTranscribePrompt(): string {
   return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.
 
 Return ONLY a valid JSON object: {"pageText": "..."}. No markdown, no explanation, no commentary — just the transcribed text.`;
+}
+
+// ── Structured chapter capture (layout-aware OCR) ──────────────────────────────
+// This is the OCR layer: "what is present on the page?" — never the question-
+// structuring layer above. Keep the two responsibilities separate (Rule 9):
+// this prompt only transcribes structure, it never drafts questions.
+
+function buildStructuredTranscribePrompt(): string {
+  return `You are a document-structure OCR engine for school textbook pages. Read the image and reconstruct it as an ordered list of content blocks that preserve the page's actual layout, hierarchy, and reading order — including multi-column layouts, sidebars, and boxed callouts, which you must reorder into correct logical reading order (not raw left-to-right/top-to-bottom pixel order).
+
+Rules (do not break these):
+1. Never invent content that is not visibly present on the page.
+2. Never silently change the meaning of anything you transcribe.
+3. Preserve the original ordering of content exactly as a reader would encounter it.
+4. Preserve heading/subheading hierarchy using "level" (1 = chapter/top title, 2 = section, 3 = subsection).
+5. Tables must become "table" blocks with real headers/rows — never flatten a table into paragraph text.
+6. Numbered/bulleted lists must become "list" blocks with "ordered" set correctly — never flatten a list into a paragraph. Nested sub-items go in a child "items" array.
+7. Mathematical expressions/equations must become "equation" blocks with a "latex" field (standard LaTeX) and a plain "displayText" fallback — never lose subscripts/superscripts/fractions by flattening them into plain text.
+8. Diagrams/figures become "figure" blocks — capture the figure number, caption, and any labels you can read, but do not describe the image's visual content beyond what's textually labeled.
+9. If a block is hard to read (blurry, cut off, ambiguous), still transcribe your best reading but set "confidence" to "review" or "low" rather than guessing confidently and marking it "high". Only mark "high" when you are certain.
+10. Definitions, "Note:", callout boxes, and important-point boxes become "note" blocks. Quoted passages become "quote" blocks.
+
+Each block is one of:
+{"type":"heading","level":1|2|3,"text":"...","confidence":"high|review|low"}
+{"type":"paragraph","text":"... may use **bold** or *italic* ...","confidence":"..."}
+{"type":"list","ordered":true|false,"items":[{"text":"...","items":[{"text":"..."}]}],"confidence":"..."}
+{"type":"table","caption":"optional","headers":["..."],"rows":[["...","..."]],"confidence":"..."}
+{"type":"equation","latex":"E = mc^2","displayText":"E = mc²","confidence":"..."}
+{"type":"figure","figureNumber":"3.2","caption":"...","labels":["..."],"confidence":"..."}
+{"type":"note","text":"..."} or {"type":"quote","text":"..."}
+
+Return ONLY a valid JSON object: {"documentTitle": "... or omit if none visible", "language": "e.g. English / Hindi / Mixed", "blocks": [...]}. No markdown, no explanation, no commentary.`;
+}
+
+const BLOCK_TYPES = new Set(['heading', 'paragraph', 'list', 'table', 'equation', 'figure', 'note', 'quote']);
+const CONFIDENCES = new Set<BlockConfidence>(['high', 'review', 'low']);
+
+function normalizeConfidence(v: unknown): BlockConfidence | undefined {
+  return typeof v === 'string' && CONFIDENCES.has(v as BlockConfidence) ? (v as BlockConfidence) : undefined;
+}
+
+/** Validates/coerces one raw block from the AI response. Drops anything unusable rather than guessing — mirrors clean()'s "skip, don't hallucinate" approach. Exported for unit testing. */
+export function normalizeBlock(raw: unknown): ContentBlock | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const b = raw as Record<string, unknown>;
+  if (typeof b.type !== 'string' || !BLOCK_TYPES.has(b.type)) return null;
+  const confidence = normalizeConfidence(b.confidence);
+
+  switch (b.type) {
+    case 'heading': {
+      if (typeof b.text !== 'string' || !b.text.trim()) return null;
+      const level = [1, 2, 3].includes(b.level as number) ? (b.level as 1 | 2 | 3) : 1;
+      return { type: 'heading', level, text: b.text.trim(), confidence };
+    }
+    case 'paragraph': {
+      if (typeof b.text !== 'string' || !b.text.trim()) return null;
+      return { type: 'paragraph', text: b.text.trim(), confidence };
+    }
+    case 'list': {
+      const normalizeItems = (items: unknown): { text: string; items?: unknown[] }[] =>
+        Array.isArray(items)
+          ? items
+              .map((it) => {
+                if (typeof it === 'string') return { text: it.trim() };
+                if (it && typeof it === 'object' && typeof (it as Record<string, unknown>).text === 'string') {
+                  const nested = (it as Record<string, unknown>).items;
+                  return { text: (it as Record<string, unknown>).text as string, items: Array.isArray(nested) ? normalizeItems(nested) : undefined };
+                }
+                return null;
+              })
+              .filter((x): x is { text: string; items?: unknown[] } => x !== null && x.text.trim().length > 0)
+          : [];
+      const items = normalizeItems(b.items);
+      if (items.length === 0) return null;
+      return { type: 'list', ordered: Boolean(b.ordered), items, confidence };
+    }
+    case 'table': {
+      const headers = Array.isArray(b.headers) ? b.headers.map(String) : [];
+      const rows = Array.isArray(b.rows) ? b.rows.filter(Array.isArray).map((r) => (r as unknown[]).map(String)) : [];
+      if (headers.length === 0 && rows.length === 0) return null;
+      return { type: 'table', headers, rows, caption: typeof b.caption === 'string' ? b.caption : undefined, confidence };
+    }
+    case 'equation': {
+      if (typeof b.latex !== 'string' || !b.latex.trim()) return null;
+      return { type: 'equation', latex: b.latex.trim(), displayText: typeof b.displayText === 'string' ? b.displayText : undefined, confidence };
+    }
+    case 'figure': {
+      return {
+        type: 'figure',
+        figureNumber: typeof b.figureNumber === 'string' ? b.figureNumber : undefined,
+        caption: typeof b.caption === 'string' ? b.caption : undefined,
+        labels: Array.isArray(b.labels) ? b.labels.map(String) : undefined,
+        confidence,
+      };
+    }
+    case 'note':
+    case 'quote': {
+      if (typeof b.text !== 'string' || !b.text.trim()) return null;
+      return { type: b.type as 'note' | 'quote', text: b.text.trim(), confidence };
+    }
+    default:
+      return null;
+  }
+}
+
+/** Exported for unit testing — see question-extraction.service.test.ts. */
+export function parseStructuredPage(raw: string): { documentTitle?: string; language?: string; blocks: ContentBlock[] } {
+  try {
+    const body = JSON.parse(raw);
+    const blocks = Array.isArray(body?.blocks)
+      ? (body.blocks as unknown[]).map(normalizeBlock).filter((b): b is ContentBlock => b !== null)
+      : [];
+    return {
+      documentTitle: typeof body?.documentTitle === 'string' ? body.documentTitle : undefined,
+      language: typeof body?.language === 'string' ? body.language : undefined,
+      blocks,
+    };
+  } catch (err) {
+    logger.error('[QuestionExtraction] Failed to parse structured page response', { error: String(err), raw: raw.slice(0, 500) });
+    throw new ValidationError('Could not read the structure of that page — try a clearer photo.');
+  }
+}
+
+/** Flattens structured blocks back to plain text so `QuestionSource.extractedText` (a required field, and the input to existing question-structuring/search/synthesis prompts) stays populated regardless of whether structured capture is used. */
+export function flattenBlocksToText(blocks: ContentBlock[]): string {
+  const lines: string[] = [];
+  const stripMd = (s: string) => s.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1');
+
+  const renderItems = (items: { text: string; items?: unknown[] }[], depth: number, ordered: boolean) => {
+    items.forEach((it, i) => {
+      const bullet = ordered ? `${i + 1}.` : '-';
+      lines.push(`${'  '.repeat(depth)}${bullet} ${stripMd(it.text)}`);
+      if (Array.isArray(it.items) && it.items.length) renderItems(it.items as { text: string; items?: unknown[] }[], depth + 1, ordered);
+    });
+  };
+
+  for (const block of blocks) {
+    switch (block.type) {
+      case 'heading': lines.push(stripMd(block.text)); break;
+      case 'paragraph': lines.push(stripMd(block.text)); break;
+      case 'list': renderItems(block.items as { text: string; items?: unknown[] }[], 0, block.ordered); break;
+      case 'table': {
+        if (block.caption) lines.push(block.caption);
+        if (block.headers.length) lines.push(block.headers.join(' | '));
+        for (const row of block.rows) lines.push(row.join(' | '));
+        break;
+      }
+      case 'equation': lines.push(block.displayText || block.latex); break;
+      case 'figure': lines.push(`[Figure${block.figureNumber ? ` ${block.figureNumber}` : ''}${block.caption ? ` — ${block.caption}` : ''}]`); break;
+      case 'note': case 'quote': lines.push(stripMd(block.text)); break;
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+/** Renders blocks back to lightweight Markdown (tables/lists stay structured) for feeding into the question-structuring prompt, instead of the fully flattened plain text — so that prompt still sees tables as tables. */
+export function blocksToMarkdown(blocks: ContentBlock[]): string {
+  const lines: string[] = [];
+  const renderItems = (items: { text: string; items?: unknown[] }[], depth: number, ordered: boolean) => {
+    items.forEach((it, i) => {
+      const bullet = ordered ? `${i + 1}.` : '-';
+      lines.push(`${'  '.repeat(depth)}${bullet} ${it.text}`);
+      if (Array.isArray(it.items) && it.items.length) renderItems(it.items as { text: string; items?: unknown[] }[], depth + 1, ordered);
+    });
+  };
+  for (const block of blocks) {
+    switch (block.type) {
+      case 'heading': lines.push(`${'#'.repeat(block.level)} ${block.text}`); break;
+      case 'paragraph': lines.push(block.text); break;
+      case 'list': renderItems(block.items as { text: string; items?: unknown[] }[], 0, block.ordered); break;
+      case 'table': {
+        if (block.caption) lines.push(`_${block.caption}_`);
+        if (block.headers.length) {
+          lines.push(`| ${block.headers.join(' | ')} |`);
+          lines.push(`| ${block.headers.map(() => '---').join(' | ')} |`);
+        }
+        for (const row of block.rows) lines.push(`| ${row.join(' | ')} |`);
+        break;
+      }
+      case 'equation': lines.push(`$${block.latex}$`); break;
+      case 'figure': lines.push(`[Figure${block.figureNumber ? ` ${block.figureNumber}` : ''}${block.caption ? ` — ${block.caption}` : ''}]`); break;
+      case 'note': case 'quote': lines.push(`> ${block.text}`); break;
+    }
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function pageWordCount(blocks: ContentBlock[]): number {
+  return flattenBlocksToText(blocks).split(/\s+/).filter(Boolean).length;
 }
 
 function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageText: string } {
@@ -252,15 +445,26 @@ export const questionExtractionService = {
 
   /** Re-runs AI structuring over previously-saved converted text — no re-upload/re-OCR needed. */
   async extractFromSourceText(source: IQuestionSource, ctx: AuthContext): Promise<QuestionExtractionResult> {
+    // Structured captures pass their blocks back through as lightweight Markdown (tables/lists stay
+    // structured) rather than the fully flattened text, so the question-structuring prompt still sees
+    // tables as tables — see blocksToMarkdown.
+    const sourceText = source.pages?.length
+      ? blocksToMarkdown(source.pages.flatMap((p) => p.blocks))
+      : source.extractedText;
     const { extracted, warnings } = await questionExtractionService.structureFromText(
-      source.class, source.subject, source.extractedText, ctx,
+      source.class, source.subject, sourceText, ctx,
     );
     // A teacher-assigned chapter on the source overrides the AI's per-question guess —
     // it's a more reliable signal than inferring the chapter from page content alone.
-    const withChapter = source.chapterName
-      ? extracted.map((q) => ({ ...q, chapterName: source.chapterName! }))
-      : extracted;
-    return { sourceType: source.kind, extracted: withChapter, warnings, sourceId: String(source._id) };
+    // Every draft is stamped with sourceRef so a saved question can trace back to the
+    // upload it came from ("Show source") — the structuring prompt doesn't track which
+    // block a question came from, so this is source-level, not block-level, traceability.
+    const sourceId = String(source._id);
+    const withChapter = extracted.map((q) => ({
+      ...(source.chapterName ? { ...q, chapterName: source.chapterName } : q),
+      sourceRef: { sourceId },
+    }));
+    return { sourceType: source.kind, extracted: withChapter, warnings, sourceId };
   },
 
   /** Shared AI call: turns raw page/document text into structured question drafts. */
@@ -383,10 +587,152 @@ export const questionExtractionService = {
 
   async getExtractionJob(
     jobId: string, ctx: AuthContext,
-  ): Promise<{ status: string; result?: TextExtractionResult | QuestionExtractionResult; error?: string }> {
+  ): Promise<{ status: string; result?: TextExtractionResult | QuestionExtractionResult | ChapterCaptureJobResult; error?: string; totalPages?: number; completedPages?: number }> {
     const job = await extractionJobRepository.findById(jobId, ctx.schoolId);
     if (!job) throw new ValidationError('Extraction job not found or expired');
     if (job.userId !== ctx.userId) throw new ValidationError('Extraction job not found or expired');
-    return { status: job.status, result: job.result, error: job.error };
+    return { status: job.status, result: job.result, error: job.error, totalPages: job.totalPages, completedPages: job.completedPages };
+  },
+
+  // ── Layout-aware chapter capture (multi-page, structure-preserving) ──────────
+
+  /** Single-page structured OCR call — the building block enqueueChapterCapture and retryPage both use. */
+  async extractStructuredPage(
+    imageDataUri: string, ctx: AuthContext,
+  ): Promise<{ documentTitle?: string; language?: string; blocks: ContentBlock[] }> {
+    if (!openaiProvider.isAvailable()) {
+      throw new ValidationError('AI extraction is not configured on this server.');
+    }
+    const start = Date.now();
+    const result = await openaiProvider.complete({
+      systemPrompt: buildStructuredTranscribePrompt(),
+      userPrompt: 'Reconstruct this page as structured blocks, in correct reading order.',
+      imageDataUri,
+      temperature: 0.1,
+      maxTokens: 4000,
+      jsonResponse: true,
+    });
+
+    aiUsageRepository.record({
+      provider: 'openai',
+      aiModel: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+      durationMs: Date.now() - start,
+      schoolId: ctx.schoolId,
+    });
+
+    return parseStructuredPage(result.content);
+  },
+
+  /**
+   * Enqueues a multi-page batch job (kind: 'chapter_capture'). Pages are processed with bounded
+   * concurrency (3 at a time) so a 20-page chapter doesn't fire 20 simultaneous vision calls. One
+   * page's failure never fails the whole job — it's recorded as a pageError on that page's slot so
+   * the review screen can offer "Retry Page" / "Continue Without This Page" per Deliverable 22, and
+   * the rest of the batch keeps going. Nothing is persisted to QuestionSource here — the teacher
+   * reviews this job's result and calls the save endpoint explicitly.
+   */
+  async enqueueChapterCapture(
+    images: { dataUri: string; fileName?: string }[], ctx: AuthContext,
+  ): Promise<{ jobId: string }> {
+    const totalPages = images.length;
+    const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'chapter_capture', totalPages });
+    const jobId = job._id.toString();
+    usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'capture_started', pagesProcessed: totalPages, status: 'success' });
+
+    (async () => {
+      const pages: ChapterPage[] = new Array(totalPages);
+      let documentTitle: string | undefined;
+      let language: string | undefined;
+      let completed = 0;
+      const CONCURRENCY = 3;
+
+      const processOne = async (index: number) => {
+        const pageNumber = index + 1;
+        try {
+          const page = await questionExtractionService.extractStructuredPage(images[index].dataUri, ctx);
+          if (!documentTitle && page.documentTitle) documentTitle = page.documentTitle;
+          if (!language && page.language) language = page.language;
+          const lowConfidenceBlocks = page.blocks.filter((b) => b.confidence === 'low').length;
+          pages[index] = {
+            pageNumber,
+            blocks: page.blocks,
+            confidence: page.blocks.length === 0 ? 'low' : lowConfidenceBlocks > page.blocks.length / 2 ? 'review' : undefined,
+          };
+          usageEventRepository.record({
+            userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed',
+            pagesProcessed: 1, wordsGenerated: pageWordCount(page.blocks), status: 'success',
+          });
+        } catch (err) {
+          logger.error('[QuestionExtraction] Chapter capture page failed', { jobId, pageNumber, err });
+          pages[index] = { pageNumber, blocks: [], pageError: err instanceof Error ? err.message : 'Could not read this page' };
+          usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed', pagesProcessed: 1, status: 'failed' });
+        } finally {
+          completed += 1;
+          await extractionJobRepository.updateProgress(jobId, completed, { documentTitle, language, pages: pages.filter(Boolean), totalPages, completedPages: completed });
+        }
+      };
+
+      // Simple bounded-concurrency batching — no new dependency needed for a fixed pool of 3.
+      for (let i = 0; i < images.length; i += CONCURRENCY) {
+        await Promise.all(images.slice(i, i + CONCURRENCY).map((_, offset) => processOne(i + offset)));
+      }
+
+      await extractionJobRepository.markCompleted(jobId, { documentTitle, language, pages, totalPages, completedPages: completed });
+    })().catch((err) => {
+      logger.error('[QuestionExtraction] Chapter capture batch failed', { jobId, err });
+      extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Chapter capture failed').catch(() => {});
+    });
+
+    return { jobId };
+  },
+
+  /** Reprocesses a single page in-place on an already-completed/partial chapter-capture job result. */
+  async retryPage(jobId: string, pageNumber: number, imageDataUri: string, ctx: AuthContext): Promise<ChapterCaptureJobResult> {
+    const job = await extractionJobRepository.findById(jobId, ctx.schoolId);
+    if (!job || job.userId !== ctx.userId || job.kind !== 'chapter_capture') {
+      throw new ValidationError('Chapter capture job not found or expired');
+    }
+    const current = (job.result as ChapterCaptureJobResult) ?? { pages: [], totalPages: job.totalPages ?? 0, completedPages: job.completedPages ?? 0 };
+    const page = await questionExtractionService.extractStructuredPage(imageDataUri, ctx);
+    const updatedPages = current.pages.map((p) => (p.pageNumber === pageNumber ? { pageNumber, blocks: page.blocks } : p));
+    if (!updatedPages.some((p) => p.pageNumber === pageNumber)) updatedPages.push({ pageNumber, blocks: page.blocks });
+    updatedPages.sort((a, b) => a.pageNumber - b.pageNumber);
+
+    const updated: ChapterCaptureJobResult = { ...current, pages: updatedPages };
+    await extractionJobRepository.markCompleted(jobId, updated);
+    usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed', pagesProcessed: 1, wordsGenerated: pageWordCount(page.blocks), status: 'success' });
+    return updated;
+  },
+
+  /** Finalizes a reviewed chapter-capture job (with the teacher's edits already applied to `pages`) into a permanent QuestionSource — the literal "Save Chapter" action. */
+  async saveChapterSource(
+    cls: string, subject: string, data: { documentTitle?: string; language?: string; pages: ChapterPage[]; fileName?: string; chapterName?: string }, ctx: AuthContext,
+  ): Promise<IQuestionSource> {
+    const allBlocks = data.pages.flatMap((p) => p.blocks);
+    const extractedText = flattenBlocksToText(allBlocks);
+    if (!extractedText.trim()) {
+      throw new ValidationError('This chapter has no readable content to save — check the captured pages.');
+    }
+
+    const source = await questionSourceRepository.create({
+      schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image', fileName: data.fileName,
+      extractedText,
+      documentTitle: data.documentTitle,
+      language: data.language,
+      pages: data.pages,
+      chapterName: data.chapterName,
+      reviewStatus: 'saved',
+    });
+
+    usageEventRepository.record({
+      userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'chapter_saved',
+      documentId: String(source._id), pagesProcessed: data.pages.length, wordsGenerated: extractedText.split(/\s+/).filter(Boolean).length, status: 'success',
+    });
+
+    return source;
   },
 };

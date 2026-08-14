@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { opsApi } from '../api/opsApi';
-import type { OpsLogsParams, OpsAuditTrailParams, AlertStatus } from '../api/opsApi';
+import type { OpsLogsParams, OpsAuditTrailParams, AlertStatus, OpsChapterCaptureUsageParams } from '../api/opsApi';
 
 // Was 10s/5s — with ~9 independently-polling hooks on this dashboard, a single
 // admin tab left open generated 70+ req/min. Ops Center doesn't need
@@ -59,6 +59,14 @@ export const useOpsApplications = () =>
   useQuery({
     queryKey: ['ops', 'applications'],
     queryFn: opsApi.getApplications,
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchOnWindowFocus: false,
+  });
+
+export const useOpsChapterCaptureUsage = (params: OpsChapterCaptureUsageParams = {}) =>
+  useQuery({
+    queryKey: ['ops', 'chapter-capture-usage', params],
+    queryFn: () => opsApi.getChapterCaptureUsage(params),
     refetchInterval: POLL_INTERVAL_MS,
     refetchOnWindowFocus: false,
   });

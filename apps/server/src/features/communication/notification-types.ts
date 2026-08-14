@@ -16,6 +16,7 @@ export type NotificationType =
   | 'ATTENDANCE_ABSENT'
   | 'FEE_REMINDER'
   | 'FEE_DEFAULTER'
+  | 'FEE_PAYMENT_RECEIPT'
   | 'BIRTHDAY'
   | 'PTM_REMINDER'
   | 'HOMEWORK'
@@ -49,6 +50,11 @@ export const NOTIFICATION_TYPES: Record<NotificationType, NotificationTypeMeta> 
   FEE_DEFAULTER: {
     label: 'Fee Defaulter',
     placeholders: ['student_name', 'class', 'section', 'amount', 'due_date', 'school_name'],
+    defaultChannel: 'whatsapp',
+  },
+  FEE_PAYMENT_RECEIPT: {
+    label: 'Fee Payment Receipt',
+    placeholders: ['student_name', 'amount', 'receipt_number', 'payment_date', 'school_name'],
     defaultChannel: 'whatsapp',
   },
   BIRTHDAY: {

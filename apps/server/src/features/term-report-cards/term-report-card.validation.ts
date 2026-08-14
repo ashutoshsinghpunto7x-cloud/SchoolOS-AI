@@ -15,6 +15,8 @@ const termSubjectMarkCorrectionSchema = z.object({
   unitTest2Score: z.number().min(0).optional(),
   mainExamScore:  z.number().min(0).optional(),
   grade:          z.string().trim().max(10).optional(),
+  // Per-student override of the template's evaluation type for this one subject/card.
+  evaluationType: z.enum(['marks', 'grade', 'both']).optional(),
 });
 
 export const updateTermReportCardSchema = z.object({

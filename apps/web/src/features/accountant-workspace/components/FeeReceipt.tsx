@@ -2,9 +2,12 @@ import { useState, useId } from 'react';
 import {
   Printer, Download, Mail, Loader2, CheckCircle2,
   ShieldCheck, User, GraduationCap, FolderKanban, CreditCard, MapPin,
+  MessageCircle, AlertTriangle, RefreshCw, Circle,
 } from 'lucide-react';
 import { useUpdateStudent } from '@/features/students/hooks/useStudents';
 import { useSendReceiptEmail } from '../hooks/useAccountantWorkspace';
+import { useWhatsappReceiptStatus, useRetryWhatsappReceipt } from '@/features/fees/hooks/useFees';
+import { feesApi } from '@/features/fees/api/fees.api';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const fmt = (n: number) =>
@@ -243,12 +246,89 @@ function StampSeal({ className = '' }: { className?: string }) {
   );
 }
 
+/**
+ * One payment's automatic WhatsApp receipt delivery status — polls until it
+ * reaches a terminal state (see useWhatsappReceiptStatus), matching the
+ * Collect Fee → ✓ Receipt Sent flow: the accountant never clicks "send",
+ * they just see where it landed.
+ */
+function WhatsAppReceiptStatusRow({ paymentId, studentId }: { paymentId: string; studentId?: string }) {
+  const { data: status, isLoading } = useWhatsappReceiptStatus(paymentId);
+  const { mutateAsync: retry, isPending: retrying } = useRetryWhatsappReceipt(paymentId);
+
+  if (isLoading || !status) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-gray-400">
+        <Circle className="w-3.5 h-3.5 animate-pulse" /> Sending receipt to WhatsApp…
+      </div>
+    );
+  }
+
+  if (status.status === 'SENT' || status.status === 'DELIVERED' || status.status === 'READ') {
+    return (
+      <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600">
+        <MessageCircle className="w-3.5 h-3.5" />
+        Receipt sent to parent via WhatsApp{status.status === 'READ' ? ' — read' : status.status === 'DELIVERED' ? ' — delivered' : ''}
+      </div>
+    );
+  }
+
+  if (status.status === 'SKIPPED') {
+    return (
+      <div className="flex items-center justify-between gap-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5">
+        <span className="flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Fee collected — {status.errorMessage || 'WhatsApp receipt not sent'}</span>
+        {studentId && (
+          <a href={`/students/${studentId}`} className="font-semibold underline shrink-0">Add Parent WhatsApp Number</a>
+        )}
+      </div>
+    );
+  }
+
+  if (status.status === 'FAILED') {
+    return (
+      <div className="flex items-center justify-between gap-2 text-xs text-red-600 bg-red-50 rounded-lg px-2.5 py-1.5">
+        <span className="flex items-center gap-2"><AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Fee collected successfully, but WhatsApp delivery failed.</span>
+        <button
+          onClick={() => retry()}
+          disabled={retrying}
+          className="flex items-center gap-1 font-semibold underline shrink-0 disabled:opacity-50"
+        >
+          {retrying ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Retry WhatsApp
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-gray-400">
+      <Circle className="w-3.5 h-3.5 animate-pulse" /> Sending receipt to WhatsApp…
+    </div>
+  );
+}
+
+async function downloadReceiptPdf(paymentId: string, filenameHint?: string) {
+  const blob = await feesApi.downloadReceiptPdf(paymentId);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filenameHint || 'Receipt'}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** Post-payment screen: on-screen receipt preview, print (2 copies), download, and email. Shared by every fee-collection flow so every receipt in the app looks identical. */
 export function FeeReceiptSuccessScreen({
-  context, lineItems, total, paymentMode, receiptNumber, onDone,
+  context, lineItems, total, paymentMode, receiptNumber, paymentIds, onDone,
 }: {
   context: CollectContext; lineItems: ReceiptLineItem[]; total: number;
-  paymentMode: string; receiptNumber?: string; onDone: () => void;
+  paymentMode: string; receiptNumber?: string;
+  /** Underlying FeePayment id(s) this receipt covers — one per fee item collected in this
+   *  transaction (a multi-month collection produces several). Drives the automatic WhatsApp
+   *  delivery status row(s) below and the real-PDF download button. */
+  paymentIds?: string[];
+  onDone: () => void;
 }) {
   const { mutateAsync: sendEmail, isPending: sending, error, isSuccess } = useSendReceiptEmail();
   const { mutateAsync: updateStudent } = useUpdateStudent(context.studentId ?? '');
@@ -307,6 +387,15 @@ export function FeeReceiptSuccessScreen({
         <CheckCircle2 className="w-10 h-10 text-emerald-600" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 print:hidden">Payment Collected!</h2>
+      {receiptNumber && <p className="text-xs text-gray-400 mt-1 print:hidden">Receipt No: {receiptNumber} · Amount: {fmt(total)}</p>}
+
+      {paymentIds && paymentIds.length > 0 && (
+        <div className="print:hidden w-full mt-3 max-w-4xl space-y-1.5">
+          {paymentIds.map((id) => (
+            <WhatsAppReceiptStatusRow key={id} paymentId={id} studentId={context.studentId} />
+          ))}
+        </div>
+      )}
 
       <div className="print:hidden w-full mt-5 max-w-4xl">
         <ReceiptCopy context={context} lineItems={lineItems} total={total} paymentMode={paymentMode} receiptNumber={receiptNumber} copyLabel="School Copy" />
@@ -332,10 +421,10 @@ export function FeeReceiptSuccessScreen({
             <Printer className="w-4 h-4" /> Print / Save Receipt (2 copies)
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={() => (paymentIds?.[0] ? downloadReceiptPdf(paymentIds[0], `Receipt-${receiptNumber || context.studentName}`) : window.print())}
             className="h-12 px-5 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
           >
-            <Download className="w-4 h-4" /> Download PDF
+            <Download className="w-4 h-4" /> Download Receipt
           </button>
         </div>
 

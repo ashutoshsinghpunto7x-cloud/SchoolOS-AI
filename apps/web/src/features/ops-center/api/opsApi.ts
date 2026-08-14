@@ -445,6 +445,40 @@ interface ApiEnvelope<T> {
   data: T;
 }
 
+// ── Chapter Capture usage analytics ──────────────────────────────────────────
+
+export interface OpsChapterCaptureOverview {
+  totalUsers: number;
+  totalDocuments: number;
+  totalPages: number;
+  totalWords: number;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  avgProcessingTimeMs: number;
+  avgWordsPerDocument: number;
+}
+
+export interface OpsChapterCaptureUserUsage {
+  userId: string;
+  documents: number;
+  pages: number;
+  wordsGenerated: number;
+  processingRequests: number;
+}
+
+export interface OpsChapterCaptureUsage {
+  overview: OpsChapterCaptureOverview;
+  byUser: OpsChapterCaptureUserUsage[];
+}
+
+export interface OpsChapterCaptureUsageParams {
+  schoolId?: string;
+  userId?: string;
+  from?: string;
+  to?: string;
+}
+
 export const opsApi = {
   async getDashboard(): Promise<OpsDashboard> {
     const res = await apiClient.get<ApiEnvelope<OpsDashboard>>('/ops/dashboard');
@@ -478,6 +512,11 @@ export const opsApi = {
 
   async getApplications(): Promise<OpsFeatureHealth[]> {
     const res = await apiClient.get<ApiEnvelope<OpsFeatureHealth[]>>('/ops/applications');
+    return res.data.data;
+  },
+
+  async getChapterCaptureUsage(params: OpsChapterCaptureUsageParams): Promise<OpsChapterCaptureUsage> {
+    const res = await apiClient.get<ApiEnvelope<OpsChapterCaptureUsage>>('/ops/chapter-capture-usage', { params });
     return res.data.data;
   },
 

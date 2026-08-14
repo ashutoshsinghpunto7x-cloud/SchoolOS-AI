@@ -8,13 +8,19 @@ import {
   SendMediaParams,
   SendButtonsParams,
   SendInteractiveListParams,
+  UploadMediaResult,
 } from './provider.interface';
 
 const MAX_ATTEMPTS = 3;
 const REQUEST_TIMEOUT_MS = 15_000;
+const MEDIA_UPLOAD_TIMEOUT_MS = 30_000;
 
 function graphUrl(): string {
   return `https://graph.facebook.com/${env.WHATSAPP_API_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+}
+
+function mediaUrl(): string {
+  return `https://graph.facebook.com/${env.WHATSAPP_API_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/media`;
 }
 
 /** parentPhone is stored as a bare 10-digit Indian number (see Student model);
@@ -152,6 +158,44 @@ export const whatsAppCloudProvider: ICommunicationChannelProvider = {
         action: { button: buttonText, sections },
       },
     });
+  },
+
+  /** Uploads a document buffer (e.g. a fee receipt PDF) to Meta's Cloud API media
+   *  endpoint and returns its media id — referencing it by id in a subsequent
+   *  template `header` component avoids ever needing to host the file at a
+   *  publicly-reachable URL. */
+  async uploadMedia(buffer: Buffer, mimeType: string, filename: string): Promise<UploadMediaResult> {
+    if (!isWhatsAppCloudConfigured()) {
+      return { success: false, errorMessage: 'WhatsApp Cloud API is not configured (missing WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID)' };
+    }
+
+    try {
+      const form = new FormData();
+      form.append('messaging_product', 'whatsapp');
+      form.append('file', new Blob([buffer], { type: mimeType }), filename);
+
+      const res = await fetch(mediaUrl(), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}` },
+        body: form,
+        signal: AbortSignal.timeout(MEDIA_UPLOAD_TIMEOUT_MS),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { id?: string };
+        if (!data.id) return { success: false, errorMessage: 'Meta media upload returned no media id' };
+        return { success: true, mediaId: data.id };
+      }
+
+      const errorBody = (await res.json().catch(() => ({}))) as GraphErrorBody;
+      const errorMessage = `Meta media upload ${res.status}: ${errorBody.error?.message ?? res.statusText} (code ${errorBody.error?.code ?? '?'})`;
+      logger.error('[WhatsAppCloud] Media upload failed', { status: res.status, errorMessage });
+      return { success: false, errorMessage };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Network error uploading media to Meta Graph API';
+      logger.error('[WhatsAppCloud] Media upload threw', { errorMessage });
+      return { success: false, errorMessage };
+    }
   },
 
   async sendBulk(recipients: SendTextParams[]): Promise<SendResult[]> {

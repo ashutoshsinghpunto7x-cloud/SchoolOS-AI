@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Camera, FileText, Loader2, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Camera, FileText, Loader2, ChevronRight, Image as ImageIcon, BookOpen } from 'lucide-react';
 import { useExtractQuestionsFromImage, useExtractQuestionsFromPdf, useQuestionSources } from '../hooks/useQuestionBank';
 
 export function QuestionUploadPage() {
@@ -68,6 +68,19 @@ export function QuestionUploadPage() {
         <p className="text-xs text-gray-400 dark:text-white/30 -mt-2">
           Uploading only reads and saves the text — you'll generate questions from it on the next screen, as many times as you like.
         </p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/question-bank/capture')}
+          className="w-full h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center gap-3 px-4"
+        >
+          <BookOpen className="w-5 h-5 shrink-0" />
+          <div className="text-left">
+            <div className="text-sm font-semibold">Capture a chapter (multi-page)</div>
+            <div className="text-[11px] text-white/70">Photograph several pages and preserve tables, headings, lists & equations</div>
+          </div>
+          <ChevronRight className="w-4 h-4 ml-auto shrink-0" />
+        </button>
 
         <div className="grid grid-cols-2 gap-3">
           <button

@@ -8,6 +8,7 @@ import type {
   ConfirmExtractedQuestionsPayload,
   PaperGenerationConfig,
   UpdateQuestionSourcePayload,
+  ChapterPage,
 } from '@schoolos/types';
 
 export const questionBankKeys = {
@@ -78,6 +79,38 @@ export const useExtractQuestionsFromPdf = () => {
     mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromPdf(target, file),
     onSuccess:  (_result, { target }) => {
       qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) });
+      qc.invalidateQueries({ queryKey: questionBankKeys.sources() });
+    },
+  });
+};
+
+// ── Layout-aware chapter capture (multi-page) ─────────────────────────────────
+
+export const useExtractChapter = () =>
+  useMutation({ mutationFn: (images: File[]) => questionBankApi.extractChapter(images) });
+
+/** Polls the chapter-capture job every 2s while processing, so the review screen can show per-page progress instead of a blocking spinner. */
+export const useChapterCaptureJob = (jobId: string | undefined) =>
+  useQuery({
+    queryKey: ['question-bank', 'chapter-capture-job', jobId],
+    queryFn: () => questionBankApi.getChapterCaptureJob(jobId!),
+    enabled: !!jobId,
+    refetchInterval: (query) => (query.state.data?.status === 'processing' ? 2000 : false),
+  });
+
+export const useRetryChapterPage = () =>
+  useMutation({
+    mutationFn: ({ jobId, pageNumber, file }: { jobId: string; pageNumber: number; file: File }) =>
+      questionBankApi.retryChapterPage(jobId, pageNumber, file),
+  });
+
+export const useSaveChapterSource = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { class: string; subject: string; documentTitle?: string; language?: string; chapterName?: string; fileName?: string; pages: ChapterPage[] }) =>
+      questionBankApi.saveChapterSource(payload),
+    onSuccess: (source) => {
+      qc.invalidateQueries({ queryKey: questionBankKeys.sources(source.class, source.subject) });
       qc.invalidateQueries({ queryKey: questionBankKeys.sources() });
     },
   });

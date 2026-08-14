@@ -16,6 +16,8 @@ import {
   listChaptersSchema,
   listSourcesSchema,
   updateSourceSchema,
+  retryPageParamsSchema,
+  saveChapterSourceSchema,
   paperGenerationConfigSchema,
 } from './question-bank.validation';
 
@@ -52,6 +54,38 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const job = await questionExtractionService.getExtractionJob(req.params.id, ctx);
       sendSuccess(res, job);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/extract/chapter — multi-page layout-aware capture, one image per captured page. */
+  async extractChapter(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+      if (files.length === 0) throw new ValidationError('At least one page image is required');
+      const images = files.map((f) => ({ dataUri: fileToDataUri(f), fileName: f.originalname }));
+      const job = await questionBankService.enqueueChapterCapture(images, buildAuthContext(req.user!));
+      sendCreated(res, job, `Reading ${files.length} page(s)…`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/extract/jobs/:id/pages/:pageNumber/retry — reprocess one failed/low-confidence page. */
+  async retryChapterPage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('An image file is required');
+      const params = retryPageParamsSchema.parse({ id: req.params.id, pageNumber: req.params.pageNumber });
+      const ctx = buildAuthContext(req.user!);
+      const result = await questionBankService.retryChapterPage(params.id, params.pageNumber, fileToDataUri(req.file), ctx);
+      sendSuccess(res, result, 'Page reprocessed');
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/sources — finalizes a reviewed chapter capture into a permanent, saved source ("Save Chapter"). */
+  async saveChapterSource(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = saveChapterSourceSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const source = await questionBankService.saveChapterSource(data, ctx);
+      sendCreated(res, source, 'Chapter saved');
     } catch (err) { next(err); }
   },
 
@@ -93,13 +127,13 @@ export const questionBankController = {
     } catch (err) { next(err); }
   },
 
-  /** PATCH /question-bank/sources/:id — assign/rename the chapter this upload belongs to */
+  /** PATCH /question-bank/sources/:id — chapter rename and/or structured content edits made during review */
   async updateSource(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = updateSourceSchema.parse(req.body);
       const ctx = buildAuthContext(req.user!);
-      const source = await questionBankService.updateSourceChapter(req.params.id, data.chapterName, ctx);
-      sendSuccess(res, source, 'Chapter updated');
+      const source = await questionBankService.updateSource(req.params.id, data, ctx);
+      sendSuccess(res, source, 'Saved');
     } catch (err) { next(err); }
   },
 

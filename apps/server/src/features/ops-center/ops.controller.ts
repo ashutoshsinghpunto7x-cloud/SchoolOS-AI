@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { opsService } from './ops.service';
 import { sendPaginated, sendSuccess } from '../../lib/response';
-import { auditTrailQuerySchema, updateAlertSchema } from './ops.validation';
+import { auditTrailQuerySchema, updateAlertSchema, chapterCaptureUsageQuerySchema, feeReceiptWhatsappQuerySchema } from './ops.validation';
 import { NotFoundError } from '../../middlewares/errorHandler';
 
 export const opsController = {
@@ -60,6 +60,14 @@ export const opsController = {
     } catch (err) { next(err); }
   },
 
+  async chapterCaptureUsage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = chapterCaptureUsageQuerySchema.parse(req.query);
+      const data = await opsService.getChapterCaptureUsage(query);
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
   async schoolDetail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = await opsService.getSchoolDetail(req.params.schoolId);
@@ -102,6 +110,14 @@ export const opsController = {
   async communications(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = await opsService.getCommunications();
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  },
+
+  async feeReceiptWhatsapp(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = feeReceiptWhatsappQuerySchema.parse(req.query);
+      const data = await opsService.getFeeReceiptWhatsappAnalytics(query);
       sendSuccess(res, data);
     } catch (err) { next(err); }
   },

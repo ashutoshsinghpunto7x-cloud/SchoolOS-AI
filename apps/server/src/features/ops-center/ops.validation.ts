@@ -13,6 +13,26 @@ export const auditTrailQuerySchema = z.object({
 
 export type AuditTrailQuery = z.infer<typeof auditTrailQuerySchema>;
 
+export const chapterCaptureUsageQuerySchema = z.object({
+  schoolId: z.string().optional(),
+  userId:   z.string().optional(),
+  from:     z.string().optional(),
+  to:       z.string().optional(),
+});
+
+export type ChapterCaptureUsageQuery = z.infer<typeof chapterCaptureUsageQuerySchema>;
+
+export const feeReceiptWhatsappQuerySchema = z.object({
+  schoolId:  z.string().optional(),
+  studentId: z.string().optional(),
+  createdBy: z.string().optional(),
+  status:    z.enum(['QUEUED', 'SENT', 'DELIVERED', 'READ', 'FAILED', 'SKIPPED']).optional(),
+  from:      z.string().optional(),
+  to:        z.string().optional(),
+});
+
+export type FeeReceiptWhatsappQuery = z.infer<typeof feeReceiptWhatsappQuerySchema>;
+
 export const updateAlertSchema = z.object({
   status: z.enum(['open', 'acknowledged', 'resolved']).optional(),
   assignedToUserId: z.string().optional(),

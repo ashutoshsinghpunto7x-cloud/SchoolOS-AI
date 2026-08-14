@@ -15,6 +15,8 @@ import type {
   PaginatedResponse,
   QuestionSource,
   UpdateQuestionSourcePayload,
+  ChapterCaptureJobResult,
+  ChapterPage,
 } from '@schoolos/types';
 
 const BASE = '/question-bank';
@@ -64,6 +66,49 @@ export const questionBankApi = {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  // ── Layout-aware chapter capture (multi-page) ───────────────────────────────
+
+  /** Starts a multi-page structured OCR batch job — returns immediately with a jobId to poll (see useChapterCaptureJob), unlike the single-image flows above which poll to completion internally. This lets the review screen show per-page progress. */
+  extractChapter: async (images: File[]): Promise<{ jobId: string }> => {
+    try {
+      const formData = new FormData();
+      images.forEach((img) => formData.append('images', img));
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/chapter`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getChapterCaptureJob: async (jobId: string): Promise<ExtractionJobStatus<ChapterCaptureJobResult> & { totalPages?: number; completedPages?: number }> => {
+    try {
+      const res = await apiClient.get<{ data: ExtractionJobStatus<ChapterCaptureJobResult> & { totalPages?: number; completedPages?: number } }>(`${BASE}/extract/jobs/${jobId}`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Reprocesses one page in-place — for "Retry Page" on a failed/low-confidence page without redoing the whole batch. */
+  retryChapterPage: async (jobId: string, pageNumber: number, file: File): Promise<ChapterCaptureJobResult> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post<{ data: ChapterCaptureJobResult }>(`${BASE}/extract/jobs/${jobId}/pages/${pageNumber}/retry`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Finalizes a reviewed chapter capture (with the teacher's edits already applied) into a permanent, saved source — "Save Chapter". */
+  saveChapterSource: async (payload: {
+    class: string; subject: string; documentTitle?: string; language?: string; chapterName?: string; fileName?: string; pages: ChapterPage[];
+  }): Promise<QuestionSource> => {
+    try {
+      const res = await apiClient.post<{ data: QuestionSource }>(`${BASE}/sources`, payload);
+      return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

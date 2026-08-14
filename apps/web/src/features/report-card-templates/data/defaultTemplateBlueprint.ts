@@ -29,14 +29,15 @@ export const DEFAULT_TEMPLATE_SUBJECTS: TemplateSubjectRow[] = [
   marksSubject('Hindi - Dictation/Spelling', 9),
   marksSubject('Mathematics', 10),
   marksSubject('Science/EVS', 11),
-  marksSubject('Computer Education', 12),
-  marksSubject('G.K.', 13),
-  marksSubject('Abacus', 14),
-  gradeSubject('Moral Science', 15),
-  gradeSubject('Art/Craft', 16),
-  gradeSubject('Music', 17),
-  gradeSubject('Dance', 18),
-  gradeSubject('P.T./Games', 19),
+  marksSubject('Social Studies', 12),
+  marksSubject('Computer Education', 13),
+  marksSubject('G.K.', 14),
+  marksSubject('Abacus/STEM', 15),
+  gradeSubject('Moral Science', 16),
+  gradeSubject('Art/Craft', 17),
+  gradeSubject('P.T./Games', 18),
+  gradeSubject('Dance', 19),
+  gradeSubject('Music', 20),
 ];
 
 export const DEFAULT_TEMPLATE_SKILL_SECTIONS: TemplateSkillSection[] = [

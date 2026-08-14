@@ -3,7 +3,7 @@ import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { chapterRepository } from './chapter.repository';
 import { questionRepository, QuestionListOptions } from './question.repository';
 import { questionSourceRepository } from './question-source.repository';
-import { questionExtractionService } from './question-extraction.service';
+import { questionExtractionService, flattenBlocksToText } from './question-extraction.service';
 import { IQuestion } from './question.model';
 import { ISyllabusChapter } from './chapter.model';
 import { IQuestionSource } from './question-source.model';
@@ -14,6 +14,8 @@ import {
   ListQuestionsInput,
   ListQuestionGroupsInput,
   ListSourcesInput,
+  UpdateSourceInput,
+  SaveChapterSourceInput,
 } from './question-bank.validation';
 
 export const questionBankService = {
@@ -91,6 +93,7 @@ export const questionBankService = {
         keywords: q.keywords,
         source: q.source ?? undefined,
         createdBy: ctx.userId,
+        sourceRef: q.sourceRef ?? undefined,
       });
     }
 
@@ -153,6 +156,49 @@ export const questionBankService = {
     const updated = await questionSourceRepository.updateChapterName(id, ctx.schoolId, chapterName);
     if (!updated) throw new NotFoundError('Upload');
     return updated;
+  },
+
+  /** PATCH /sources/:id — chapter rename (legacy) and/or structured content edits (teacher review). */
+  async updateSource(id: string, data: UpdateSourceInput, ctx: AuthContext): Promise<IQuestionSource> {
+    const source = await questionSourceRepository.findById(id, ctx.schoolId);
+    if (!source) throw new NotFoundError('Upload');
+
+    if (data.pages) {
+      const extractedText = flattenBlocksToText(data.pages.flatMap((p) => p.blocks));
+      const updated = await questionSourceRepository.updateStructuredContent(id, ctx.schoolId, {
+        documentTitle: data.documentTitle ?? source.documentTitle,
+        pages: data.pages,
+        extractedText: extractedText || source.extractedText,
+        reviewStatus: data.reviewStatus,
+      });
+      if (!updated) throw new NotFoundError('Upload');
+      if (data.chapterName) return (await questionSourceRepository.updateChapterName(id, ctx.schoolId, data.chapterName)) ?? updated;
+      return updated;
+    }
+
+    if (data.chapterName) {
+      const updated = await questionSourceRepository.updateChapterName(id, ctx.schoolId, data.chapterName);
+      if (!updated) throw new NotFoundError('Upload');
+      return updated;
+    }
+
+    return source;
+  },
+
+  /** POST /extract/chapter — starts a multi-page structured OCR batch job. */
+  async enqueueChapterCapture(images: { dataUri: string; fileName?: string }[], ctx: AuthContext): Promise<{ jobId: string }> {
+    if (images.length === 0) throw new ValidationError('At least one page image is required');
+    return questionExtractionService.enqueueChapterCapture(images, ctx);
+  },
+
+  /** POST /extract/jobs/:id/pages/:pageNumber/retry — reprocess a single page without redoing the whole batch. */
+  async retryChapterPage(jobId: string, pageNumber: number, imageDataUri: string, ctx: AuthContext) {
+    return questionExtractionService.retryPage(jobId, pageNumber, imageDataUri, ctx);
+  },
+
+  /** POST /sources — finalizes a reviewed chapter-capture job into a permanent QuestionSource ("Save Chapter"). */
+  async saveChapterSource(data: SaveChapterSourceInput, ctx: AuthContext): Promise<IQuestionSource> {
+    return questionExtractionService.saveChapterSource(data.class, data.subject, data, ctx);
   },
 
   async deleteQuestion(id: string, ctx: AuthContext): Promise<void> {

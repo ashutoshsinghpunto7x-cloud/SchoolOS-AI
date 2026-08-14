@@ -3550,6 +3550,9 @@ export interface TermSubjectMarkCorrection {
   unitTest2Score?: number;
   mainExamScore?: number;
   grade?: string;
+  /** Per-student override of the subject's evaluation type on this one card — e.g. a subject the
+   *  template scores by marks for the class, but this teacher wants graded only for this student. */
+  evaluationType?: SubjectEvaluationType;
 }
 
 export interface UpdateTermReportCardPayload {
@@ -3637,6 +3640,14 @@ export interface Question extends BaseEntity {
   usageHistory: QuestionUsageEntry[];
   createdBy: string;
   isDeleted: boolean;
+  /** Traceability back to the structured chapter capture this question was drafted from, if any — powers "Show source". */
+  sourceRef?: QuestionSourceRef;
+}
+
+export interface QuestionSourceRef {
+  sourceId: string;
+  pageNumber?: number;
+  blockIndex?: number;
 }
 
 export interface CreateQuestionPayload {
@@ -3700,6 +3711,7 @@ export interface ExtractedQuestionDraft {
   chapterName: string;
   topic?: string;
   source?: string;
+  sourceRef?: QuestionSourceRef;
 }
 
 export interface QuestionExtractionResult {
@@ -3733,10 +3745,147 @@ export interface QuestionSource extends BaseEntity {
   extractedText: string;
   /** Teacher-assigned chapter for this upload — pre-fills every question drafted from it, overriding the AI's per-question guess. */
   chapterName?: string;
+  /** Layout-aware chapter capture (multi-page). Absent on older flat-text sources and on plain PDF/single-image uploads — UI falls back to `extractedText`. */
+  documentTitle?: string;
+  language?: string;
+  pages?: ChapterPage[];
+  reviewStatus?: 'ready_for_review' | 'saved';
 }
 
 export interface UpdateQuestionSourcePayload {
-  chapterName: string;
+  chapterName?: string;
+  documentTitle?: string;
+  pages?: ChapterPage[];
+  reviewStatus?: 'ready_for_review' | 'saved';
+}
+
+// ── Structured chapter capture (layout-aware OCR) ─────────────────────────────
+// OCR layer only: "what is present on the page?" — never invents content, always
+// preserves source ordering/hierarchy. Question generation (above) is a separate,
+// later AI step that reads this structure but never feeds back into it.
+
+export type BlockConfidence = 'high' | 'review' | 'low';
+
+export interface HeadingBlock {
+  type: 'heading';
+  level: 1 | 2 | 3;
+  text: string;
+  confidence?: BlockConfidence;
+}
+
+export interface ParagraphBlock {
+  type: 'paragraph';
+  /** Markdown-lite inline formatting only (**bold**, *italic*) — no span-offset model. */
+  text: string;
+  confidence?: BlockConfidence;
+}
+
+export interface ListBlockItem {
+  text: string;
+  items?: ListBlockItem[];
+}
+
+export interface ListBlock {
+  type: 'list';
+  ordered: boolean;
+  items: ListBlockItem[];
+  confidence?: BlockConfidence;
+}
+
+export interface TableBlock {
+  type: 'table';
+  caption?: string;
+  headers: string[];
+  rows: string[][];
+  confidence?: BlockConfidence;
+}
+
+export interface EquationBlock {
+  type: 'equation';
+  latex: string;
+  /** Plain-text fallback for when LaTeX rendering isn't available/desired. */
+  displayText?: string;
+  confidence?: BlockConfidence;
+}
+
+export interface FigureBlock {
+  type: 'figure';
+  figureNumber?: string;
+  caption?: string;
+  labels?: string[];
+  confidence?: BlockConfidence;
+}
+
+export interface NoteBlock {
+  type: 'note' | 'quote';
+  text: string;
+  confidence?: BlockConfidence;
+}
+
+export type ContentBlock = HeadingBlock | ParagraphBlock | ListBlock | TableBlock | EquationBlock | FigureBlock | NoteBlock;
+
+export interface ChapterPage {
+  pageNumber: number;
+  blocks: ContentBlock[];
+  confidence?: BlockConfidence;
+  /** Set when this page's OCR failed and was skipped rather than blocking the whole batch — see "Continue Without This Page". */
+  pageError?: string;
+}
+
+/** Async batch job covering every page of a chapter capture — see ExtractionJob on the server (kind: 'chapter_capture'). */
+export interface ChapterCaptureJobResult {
+  documentTitle?: string;
+  language?: string;
+  pages: ChapterPage[];
+  totalPages: number;
+  completedPages: number;
+}
+
+// ── Server-side usage accounting (never trusts client-reported counts) ───────
+
+export type UsageEventFeature = 'chapter-capture';
+export type UsageEventAction = 'capture_started' | 'page_processed' | 'chapter_saved' | 'question_generated' | 'paper_generated';
+export type UsageEventStatus = 'success' | 'failed';
+
+export interface UsageEvent {
+  _id: string;
+  userId: string;
+  schoolId: string;
+  feature: UsageEventFeature;
+  action: UsageEventAction;
+  documentId?: string;
+  pagesProcessed?: number;
+  wordsGenerated?: number;
+  processingTimeMs?: number;
+  status: UsageEventStatus;
+  createdAt: string;
+}
+
+/** Ops Center — Chapter Capture usage overview + per-user breakdown. */
+export interface ChapterCaptureUsageOverview {
+  totalUsers: number;
+  totalDocuments: number;
+  totalPages: number;
+  totalWords: number;
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  avgProcessingTimeMs: number;
+  avgWordsPerDocument: number;
+}
+
+export interface ChapterCaptureUserUsage {
+  userId: string;
+  userName?: string;
+  documents: number;
+  pages: number;
+  wordsGenerated: number;
+  processingRequests: number;
+}
+
+export interface ChapterCaptureUsageReport {
+  overview: ChapterCaptureUsageOverview;
+  byUser: ChapterCaptureUserUsage[];
 }
 
 // ── Paper generation ───────────────────────────────────────────────────────────

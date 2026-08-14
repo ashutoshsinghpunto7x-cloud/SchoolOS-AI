@@ -36,6 +36,22 @@ export const aiImageUploadMiddleware = multer({
   },
 }).single('file');
 
+// Multi-page chapter capture — a teacher can photograph 5-20+ pages in one
+// sitting and process them as a single batch (see question-bank's
+// enqueueChapterCapture) rather than firing one request per page. Same
+// per-file size/type rules as aiImageUploadMiddleware; capped at 30 pages,
+// which is generous for a single textbook chapter/section.
+const MAX_CHAPTER_PAGES = 30;
+
+export const chapterImagesUploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_AI_IMAGE_SIZE, files: MAX_CHAPTER_PAGES },
+  fileFilter(_req, file, cb) {
+    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new ValidationError('Only JPEG, PNG, WEBP, or GIF images are allowed.'));
+  },
+}).array('images', MAX_CHAPTER_PAGES);
+
 const ALLOWED_DOC_TYPES = [
   ...ALLOWED_IMAGE_TYPES,
   'application/pdf',

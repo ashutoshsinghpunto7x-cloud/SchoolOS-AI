@@ -217,7 +217,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
   const [method, setMethod] = useState<MethodKey>('cash');
   const [refNumber, setRefNumber] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState<{ lineItems: ReceiptLineItem[]; total: number; paymentMode: string; receiptNumber?: string } | null>(null);
+  const [success, setSuccess] = useState<{ lineItems: ReceiptLineItem[]; total: number; paymentMode: string; receiptNumber?: string; paymentIds: string[] } | null>(null);
 
   const { mutateAsync: updateFeeRecord, isPending: updating } = useUpdateAnyFeeRecord();
   const { mutateAsync: createFeeRecord, isPending: creating } = useCreateFeeRecord();
@@ -269,6 +269,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
     let remainingDiscount = discountNum;
     const lineItems: ReceiptLineItem[] = [];
     const receiptNumbers: string[] = [];
+    const paymentIds: string[] = [];
 
     try {
       for (let i = 0; i < selectedLines.length; i++) {
@@ -313,11 +314,12 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
         lineItems.push({ label: line.label, amount: Math.round((amountToPay + allocated) * 100) / 100 });
         if (result.payment.receiptNumber) receiptNumbers.push(result.payment.receiptNumber);
+        paymentIds.push(result.payment._id);
       }
 
       if (discountNum > 0) lineItems.push({ label: 'Discount', amount: -discountNum });
 
-      setSuccess({ lineItems, total, paymentMode: method === 'card' ? 'card' : paymentMode, receiptNumber: receiptNumbers.join(' / ') || undefined });
+      setSuccess({ lineItems, total, paymentMode: method === 'card' ? 'card' : paymentMode, receiptNumber: receiptNumbers.join(' / ') || undefined, paymentIds });
       onPaid();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record payment.');
@@ -336,6 +338,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
         total={success.total}
         paymentMode={success.paymentMode}
         receiptNumber={success.receiptNumber}
+        paymentIds={success.paymentIds}
         onDone={onBack}
       />
     );
