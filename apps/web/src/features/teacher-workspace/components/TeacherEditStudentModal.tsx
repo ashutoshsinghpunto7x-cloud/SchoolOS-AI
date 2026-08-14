@@ -108,6 +108,7 @@ export function TeacherEditStudentModal({ student, onClose }: Props) {
             isLoading={isPending}
             submitLabel="Save Changes"
             showMonthlyFee={false}
+            requireAllFields={false}
           />
         </div>
       </div>

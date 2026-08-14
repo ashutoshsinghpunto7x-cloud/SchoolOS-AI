@@ -17,6 +17,7 @@
     "seed:replace-class-2": "tsx src/scripts/replace-class-2-roster.ts",
     "seed:replace-class-va": "tsx src/scripts/replace-class-va-roster.ts",
     "seed:replace-class-vb": "tsx src/scripts/replace-class-vb-roster.ts",
+    "seed:replace-class-1a": "tsx src/scripts/replace-class-1a-roster.ts",
     "seed:assign-class-5a-teacher": "tsx src/scripts/assign-class-5a-teacher.ts",
     "seed:demo-workspace": "tsx src/scripts/seed-demo-workspace.ts",
     "seed:whatsapp-demo": "tsx src/scripts/seed-whatsapp-demo-class.ts",

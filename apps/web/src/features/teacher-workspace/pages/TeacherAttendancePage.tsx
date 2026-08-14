@@ -374,12 +374,12 @@ function CompactRow({
       <div className="w-full flex items-center px-4 py-3 gap-3">
         <button
           type="button"
-          disabled={!marked || !editable}
-          onClick={() => (marked ? onToggleExpanded?.(row.studentId) : undefined)}
+          disabled={!editable}
+          onClick={() => onToggleExpanded?.(row.studentId)}
           className={cn(
             'flex-1 flex items-center gap-3 text-left min-w-0',
-            marked && editable && 'hover:brightness-[0.97]',
-            !marked && 'cursor-default',
+            editable && 'hover:brightness-[0.97]',
+            !editable && 'cursor-default',
           )}
         >
           <span className="text-sm text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono">{index + 1}</span>
@@ -417,10 +417,13 @@ function CompactRow({
         )}
       </div>
 
-      {/* Action picker — appears in place under a marked row once tapped, so
-          switching Present↔Absent or undoing is a deliberate choice made
-          right here instead of an instant undo-on-tap. */}
-      {marked && editable && expanded && (
+      {/* Action picker — appears in place under a row once its name is tapped, so
+          picking Present/Absent (or switching/undoing an already-marked row) is a
+          deliberate choice made right here instead of an instant undo-on-tap.
+          Shown for unmarked rows too, so a teacher can mark the few absent
+          students directly by tapping their name instead of only via the
+          swipeable "next up" card. */}
+      {editable && expanded && (
         <div className="px-4 pb-3 pl-16 flex items-center gap-2">
           <button
             type="button"
@@ -446,13 +449,15 @@ function CompactRow({
           >
             <X className="w-3.5 h-3.5" /> Absent
           </button>
-          <button
-            type="button"
-            onClick={() => onUndo(row.studentId)}
-            className="h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
-          >
-            <Undo2 className="w-3.5 h-3.5" /> Unmark
-          </button>
+          {marked && (
+            <button
+              type="button"
+              onClick={() => onUndo(row.studentId)}
+              className="h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-white/50 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+            >
+              <Undo2 className="w-3.5 h-3.5" /> Unmark
+            </button>
+          )}
         </div>
       )}
     </div>

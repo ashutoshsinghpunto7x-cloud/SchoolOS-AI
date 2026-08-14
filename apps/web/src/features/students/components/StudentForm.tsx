@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
@@ -15,7 +15,14 @@ const phoneRule = z
   .string()
   .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number');
 
-const studentFormSchema = z.object({
+const admissionStatusRule = z.enum([
+  'enquiry', 'application', 'admission_pending', 'active',
+  'transferred', 'graduated', 'inactive',
+]);
+
+// Full validation — used for admin/reception/accountant create & edit flows,
+// where the record is expected to be complete.
+const strictStudentFormSchema = z.object({
   fullName: z
     .string({ required_error: 'Full name is required' })
     .min(2, 'At least 2 characters'),
@@ -38,16 +45,40 @@ const studentFormSchema = z.object({
   alternatePhone: phoneRule.optional().or(z.literal('')),
   email: z.string().email('Enter a valid email').optional().or(z.literal('')),
   address: z.string().optional(),
-  admissionStatus: z.enum([
-    'enquiry', 'application', 'admission_pending', 'active',
-    'transferred', 'graduated', 'inactive',
-  ]),
+  admissionStatus: admissionStatusRule,
   tags: z.array(z.string()),
   remarks: z.string().optional(),
   monthlyTuitionFee: z.string().optional(),
 });
 
-export type StudentFormValues = z.infer<typeof studentFormSchema>;
+// Relaxed validation — used when a teacher edits a student. Teachers own the
+// student's name (and can add a new student outright); everything else —
+// gender, DOB, parent details, address, admission status — is filled in and
+// kept current by the accountant/reception workspace, so it's optional here.
+// Format checks (e.g. a valid phone number, a valid email) still apply if a
+// value is actually entered, so partial/garbled edits are still caught.
+const lenientStudentFormSchema = z.object({
+  fullName: z
+    .string({ required_error: 'Full name is required' })
+    .min(2, 'At least 2 characters'),
+  rollNumber: z.string().optional().or(z.literal('')),
+  class: z.string().optional().or(z.literal('')),
+  section: z.string().optional().or(z.literal('')),
+  gender: z.enum(['male', 'female', 'other']).optional().or(z.literal('')),
+  dateOfBirth: z.string().optional().or(z.literal('')),
+  fatherName: z.string().optional().or(z.literal('')),
+  motherName: z.string().optional().or(z.literal('')),
+  parentPhone: phoneRule.optional().or(z.literal('')),
+  alternatePhone: phoneRule.optional().or(z.literal('')),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+  address: z.string().optional(),
+  admissionStatus: admissionStatusRule.optional(),
+  tags: z.array(z.string()),
+  remarks: z.string().optional(),
+  monthlyTuitionFee: z.string().optional(),
+});
+
+export type StudentFormValues = z.infer<typeof strictStudentFormSchema>;
 
 // ── Helper components ─────────────────────────────────────────────────────────
 
@@ -103,6 +134,13 @@ interface StudentFormProps {
   submitLabel?: string;
   /** Monthly tuition fee is an accountant-only concern — hidden for other editors (e.g. teachers). */
   showMonthlyFee?: boolean;
+  /**
+   * Whether gender/DOB/parent-info/address/admission-status are required to save.
+   * Default true for admin/reception/accountant flows. Set false for the teacher-edit
+   * modal — teachers own the name (and can add a student outright); the rest is
+   * accountant-owned and optional for them to fill in.
+   */
+  requireAllFields?: boolean;
 }
 
 export const StudentForm = ({
@@ -111,6 +149,7 @@ export const StudentForm = ({
   isLoading = false,
   submitLabel = 'Create Student',
   showMonthlyFee = true,
+  requireAllFields = true,
 }: StudentFormProps) => {
   const {
     register,
@@ -121,7 +160,10 @@ export const StudentForm = ({
     getValues,
     formState: { errors },
   } = useForm<StudentFormValues>({
-    resolver: zodResolver(studentFormSchema),
+    // Both schemas share the same field set; the lenient one just relaxes which
+    // fields are required. Cast so `useForm<StudentFormValues>` (typed against the
+    // strict/required shape used elsewhere in the app) accepts either resolver.
+    resolver: zodResolver(requireAllFields ? strictStudentFormSchema : lenientStudentFormSchema) as Resolver<StudentFormValues>,
     defaultValues: initialData
       ? {
           fullName: initialData.fullName,
@@ -207,7 +249,7 @@ export const StudentForm = ({
             />
           </Field>
 
-          <Field label="Class" required error={errors.class?.message}>
+          <Field label="Class" required={requireAllFields} error={errors.class?.message}>
             <select {...register('class')} className={selectClass(!!errors.class)}>
               <option value="">Select class</option>
               {CLASS_OPTIONS.map((c) => (
@@ -218,7 +260,7 @@ export const StudentForm = ({
             </select>
           </Field>
 
-          <Field label="Section" required error={errors.section?.message}>
+          <Field label="Section" required={requireAllFields} error={errors.section?.message}>
             <select {...register('section')} className={selectClass(!!errors.section)}>
               <option value="">Select section</option>
               {SECTION_OPTIONS.map((s) => (
@@ -229,7 +271,7 @@ export const StudentForm = ({
             </select>
           </Field>
 
-          <Field label="Gender" required error={errors.gender?.message}>
+          <Field label="Gender" required={requireAllFields} error={errors.gender?.message}>
             <select {...register('gender')} className={selectClass(!!errors.gender)}>
               <option value="">Select gender</option>
               <option value="male">Male</option>
@@ -238,7 +280,7 @@ export const StudentForm = ({
             </select>
           </Field>
 
-          <Field label="Date of Birth" required error={errors.dateOfBirth?.message}>
+          <Field label="Date of Birth" required={requireAllFields} error={errors.dateOfBirth?.message}>
             <input
               {...register('dateOfBirth')}
               type="date"
@@ -297,7 +339,7 @@ export const StudentForm = ({
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-          <Field label="Father's Name" required error={errors.fatherName?.message}>
+          <Field label="Father's Name" required={requireAllFields} error={errors.fatherName?.message}>
             <input
               {...register('fatherName')}
               type="text"
@@ -306,7 +348,7 @@ export const StudentForm = ({
             />
           </Field>
 
-          <Field label="Mother's Name" required error={errors.motherName?.message}>
+          <Field label="Mother's Name" required={requireAllFields} error={errors.motherName?.message}>
             <input
               {...register('motherName')}
               type="text"
@@ -315,7 +357,7 @@ export const StudentForm = ({
             />
           </Field>
 
-          <Field label="Primary Phone" required error={errors.parentPhone?.message}>
+          <Field label="Primary Phone" required={requireAllFields} error={errors.parentPhone?.message}>
             <input
               {...register('parentPhone')}
               type="tel"
