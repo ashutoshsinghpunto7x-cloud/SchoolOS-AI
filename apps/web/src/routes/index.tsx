@@ -997,19 +997,23 @@ export const router = createBrowserRouter([
                 ],
               },
 
-              // Parent Workspace — mobile-first, mock-data-backed for now.
-              // Not yet gated by a dedicated `parent` role (none exists on
-              // the backend); reachable by any authenticated user at /parent
-              // until the role ships, matching how other in-progress
-              // workspaces (e.g. reports below) are left ungated.
+              // Parent Workspace (parent-role only, mobile-first with bottom
+              // nav). Dashboard content is still mock-data-backed pending a
+              // real parent-workspace aggregation API; login/routing/role
+              // gating is real.
               {
-                element: <ParentLayout />,
+                element: <ProtectedRoute allowedRoles={['parent']} />,
                 children: [
-                  { path: 'parent', element: <ParentDashboardPage /> },
-                  { path: 'parent/academics', element: <ComingSoon /> },
-                  { path: 'parent/attendance', element: <ComingSoon /> },
-                  { path: 'parent/fees', element: <ComingSoon /> },
-                  { path: 'parent/more', element: <ComingSoon /> },
+                  {
+                    element: <ParentLayout />,
+                    children: [
+                      { path: 'parent', element: <ParentDashboardPage /> },
+                      { path: 'parent/academics', element: <ComingSoon /> },
+                      { path: 'parent/attendance', element: <ComingSoon /> },
+                      { path: 'parent/fees', element: <ComingSoon /> },
+                      { path: 'parent/more', element: <ComingSoon /> },
+                    ],
+                  },
                 ],
               },
 

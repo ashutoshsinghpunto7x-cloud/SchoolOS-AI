@@ -10,6 +10,9 @@ function PendingUploadRow({ source }: { source: import('@schoolos/types').Questi
   const [editing, setEditing] = useState(false);
   const [chapterName, setChapterName] = useState(source.chapterName ?? '');
 
+  const pageCount = source.pages?.length;
+  const wordCount = source.extractedText ? source.extractedText.trim().split(/\s+/).filter(Boolean).length : 0;
+
   async function saveChapter() {
     if (!chapterName.trim()) { setEditing(false); return; }
     try {
@@ -31,6 +34,9 @@ function PendingUploadRow({ source }: { source: import('@schoolos/types').Questi
           {source.fileName || (source.kind === 'image' ? 'Photo upload' : 'PDF upload')}
         </span>
         <span className="text-[11px] text-gray-400 shrink-0">Class {source.class} · {source.subject}</span>
+        <span className="text-[11px] text-gray-400 shrink-0">
+          {pageCount ? `${pageCount} pg · ` : ''}{wordCount.toLocaleString()} words
+        </span>
         <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
       </button>
       {editing ? (

@@ -210,7 +210,11 @@ export const questionBankApi = {
 
   generatePaper: async (config: PaperGenerationConfig): Promise<GeneratedPaper> => {
     try {
-      const res = await apiClient.post<{ data: GeneratedPaper }>(`${BASE}/papers/generate`, config);
+      // Same reasoning as UPLOAD_TIMEOUT_MS above: when the question bank can't fully
+      // satisfy the requested marks breakdown, the server fills gaps with sequential
+      // AI synthesis calls (one per unfilled marks row) — a paper with several rows can
+      // easily exceed the default 60s timeout and needed to error before completing.
+      const res = await apiClient.post<{ data: GeneratedPaper }>(`${BASE}/papers/generate`, config, { timeout: UPLOAD_TIMEOUT_MS });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

@@ -47,6 +47,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   ],
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
+  // Parent portal — scoped entirely to their own linked children via
+  // Parent Workspace endpoints, not the general admin-facing permission set.
+  parent: [],
   // Internal SchoolOS staff — Ops Center only, no tenant-facing permissions.
   // Feature-flag management (create/delete/rollout/global toggle) is reserved
   // for owner/super_admin; the rest of Ops staff can only view flag status.
@@ -63,6 +66,7 @@ export const ROLE_META: Record<UserRole, { label: string; description: string }>
   reception: { label: 'Receptionist', description: 'Student admissions and communication' },
   teacher: { label: 'Teacher', description: 'View students and communications' },
   accountant: { label: 'Accountant', description: 'Fee collection, salary, and expense management' },
+  parent: { label: 'Parent', description: 'View their own children\'s attendance, academics, and fees' },
   owner: { label: 'Owner', description: 'SchoolOS platform owner — Ops Center access' },
   super_admin: { label: 'Super Admin', description: 'SchoolOS platform super admin — Ops Center access' },
   devops: { label: 'DevOps', description: 'SchoolOS infrastructure engineer — Ops Center access' },

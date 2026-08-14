@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { ParentHeader } from '../components/ParentHeader';
 import { ChildStatus } from '../components/ChildStatus';
@@ -19,6 +20,7 @@ const fadeUp = {
 };
 
 export function ParentDashboardPage() {
+  const { user } = useAuth();
   const { data, activeChild, isLoading, isError, setActiveChildId } = useParentWorkspace();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
@@ -56,7 +58,7 @@ export function ParentDashboardPage() {
   return (
     <>
       <ParentHeader
-        parentName={data.parent.name}
+        parentName={user ? `${user.firstName} ${user.lastName}`.trim() : data.parent.name}
         childName={activeChild.name}
         unreadCount={unreadCount}
         onOpenNotifications={() => setNotificationsOpen(true)}

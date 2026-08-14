@@ -6,7 +6,9 @@ export const createUserSchema = z.object({
   email: z.string().email().toLowerCase(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant']),
+  role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent']),
+  /** Parent role only — Student._id values this account may view. */
+  linkedStudentIds: z.array(z.string()).optional(),
 });
 
 export const updateUserSchema = z
@@ -16,8 +18,9 @@ export const updateUserSchema = z
     email: z.string().email().toLowerCase().optional(),
     phone: z.string().optional(),
     password: z.string().min(8).optional(),
-    role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant']).optional(),
+    role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent']).optional(),
     status: z.enum(['active', 'inactive', 'suspended']).optional(),
+    linkedStudentIds: z.array(z.string()).optional(),
   })
   .strict();
 

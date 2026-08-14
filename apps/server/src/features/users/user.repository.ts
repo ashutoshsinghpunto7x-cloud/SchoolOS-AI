@@ -9,6 +9,7 @@ interface CreateUserInput {
   phone?: string;
   passwordHash: string;
   role: IUser['role'];
+  linkedStudentIds?: string[];
   schoolId: string;
   createdBy?: string;
 }

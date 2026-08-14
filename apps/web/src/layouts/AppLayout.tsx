@@ -26,10 +26,8 @@ function AppLayoutInner() {
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
   // Parent Workspace ships its own full-bleed shell (ParentLayout: header +
-  // bottom nav) — same treatment as the teacher portal below. Routed on
-  // pathname rather than role since there's no dedicated `parent` UserRole
-  // yet; any authenticated user can preview it at /parent for now.
-  const isParentWorkspace = location.pathname.startsWith('/parent');
+  // bottom nav) — same treatment as the teacher portal above.
+  const isParentWorkspace = user?.role === 'parent';
   const mainRef = useRef<HTMLElement>(null);
 
   // Read the shared theme — safe because this component is always wrapped in

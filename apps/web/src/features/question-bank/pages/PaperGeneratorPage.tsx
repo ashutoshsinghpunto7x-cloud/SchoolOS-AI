@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Plus, Trash2, Sparkles } from 'lucide-react';
-import { useChapters, useGeneratePaper } from '../hooks/useQuestionBank';
+import { useChapters, useGeneratePaper, useQuestionSources } from '../hooks/useQuestionBank';
 import type { PaperMarksBreakdownEntry, QuestionType } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
@@ -23,6 +23,17 @@ export function PaperGeneratorPage() {
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set());
 
   const { data: chapters } = useChapters(cls.trim(), subject.trim());
+  // Uploads can have a chapter name assigned before any question from them has actually
+  // been generated + saved — that's when a real SyllabusChapter (what `chapters` reads from)
+  // gets created. Surfacing those pending names too (disabled) so a teacher who assigned a
+  // chapter to an upload isn't told "no chapters yet" as if they hadn't uploaded anything.
+  const { data: pendingSources } = useQuestionSources(cls.trim(), subject.trim());
+  const savedChapterNames = new Set((chapters ?? []).map((c) => c.chapterName.trim().toLowerCase()));
+  const pendingChapterNames = [...new Set(
+    (pendingSources ?? [])
+      .map((s) => s.chapterName?.trim())
+      .filter((name): name is string => !!name && !savedChapterNames.has(name.toLowerCase())),
+  )];
   const generate = useGeneratePaper();
 
   const totalMarks = marksBreakdown.reduce((sum, e) => sum + Number(e.marks || 0) * Number(e.count || 0), 0);
@@ -111,23 +122,39 @@ export function PaperGeneratorPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Chapters</p>
           {!cls || !subject ? (
             <p className="text-xs text-gray-400">Enter class and subject to see chapters.</p>
-          ) : !chapters || chapters.length === 0 ? (
-            <p className="text-xs text-gray-400">No chapters yet for this class/subject — upload some questions first.</p>
+          ) : (!chapters || chapters.length === 0) && pendingChapterNames.length === 0 ? (
+            <p className="text-xs text-gray-400">No chapters yet for this class/subject — upload a page and generate questions from it first.</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {chapters.map((c) => (
-                <button
-                  key={c._id} type="button" onClick={() => toggleChapter(c._id)}
-                  className={`h-8 px-3 rounded-lg text-xs font-semibold border ${
-                    selectedChapterIds.has(c._id)
-                      ? 'bg-[#1C2B4A] text-white border-[#1C2B4A]'
-                      : 'bg-white dark:bg-transparent text-gray-600 dark:text-white/60 border-gray-200 dark:border-white/10'
-                  }`}
-                >
-                  {c.chapterName}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-2">
+                {(chapters ?? []).map((c) => (
+                  <button
+                    key={c._id} type="button" onClick={() => toggleChapter(c._id)}
+                    className={`h-8 px-3 rounded-lg text-xs font-semibold border ${
+                      selectedChapterIds.has(c._id)
+                        ? 'bg-[#1C2B4A] text-white border-[#1C2B4A]'
+                        : 'bg-white dark:bg-transparent text-gray-600 dark:text-white/60 border-gray-200 dark:border-white/10'
+                    }`}
+                  >
+                    {c.chapterName}
+                  </button>
+                ))}
+                {pendingChapterNames.map((name) => (
+                  <button
+                    key={`pending-${name}`} type="button" disabled
+                    title="This upload has no saved questions yet — open it and use Generate Questions, then Save, before it can be used in a paper."
+                    className="h-8 px-3 rounded-lg text-xs font-semibold border border-dashed border-gray-200 dark:border-white/10 text-gray-300 dark:text-white/25 cursor-not-allowed"
+                  >
+                    {name} (not ready)
+                  </button>
+                ))}
+              </div>
+              {pendingChapterNames.length > 0 && (
+                <p className="text-[11px] text-gray-400 mt-2">
+                  Greyed-out chapters have an upload but no saved questions yet — open the upload in Question Bank and use "Generate Questions" first.
+                </p>
+              )}
+            </>
           )}
         </div>
 

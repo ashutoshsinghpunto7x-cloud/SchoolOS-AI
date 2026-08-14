@@ -6,6 +6,7 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  | 'parent'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
   | 'owner'
   | 'super_admin'
@@ -49,6 +50,11 @@ export interface IUser extends Document {
    *  features. Set only via the feature-flags "testers" endpoint. */
   isDeveloper?: boolean;
   isInternalTester?: boolean;
+  /** Parent role only — Student._id values this account may view. Set by an
+   *  admin/principal when creating or editing the parent account (no
+   *  self-serve linking flow yet). Empty/undefined means no linked children,
+   *  which the Parent Workspace treats as "nothing to show" rather than an error. */
+  linkedStudentIds?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,7 +69,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent', 'owner', 'super_admin', 'devops', 'developer', 'support'],
       required: true,
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
@@ -81,6 +87,7 @@ const userSchema = new Schema<IUser>(
     tempPasswordExpiresAt: { type: Date },
     isDeveloper: { type: Boolean, default: false },
     isInternalTester: { type: Boolean, default: false },
+    linkedStudentIds: { type: [String], default: undefined },
   },
   { timestamps: true, versionKey: false }
 );

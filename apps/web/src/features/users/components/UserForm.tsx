@@ -16,6 +16,7 @@ const ROLES: { value: UserRole; label: string }[] = [
   { value: 'reception', label: 'Receptionist' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'accountant', label: 'Accountant' },
+  { value: 'parent', label: 'Parent' },
 ];
 
 const fieldCls =

@@ -40,6 +40,7 @@ export const userService = {
       phone: data.phone,
       passwordHash,
       role: data.role,
+      linkedStudentIds: data.linkedStudentIds,
       schoolId: ctx.schoolId,
       createdBy: ctx.userId,
     });

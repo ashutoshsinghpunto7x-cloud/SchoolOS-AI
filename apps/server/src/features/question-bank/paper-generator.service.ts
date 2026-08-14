@@ -90,7 +90,25 @@ async function fillMarksGapsWithAi(
   for (const q of selected) actualByMarks.set(q.marks, (actualByMarks.get(q.marks) ?? 0) + 1);
 
   const sources = await questionSourceRepository.findAll(ctx.schoolId, config.class, config.subject).catch(() => []);
-  const created: IQuestion[] = [];
+
+  // Decide every shortfall's target chapter + context up front, from the pool/selected state
+  // before any synthesis call runs — then fire all the AI calls in parallel. This used to be a
+  // sequential await-in-loop, so a paper with several unfilled marks rows took one AI call's
+  // worth of time *per row*; parallelizing means it now takes roughly one call's worth of time
+  // total. Deciding chapter targets after the fact (post-await) would race across concurrent
+  // calls, so the "least covered chapter" tally is provisionally updated as each task is planned
+  // rather than waiting for its questions to actually be written.
+  const marksByChapter = new Map<string, number>();
+  for (const q of selected) marksByChapter.set(q.chapterId, (marksByChapter.get(q.chapterId) ?? 0) + 1);
+
+  interface Task {
+    marks: number;
+    count: number;
+    chapter: ISyllabusChapter;
+    contextText: string;
+    questionType?: PaperGenerationConfig['questionTypes'][number];
+  }
+  const tasks: Task[] = [];
 
   for (const entry of config.marksBreakdown) {
     const have = actualByMarks.get(entry.marks) ?? 0;
@@ -99,10 +117,9 @@ async function fillMarksGapsWithAi(
 
     // Attribute new questions to whichever requested chapter is least covered so far —
     // keeps the AI-filled gap spread across the paper's actual chapter selection.
-    const marksByChapter = new Map<string, number>();
-    for (const q of selected) marksByChapter.set(q.chapterId, (marksByChapter.get(q.chapterId) ?? 0) + 1);
     const chapter = [...chapters].sort((a, b) => (marksByChapter.get(String(a._id)) ?? 0) - (marksByChapter.get(String(b._id)) ?? 0))[0];
     if (!chapter) continue;
+    marksByChapter.set(String(chapter._id), (marksByChapter.get(String(chapter._id)) ?? 0) + short);
 
     const contextQuestions = pool.filter((q) => q.chapterId === String(chapter._id)).map((q) => q.questionText).slice(0, 10);
     const contextSourceText = sources.filter((s) => s.chapterName === chapter.chapterName).map((s) => s.extractedText).join('\n\n');
@@ -110,45 +127,59 @@ async function fillMarksGapsWithAi(
       || `Chapter topics: ${chapter.topics.join(', ') || chapter.chapterName}`;
 
     const questionType = config.questionTypes.length === 1 ? config.questionTypes[0] : undefined;
+    tasks.push({ marks: entry.marks, count: short, chapter, contextText, questionType });
+  }
 
-    try {
-      const drafts = await questionExtractionService.synthesizeQuestions(
-        { class: config.class, subject: config.subject, chapterName: chapter.chapterName, marks: entry.marks, count: short, questionType, contextText },
-        ctx,
-      );
-      if (drafts.length === 0) continue;
+  if (tasks.length === 0) return [];
 
-      const newQuestions = await questionRepository.createMany(drafts.map((d) => ({
-        schoolId: ctx.schoolId,
-        class: config.class,
-        subject: config.subject,
-        chapterId: String(chapter._id),
-        chapterName: chapter.chapterName,
-        topic: d.topic,
-        questionText: d.questionText,
-        questionType: d.questionType,
-        options: d.options,
-        correctAnswer: d.correctAnswer,
-        difficulty: d.difficulty,
-        marks: entry.marks,
-        estimatedTimeMinutes: d.estimatedTimeMinutes,
-        bloomsLevel: d.bloomsLevel,
-        keywords: d.keywords,
-        source: 'AI-generated to complete a paper request',
-        createdBy: ctx.userId,
-      })));
+  const results = await Promise.allSettled(tasks.map((task) =>
+    questionExtractionService.synthesizeQuestions(
+      { class: config.class, subject: config.subject, chapterName: task.chapter.chapterName, marks: task.marks, count: task.count, questionType: task.questionType, contextText: task.contextText },
+      ctx,
+    ),
+  ));
 
-      created.push(...newQuestions);
-      selected.push(...newQuestions);
-      pool.push(...newQuestions);
-      actualByMarks.set(entry.marks, have + newQuestions.length);
-    } catch (err) {
+  const created: IQuestion[] = [];
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    const result = results[i];
+
+    if (result.status === 'rejected') {
       // AI synthesis failing shouldn't take down paper generation — the pre-existing shortfall
       // warning from paper-validation.service still surfaces to the teacher either way.
       logger.error('[PaperGenerator] AI question synthesis failed for a marks gap', {
-        schoolId: ctx.schoolId, chapterId: String(chapter._id), marks: entry.marks, error: err instanceof Error ? err.message : String(err),
+        schoolId: ctx.schoolId, chapterId: String(task.chapter._id), marks: task.marks,
+        error: result.reason instanceof Error ? result.reason.message : String(result.reason),
       });
+      continue;
     }
+
+    const drafts = result.value;
+    if (drafts.length === 0) continue;
+
+    const newQuestions = await questionRepository.createMany(drafts.map((d) => ({
+      schoolId: ctx.schoolId,
+      class: config.class,
+      subject: config.subject,
+      chapterId: String(task.chapter._id),
+      chapterName: task.chapter.chapterName,
+      topic: d.topic,
+      questionText: d.questionText,
+      questionType: d.questionType,
+      options: d.options,
+      correctAnswer: d.correctAnswer,
+      difficulty: d.difficulty,
+      marks: task.marks,
+      estimatedTimeMinutes: d.estimatedTimeMinutes,
+      bloomsLevel: d.bloomsLevel,
+      keywords: d.keywords,
+      source: 'AI-generated to complete a paper request',
+      createdBy: ctx.userId,
+    })));
+
+    created.push(...newQuestions);
+    selected.push(...newQuestions);
+    pool.push(...newQuestions);
   }
 
   return created;

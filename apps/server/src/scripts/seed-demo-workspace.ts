@@ -76,6 +76,13 @@ const DEMO_RECEPTION = {
   lastName: 'Rao',
 };
 
+const DEMO_PARENT = {
+  email: 'demoparent@demo.schoolos.ai',
+  username: 'demoparent',
+  firstName: 'Ekansh',
+  lastName: 'Sharma',
+};
+
 // ── Name pools (kept small and clearly fictional) ──────────────────────────
 
 const SURNAMES = ['Yadav', 'Verma', 'Mishra', 'Tiwari', 'Singh', 'Gupta', 'Sharma', 'Pandey', 'Khan', 'Srivastava'];
@@ -265,9 +272,15 @@ async function main() {
   let studentsCreated = 0;
   let attendanceCreated = 0;
   let feesCreated = 0;
+  // The demo parent account gets linked to one student from each of the
+  // first two classes, so the Parent Workspace's child-switcher has two
+  // real children to switch between (mirrors the mocked Aarav/Anaya pair
+  // the frontend currently ships with).
+  const demoParentLinkedStudentIds: string[] = [];
 
-  for (const { plan, teacherName } of teacherProfiles) {
+  for (const [classIndex, { plan, teacherName }] of teacherProfiles.entries()) {
     const classLevelNum = parseInt(plan.classLevel, 10);
+    const isParentLinkClass = classIndex < 2;
 
     for (let i = 0; i < STUDENTS_PER_TEACHER; i++) {
       const isBoy = Math.random() < 0.5;
@@ -297,6 +310,10 @@ async function main() {
       });
       studentsCreated++;
       admissionSeq++;
+
+      if (isParentLinkClass && i === 0) {
+        demoParentLinkedStudentIds.push(student._id.toString());
+      }
 
       // Attendance: last 7 days, ~90% present.
       for (let d = 0; d < 7; d++) {
@@ -354,6 +371,24 @@ async function main() {
   console.log(`Attendance records created: ${attendanceCreated}`);
   console.log(`Fee records created: ${feesCreated}`);
 
+  // ── 5b. Parent User login, linked to two real students ─────────────────────
+  await User.findOneAndUpdate(
+    { email: DEMO_PARENT.email },
+    {
+      firstName: DEMO_PARENT.firstName,
+      lastName: DEMO_PARENT.lastName,
+      email: DEMO_PARENT.email,
+      username: DEMO_PARENT.username,
+      passwordHash,
+      role: 'parent',
+      linkedStudentIds: demoParentLinkedStudentIds,
+      schoolId: SCHOOL_ID,
+      status: 'active',
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log(`+ Parent login ready: ${DEMO_PARENT.email} / ${PASSWORD} (linked to ${demoParentLinkedStudentIds.length} students)`);
+
   // ── 6. A handful of admissions-pipeline enquiries ──────────────────────────
   const ENQUIRY_STAGES: Array<{ stage: string; source: string }> = [
     { stage: 'new_enquiry', source: 'website' },
@@ -403,6 +438,7 @@ async function main() {
   }
   console.log(`  ${DEMO_PRINCIPAL.email}  (or username "${DEMO_PRINCIPAL.username}")  /  ${PASSWORD}   — principal dashboard`);
   console.log(`  ${DEMO_RECEPTION.email}  (or username "${DEMO_RECEPTION.username}")  /  ${PASSWORD}   — reception dashboard`);
+  console.log(`  ${DEMO_PARENT.email}  (or username "${DEMO_PARENT.username}")  /  ${PASSWORD}   — parent dashboard`);
 
   await mongoose.disconnect();
   console.log('\nDone.');

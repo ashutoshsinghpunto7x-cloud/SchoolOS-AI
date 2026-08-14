@@ -91,6 +91,7 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  | 'parent'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
   | 'owner'
   | 'super_admin'

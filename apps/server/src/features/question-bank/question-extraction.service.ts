@@ -124,8 +124,13 @@ Return ONLY a valid JSON object: {"pageText": "..."}. No markdown, no explanatio
 // This is the OCR layer: "what is present on the page?" — never the question-
 // structuring layer above. Keep the two responsibilities separate (Rule 9):
 // this prompt only transcribes structure, it never drafts questions.
+//
+// Not currently called — chapter capture was reverted to plain transcription
+// (see extractStructuredPage) for speed/cost. Kept + exported rather than deleted
+// in case structured capture is re-enabled later; normalizeBlock/parseStructuredPage
+// below are the matching parse-side utilities and stay covered by existing tests.
 
-function buildStructuredTranscribePrompt(): string {
+export function buildStructuredTranscribePrompt(): string {
   return `You are a document-structure OCR engine for school textbook pages. Read the image and reconstruct it as an ordered list of content blocks that preserve the page's actual layout, hierarchy, and reading order — including multi-column layouts, sidebars, and boxed callouts, which you must reorder into correct logical reading order (not raw left-to-right/top-to-bottom pixel order).
 
 Rules (do not break these):
@@ -309,6 +314,15 @@ export function blocksToMarkdown(blocks: ContentBlock[]): string {
 
 function pageWordCount(blocks: ContentBlock[]): number {
   return flattenBlocksToText(blocks).split(/\s+/).filter(Boolean).length;
+}
+
+/** Splits plain transcribed page text into paragraph blocks on blank lines, so the review screen still gets readable chunks instead of one giant blob — used by the (now plain-text) chapter capture flow. */
+function textToParagraphBlocks(text: string): ContentBlock[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => ({ type: 'paragraph' as const, text: p }));
 }
 
 function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageText: string } {
@@ -594,9 +608,17 @@ export const questionExtractionService = {
     return { status: job.status, result: job.result, error: job.error, totalPages: job.totalPages, completedPages: job.completedPages };
   },
 
-  // ── Layout-aware chapter capture (multi-page, structure-preserving) ──────────
+  // ── Layout-aware chapter capture (multi-page) ─────────────────────────────────
+  // Reverted to plain transcription (see buildTranscribePrompt) instead of the structured
+  // block-classification prompt: asking the model to classify every line into
+  // heading/paragraph/list/table/equation/figure with confidence scores is a much bigger,
+  // slower, pricier task per page than "transcribe this verbatim". The tradeoff: tables,
+  // equations, and multi-column reading order are no longer reconstructed — every page comes
+  // back as plain paragraphs, same as the original single-page upload flow. Kept the
+  // ChapterPage/ContentBlock storage shape unchanged (wrapping the text as paragraph blocks)
+  // so the multi-page batching, retry-per-page, and review UI didn't need to change.
 
-  /** Single-page structured OCR call — the building block enqueueChapterCapture and retryPage both use. */
+  /** Single-page OCR call — the building block enqueueChapterCapture and retryPage both use. */
   async extractStructuredPage(
     imageDataUri: string, ctx: AuthContext,
   ): Promise<{ documentTitle?: string; language?: string; blocks: ContentBlock[] }> {
@@ -605,11 +627,11 @@ export const questionExtractionService = {
     }
     const start = Date.now();
     const result = await openaiProvider.complete({
-      systemPrompt: buildStructuredTranscribePrompt(),
-      userPrompt: 'Reconstruct this page as structured blocks, in correct reading order.',
+      systemPrompt: buildTranscribePrompt(),
+      userPrompt: 'Transcribe everything readable on this page.',
       imageDataUri,
       temperature: 0.1,
-      maxTokens: 4000,
+      maxTokens: 2500,
       jsonResponse: true,
     });
 
@@ -624,7 +646,8 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    return parseStructuredPage(result.content);
+    const pageText = parseTranscription(result.content);
+    return { blocks: textToParagraphBlocks(pageText) };
   },
 
   /**
@@ -641,14 +664,20 @@ export const questionExtractionService = {
     const totalPages = images.length;
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'chapter_capture', totalPages });
     const jobId = job._id.toString();
-    usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'capture_started', pagesProcessed: totalPages, status: 'success' });
+    // Deliberately omits pagesProcessed here — this event only marks that a job started,
+    // it hasn't processed any pages yet. Each page records its own pagesProcessed:1 below
+    // (see processOne) — recording totalPages here too used to double-count every job's
+    // pages in the ops usage dashboard (a 6-page job would show as 12+).
+    usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'capture_started', status: 'success' });
 
     (async () => {
       const pages: ChapterPage[] = new Array(totalPages);
       let documentTitle: string | undefined;
       let language: string | undefined;
       let completed = 0;
-      const CONCURRENCY = 3;
+      // Raised from 3 now that each page is a plain transcription call rather than structured
+      // block classification — lighter output per call means more can safely run at once.
+      const CONCURRENCY = 5;
 
       const processOne = async (index: number) => {
         const pageNumber = index + 1;
