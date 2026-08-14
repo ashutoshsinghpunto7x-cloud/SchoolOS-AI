@@ -25,6 +25,11 @@ function AppLayoutInner() {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
+  // Parent Workspace ships its own full-bleed shell (ParentLayout: header +
+  // bottom nav) — same treatment as the teacher portal below. Routed on
+  // pathname rather than role since there's no dedicated `parent` UserRole
+  // yet; any authenticated user can preview it at /parent for now.
+  const isParentWorkspace = location.pathname.startsWith('/parent');
   const mainRef = useRef<HTMLElement>(null);
 
   // Read the shared theme — safe because this component is always wrapped in
@@ -84,8 +89,9 @@ function AppLayoutInner() {
         />
       )}
 
-      {/* Sidebar — teacher portal has no sidebar; bottom nav + profile cover its role */}
-      {!isTeacher && (
+      {/* Sidebar — teacher portal and Parent Workspace have no sidebar; their
+          own bottom nav + header cover this role */}
+      {!isTeacher && !isParentWorkspace && (
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -93,17 +99,19 @@ function AppLayoutInner() {
         />
       )}
 
-      {/* Main content — offset by sidebar on desktop (not for teacher, whose sidebar doesn't apply; not for accountant while manually collapsed) */}
+      {/* Main content — offset by sidebar on desktop (not for teacher/parent, whose sidebar doesn't apply; not for accountant while manually collapsed) */}
       <div className={cn(
         'flex flex-1 flex-col min-h-screen overflow-hidden',
-        !isTeacher && !(isAccountant && accountantSidebarCollapsed) && 'lg:ml-[260px]'
+        !isTeacher && !isParentWorkspace && !(isAccountant && accountantSidebarCollapsed) && 'lg:ml-[260px]'
       )}>
-        <Topbar
-          onMenuToggle={() => setSidebarOpen(prev => !prev)}
-          showDesktopCollapseToggle={isAccountant}
-          desktopCollapsed={accountantSidebarCollapsed}
-          onToggleDesktopCollapse={() => setAccountantSidebarCollapsed((v) => !v)}
-        />
+        {!isParentWorkspace && (
+          <Topbar
+            onMenuToggle={() => setSidebarOpen(prev => !prev)}
+            showDesktopCollapseToggle={isAccountant}
+            desktopCollapsed={accountantSidebarCollapsed}
+            onToggleDesktopCollapse={() => setAccountantSidebarCollapsed((v) => !v)}
+          />
+        )}
 
         <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col">
           {activeRestriction ? (

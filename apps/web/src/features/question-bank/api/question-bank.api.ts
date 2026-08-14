@@ -30,6 +30,12 @@ interface ExtractionJobStatus<T> {
 const EXTRACTION_POLL_INTERVAL_MS = 1500;
 const EXTRACTION_POLL_TIMEOUT_MS = 120_000;
 
+// Longer than apiClient's default 60s: these endpoints upload one or more
+// full-resolution photos as multipart form data, which routinely exceeds 60s
+// on a slow/patchy mobile connection well before the server even gets to
+// respond — the request itself is still in flight, not hung server-side.
+const UPLOAD_TIMEOUT_MS = 180_000;
+
 /** Extraction is backgrounded (OCR + vision/text call can take a while) — poll instead of holding the request open. */
 async function pollExtractionJob<T>(jobId: string): Promise<T> {
   const deadline = Date.now() + EXTRACTION_POLL_TIMEOUT_MS;
@@ -52,6 +58,7 @@ export const questionBankApi = {
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/image`, formData, {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
@@ -64,6 +71,7 @@ export const questionBankApi = {
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/pdf`, formData, {
         params: target,
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
@@ -78,6 +86,7 @@ export const questionBankApi = {
       images.forEach((img) => formData.append('images', img));
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/chapter`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
@@ -97,6 +106,7 @@ export const questionBankApi = {
       formData.append('file', file);
       const res = await apiClient.post<{ data: ChapterCaptureJobResult }>(`${BASE}/extract/jobs/${jobId}/pages/${pageNumber}/retry`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }

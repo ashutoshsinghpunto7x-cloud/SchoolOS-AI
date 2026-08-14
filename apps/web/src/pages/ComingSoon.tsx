@@ -9,6 +9,10 @@ const WORKSPACE_NAMES: Record<string, string> = {
   '/ai-assistant': 'AI Assistant',
   '/administration': 'Administration',
   '/settings': 'Settings',
+  '/parent/academics': 'Academics',
+  '/parent/attendance': 'Attendance',
+  '/parent/fees': 'Fees',
+  '/parent/more': 'More',
 };
 
 const getWorkspaceName = (pathname: string): string => {

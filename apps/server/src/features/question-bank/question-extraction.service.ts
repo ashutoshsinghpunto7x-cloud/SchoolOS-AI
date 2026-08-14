@@ -9,7 +9,7 @@ import { extractionJobRepository } from './extraction-job.repository';
 import { questionSourceRepository } from './question-source.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
-import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence } from '@schoolos/types';
+import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem } from '@schoolos/types';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
 
@@ -177,10 +177,10 @@ export function normalizeBlock(raw: unknown): ContentBlock | null {
       return { type: 'paragraph', text: b.text.trim(), confidence };
     }
     case 'list': {
-      const normalizeItems = (items: unknown): { text: string; items?: unknown[] }[] =>
+      const normalizeItems = (items: unknown): ListBlockItem[] =>
         Array.isArray(items)
           ? items
-              .map((it) => {
+              .map((it): ListBlockItem | null => {
                 if (typeof it === 'string') return { text: it.trim() };
                 if (it && typeof it === 'object' && typeof (it as Record<string, unknown>).text === 'string') {
                   const nested = (it as Record<string, unknown>).items;
@@ -188,7 +188,7 @@ export function normalizeBlock(raw: unknown): ContentBlock | null {
                 }
                 return null;
               })
-              .filter((x): x is { text: string; items?: unknown[] } => x !== null && x.text.trim().length > 0)
+              .filter((x): x is ListBlockItem => x !== null && x.text.trim().length > 0)
           : [];
       const items = normalizeItems(b.items);
       if (items.length === 0) return null;

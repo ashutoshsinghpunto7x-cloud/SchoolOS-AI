@@ -758,6 +758,15 @@ const TeacherMyPayslipsPage = lazyPage(
   'TeacherMyPayslipsPage',
 );
 
+const ParentLayout = lazyPage(
+  () => import('@/features/parent-workspace/components/ParentLayout'),
+  'ParentLayout',
+);
+const ParentDashboardPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/ParentDashboardPage'),
+  'ParentDashboardPage',
+);
+
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
   'ComingSoon',
@@ -985,6 +994,22 @@ export const router = createBrowserRouter([
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },
+                ],
+              },
+
+              // Parent Workspace — mobile-first, mock-data-backed for now.
+              // Not yet gated by a dedicated `parent` role (none exists on
+              // the backend); reachable by any authenticated user at /parent
+              // until the role ships, matching how other in-progress
+              // workspaces (e.g. reports below) are left ungated.
+              {
+                element: <ParentLayout />,
+                children: [
+                  { path: 'parent', element: <ParentDashboardPage /> },
+                  { path: 'parent/academics', element: <ComingSoon /> },
+                  { path: 'parent/attendance', element: <ComingSoon /> },
+                  { path: 'parent/fees', element: <ComingSoon /> },
+                  { path: 'parent/more', element: <ComingSoon /> },
                 ],
               },
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ListBlockItem } from '@schoolos/types';
 
 export const QUESTION_TYPES = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
@@ -96,29 +97,41 @@ export const listSourcesSchema = z.object({
 // round-trip through ExtractionJob's `Schema.Types.Mixed` result field between
 // enqueue and save, and MongoDB's driver serializes JS `undefined` object
 // properties as BSON null on write — so a field that was never set comes back
-// as `null`, not simply absent, and validation has to accept both.
+// as `null`, not simply absent, and validation has to accept both. Each of
+// these is chained with `.transform(v => v ?? undefined)` so the *parsed*
+// output — what the rest of the app actually works with — collapses back to
+// plain `| undefined`, matching the shared ContentBlock/ChapterPage types in
+// @schoolos/types (which don't allow null). Without the transform, z.infer
+// leaks `| null` into those types and apps/server fails to build (`tsc`),
+// even though `tsx`'s transpile-only dev server never catches it.
+const nullishString = () => z.string().nullish().transform((v) => v ?? undefined);
 
-const listBlockItemSchema: z.ZodType<{ text: string; items?: { text: string; items?: unknown[] }[] | null }> = z.lazy(() =>
-  z.object({ text: z.string().min(1), items: z.array(listBlockItemSchema).nullish() }),
+// Raw wire shape (pre-transform) is recursively nullable, same rationale as the module comment above;
+// the schema's *output* — the second/third type params below — collapses to the plain, non-null
+// ListBlockItem shared with the rest of the app.
+type ListBlockItemInput = { text: string; items?: ListBlockItemInput[] | null };
+
+const listBlockItemSchema: z.ZodType<ListBlockItem, z.ZodTypeDef, ListBlockItemInput> = z.lazy(() =>
+  z.object({ text: z.string().min(1), items: z.array(listBlockItemSchema).nullish().transform((v) => v ?? undefined) }),
 );
 
-const blockConfidenceSchema = z.enum(['high', 'review', 'low']).nullish();
+const blockConfidenceSchema = z.enum(['high', 'review', 'low']).nullish().transform((v) => v ?? undefined);
 
 const contentBlockSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('heading'), level: z.union([z.literal(1), z.literal(2), z.literal(3)]), text: z.string().min(1), confidence: blockConfidenceSchema }),
   z.object({ type: z.literal('paragraph'), text: z.string().min(1), confidence: blockConfidenceSchema }),
   z.object({ type: z.literal('list'), ordered: z.boolean(), items: z.array(listBlockItemSchema).min(1), confidence: blockConfidenceSchema }),
-  z.object({ type: z.literal('table'), caption: z.string().nullish(), headers: z.array(z.string()), rows: z.array(z.array(z.string())), confidence: blockConfidenceSchema }),
-  z.object({ type: z.literal('equation'), latex: z.string().min(1), displayText: z.string().nullish(), confidence: blockConfidenceSchema }),
-  z.object({ type: z.literal('figure'), figureNumber: z.string().nullish(), caption: z.string().nullish(), labels: z.array(z.string()).nullish(), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('table'), caption: nullishString(), headers: z.array(z.string()), rows: z.array(z.array(z.string())), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('equation'), latex: z.string().min(1), displayText: nullishString(), confidence: blockConfidenceSchema }),
+  z.object({ type: z.literal('figure'), figureNumber: nullishString(), caption: nullishString(), labels: z.array(z.string()).nullish().transform((v) => v ?? undefined), confidence: blockConfidenceSchema }),
   z.object({ type: z.enum(['note', 'quote']), text: z.string().min(1), confidence: blockConfidenceSchema }),
 ]);
 
 const chapterPageSchema = z.object({
   pageNumber: z.number().int().min(1),
   blocks: z.array(contentBlockSchema),
-  confidence: z.enum(['high', 'review', 'low']).nullish(),
-  pageError: z.string().nullish(),
+  confidence: z.enum(['high', 'review', 'low']).nullish().transform((v) => v ?? undefined),
+  pageError: nullishString(),
 });
 
 export const updateSourceSchema = z.object({
