@@ -15,6 +15,7 @@ import type { CapturedPage } from '../components/ChapterCapture/PageList';
 interface ChapterCaptureSession {
   class: string;
   subject: string;
+  chapterName?: string;
   pages: CapturedPage[];
 }
 

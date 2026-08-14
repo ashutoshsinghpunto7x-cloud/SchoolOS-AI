@@ -19,7 +19,7 @@ export function ChapterReviewPage() {
 
   const [editedPages, setEditedPages] = useState<ChapterPage[] | null>(null);
   const [documentTitle, setDocumentTitle] = useState('');
-  const [chapterName, setChapterName] = useState('');
+  const [chapterName, setChapterName] = useState(session?.chapterName ?? '');
   const [activePage, setActivePage] = useState(0);
   const [initialized, setInitialized] = useState(false);
 
@@ -207,7 +207,10 @@ export function ChapterReviewPage() {
       )}
 
       {!processing && !failed && editedPages && (
-        <div className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-black/80 backdrop-blur border-t border-gray-100 dark:border-white/10 px-5 py-3">
+        <div
+          className="fixed inset-x-0 z-30 bg-white/95 dark:bg-black/80 backdrop-blur border-t border-gray-100 dark:border-white/10 px-5 py-3 sm:mx-auto sm:max-w-md"
+          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+        >
           <button
             type="button" onClick={handleSave} disabled={saveChapter.isPending}
             className="w-full h-11 rounded-xl bg-emerald-600 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"

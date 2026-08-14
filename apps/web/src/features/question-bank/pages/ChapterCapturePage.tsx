@@ -15,6 +15,7 @@ export function ChapterCapturePage() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
+  const [chapterName, setChapterName] = useState('');
   const [pages, setPages] = useState<CapturedPage[]>([]);
   const [cameraOpen, setCameraOpen] = useState(false);
   const extractChapter = useExtractChapter();
@@ -49,7 +50,7 @@ export function ChapterCapturePage() {
     if (pages.length === 0) { toast.error('Capture or choose at least one page first'); return; }
     try {
       const { jobId } = await extractChapter.mutateAsync(pages.map((p) => p.file));
-      setChapterCaptureSession({ class: cls.trim(), subject: subject.trim(), pages });
+      setChapterCaptureSession({ class: cls.trim(), subject: subject.trim(), chapterName: chapterName.trim(), pages });
       navigate(`/teacher/question-bank/capture/${jobId}/review`);
     } catch (err) {
       toast.error('Could not start processing', { description: err instanceof Error ? err.message : undefined });
@@ -66,15 +67,22 @@ export function ChapterCapturePage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
-            <input value={cls} onChange={(e) => setCls(e.target.value)} placeholder="e.g. 8"
-              className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-3">
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
+              <input value={cls} onChange={(e) => setCls(e.target.value)} placeholder="e.g. 8"
+                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
+              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Science"
+                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+            </div>
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Science"
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Chapter name (optional)</label>
+            <input value={chapterName} onChange={(e) => setChapterName(e.target.value)} placeholder="e.g. Chapter 4 — Light"
               className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
           </div>
         </div>
@@ -117,7 +125,10 @@ export function ChapterCapturePage() {
       </div>
 
       {pages.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-black/80 backdrop-blur border-t border-gray-100 dark:border-white/10 px-5 py-3">
+        <div
+          className="fixed inset-x-0 z-30 bg-white/95 dark:bg-black/80 backdrop-blur border-t border-gray-100 dark:border-white/10 px-5 py-3 sm:mx-auto sm:max-w-md"
+          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}
+        >
           <button
             type="button" onClick={handleProcess} disabled={extractChapter.isPending}
             className="w-full h-11 rounded-xl bg-blue-600 text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
