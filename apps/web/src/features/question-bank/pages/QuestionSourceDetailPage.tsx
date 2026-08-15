@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle, Pencil, Check } from 'lucide-react';
-import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter } from '../hooks/useQuestionBank';
+import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle, Pencil, Check, Trash2 } from 'lucide-react';
+import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter, useDeleteSource } from '../hooks/useQuestionBank';
 import { ExtractedDraftsReview, type DraftEdit } from '../components/ExtractedDraftsReview';
 import { BlockEditor } from '../components/ChapterCapture/BlockEditor';
 import type { ExtractedQuestionDraft, QuestionDifficulty } from '@schoolos/types';
@@ -21,6 +21,7 @@ export function QuestionSourceDetailPage() {
   const generate = useReExtractSource();
   const confirm = useConfirmExtractedQuestions();
   const updateChapter = useUpdateSourceChapter();
+  const deleteSource = useDeleteSource();
 
   const [warnings, setWarnings] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
@@ -62,6 +63,19 @@ export function QuestionSourceDetailPage() {
     setDrafts((prev) => prev?.filter((_, i) => i !== index) ?? null);
   }
 
+  async function handleDeleteSource() {
+    if (!sourceId) return;
+    // Irreversible (removes the converted text itself) — confirm first.
+    if (!window.confirm('Delete this upload? Its converted text will be gone for good — any questions already saved from it are kept.')) return;
+    try {
+      await deleteSource.mutateAsync(sourceId);
+      toast.success('Upload deleted');
+      navigate('/teacher/question-bank');
+    } catch (err) {
+      toast.error('Could not delete upload', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
   async function handleConfirm() {
     if (!drafts || drafts.length === 0 || !source) return;
     try {
@@ -84,7 +98,15 @@ export function QuestionSourceDetailPage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white">Stored Upload</h1>
+        <h1 className="flex-1 text-sm font-bold text-gray-900 dark:text-white">Stored Upload</h1>
+        {source && (
+          <button
+            type="button" onClick={handleDeleteSource} disabled={deleteSource.isPending}
+            title="Delete this upload" className="flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-500 disabled:opacity-50 shrink-0"
+          >
+            <Trash2 className="w-4 h-4" /> Delete
+          </button>
+        )}
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">

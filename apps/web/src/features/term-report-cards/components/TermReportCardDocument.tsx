@@ -1,5 +1,21 @@
 import { CircularAttendance } from '@/features/report-cards/components/CircularAttendance';
-import type { TermReportCard, ReportCardTemplate, Student, SchoolSettings, TermReportCardTermBlock } from '@schoolos/types';
+import type { TermReportCard, ReportCardTemplate, SchoolSettings, TermReportCardTermBlock } from '@schoolos/types';
+
+/** Only the header fields this document actually renders — lets the parent
+ *  workspace (which never fetches the full Student record) pass its own
+ *  narrower view without widening what a parent can read. A full `Student`
+ *  satisfies this structurally, so existing callers are unaffected. */
+export interface ReportCardStudentHeader {
+  fullName: string;
+  admissionNumber: string;
+  rollNumber?: string;
+  class: string;
+  section: string;
+  fatherName?: string;
+  motherName?: string;
+  dateOfBirth?: string;
+  photoUrl?: string;
+}
 
 const INK = '#14161A';
 const NAVY = '#1C2B4A';
@@ -99,7 +115,7 @@ function TermTable({ title, unitTestLabel, mainLabel, block }: {
 interface TermReportCardDocumentProps {
   reportCard: TermReportCard;
   template: ReportCardTemplate;
-  student: Student;
+  student: ReportCardStudentHeader;
   schoolSettings?: SchoolSettings;
   qrDataUri?: string;
   hideWarnings?: boolean;

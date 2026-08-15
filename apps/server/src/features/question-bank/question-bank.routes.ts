@@ -19,6 +19,7 @@ router.get('/sources', questionBankController.listSources);
 router.get('/sources/:id', questionBankController.getSource);
 router.post('/sources', questionBankController.saveChapterSource);
 router.patch('/sources/:id', questionBankController.updateSource);
+router.delete('/sources/:id', questionBankController.deleteSource);
 router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 
 router.get('/chapters', questionBankController.listChapters);

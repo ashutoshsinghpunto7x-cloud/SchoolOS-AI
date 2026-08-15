@@ -96,4 +96,10 @@ export const termReportCardRepository = {
   async findByClassYear(schoolId: string, cls: string, section: string, academicYear: string): Promise<ITermReportCard[]> {
     return TermReportCard.find({ schoolId, class: cls, section, academicYear }).lean<ITermReportCard[]>();
   },
+
+  /** Most recent published card for a student, regardless of academic year —
+   *  used by the parent workspace, which doesn't ask the parent to pick a year. */
+  async findLatestPublishedByStudent(schoolId: string, studentId: string): Promise<ITermReportCard | null> {
+    return TermReportCard.findOne({ schoolId, studentId, status: 'published' }).sort({ generatedAt: -1 });
+  },
 };

@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen } from 'lucide-react';
-import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter } from '../hooks/useQuestionBank';
+import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2 } from 'lucide-react';
+import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource } from '../hooks/useQuestionBank';
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
   const navigate = useNavigate();
   const updateChapter = useUpdateSourceChapter();
+  const deleteSource = useDeleteSource();
   const [editing, setEditing] = useState(false);
   const [chapterName, setChapterName] = useState(source.chapterName ?? '');
 
@@ -20,6 +21,17 @@ function PendingUploadRow({ source }: { source: import('@schoolos/types').Questi
       setEditing(false);
     } catch (err) {
       toast.error('Could not update chapter', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
+  async function handleDelete() {
+    // Irreversible (removes the converted text itself, not just a saved question) — confirm first.
+    if (!window.confirm('Delete this upload? Its converted text will be gone for good — any questions already saved from it are kept.')) return;
+    try {
+      await deleteSource.mutateAsync(source._id);
+      toast.success('Upload deleted');
+    } catch (err) {
+      toast.error('Could not delete upload', { description: err instanceof Error ? err.message : undefined });
     }
   }
 
@@ -55,6 +67,12 @@ function PendingUploadRow({ source }: { source: import('@schoolos/types').Questi
           {source.chapterName || 'Assign chapter'} <Pencil className="w-3 h-3" />
         </button>
       )}
+      <button
+        type="button" onClick={handleDelete} disabled={deleteSource.isPending}
+        title="Delete upload" className="text-gray-300 hover:text-red-500 shrink-0 disabled:opacity-50"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
     </div>
   );
 }

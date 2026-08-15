@@ -139,6 +139,15 @@ export const questionBankController = {
     } catch (err) { next(err); }
   },
 
+  /** DELETE /question-bank/sources/:id — permanently removes an upload's converted text (frees storage; already-saved questions are unaffected) */
+  async deleteSource(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await questionBankService.deleteSource(req.params.id, ctx);
+      sendSuccess(res, null, 'Upload deleted');
+    } catch (err) { next(err); }
+  },
+
   /** GET /question-bank/chapters?class=8&subject=Science */
   async listChapters(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

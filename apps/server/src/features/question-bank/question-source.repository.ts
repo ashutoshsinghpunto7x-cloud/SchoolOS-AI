@@ -41,4 +41,16 @@ export const questionSourceRepository = {
   ): Promise<IQuestionSource | null> {
     return QuestionSource.findOneAndUpdate({ _id: id, schoolId }, { $set: data }, { new: true }).lean<IQuestionSource>();
   },
+
+  /**
+   * Hard delete, unlike questionRepository.softDelete — a source is just converted OCR text
+   * (and, for chapter captures, a page/block array that can get sizeable), not a graded/exam
+   * record, and the whole point of exposing delete here is to actually reclaim that storage once
+   * a teacher has no more use for the upload. Any questions already saved from it keep their own
+   * copy of the data (sourceRef just loses its target) — see question-bank.service.deleteSource.
+   */
+  async delete(id: string, schoolId: string): Promise<boolean> {
+    const res = await QuestionSource.deleteOne({ _id: id, schoolId });
+    return res.deletedCount > 0;
+  },
 };

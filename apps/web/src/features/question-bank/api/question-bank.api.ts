@@ -145,6 +145,13 @@ export const questionBankApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
+  /** Permanently deletes an upload's converted text — frees storage; questions already saved from it are unaffected. */
+  deleteSource: async (id: string): Promise<void> => {
+    try {
+      await apiClient.delete(`${BASE}/sources/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
   /** Generates a fresh batch of question drafts from a stored source's text — repeatable any number of times. */
   reExtractSource: async (id: string, options: QuestionGenerationOptions): Promise<QuestionExtractionResult> => {
     try {

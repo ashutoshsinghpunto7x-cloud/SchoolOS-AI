@@ -155,6 +155,29 @@ export const useReExtractSource = () =>
     mutationFn: ({ id, options }: { id: string; options: QuestionGenerationOptions }) => questionBankApi.reExtractSource(id, options),
   });
 
+/**
+ * Permanently deletes an upload's converted text. Questions already saved from it are untouched
+ * — only the source record (and its storage) goes away. Deliberately NOT built on
+ * useInvalidatingMutation: that invalidates questionBankKeys.all broadly, which would also
+ * invalidate this exact source's own detail query (still mounted on the page the teacher is
+ * deleting from) — that refetch 404s since the id no longer exists, which used to make the whole
+ * delete look like it failed even though it had already succeeded server-side. Instead, drop the
+ * deleted source straight from cache (no refetch possible) and only invalidate the list queries.
+ */
+export const useDeleteSource = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => questionBankApi.deleteSource(id),
+    onSuccess: (_result, id) => {
+      qc.removeQueries({ queryKey: questionBankKeys.source(id) });
+      // Prefix match (no trailing filter object) so every class/subject-scoped sources() query
+      // gets caught, not just the exact no-filter one — same for groups().
+      qc.invalidateQueries({ queryKey: [...questionBankKeys.all, 'sources'] });
+      qc.invalidateQueries({ queryKey: [...questionBankKeys.all, 'groups'] });
+    },
+  });
+};
+
 export const useGeneratePaper = () =>
   useMutation({ mutationFn: (config: PaperGenerationConfig) => questionBankApi.generatePaper(config) });
 

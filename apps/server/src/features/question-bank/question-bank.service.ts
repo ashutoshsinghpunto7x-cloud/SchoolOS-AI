@@ -209,4 +209,20 @@ export const questionBankService = {
     const deleted = await questionRepository.softDelete(id, ctx.schoolId);
     if (!deleted) throw new ValidationError('Could not delete this question');
   },
+
+  /**
+   * DELETE /sources/:id — permanently removes an upload's converted text (and, for chapter
+   * captures, its page/block content). This is a hard delete, not a soft one: unlike a question,
+   * a source has no exam/grading history depending on it, and the point of exposing this is to
+   * free up storage from uploads a teacher no longer needs. Any questions already saved from this
+   * source keep their own copy of every field — deleting the source only drops the "Show source"
+   * traceability link (sourceRef), never the saved questions themselves.
+   */
+  async deleteSource(id: string, ctx: AuthContext): Promise<void> {
+    const existing = await questionSourceRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Upload');
+
+    const deleted = await questionSourceRepository.delete(id, ctx.schoolId);
+    if (!deleted) throw new ValidationError('Could not delete this upload');
+  },
 };

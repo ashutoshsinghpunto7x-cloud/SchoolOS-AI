@@ -766,6 +766,26 @@ const ParentDashboardPage = lazyPage(
   () => import('@/features/parent-workspace/pages/ParentDashboardPage'),
   'ParentDashboardPage',
 );
+const ParentAcademicsPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/AcademicsPage'),
+  'AcademicsPage',
+);
+const ParentAttendancePage = lazyPage(
+  () => import('@/features/parent-workspace/pages/AttendancePage'),
+  'AttendancePage',
+);
+const ParentFeesPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/FeesPage'),
+  'FeesPage',
+);
+const ParentMorePage = lazyPage(
+  () => import('@/features/parent-workspace/pages/MorePage'),
+  'MorePage',
+);
+const ParentReportCardPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/ReportCardPage'),
+  'ReportCardPage',
+);
 
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
@@ -1008,10 +1028,11 @@ export const router = createBrowserRouter([
                     element: <ParentLayout />,
                     children: [
                       { path: 'parent', element: <ParentDashboardPage /> },
-                      { path: 'parent/academics', element: <ComingSoon /> },
-                      { path: 'parent/attendance', element: <ComingSoon /> },
-                      { path: 'parent/fees', element: <ComingSoon /> },
-                      { path: 'parent/more', element: <ComingSoon /> },
+                      { path: 'parent/academics', element: <ParentAcademicsPage /> },
+                      { path: 'parent/academics/report-card', element: <ParentReportCardPage /> },
+                      { path: 'parent/attendance', element: <ParentAttendancePage /> },
+                      { path: 'parent/fees', element: <ParentFeesPage /> },
+                      { path: 'parent/more', element: <ParentMorePage /> },
                     ],
                   },
                 ],
