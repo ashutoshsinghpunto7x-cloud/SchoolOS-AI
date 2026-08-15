@@ -22,6 +22,7 @@
     "seed:assign-class-5a-teacher": "tsx src/scripts/assign-class-5a-teacher.ts",
     "seed:demo-workspace": "tsx src/scripts/seed-demo-workspace.ts",
     "seed:whatsapp-demo": "tsx src/scripts/seed-whatsapp-demo-class.ts",
+    "seed:whatsapp-demo-accountant": "tsx src/scripts/seed-whatsapp-demo-accountant.ts",
     "seed:perf-test-data": "tsx src/scripts/seed-perf-test-data.ts",
     "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",
     "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts",
