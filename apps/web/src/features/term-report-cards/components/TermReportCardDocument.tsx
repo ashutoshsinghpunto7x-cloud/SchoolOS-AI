@@ -190,8 +190,8 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
           <InfoField label="Class — Section" value={`${student.class} – ${student.section}`} />
           <InfoField label="Admission No." value={student.admissionNumber} />
           <InfoField label="Roll No." value={student.rollNumber ?? '—'} />
-          <InfoField label="Father's Name" value={student.fatherName} />
-          <InfoField label="Mother's Name" value={student.motherName} />
+          <InfoField label="Father's Name" value={student.fatherName ?? '—'} />
+          <InfoField label="Mother's Name" value={student.motherName ?? '—'} />
           <InfoField label="Date of Birth" value={fmtDate(student.dateOfBirth)} />
         </div>
       </div>
