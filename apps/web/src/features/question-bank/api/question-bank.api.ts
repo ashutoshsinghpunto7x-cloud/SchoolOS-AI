@@ -17,6 +17,7 @@ import type {
   UpdateQuestionSourcePayload,
   ChapterCaptureJobResult,
   ChapterPage,
+  QuestionGenerationOptions,
 } from '@schoolos/types';
 
 const BASE = '/question-bank';
@@ -145,9 +146,9 @@ export const questionBankApi = {
   },
 
   /** Generates a fresh batch of question drafts from a stored source's text — repeatable any number of times. */
-  reExtractSource: async (id: string): Promise<QuestionExtractionResult> => {
+  reExtractSource: async (id: string, options: QuestionGenerationOptions): Promise<QuestionExtractionResult> => {
     try {
-      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/sources/${id}/re-extract`);
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/sources/${id}/re-extract`, options);
       return await pollExtractionJob<QuestionExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

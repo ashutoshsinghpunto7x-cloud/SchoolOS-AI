@@ -25,11 +25,11 @@ export function ParentHeader({ parentName, childName, unreadCount, onOpenNotific
   const childFirst = childName.split(' ')[0];
 
   return (
-    <header className="border-b border-[#E7E4DE] bg-[#F5F1EB]/95 backdrop-blur-sm sticky top-0 z-20">
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+    <header className="border-b border-gray-100 bg-white/95 backdrop-blur-sm sticky top-0 z-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold tracking-tight text-[#0D0D0D]">SchoolOS</span>
-          <span className="hidden sm:inline text-sm text-[#6B6B6B]">Parent Workspace</span>
+          <span className="text-base font-bold tracking-tight text-gray-900">SchoolOS</span>
+          <span className="hidden sm:inline text-sm text-gray-500">Parent Workspace</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -37,37 +37,37 @@ export function ParentHeader({ parentName, childName, unreadCount, onOpenNotific
             type="button"
             onClick={onOpenNotifications}
             aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
-            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
           >
-            <Bell className="w-[18px] h-[18px] text-[#1A1A1A]" strokeWidth={1.75} />
+            <Bell className="w-[18px] h-[18px] text-gray-700" strokeWidth={1.75} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#A6752F]" aria-hidden="true" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-600" aria-hidden="true" />
             )}
           </button>
           <button
             type="button"
             aria-label="Help"
-            className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            className="hidden sm:flex w-9 h-9 items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
           >
-            <HelpCircle className="w-[18px] h-[18px] text-[#1A1A1A]" strokeWidth={1.75} />
+            <HelpCircle className="w-[18px] h-[18px] text-gray-700" strokeWidth={1.75} />
           </button>
           <span
             aria-hidden="true"
-            className="w-8 h-8 rounded-full bg-[#0D0D0D] text-white text-xs font-medium flex items-center justify-center ml-1"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white text-xs font-semibold flex items-center justify-center ml-1 shadow-sm"
           >
             {firstName[0]}
           </span>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-6 pt-1">
-        <p className="text-2xl sm:text-3xl font-medium text-[#0D0D0D] tracking-tight">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 sm:pb-6 pt-1">
+        <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
           {getGreeting()}, {firstName}.
         </p>
-        <p className="text-base text-[#6B6B6B] mt-1">
+        <p className="text-base text-gray-500 mt-1">
           Here's what's happening with {childFirst} today.
         </p>
-        <p className="text-sm text-[#6B6B6B] mt-1">{TODAY}</p>
+        <p className="text-sm text-gray-400 mt-1">{TODAY}</p>
       </div>
     </header>
   );

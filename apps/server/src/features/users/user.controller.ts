@@ -46,6 +46,16 @@ export const userController = {
     }
   },
 
+  async bulkCreateParents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const result = await userService.bulkCreateParents(req.body, ctx);
+      sendCreated(res, result, `${result.created.length} parent login(s) created`);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

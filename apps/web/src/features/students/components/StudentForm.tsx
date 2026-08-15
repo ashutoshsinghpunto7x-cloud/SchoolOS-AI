@@ -378,13 +378,16 @@ export const StudentForm = ({
           </Field>
 
           <div className="sm:col-span-2">
-            <Field label="Email Address" error={errors.email?.message}>
+            <Field label="Parent Email" error={errors.email?.message}>
               <input
                 {...register('email')}
                 type="email"
                 placeholder="parent@example.com (optional)"
                 className={inputClass(!!errors.email)}
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Used for fee-balance emails, and as the login if you bulk-create a Parent Workspace account.
+              </p>
             </Field>
           </div>
         </div>

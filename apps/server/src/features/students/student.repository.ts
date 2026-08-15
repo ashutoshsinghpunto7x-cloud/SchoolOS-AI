@@ -86,6 +86,13 @@ export const studentRepository = {
     return Student.findOne({ _id: id, schoolId, isDeleted: false }).lean<IStudent>();
   },
 
+  /** Batch lookup by id — used by bulk-create-parent-logins so the whole
+   *  selected set is fetched in one query instead of one-by-one. */
+  async findByIds(ids: string[], schoolId: string): Promise<IStudent[]> {
+    if (ids.length === 0) return [];
+    return Student.find({ _id: { $in: ids }, schoolId, isDeleted: false }).lean<IStudent[]>();
+  },
+
   /** Used by the Excel import pipeline to upsert — re-uploading a file updates existing students instead of duplicating them. */
   /** Every active student in a class, across all sections — used to generate
    *  fee records for a class-wide fee structure entry. Lean projection since

@@ -46,6 +46,10 @@ export interface IStudent extends Document {
   motherName?: string;
   parentPhone?: string;
   alternatePhone?: string;
+  /** Parent/guardian's contact email — despite the generic name, this is the
+   *  parent's address, not the student's: it's what fee-balance emails go to
+   *  (see accountant-workspace.service.ts) and what bulk parent-login
+   *  creation reads as the login email when present. */
   email?: string;
   address?: string;
   locality?: string;

@@ -6,7 +6,7 @@ import { marksRepository } from '../marks/marks.repository';
 import { timetableRepository } from '../timetable/timetable.repository';
 import { periodSlotRepository } from '../timetable/timetable.period.repository';
 import { eventRepository } from '../events/event.repository';
-import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { NotFoundError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import type { IStudent } from '../students/student.model';
 import type { ISchoolEvent } from '../events/event.model';
@@ -250,7 +250,7 @@ export const parentWorkspaceService = {
 
     // ── Needs Your Attention ─────────────────────────────────────────────
     const attention: AttentionItem[] = [];
-    const activeOutstanding = feeRepository ? await feeRepository.findByStudent(ctx.schoolId, activeChild._id) : [];
+    const activeOutstanding = await feeRepository.findByStudent(ctx.schoolId, activeChild._id);
     const dueFees = activeOutstanding.filter((f) => f.balance > 0);
     if (dueFees.length > 0) {
       const total = dueFees.reduce((s, f) => s + f.balance, 0);
@@ -386,11 +386,3 @@ export const parentWorkspaceService = {
     return `${bundle.insight.headline} ${bundle.insight.recommendation}`;
   },
 };
-
-// Used above purely for the ValidationError import to not go unused if a
-// future caller passes an unlinked childId — kept as a guard rail.
-export function assertChildLinked(children: ChildSummary[], childId: string | undefined): void {
-  if (childId && !children.some((c) => c._id === childId)) {
-    throw new ValidationError('That child is not linked to your account');
-  }
-}

@@ -24,6 +24,15 @@ export const updateUserSchema = z
   })
   .strict();
 
+/** Bulk-creates one Parent Workspace login per selected student, sharing a
+ *  single admin-set password across the batch. Email/username are always
+ *  generated server-side (from the student's parentEmail if present, else
+ *  a synthetic address) — never taken from client input, per student. */
+export const bulkCreateParentsSchema = z.object({
+  studentIds: z.array(z.string()).min(1, 'Select at least one student'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
 export const statusChangeSchema = z.object({
   status: z.enum(['active', 'inactive', 'suspended']),
 });

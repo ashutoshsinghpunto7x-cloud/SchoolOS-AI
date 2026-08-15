@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Users } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { ParentHeader } from '../components/ParentHeader';
@@ -37,18 +38,32 @@ export function ParentDashboardPage() {
 
   if (isError) {
     return (
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 py-16 text-center">
-        <p className="text-base text-[#6B6B6B]">
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
+        <p className="text-base text-gray-500 text-center max-w-sm">
           Something went wrong loading your dashboard. Please try again shortly.
         </p>
       </div>
     );
   }
 
-  if (isLoading || !data || !activeChild) {
+  if (isLoading || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F1EB]">
+      <div className="min-h-screen bg-[#F5F5F7]">
         <DashboardSkeleton />
+      </div>
+    );
+  }
+
+  if (!activeChild) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-6 text-center">
+        <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+          <Users className="w-6 h-6 text-purple-600" strokeWidth={1.75} />
+        </div>
+        <h1 className="text-lg font-bold text-gray-900">No children linked yet</h1>
+        <p className="text-sm text-gray-500 mt-1.5 max-w-xs">
+          Ask the school office to link your child's profile to this account.
+        </p>
       </div>
     );
   }
@@ -68,7 +83,7 @@ export function ParentDashboardPage() {
         initial="hidden"
         animate="show"
         transition={{ staggerChildren: 0.05 }}
-        className="max-w-5xl mx-auto px-5 sm:px-8 py-6 space-y-5"
+        className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
       >
         <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
           <ChildStatus
@@ -82,7 +97,7 @@ export function ParentDashboardPage() {
           <TodayAtSchool schedule={data.schedule} />
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 gap-5 items-stretch">
           <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
             <LearningSnapshot subjects={data.subjects} />
           </motion.div>

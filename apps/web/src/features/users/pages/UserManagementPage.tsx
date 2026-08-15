@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Loader2, AlertCircle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UserPlus, Users2, Loader2, AlertCircle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useUsers } from '../hooks/useUsers';
 import { UserCard } from '../components/UserCard';
 import { UserFilters } from '../components/UserFilters';
+import { BulkCreateParentsModal } from '../components/BulkCreateParentsModal';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -20,6 +21,7 @@ export const UserManagementPage = () => {
   const [role, setRole] = useState<UserRole | ''>('');
   const [status, setStatus] = useState<UserStatus | ''>('');
   const [page, setPage] = useState(1);
+  const [showBulkParents, setShowBulkParents] = useState(false);
 
   const { data, isLoading, isError } = useUsers({
     page,
@@ -57,16 +59,29 @@ export const UserManagementPage = () => {
             Manage staff accounts and permissions.
           </p>
         </div>
-        <button
-          onClick={() => navigate('/administration/users/new')}
-          className="h-12 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
-                     flex items-center gap-2 text-sm font-bold text-white transition-colors"
-          type="button"
-        >
-          <UserPlus className="w-4 h-4" />
-          Add User
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowBulkParents(true)}
+            className="h-12 px-5 rounded-xl bg-white border border-gray-200 hover:bg-gray-50
+                       flex items-center gap-2 text-sm font-bold text-gray-700 transition-colors"
+            type="button"
+          >
+            <Users2 className="w-4 h-4" />
+            Bulk Create Parent Logins
+          </button>
+          <button
+            onClick={() => navigate('/administration/users/new')}
+            className="h-12 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
+                       flex items-center gap-2 text-sm font-bold text-white transition-colors"
+            type="button"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add User
+          </button>
+        </div>
       </div>
+
+      {showBulkParents && <BulkCreateParentsModal onClose={() => setShowBulkParents(false)} />}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

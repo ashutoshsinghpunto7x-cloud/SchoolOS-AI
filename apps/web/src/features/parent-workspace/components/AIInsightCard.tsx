@@ -11,22 +11,22 @@ export function AIInsightCard({ insight, childName, onAsk }: AIInsightCardProps)
   return (
     <section
       aria-labelledby="ai-heading"
-      className="rounded-2xl border border-[#E7E4DE] px-6 py-6 sm:px-7 sm:py-7 bg-[#0D0D0D]"
+      className="rounded-2xl px-5 py-5 sm:px-7 sm:py-7 bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] shadow-sm"
     >
       <div className="flex items-center gap-2">
-        <Sparkle className="w-4 h-4 text-[#F5F1EB]" strokeWidth={1.75} />
-        <h2 id="ai-heading" className="text-base font-medium text-[#F5F1EB]">
+        <Sparkle className="w-4 h-4 text-white" strokeWidth={1.75} />
+        <h2 id="ai-heading" className="text-base font-bold text-white">
           SchoolOS AI
         </h2>
       </div>
 
       <p className="text-lg leading-relaxed text-white mt-4">{insight.headline}</p>
-      <p className="text-base leading-relaxed text-white/60 mt-2">{insight.recommendation}</p>
+      <p className="text-base leading-relaxed text-white/70 mt-2">{insight.recommendation}</p>
 
       <button
         type="button"
         onClick={onAsk}
-        className="text-sm font-medium text-white hover:opacity-70 transition-opacity mt-6 inline-flex items-center gap-1"
+        className="text-sm font-semibold text-white hover:text-white/80 transition-colors mt-6 inline-flex items-center gap-1"
       >
         Ask about {childName.split(' ')[0]} →
       </button>

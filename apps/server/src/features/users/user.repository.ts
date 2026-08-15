@@ -62,6 +62,26 @@ export const userRepository = {
     });
   },
 
+  /** Student._id values that already have a parent login linked — used by
+   *  bulk-create-parent-logins to skip students that were already done
+   *  (individually or in an earlier bulk run) instead of creating duplicates. */
+  async findLinkedStudentIds(schoolId: string, studentIds: string[]): Promise<Set<string>> {
+    if (studentIds.length === 0) return new Set();
+    const users = await User.find({
+      schoolId,
+      role: 'parent',
+      deletedAt: { $exists: false },
+      linkedStudentIds: { $in: studentIds },
+    })
+      .select('linkedStudentIds')
+      .lean<Pick<IUser, 'linkedStudentIds'>[]>();
+    const linked = new Set<string>();
+    for (const u of users) {
+      for (const id of u.linkedStudentIds ?? []) linked.add(id);
+    }
+    return linked;
+  },
+
   async findById(id: string, schoolId: string): Promise<IUser | null> {
     return User.findOne({ _id: id, schoolId, deletedAt: { $exists: false } })
       .select('-passwordHash')

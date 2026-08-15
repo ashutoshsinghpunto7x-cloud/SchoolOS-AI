@@ -30,6 +30,7 @@ export type AuditAction =
   | 'user.updated'
   | 'user.status_changed'
   | 'user.deleted'
+  | 'user.bulk_created_parents'
   | 'comm.created'
   | 'comm.updated'
   | 'comm.completed'

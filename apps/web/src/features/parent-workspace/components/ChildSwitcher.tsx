@@ -24,8 +24,8 @@ export function ChildSwitcher({ children, activeChild, onSelect }: ChildSwitcher
   if (children.length <= 1) {
     return (
       <div>
-        <p className="text-2xl font-medium text-[#0D0D0D] tracking-tight">{activeChild.name}</p>
-        <p className="text-sm text-[#6B6B6B] mt-0.5">
+        <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">{activeChild.name}</p>
+        <p className="text-sm text-gray-500 mt-0.5">
           Grade {activeChild.grade} · Section {activeChild.section}
         </p>
       </div>
@@ -39,18 +39,18 @@ export function ChildSwitcher({ children, activeChild, onSelect }: ChildSwitcher
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-2 group text-left rounded-lg -m-1 p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A6752F]/40"
+        className="flex items-center gap-2 group text-left rounded-lg -m-1 p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/40"
       >
         <div>
-          <p className="text-2xl font-medium text-[#0D0D0D] tracking-tight group-hover:opacity-70 transition-opacity">
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight group-hover:opacity-70 transition-opacity">
             {activeChild.name}
           </p>
-          <p className="text-sm text-[#6B6B6B] mt-0.5">
+          <p className="text-sm text-gray-500 mt-0.5">
             Grade {activeChild.grade} · Section {activeChild.section}
           </p>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-[#6B6B6B] mt-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-400 mt-1 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           strokeWidth={2}
         />
       </button>
@@ -63,7 +63,7 @@ export function ChildSwitcher({ children, activeChild, onSelect }: ChildSwitcher
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15 }}
             role="listbox"
-            className="absolute left-0 top-full mt-2 w-72 bg-white rounded-xl border border-[#E7E4DE] shadow-lg py-1.5 z-30"
+            className="absolute left-0 top-full mt-2 w-72 max-w-[85vw] bg-white rounded-xl border border-gray-100 shadow-lg py-1.5 z-30"
           >
             {children.map((child) => {
               const isActive = child._id === activeChild._id;
@@ -77,15 +77,15 @@ export function ChildSwitcher({ children, activeChild, onSelect }: ChildSwitcher
                     onSelect(child._id);
                     setOpen(false);
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-[#F5F1EB] transition-colors"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-left hover:bg-gray-50 transition-colors"
                 >
                   <span>
-                    <span className="block text-base text-[#0D0D0D]">{child.name}</span>
-                    <span className="block text-sm text-[#6B6B6B]">
+                    <span className="block text-base text-gray-900">{child.name}</span>
+                    <span className="block text-sm text-gray-500">
                       Grade {child.grade} · Section {child.section}
                     </span>
                   </span>
-                  {isActive && <Check className="w-4 h-4 text-[#A6752F] shrink-0 ml-2" strokeWidth={2.5} />}
+                  {isActive && <Check className="w-4 h-4 text-purple-600 shrink-0 ml-2" strokeWidth={2.5} />}
                 </button>
               );
             })}

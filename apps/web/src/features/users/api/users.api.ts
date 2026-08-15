@@ -9,6 +9,8 @@ import type {
   UsersQueryOptions,
   RoleMeta,
   PermissionMeta,
+  BulkCreateParentsPayload,
+  BulkCreateParentsResult,
 } from '@schoolos/types';
 
 export const usersApi = {
@@ -60,6 +62,18 @@ export const usersApi = {
   async changeStatus(id: string, payload: ChangeStatusPayload): Promise<User> {
     try {
       const res = await apiClient.patch<ApiResponse<User>>(`/users/${id}/status`, payload);
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async bulkCreateParents(payload: BulkCreateParentsPayload): Promise<BulkCreateParentsResult> {
+    try {
+      const res = await apiClient.post<ApiResponse<BulkCreateParentsResult>>(
+        '/users/bulk-create-parents',
+        payload
+      );
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

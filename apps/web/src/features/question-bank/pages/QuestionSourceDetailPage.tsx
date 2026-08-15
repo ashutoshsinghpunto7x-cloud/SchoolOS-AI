@@ -5,7 +5,14 @@ import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriang
 import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter } from '../hooks/useQuestionBank';
 import { ExtractedDraftsReview, type DraftEdit } from '../components/ExtractedDraftsReview';
 import { BlockEditor } from '../components/ChapterCapture/BlockEditor';
-import type { ExtractedQuestionDraft } from '@schoolos/types';
+import type { ExtractedQuestionDraft, QuestionDifficulty } from '@schoolos/types';
+
+const DIFFICULTY_OPTIONS: { value: QuestionDifficulty | 'mixed'; label: string }[] = [
+  { value: 'mixed', label: 'Mixed' },
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+];
 
 export function QuestionSourceDetailPage() {
   const navigate = useNavigate();
@@ -19,6 +26,8 @@ export function QuestionSourceDetailPage() {
   const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterName, setChapterName] = useState('');
+  const [count, setCount] = useState(5);
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty | 'mixed'>('mixed');
 
   useEffect(() => { setChapterName(source?.chapterName ?? ''); }, [source?.chapterName]);
 
@@ -35,7 +44,7 @@ export function QuestionSourceDetailPage() {
   async function handleGenerate() {
     if (!sourceId) return;
     try {
-      const result = await generate.mutateAsync(sourceId);
+      const result = await generate.mutateAsync({ id: sourceId, options: { count, difficulty } });
       setDrafts(result.extracted);
       setWarnings(result.warnings);
       if (result.extracted.length === 0) toast.error('No questions found in that text');
@@ -145,13 +154,44 @@ export function QuestionSourceDetailPage() {
               </div>
             </div>
 
-            <button
-              type="button" onClick={handleGenerate} disabled={generate.isPending}
-              className="w-full h-11 rounded-xl bg-[#6D4AFF] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {generate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {drafts ? 'Regenerate Questions' : 'Generate Questions'}
-            </button>
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor="question-count" className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  How many questions?
+                </label>
+                <input
+                  id="question-count" type="number" min={1} max={20} value={count}
+                  onChange={(e) => setCount(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+                  className="w-16 h-8 px-2 rounded-md border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm text-center"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1.5">Difficulty</p>
+                <div className="flex gap-1.5">
+                  {DIFFICULTY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value} type="button" onClick={() => setDifficulty(opt.value)}
+                      className={`flex-1 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                        difficulty === opt.value
+                          ? 'bg-[#6D4AFF] text-white'
+                          : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button" onClick={handleGenerate} disabled={generate.isPending}
+                className="w-full h-11 rounded-xl bg-[#6D4AFF] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {generate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {drafts ? 'Regenerate Questions' : 'Generate Questions'}
+              </button>
+            </div>
 
             {drafts && (
               <ExtractedDraftsReview

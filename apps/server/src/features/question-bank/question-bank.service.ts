@@ -16,6 +16,7 @@ import {
   ListSourcesInput,
   UpdateSourceInput,
   SaveChapterSourceInput,
+  ReExtractSourceInput,
 } from './question-bank.validation';
 
 export const questionBankService = {
@@ -143,10 +144,10 @@ export const questionBankService = {
   },
 
   /** Re-runs AI structuring over a saved upload's converted text, without needing the original file again. */
-  async reExtractSource(id: string, ctx: AuthContext): Promise<{ jobId: string }> {
+  async reExtractSource(id: string, options: ReExtractSourceInput, ctx: AuthContext): Promise<{ jobId: string }> {
     const source = await questionSourceRepository.findById(id, ctx.schoolId);
     if (!source) throw new NotFoundError('Upload');
-    return questionExtractionService.enqueueReExtractFromSource(source, ctx);
+    return questionExtractionService.enqueueReExtractFromSource(source, options, ctx);
   },
 
   /** Sets the chapter this upload belongs to — pre-fills every question drafted from it from then on. */

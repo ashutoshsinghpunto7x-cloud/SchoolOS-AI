@@ -9,6 +9,7 @@ import type {
   PaperGenerationConfig,
   UpdateQuestionSourcePayload,
   ChapterPage,
+  QuestionGenerationOptions,
 } from '@schoolos/types';
 
 export const questionBankKeys = {
@@ -150,7 +151,9 @@ export const useUpdateSourceChapter = () => {
 
 /** Generates a fresh batch of question drafts from a stored source's text — safe to call repeatedly. */
 export const useReExtractSource = () =>
-  useMutation({ mutationFn: (id: string) => questionBankApi.reExtractSource(id) });
+  useMutation({
+    mutationFn: ({ id, options }: { id: string; options: QuestionGenerationOptions }) => questionBankApi.reExtractSource(id, options),
+  });
 
 export const useGeneratePaper = () =>
   useMutation({ mutationFn: (config: PaperGenerationConfig) => questionBankApi.generatePaper(config) });

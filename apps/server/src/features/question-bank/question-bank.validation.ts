@@ -143,6 +143,14 @@ export const updateSourceSchema = z.object({
   message: 'At least one field is required',
 });
 
+// Teacher picks these up front (count + difficulty) instead of the AI silently pulling every
+// question it can find at max verbosity — keeps generation fast for a short/simple page and
+// gives the teacher control over what comes back.
+export const reExtractSourceSchema = z.object({
+  count: z.number().int().min(1).max(20).default(5),
+  difficulty: z.enum(['easy', 'medium', 'hard', 'mixed']).default('mixed'),
+});
+
 export const retryPageParamsSchema = z.object({
   id: z.string().min(1),
   pageNumber: z.coerce.number().int().min(1),
@@ -190,4 +198,5 @@ export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
 export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;
 export type PaperGenerationConfigInput = z.infer<typeof paperGenerationConfigSchema>;
 export type RetryPageParamsInput = z.infer<typeof retryPageParamsSchema>;
+export type ReExtractSourceInput = z.infer<typeof reExtractSourceSchema>;
 export type SaveChapterSourceInput = z.infer<typeof saveChapterSourceSchema>;

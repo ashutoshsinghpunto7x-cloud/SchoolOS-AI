@@ -40,37 +40,37 @@ export function NotificationDrawer({ open, onClose, notifications }: Notificatio
             aria-label="Notifications"
             className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-white z-50 shadow-2xl flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E7E4DE]">
-              <h2 className="text-base font-medium text-[#0D0D0D]">Notifications</h2>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900">Notifications</h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close notifications"
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F5F1EB] transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
               >
-                <X className="w-4 h-4 text-[#1A1A1A]" strokeWidth={1.75} />
+                <X className="w-4 h-4 text-gray-700" strokeWidth={1.75} />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center text-center py-20 px-6">
-                  <Bell className="w-6 h-6 text-[#6B6B6B] mb-3" strokeWidth={1.5} />
-                  <p className="text-sm text-[#6B6B6B]">You're all caught up.</p>
+                  <Bell className="w-6 h-6 text-gray-400 mb-3" strokeWidth={1.5} />
+                  <p className="text-sm text-gray-500">You're all caught up.</p>
                 </div>
               ) : (
-                <ul className="divide-y divide-[#E7E4DE]">
+                <ul className="divide-y divide-gray-100">
                   {notifications.map((n) => (
                     <li key={n._id} className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#A6752F] shrink-0" aria-hidden="true" />}
-                        <span className="text-xs uppercase tracking-wide text-[#6B6B6B]">
+                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" aria-hidden="true" />}
+                        <span className="text-xs uppercase tracking-wide text-gray-400 font-medium">
                           {CATEGORY_LABEL[n.category]}
                         </span>
                       </div>
-                      <p className="text-base text-[#0D0D0D] mt-1.5">{n.title}</p>
-                      {n.detail && <p className="text-sm text-[#6B6B6B] mt-0.5">{n.detail}</p>}
-                      <p className="text-xs text-[#6B6B6B] mt-1.5">{n.when}</p>
+                      <p className="text-base text-gray-900 mt-1.5">{n.title}</p>
+                      {n.detail && <p className="text-sm text-gray-500 mt-0.5">{n.detail}</p>}
+                      <p className="text-xs text-gray-400 mt-1.5">{n.when}</p>
                     </li>
                   ))}
                 </ul>

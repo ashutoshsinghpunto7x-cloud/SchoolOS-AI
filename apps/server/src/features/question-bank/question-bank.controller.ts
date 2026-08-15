@@ -19,6 +19,7 @@ import {
   retryPageParamsSchema,
   saveChapterSourceSchema,
   paperGenerationConfigSchema,
+  reExtractSourceSchema,
 } from './question-bank.validation';
 
 export const questionBankController = {
@@ -121,8 +122,9 @@ export const questionBankController = {
   /** POST /question-bank/sources/:id/re-extract — regenerate draft questions from a saved upload's converted text */
   async reExtractSource(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const options = reExtractSourceSchema.parse(req.body ?? {});
       const ctx = buildAuthContext(req.user!);
-      const job = await questionBankService.reExtractSource(req.params.id, ctx);
+      const job = await questionBankService.reExtractSource(req.params.id, options, ctx);
       sendCreated(res, job, 'Re-reading the saved text…');
     } catch (err) { next(err); }
   },

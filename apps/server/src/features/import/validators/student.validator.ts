@@ -45,7 +45,7 @@ export const studentValidator: IValidator = {
     motherName: 'Mother Name',
     parentPhone: 'Parent Phone',
     alternatePhone: 'Alternate Phone',
-    email: 'Email',
+    email: 'Parent Email',
     address: 'Address',
     locality: 'Locality',
     admissionStatus: 'Admission Status',

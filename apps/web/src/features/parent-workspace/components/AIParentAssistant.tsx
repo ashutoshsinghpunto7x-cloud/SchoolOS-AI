@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Sparkle, ArrowUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { parentWorkspaceApi } from '../api/parent-workspace.mock';
+import { parentWorkspaceApi } from '../api/parent-workspace.api';
 import type { AIChatMessage } from '../types';
 
 interface AIParentAssistantProps {
@@ -41,9 +41,17 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
     setMessages((prev) => [...prev, { _id: `u-${Date.now()}`, role: 'user', text: trimmed }]);
     setInput('');
     setThinking(true);
-    const reply = await parentWorkspaceApi.askAI(childId, trimmed);
-    setMessages((prev) => [...prev, reply]);
-    setThinking(false);
+    try {
+      const text = await parentWorkspaceApi.askAI(childId, trimmed);
+      setMessages((prev) => [...prev, { _id: `a-${Date.now()}`, role: 'assistant', text }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        { _id: `a-${Date.now()}`, role: 'assistant', text: "Sorry, I couldn't reach that just now — please try again." },
+      ]);
+    } finally {
+      setThinking(false);
+    }
   };
 
   return (
@@ -67,12 +75,12 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
             role="dialog"
             aria-modal="true"
             aria-label="Ask SchoolOS AI"
-            className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[600px] bg-[#0D0D0D] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl overflow-hidden"
+            className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[600px] bg-gradient-to-b from-[#5B21B6] to-[#4C1D95] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl overflow-hidden"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkle className="w-4 h-4 text-white" strokeWidth={1.75} />
-                <h2 className="text-base font-medium text-white">SchoolOS AI</h2>
+                <h2 className="text-base font-bold text-white">SchoolOS AI</h2>
               </div>
               <button
                 type="button"
@@ -90,7 +98,7 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
                   key={m._id}
                   className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
                     m.role === 'user'
-                      ? 'ml-auto bg-white text-[#0D0D0D]'
+                      ? 'ml-auto bg-white text-gray-900'
                       : 'bg-white/10 text-white'
                   }`}
                 >
@@ -124,7 +132,8 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
                 e.preventDefault();
                 send(input);
               }}
-              className="flex items-center gap-2 px-4 py-3 border-t border-white/10 shrink-0"
+              className="flex items-center gap-2 px-4 pt-3 border-t border-white/10 shrink-0"
+              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
             >
               <input
                 type="text"
@@ -138,7 +147,7 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
                 type="submit"
                 disabled={!input.trim() || thinking}
                 aria-label="Send"
-                className="w-9 h-9 shrink-0 rounded-full bg-white text-[#0D0D0D] flex items-center justify-center disabled:opacity-30 transition-opacity"
+                className="w-9 h-9 shrink-0 rounded-full bg-white text-purple-700 flex items-center justify-center disabled:opacity-30 transition-opacity"
               >
                 <ArrowUp className="w-4 h-4" strokeWidth={2} />
               </button>

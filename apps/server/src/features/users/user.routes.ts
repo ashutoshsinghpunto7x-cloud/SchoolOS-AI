@@ -16,6 +16,7 @@ router.use(authorize('admin'));
 
 router.get('/', userController.list);
 router.post('/', userController.create);
+router.post('/bulk-create-parents', userController.bulkCreateParents);
 router.get('/:id', userController.getById);
 router.patch('/:id/status', userController.changeStatus);
 router.patch('/:id', userController.update);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { parentWorkspaceApi } from '../api/parent-workspace.mock';
+import { parentWorkspaceApi } from '../api/parent-workspace.api';
 
 // Selected child persists across a browser session so a parent who checked
 // Anaya's homework doesn't land back on Aarav after a refresh.

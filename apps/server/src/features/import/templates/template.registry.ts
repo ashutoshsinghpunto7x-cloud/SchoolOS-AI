@@ -13,10 +13,10 @@ const TEMPLATES: Record<ImportType, ImportTemplate> = {
   students: {
     importType: 'students',
     name: 'Student Import Template',
-    description: 'Import or update student records. Required: fullName, class, section, gender, dateOfBirth, fatherName, motherName, parentPhone. If Admission Number matches an existing student, that record is updated instead of duplicated.',
+    description: 'Import or update student records. Required: fullName, class, section, gender, dateOfBirth, fatherName, motherName, parentPhone. Email is the parent/guardian\'s contact address (used for fee-balance emails and parent-login creation), not the student\'s own. If Admission Number matches an existing student, that record is updated instead of duplicated.',
     headers: [
       'admissionNumber', 'fullName', 'class', 'section', 'gender', 'dateOfBirth',
-      'fatherName', 'motherName', 'parentPhone', 'locality', 'address',
+      'fatherName', 'motherName', 'parentPhone', 'email', 'locality', 'address',
     ],
     sampleRows: [
       {
@@ -29,6 +29,7 @@ const TEMPLATES: Record<ImportType, ImportTemplate> = {
         fatherName: 'Ramesh Sharma',
         motherName: 'Sunita Sharma',
         parentPhone: '9876543210',
+        email: 'ramesh.sharma@example.com',
         locality: 'Kothrud',
         address: '12 MG Road, Pune',
       },
@@ -42,6 +43,7 @@ const TEMPLATES: Record<ImportType, ImportTemplate> = {
         fatherName: 'Nilesh Patel',
         motherName: 'Rekha Patel',
         parentPhone: '9012345678',
+        email: '',
         locality: 'Baner',
         address: '',
       },

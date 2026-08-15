@@ -5,6 +5,7 @@ import type {
   UpdateUserPayload,
   ChangeStatusPayload,
   UsersQueryOptions,
+  BulkCreateParentsPayload,
 } from '@schoolos/types';
 
 export const userKeys = {
@@ -71,6 +72,14 @@ export const useChangeStatus = () => {
       qc.invalidateQueries({ queryKey: userKeys.lists() });
       qc.invalidateQueries({ queryKey: userKeys.detail(id) });
     },
+  });
+};
+
+export const useBulkCreateParents = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BulkCreateParentsPayload) => usersApi.bulkCreateParents(payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.lists() }),
   });
 };
 

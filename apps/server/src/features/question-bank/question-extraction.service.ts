@@ -9,7 +9,7 @@ import { extractionJobRepository } from './extraction-job.repository';
 import { questionSourceRepository } from './question-source.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
-import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem } from '@schoolos/types';
+import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions } from '@schoolos/types';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
 
@@ -68,8 +68,23 @@ const QUESTION_TYPES: QuestionType[] = [
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
 
-function buildSystemPrompt(cls: string, subject: string): string {
-  return `You read school textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and convert every question you find into structured JSON.
+/** Roughly how many output tokens one structured question drafts to (JSON scaffolding + a few sentences) — used to size maxTokens to the request instead of always asking for the same fixed budget regardless of how many questions were actually requested. */
+const TOKENS_PER_QUESTION = 220;
+const MIN_STRUCTURING_TOKENS = 600;
+const MAX_STRUCTURING_TOKENS = 4000;
+
+function structuringTokenBudget(count: number): number {
+  return Math.min(MAX_STRUCTURING_TOKENS, Math.max(MIN_STRUCTURING_TOKENS, count * TOKENS_PER_QUESTION + 300));
+}
+
+function buildSystemPrompt(cls: string, subject: string, options: QuestionGenerationOptions): string {
+  const difficultyInstruction = options.difficulty === 'mixed'
+    ? 'a mix of easy, medium, and hard difficulty'
+    : `"${options.difficulty}" difficulty only`;
+
+  return `You read school textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and convert what you find into structured JSON.
+
+Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.
 
 For each question, return:
 - "questionText": the full question text
@@ -458,7 +473,7 @@ export const questionExtractionService = {
   },
 
   /** Re-runs AI structuring over previously-saved converted text — no re-upload/re-OCR needed. */
-  async extractFromSourceText(source: IQuestionSource, ctx: AuthContext): Promise<QuestionExtractionResult> {
+  async extractFromSourceText(source: IQuestionSource, options: QuestionGenerationOptions, ctx: AuthContext): Promise<QuestionExtractionResult> {
     // Structured captures pass their blocks back through as lightweight Markdown (tables/lists stay
     // structured) rather than the fully flattened text, so the question-structuring prompt still sees
     // tables as tables — see blocksToMarkdown.
@@ -466,7 +481,7 @@ export const questionExtractionService = {
       ? blocksToMarkdown(source.pages.flatMap((p) => p.blocks))
       : source.extractedText;
     const { extracted, warnings } = await questionExtractionService.structureFromText(
-      source.class, source.subject, sourceText, ctx,
+      source.class, source.subject, sourceText, options, ctx,
     );
     // A teacher-assigned chapter on the source overrides the AI's per-question guess —
     // it's a more reliable signal than inferring the chapter from page content alone.
@@ -483,14 +498,16 @@ export const questionExtractionService = {
 
   /** Shared AI call: turns raw page/document text into structured question drafts. */
   async structureFromText(
-    cls: string, subject: string, text: string, ctx: AuthContext,
+    cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext,
   ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
     const start = Date.now();
     const result = await openaiProvider.complete({
-      systemPrompt: buildSystemPrompt(cls, subject),
-      userPrompt: `Extract every question from this document text:\n\n${text.slice(0, 15000)}`,
+      systemPrompt: buildSystemPrompt(cls, subject, options),
+      userPrompt: `Extract up to ${options.count} question(s) from this document text:\n\n${text.slice(0, 15000)}`,
       temperature: 0.2,
-      maxTokens: 4000,
+      // Sized to the requested count instead of always maxing out — a 5-question request on a
+      // one-paragraph story shouldn't pay for (or wait on) a 4000-token completion budget.
+      maxTokens: structuringTokenBudget(options.count),
       jsonResponse: true,
     });
 
@@ -585,11 +602,11 @@ export const questionExtractionService = {
   },
 
   /** Re-extraction job over an already-saved QuestionSource — caller (question-bank.service) has already checked ownership/scope. */
-  async enqueueReExtractFromSource(source: IQuestionSource, ctx: AuthContext): Promise<{ jobId: string }> {
+  async enqueueReExtractFromSource(source: IQuestionSource, options: QuestionGenerationOptions, ctx: AuthContext): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: source.kind });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromSourceText(source, ctx)
+    questionExtractionService.extractFromSourceText(source, options, ctx)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background re-extraction failed', { jobId, err });

@@ -283,6 +283,28 @@ export type UpdateUserPayload = Partial<Omit<CreateUserPayload, 'password'>> & {
   status?: UserStatus;
 };
 
+// ── Bulk parent-login creation ───────────────────────────────────────────────
+
+export interface BulkCreateParentsPayload {
+  studentIds: string[];
+  password: string;
+}
+
+export interface BulkCreateParentsResult {
+  created: {
+    studentId: string;
+    studentName: string;
+    email: string;
+    username: string;
+  }[];
+  skipped: {
+    studentId: string;
+    studentName: string;
+    reason: string;
+  }[];
+  password: string;
+}
+
 export interface ChangeStatusPayload {
   status: UserStatus;
 }
@@ -364,6 +386,8 @@ export interface Student extends BaseEntity {
   motherName: string;
   parentPhone: string;
   alternatePhone?: string;
+  /** Parent/guardian's contact email despite the generic name — see Student
+   *  model comment on the server side for why. */
   email?: string;
   address?: string;
   locality?: string;
@@ -3720,6 +3744,12 @@ export interface QuestionExtractionResult {
   extracted: ExtractedQuestionDraft[];
   warnings: string[];
   sourceId?: string;
+}
+
+/** Teacher-selected controls for a (re-)generation run — how many questions to draft and at what difficulty, asked up front instead of the AI silently pulling every question it can find at max verbosity. */
+export interface QuestionGenerationOptions {
+  count: number;
+  difficulty: QuestionDifficulty | 'mixed';
 }
 
 /** Result of an upload that only transcribes/stores text — no question drafts yet. Generating drafts is a separate, repeatable step (see QuestionSource re-extract). */
