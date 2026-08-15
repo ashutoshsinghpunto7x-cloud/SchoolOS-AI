@@ -107,7 +107,7 @@ export const opsService = {
   // role, last seen) — so a module tile never needs a second click to
   // explain why it's failing.
   async getErrorsByModule() {
-    const featureHealth = getFeatureHealth();
+    const featureHealth = await getFeatureHealth();
 
     const latestByModule = await ErrorEventModel.aggregate([
       { $sort: { createdAt: -1 } },

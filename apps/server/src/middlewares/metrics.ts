@@ -3,13 +3,19 @@ import { getRequestContext } from './requestContext';
 import { MetricsSnapshotModel } from '../lib/metrics-snapshot.model';
 import { SlowRequestModel } from '../lib/slow-request.model';
 import { logger } from '../lib/logger';
+import * as redisMetrics from '../lib/redis-metrics';
 
 // In-process request/error counters for the Ops Center infrastructure view.
-// Single-process gauge only — not shared across instances — acceptable for
-// the current single-dyno deployment. Resets on process restart. Per-minute
-// rollups are additionally flushed to Mongo (see flushSnapshot below) so
-// historical trend charts survive a restart even though the live buckets
-// don't.
+// Always kept locally (cheap, and doubles as the fallback below); when
+// REDIS_URL is configured, every instance *also* mirrors these into shared
+// Redis keys (see lib/redis-metrics.ts) so getMetricsSnapshot()/
+// getFeatureHealth() can return fleet-wide totals instead of just this
+// instance's — whichever instance happens to serve the Ops Center request
+// no longer determines what the dashboard shows. Falls back to the
+// local-only numbers below when Redis isn't configured or a read fails.
+// Per-minute rollups are additionally flushed to Mongo (see flushSnapshot
+// below) so historical trend charts survive a restart even though the live
+// buckets don't.
 
 const WINDOW_MS = 60_000;
 const BUCKET_MS = 1_000;
@@ -98,6 +104,8 @@ export const metricsMiddleware = (req: Request, res: Response, next: NextFunctio
     if (stats.latencySamples.length > LATENCY_SAMPLE_CAP) stats.latencySamples.shift();
     featureStats.set(feature, stats);
 
+    void redisMetrics.recordRequest(feature, duration, res.statusCode);
+
     if (duration > SLOW_REQUEST_MS) {
       const ctx = getRequestContext();
       SlowRequestModel.create({
@@ -130,7 +138,7 @@ export interface FeatureHealth {
   lastSeenAt: string;
 }
 
-export function getFeatureHealth(): FeatureHealth[] {
+function getLocalFeatureHealth(): FeatureHealth[] {
   return Array.from(featureStats.entries())
     .map(([feature, stats]) => ({
       feature,
@@ -146,6 +154,12 @@ export function getFeatureHealth(): FeatureHealth[] {
     .sort((a, b) => b.requests - a.requests);
 }
 
+/** Fleet-wide when Redis is configured, this-instance-only otherwise. */
+export async function getFeatureHealth(): Promise<FeatureHealth[]> {
+  const shared = await redisMetrics.getFeatureHealth();
+  return shared ?? getLocalFeatureHealth();
+}
+
 export interface MetricsSnapshot {
   requestsPerMinute: number;
   errorRatePercent: number;
@@ -154,7 +168,7 @@ export interface MetricsSnapshot {
   p99ResponseTimeMs: number;
 }
 
-export function getMetricsSnapshot(): MetricsSnapshot {
+function getLocalMetricsSnapshot(): MetricsSnapshot {
   const cutoff = Date.now() - WINDOW_MS;
   const recent = buckets.filter((b) => b.timestamp >= cutoff);
 
@@ -171,6 +185,12 @@ export function getMetricsSnapshot(): MetricsSnapshot {
   };
 }
 
+/** Fleet-wide when Redis is configured, this-instance-only otherwise. */
+export async function getMetricsSnapshot(): Promise<MetricsSnapshot> {
+  const shared = await redisMetrics.getGlobalSnapshot();
+  return shared ?? getLocalMetricsSnapshot();
+}
+
 let lastFlushedMinute = 0;
 
 async function flushSnapshot(): Promise<void> {
@@ -179,7 +199,12 @@ async function flushSnapshot(): Promise<void> {
   if (minuteStart === lastFlushedMinute) return;
   lastFlushedMinute = minuteStart;
 
-  const snapshot = getMetricsSnapshot();
+  // Always the local window here, not the (possibly fleet-wide) exported
+  // getMetricsSnapshot() — this flush is tagged with `instance` below
+  // specifically to keep per-instance history, so mixing in other
+  // instances' numbers would double-count once more than one instance is
+  // flushing every minute.
+  const snapshot = getLocalMetricsSnapshot();
   if (snapshot.requestsPerMinute === 0) return;
 
   try {

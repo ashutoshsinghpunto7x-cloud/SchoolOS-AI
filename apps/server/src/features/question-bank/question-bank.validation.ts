@@ -145,9 +145,12 @@ export const updateSourceSchema = z.object({
 
 // Teacher picks these up front (count + difficulty) instead of the AI silently pulling every
 // question it can find at max verbosity — keeps generation fast for a short/simple page and
-// gives the teacher control over what comes back.
+// gives the teacher control over what comes back. Raised from 20 to 100 now that generation
+// batches internally (see structureFromText in question-extraction.service.ts) — a teacher
+// generating a full half-yearly/yearly paper's worth of questions off one upload no longer
+// needs to re-run this multiple times; 100 stays a sane outer ceiling on cost/latency per call.
 export const reExtractSourceSchema = z.object({
-  count: z.number().int().min(1).max(20).default(5),
+  count: z.number().int().min(1).max(100).default(5),
   difficulty: z.enum(['easy', 'medium', 'hard', 'mixed']).default('mixed'),
 });
 

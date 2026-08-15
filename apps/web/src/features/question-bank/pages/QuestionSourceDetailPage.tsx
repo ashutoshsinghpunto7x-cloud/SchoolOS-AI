@@ -160,8 +160,8 @@ export function QuestionSourceDetailPage() {
                   How many questions?
                 </label>
                 <input
-                  id="question-count" type="number" min={1} max={20} value={count}
-                  onChange={(e) => setCount(Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+                  id="question-count" type="number" min={1} max={100} value={count}
+                  onChange={(e) => setCount(Math.min(100, Math.max(1, Number(e.target.value) || 1)))}
                   className="w-16 h-8 px-2 rounded-md border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm text-center"
                 />
               </div>

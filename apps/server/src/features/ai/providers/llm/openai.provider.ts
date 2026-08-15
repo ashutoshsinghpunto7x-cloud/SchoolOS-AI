@@ -25,7 +25,10 @@ function getClient(): OpenAI {
     _client = new OpenAI({
       apiKey: env.OPENAI_API_KEY,
       maxRetries: 3,
-      timeout: 30_000,
+      // Raised from 30s — batched question-generation calls can legitimately run longer
+      // (larger maxTokens for bigger batches); a tight timeout would abort a slow-but-fine
+      // completion and look identical to a real failure to the caller.
+      timeout: 60_000,
     });
   }
   return _client;
@@ -68,13 +71,20 @@ export const openaiProvider: ILLMProvider = {
       const content = choice.message.content ?? '';
       const promptTokens = response.usage?.prompt_tokens ?? 0;
       const completionTokens = response.usage?.completion_tokens ?? 0;
+      const finishReason = choice.finish_reason;
 
       logger.info('[OpenAIProvider] Completion OK', {
         model,
         promptTokens,
         completionTokens,
+        finishReason,
         durationMs: Date.now() - start,
       });
+      if (finishReason === 'length') {
+        // Not an error by itself — callers that asked for structured JSON treat this as a
+        // signal to retry with a smaller ask/bigger budget rather than failing outright.
+        logger.warn('[OpenAIProvider] Completion truncated by maxTokens', { model, completionTokens });
+      }
 
       return {
         content,
@@ -83,6 +93,7 @@ export const openaiProvider: ILLMProvider = {
         totalTokens: promptTokens + completionTokens,
         model,
         durationMs: Date.now() - start,
+        finishReason,
       };
     } catch (err) {
       logger.error('[OpenAIProvider] Completion failed', { model, err });

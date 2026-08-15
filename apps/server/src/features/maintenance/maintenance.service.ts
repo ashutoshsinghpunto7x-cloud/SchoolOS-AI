@@ -55,10 +55,10 @@ function computeStatus(state: IMaintenanceState | null): MaintenanceStatus {
 }
 
 async function getCachedState(): Promise<IMaintenanceState | null> {
-  const cached = maintenanceCache.get();
+  const cached = await maintenanceCache.get();
   if (cached !== undefined) return cached;
   const state = await maintenanceRepository.getState();
-  maintenanceCache.set(state);
+  await maintenanceCache.set(state);
   return state;
 }
 
@@ -86,7 +86,7 @@ export const maintenanceService = {
       { scheduledStartAt: data.startAt, scheduledEndAt: data.endAt, message: data.message },
       ctx.userId,
     );
-    maintenanceCache.invalidate();
+    await maintenanceCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -109,7 +109,7 @@ export const maintenanceService = {
 
   async cancelSchedule(ctx: AuthContext): Promise<IMaintenanceState> {
     const updated = await maintenanceRepository.clearSchedule(ctx.userId);
-    maintenanceCache.invalidate();
+    await maintenanceCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -128,7 +128,7 @@ export const maintenanceService = {
       { manualActive: data.isActive, ...(data.message ? { message: data.message } : {}) },
       ctx.userId,
     );
-    maintenanceCache.invalidate();
+    await maintenanceCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,

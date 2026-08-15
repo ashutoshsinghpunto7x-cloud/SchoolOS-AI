@@ -160,7 +160,7 @@ export const opsRepository = {
         status: dbStateLabel,
         healthy: dbState === 1,
       },
-      ...getMetricsSnapshot(),
+      ...(await getMetricsSnapshot()),
     };
   },
 

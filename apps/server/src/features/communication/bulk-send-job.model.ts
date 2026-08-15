@@ -19,6 +19,12 @@ export interface IBulkSendJob extends Document {
   failed: number;
   skipped: number;
   createdBy: string;
+  /** Kept alongside createdBy (display name) so a resumed run (see
+   *  queue/bulk-processor.ts#resumeStuckBulkJobs) can still write the audit
+   *  log entry with the right actor after a restart. */
+  createdByUserId: string;
+  overrideBody?: string;
+  ip?: string;
   startedAt: Date;
   completedAt?: Date;
   createdAt: Date;
@@ -36,11 +42,19 @@ const bulkSendJobSchema = new Schema<IBulkSendJob>(
     failed: { type: Number, default: 0, min: 0 },
     skipped: { type: Number, default: 0, min: 0 },
     createdBy: { type: String, required: true },
+    createdByUserId: { type: String, required: true },
+    overrideBody: { type: String },
+    ip: { type: String },
     startedAt: { type: Date, required: true },
     completedAt: { type: Date },
   },
   { timestamps: true, versionKey: false },
 );
+
+// Startup reconciliation scans PROCESSING jobs whose updatedAt (bumped by
+// every counter increment) has gone stale — see
+// queue/bulk-processor.ts#resumeStuckBulkJobs.
+bulkSendJobSchema.index({ status: 1, updatedAt: 1 });
 
 bulkSendJobSchema.index({ schoolId: 1, createdAt: -1 });
 bulkSendJobSchema.index({ schoolId: 1, status: 1 });

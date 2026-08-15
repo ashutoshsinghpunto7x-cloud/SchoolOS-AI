@@ -18,10 +18,10 @@ export interface ModuleAccessRow {
 }
 
 async function getCachedRestricted(): Promise<IModuleRestriction[]> {
-  const cached = moduleRestrictionCache.get();
+  const cached = await moduleRestrictionCache.get();
   if (cached) return cached;
   const all = await moduleRestrictionRepository.findAll();
-  moduleRestrictionCache.set(all);
+  await moduleRestrictionCache.set(all);
   return all;
 }
 
@@ -70,7 +70,7 @@ export const moduleAccessService = {
       },
       ctx.userId
     );
-    moduleRestrictionCache.invalidate();
+    await moduleRestrictionCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,

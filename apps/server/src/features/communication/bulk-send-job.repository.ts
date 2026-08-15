@@ -8,6 +8,9 @@ export const bulkSendJobRepository = {
     channel: NotificationChannel;
     totalRecipients: number;
     createdBy: string;
+    createdByUserId: string;
+    overrideBody?: string;
+    ip?: string;
   }): Promise<IBulkSendJob> {
     return BulkSendJob.create({ ...data, status: 'PROCESSING', startedAt: new Date() });
   },
@@ -31,5 +34,17 @@ export const bulkSendJobRepository = {
 
   async list(schoolId: string, limit = 50): Promise<IBulkSendJob[]> {
     return BulkSendJob.find({ schoolId }).sort({ createdAt: -1 }).limit(limit);
+  },
+
+  /**
+   * PROCESSING jobs whose counters haven't moved since `staleBefore` — i.e.
+   * no worker has touched them recently, so whatever process was running
+   * them is presumed dead (crash, or a restart mid-run). Used by
+   * queue/bulk-processor.ts#resumeStuckBulkJobs at startup; safe to resume
+   * more than once (item claiming is atomic) if two instances both pick one
+   * up.
+   */
+  async findStaleProcessing(staleBefore: Date): Promise<IBulkSendJob[]> {
+    return BulkSendJob.find({ status: 'PROCESSING', updatedAt: { $lt: staleBefore } });
   },
 };

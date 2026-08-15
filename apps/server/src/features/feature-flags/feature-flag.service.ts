@@ -42,19 +42,19 @@ async function loadEvalUser(ctx: AuthContext): Promise<EvalUser> {
 }
 
 async function getAllFeaturesCached(): Promise<IFeature[]> {
-  const cached = featureFlagCache.get<IFeature[]>(ALL_FEATURES_CACHE_KEY);
+  const cached = await featureFlagCache.get<IFeature[]>(ALL_FEATURES_CACHE_KEY);
   if (cached) return cached;
   const features = await featureFlagRepository.findAll();
-  featureFlagCache.set(ALL_FEATURES_CACHE_KEY, features);
+  await featureFlagCache.set(ALL_FEATURES_CACHE_KEY, features);
   return features;
 }
 
 async function getAssignmentsCached(featureKey: string): Promise<IFeatureAssignment[]> {
   const cacheKey = ASSIGNMENTS_CACHE_KEY(featureKey);
-  const cached = featureFlagCache.get<IFeatureAssignment[]>(cacheKey);
+  const cached = await featureFlagCache.get<IFeatureAssignment[]>(cacheKey);
   if (cached) return cached;
   const assignments = await featureFlagRepository.findAssignments(featureKey);
-  featureFlagCache.set(cacheKey, assignments);
+  await featureFlagCache.set(cacheKey, assignments);
   return assignments;
 }
 
@@ -110,7 +110,7 @@ export const featureFlagService = {
     if (existing) throw new ValidationError(`A feature with key "${data.key}" already exists`);
 
     const feature = await featureFlagRepository.create(data, ctx.userId);
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -129,7 +129,7 @@ export const featureFlagService = {
 
     const updated = await featureFlagRepository.update(key, data, ctx.userId);
     if (!updated) throw new NotFoundError('Feature');
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -147,7 +147,7 @@ export const featureFlagService = {
 
     await featureFlagRepository.deleteAssignmentsForFeature(key);
     await featureFlagRepository.delete(key);
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -164,7 +164,7 @@ export const featureFlagService = {
 
     const updated = await featureFlagRepository.setVisibilityMode(key, 'nobody', ctx.userId);
     if (!updated) throw new NotFoundError('Feature');
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -190,7 +190,7 @@ export const featureFlagService = {
     }
 
     const assignment = await featureFlagRepository.createAssignment(key, data.targetType, data.targetId, ctx.userId);
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -205,7 +205,7 @@ export const featureFlagService = {
   async deleteAssignment(key: string, assignmentId: string, ctx: AuthContext): Promise<void> {
     const deleted = await featureFlagRepository.deleteAssignment(assignmentId);
     if (!deleted) throw new NotFoundError('Assignment');
-    featureFlagCache.invalidate();
+    await featureFlagCache.invalidate();
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,

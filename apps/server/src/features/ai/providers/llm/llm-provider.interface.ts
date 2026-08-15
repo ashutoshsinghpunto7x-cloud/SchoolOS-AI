@@ -20,6 +20,8 @@ export interface LLMCompletionOutput {
   totalTokens: number;
   model: string;
   durationMs: number;
+  /** OpenAI's own signal for why generation stopped — "length" means the response was cut off by maxTokens (truncated JSON), not that the model chose to stop. Lets callers detect truncation deterministically instead of only inferring it from a JSON.parse failure. */
+  finishReason?: string;
 }
 
 export interface ILLMProvider {

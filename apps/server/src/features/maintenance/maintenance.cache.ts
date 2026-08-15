@@ -1,34 +1,28 @@
-// Same minimal process-local TTL cache shape as feature-flag.cache.ts — kept
-// deliberately short (5s) since this is read on every login attempt and every
-// ProtectedRoute mount across every open tab; invalidate() runs after every
-// write so a toggle/schedule change is visible within one TTL window at worst.
+// Redis-backed when REDIS_URL is set (shared across server instances), with
+// a process-local fallback otherwise — see lib/redis-ttl-cache.ts. Kept
+// deliberately short (5s TTL) since this is read on every login attempt and
+// every ProtectedRoute mount across every open tab; invalidate() runs after
+// every write so a toggle/schedule change is visible within one TTL window
+// at worst, on every instance.
 
 import { IMaintenanceState } from './maintenance.model';
-
-interface CacheEntry {
-  data: IMaintenanceState | null;
-  expiresAt: number;
-}
+import { createTtlCache } from '../../lib/redis-ttl-cache';
 
 const TTL_MS = 5_000;
+const SINGLETON_KEY = 'state';
 
-let entry: CacheEntry | null = null;
+const cache = createTtlCache<IMaintenanceState | null>('maintenance', TTL_MS);
 
 export const maintenanceCache = {
-  get(): IMaintenanceState | null | undefined {
-    if (!entry) return undefined;
-    if (entry.expiresAt < Date.now()) {
-      entry = null;
-      return undefined;
-    }
-    return entry.data;
+  async get(): Promise<IMaintenanceState | null | undefined> {
+    return cache.get(SINGLETON_KEY);
   },
 
-  set(data: IMaintenanceState | null): void {
-    entry = { data, expiresAt: Date.now() + TTL_MS };
+  async set(data: IMaintenanceState | null): Promise<void> {
+    await cache.set(SINGLETON_KEY, data);
   },
 
-  invalidate(): void {
-    entry = null;
+  async invalidate(): Promise<void> {
+    await cache.invalidate();
   },
 };

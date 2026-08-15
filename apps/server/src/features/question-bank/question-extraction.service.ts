@@ -68,24 +68,134 @@ const QUESTION_TYPES: QuestionType[] = [
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
 
-/** Roughly how many output tokens one structured question drafts to (JSON scaffolding + a few sentences) — used to size maxTokens to the request instead of always asking for the same fixed budget regardless of how many questions were actually requested. */
-const TOKENS_PER_QUESTION = 220;
-const MIN_STRUCTURING_TOKENS = 600;
-const MAX_STRUCTURING_TOKENS = 4000;
+/**
+ * Sizing/batching constants for AI question generation. Together these are what make
+ * generation safe at any scale — from "5 questions off a one-page worksheet" up to
+ * "60 questions for a full yearly paper spread across a 20-page upload":
+ *
+ * - MAX_BATCH_COUNT caps how many questions any single AI call is ever asked for, so a
+ *   completion's JSON body stays comfortably inside its token budget and never gets cut
+ *   off mid-string (the original bug: a 5-question ask exactly hit its 1400-token budget
+ *   and produced unparseable truncated JSON). A bigger request is split into several
+ *   sequential batch calls instead of one large one.
+ * - CHUNK_CHAR_LIMIT bounds how much source text goes into a single call's prompt. Text
+ *   longer than this (a multi-page chapter upload) is split into chunks on paragraph
+ *   boundaries and processed independently instead of silently slicing to the first N
+ *   characters and dropping the rest.
+ * - TOKENS_PER_QUESTION/BASE budget the completion generously (with headroom) per question
+ *   so batches don't brush the truncation edge the way the old tighter budget did.
+ * - MAX_RETRIES_ON_TRUNCATION governs completeQuestionsWithRetry's automatic recovery: if a
+ *   call's response is truncated (either OpenAI's own finishReason:"length" signal, or a
+ *   JSON parse failure), it retries with a smaller ask and more budget headroom, and as a
+ *   last resort salvages whatever complete question objects it can from the truncated JSON
+ *   rather than losing the whole batch. All of this happens automatically — the teacher
+ *   never sees a truncation failure or has to manually "continue" a stalled generation.
+ */
+const TOKENS_PER_QUESTION = 320;
+const BASE_STRUCTURING_TOKENS = 500;
+const MAX_STRUCTURING_TOKENS = 6000;
+const MAX_BATCH_COUNT = 8;
+const CHUNK_CHAR_LIMIT = 12_000;
+const CHUNK_CONCURRENCY = 3;
+const MAX_RETRIES_ON_TRUNCATION = 2;
 
-function structuringTokenBudget(count: number): number {
-  return Math.min(MAX_STRUCTURING_TOKENS, Math.max(MIN_STRUCTURING_TOKENS, count * TOKENS_PER_QUESTION + 300));
+function structuringTokenBudget(count: number, headroomMultiplier = 1): number {
+  return Math.min(MAX_STRUCTURING_TOKENS, Math.round((count * TOKENS_PER_QUESTION + BASE_STRUCTURING_TOKENS) * headroomMultiplier));
 }
 
-function buildSystemPrompt(cls: string, subject: string, options: QuestionGenerationOptions): string {
+/** Splits a large request into a run of per-call batch sizes, each within MAX_BATCH_COUNT, that sum back to `count`. */
+export function splitIntoBatches(count: number, maxBatch: number = MAX_BATCH_COUNT): number[] {
+  const batches: number[] = [];
+  let remaining = count;
+  while (remaining > 0) {
+    const size = Math.min(maxBatch, remaining);
+    batches.push(size);
+    remaining -= size;
+  }
+  return batches;
+}
+
+/** Splits `total` across `weights.length` slots proportional to each weight (e.g. chunk character length), using the largest-remainder method so the parts always sum exactly to `total`. */
+export function allocateByWeight(total: number, weights: number[]): number[] {
+  if (weights.length === 0) return [];
+  const sumW = weights.reduce((a, b) => a + b, 0);
+  const raw = weights.map((w) => (sumW > 0 ? (w / sumW) * total : total / weights.length));
+  const floors = raw.map(Math.floor);
+  const distributed = floors.reduce((a, b) => a + b, 0);
+  const remainder = total - distributed;
+  const order = raw
+    .map((r, i) => ({ i, frac: r - Math.floor(r) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < remainder && k < order.length; k++) floors[order[k].i] += 1;
+  return floors;
+}
+
+/** Splits long source text into chunks no larger than maxChars, breaking on paragraph boundaries so a chunk boundary never lands mid-sentence. A single paragraph longer than maxChars is hard-sliced as a last resort. */
+export function chunkText(text: string, maxChars: number = CHUNK_CHAR_LIMIT): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (trimmed.length <= maxChars) return [trimmed];
+
+  const paragraphs = trimmed.split(/\n\s*\n/);
+  const chunks: string[] = [];
+  let current = '';
+  for (const para of paragraphs) {
+    const candidate = current ? `${current}\n\n${para}` : para;
+    if (candidate.length > maxChars && current) {
+      chunks.push(current);
+      current = para;
+    } else {
+      current = candidate;
+    }
+    while (current.length > maxChars) {
+      chunks.push(current.slice(0, maxChars));
+      current = current.slice(maxChars);
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+/** Runs `fn` over `items` with at most `limit` in flight at once — bounded concurrency without pulling in a dependency. */
+async function runWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+/** Drops duplicate questions (normalized on trimmed/lowercased text) — a safety net for the rare case where two batches over overlapping/adjacent chunks legitimately extract the same question. */
+export function dedupeQuestions(list: ExtractedQuestionDraft[]): ExtractedQuestionDraft[] {
+  const seen = new Set<string>();
+  const out: ExtractedQuestionDraft[] = [];
+  for (const q of list) {
+    const key = q.questionText.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(q);
+  }
+  return out;
+}
+
+function buildSystemPrompt(cls: string, subject: string, options: { count: number; difficulty: QuestionDifficulty | 'mixed' }, excludeTexts: string[] = []): string {
   const difficultyInstruction = options.difficulty === 'mixed'
     ? 'a mix of easy, medium, and hard difficulty'
     : `"${options.difficulty}" difficulty only`;
 
+  const excludeBlock = excludeTexts.length
+    ? `\n\nThese questions were already extracted from this same document in an earlier pass — do NOT repeat them or near-duplicates of them:\n${excludeTexts.slice(0, 30).map((t) => `- ${t.slice(0, 150)}`).join('\n')}\n`
+    : '';
+
   return `You read school textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and convert what you find into structured JSON.
 
 Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.
-
+${excludeBlock}
 For each question, return:
 - "questionText": the full question text
 - "questionType": one of ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}
@@ -340,17 +450,132 @@ function textToParagraphBlocks(text: string): ContentBlock[] {
     .map((p) => ({ type: 'paragraph' as const, text: p }));
 }
 
-function parseQuestions(raw: string): { questions: RawExtractedQuestion[]; pageText: string } {
+/** Parses the model's `{"questions": [...]}` response, non-throwing — returns null instead of raising, so callers (completeQuestionsWithRetry) can decide whether to retry rather than fail immediately. */
+function tryParseQuestions(raw: string): { questions: RawExtractedQuestion[] } | null {
   try {
     const body = JSON.parse(raw);
     const questions = Array.isArray(body) ? body : body.questions;
-    const pageText = typeof body?.pageText === 'string' ? body.pageText : '';
-    if (!Array.isArray(questions)) return { questions: [], pageText };
-    return { questions, pageText };
-  } catch (err) {
-    logger.error('[QuestionExtraction] Failed to parse AI response', { error: String(err), raw: raw.slice(0, 500) });
-    throw new ValidationError('Could not read questions from that upload — try a clearer photo or a different file.');
+    if (!Array.isArray(questions)) return null;
+    return { questions };
+  } catch {
+    return null;
   }
+}
+
+/**
+ * Recovers as many complete question objects as possible from a truncated `{"questions": [...]}`
+ * response — used as a last-resort fallback when a completion hit its token budget mid-object and
+ * ordinary JSON.parse fails. Walks the raw text tracking bracket depth (respecting quoted strings
+ * and escapes) and collects only objects that fully closed before the cutoff; the one dangling,
+ * incomplete object at the end is discarded rather than guessed at.
+ */
+export function salvageTruncatedQuestions(raw: string): RawExtractedQuestion[] {
+  const questionsIdx = raw.indexOf('"questions"');
+  if (questionsIdx === -1) return [];
+  const arrStart = raw.indexOf('[', questionsIdx);
+  if (arrStart === -1) return [];
+
+  const objectStrings: string[] = [];
+  let depth = 0;
+  let objStart = -1;
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = arrStart + 1; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escapeNext) escapeNext = false;
+      else if (ch === '\\') escapeNext = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') { if (depth === 0) objStart = i; depth++; }
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0 && objStart !== -1) {
+        objectStrings.push(raw.slice(objStart, i + 1));
+        objStart = -1;
+      } else if (depth < 0) {
+        break; // hit the array's closing bracket (or malformed input) — stop
+      }
+    }
+  }
+
+  const recovered: RawExtractedQuestion[] = [];
+  for (const objStr of objectStrings) {
+    try { recovered.push(JSON.parse(objStr)); } catch { /* skip the odd malformed object, keep the rest */ }
+  }
+  return recovered;
+}
+
+/**
+ * Shared, retry-safe AI call for one batch of question drafts (structuring or synthesis). Detects
+ * truncation via OpenAI's own finishReason:"length" signal as well as JSON parse failure, and
+ * automatically recovers rather than surfacing a failure to the teacher:
+ *   1. Retry with a smaller batch count (more budget per question) and extra token headroom.
+ *   2. On the final attempt, salvage whatever complete question objects survived truncation.
+ *   3. Only if nothing could be salvaged does it give up on that batch — and even then it returns
+ *      an empty result with a warning rather than throwing, so sibling batches (other chunks/pages)
+ *      still get returned to the teacher.
+ */
+async function completeQuestionsWithRetry(
+  buildPrompts: (count: number) => { systemPrompt: string; userPrompt: string },
+  initialCount: number,
+  ctx: AuthContext,
+): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
+  let attemptCount = initialCount;
+  let headroom = 1;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES_ON_TRUNCATION; attempt++) {
+    const { systemPrompt, userPrompt } = buildPrompts(attemptCount);
+    const start = Date.now();
+    const maxTokens = structuringTokenBudget(attemptCount, headroom);
+    const result = await openaiProvider.complete({ systemPrompt, userPrompt, temperature: 0.2, maxTokens, jsonResponse: true });
+
+    aiUsageRepository.record({
+      provider: 'openai',
+      aiModel: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+      durationMs: Date.now() - start,
+      schoolId: ctx.schoolId,
+    });
+
+    const truncated = result.finishReason === 'length';
+    const parsed = tryParseQuestions(result.content);
+    const isLastAttempt = attempt === MAX_RETRIES_ON_TRUNCATION;
+
+    if (parsed && !truncated) return clean(parsed.questions);
+
+    if (parsed && truncated && !isLastAttempt) {
+      // Parsed fine (model happened to close its brackets right at the limit) but flagged as
+      // truncated — still worth a clean retry with more headroom rather than risking a partially
+      // cut-off question sneaking through on a technicality.
+      attemptCount = Math.max(1, Math.ceil(attemptCount / 2));
+      headroom += 0.75;
+      continue;
+    }
+    if (parsed) return clean(parsed.questions);
+
+    if (isLastAttempt) {
+      const salvaged = salvageTruncatedQuestions(result.content);
+      if (salvaged.length > 0) {
+        const { extracted, warnings } = clean(salvaged);
+        warnings.push(`The AI's response was cut off after ${extracted.length} question(s) in this section — the rest were recovered from the partial reply.`);
+        return { extracted, warnings };
+      }
+      logger.error('[QuestionExtraction] AI response unparseable after retries', { raw: result.content.slice(0, 500) });
+      return { extracted: [], warnings: ['Part of the uploaded content could not be turned into questions — the AI response was incomplete. Try again, or split this upload into smaller pages.'] };
+    }
+
+    attemptCount = Math.max(1, Math.ceil(attemptCount / 2));
+    headroom += 0.75;
+  }
+
+  return { extracted: [], warnings: [] };
 }
 
 function parseTranscription(raw: string): string {
@@ -496,34 +721,58 @@ export const questionExtractionService = {
     return { sourceType: source.kind, extracted: withChapter, warnings, sourceId };
   },
 
-  /** Shared AI call: turns raw page/document text into structured question drafts. */
+  /**
+   * Shared AI call: turns raw page/document text into structured question drafts. Scales to any
+   * source size and any requested count without a single call ever risking truncation:
+   *   1. `text` is split into CHUNK_CHAR_LIMIT-sized chunks (paragraph-boundary aware) instead of
+   *      being sliced to the first 15k characters — a 20-page chapter upload gets every page's
+   *      content considered, not just the start of it.
+   *   2. The requested `count` is distributed across chunks proportional to each chunk's length,
+   *      then further split into MAX_BATCH_COUNT-sized batches per chunk — so however large the
+   *      ask (5 questions or a full yearly paper's worth), every individual AI call is asking for
+   *      a small, safely-budgeted number of questions.
+   *   3. Chunks run with bounded concurrency; each batch call is retry-safe (see
+   *      completeQuestionsWithRetry) so a truncated response never loses the whole request.
+   */
   async structureFromText(
     cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext,
   ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
-    const start = Date.now();
-    const result = await openaiProvider.complete({
-      systemPrompt: buildSystemPrompt(cls, subject, options),
-      userPrompt: `Extract up to ${options.count} question(s) from this document text:\n\n${text.slice(0, 15000)}`,
-      temperature: 0.2,
-      // Sized to the requested count instead of always maxing out — a 5-question request on a
-      // one-paragraph story shouldn't pay for (or wait on) a 4000-token completion budget.
-      maxTokens: structuringTokenBudget(options.count),
-      jsonResponse: true,
+    const chunks = chunkText(text);
+    if (chunks.length === 0) return { extracted: [], warnings: [] };
+
+    const perChunkCounts = allocateByWeight(options.count, chunks.map((c) => c.length));
+    const tasks = chunks
+      .map((chunk, i) => ({ chunk, count: perChunkCounts[i] }))
+      .filter((t) => t.count > 0);
+
+    const perTaskResults = await runWithConcurrency(tasks, CHUNK_CONCURRENCY, async (task) => {
+      const extracted: ExtractedQuestionDraft[] = [];
+      const warnings: string[] = [];
+      // Sequential within a chunk (not parallel) so each later batch can be told what the
+      // earlier batches over the same text already extracted, and avoid repeating them.
+      for (const batchSize of splitIntoBatches(task.count)) {
+        const excludeTexts = extracted.map((q) => q.questionText);
+        const result = await completeQuestionsWithRetry(
+          (count) => ({
+            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty }, excludeTexts),
+            userPrompt: `Extract up to ${count} question(s) from this document text:\n\n${task.chunk}`,
+          }),
+          batchSize,
+          ctx,
+        );
+        extracted.push(...result.extracted);
+        warnings.push(...result.warnings);
+      }
+      return { extracted, warnings };
     });
 
-    aiUsageRepository.record({
-      provider: 'openai',
-      aiModel: result.model,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-      totalTokens: result.totalTokens,
-      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
-      durationMs: Date.now() - start,
-      schoolId: ctx.schoolId,
-    });
-
-    const { questions } = parseQuestions(result.content);
-    return clean(questions);
+    const merged = dedupeQuestions(perTaskResults.flatMap((r) => r.extracted));
+    const warnings = perTaskResults.flatMap((r) => r.warnings);
+    const final = merged.length > options.count ? merged.slice(0, options.count) : merged;
+    if (final.length < options.count) {
+      warnings.push(`Found ${final.length} of the ${options.count} requested question(s) in the uploaded content.`);
+    }
+    return { extracted: final, warnings };
   },
 
   /**
@@ -538,30 +787,25 @@ export const questionExtractionService = {
   ): Promise<ExtractedQuestionDraft[]> {
     if (!openaiProvider.isAvailable() || req.count <= 0) return [];
 
-    const start = Date.now();
-    const result = await openaiProvider.complete({
-      systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, req.count, req.questionType),
-      userPrompt: `Reference material for this chapter:\n\n${req.contextText.slice(0, 6000) || '(no prior questions or uploads yet for this chapter — use general syllabus knowledge for this class/subject/chapter)'}`,
-      temperature: 0.4,
-      maxTokens: 4000,
-      jsonResponse: true,
-    });
+    const contextText = req.contextText.slice(0, 6000) || '(no prior questions or uploads yet for this chapter — use general syllabus knowledge for this class/subject/chapter)';
 
-    aiUsageRepository.record({
-      provider: 'openai',
-      aiModel: result.model,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-      totalTokens: result.totalTokens,
-      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
-      durationMs: Date.now() - start,
-      schoolId: ctx.schoolId,
-    });
+    // Same batching principle as structureFromText: a large marks-gap (e.g. filling out a full
+    // yearly paper) is split into MAX_BATCH_COUNT-sized calls instead of one big ask that risks
+    // truncation, and each call is retry-safe.
+    const batchResults = await runWithConcurrency(splitIntoBatches(req.count), CHUNK_CONCURRENCY, (batchSize) =>
+      completeQuestionsWithRetry(
+        (count) => ({
+          systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, count, req.questionType),
+          userPrompt: `Reference material for this chapter:\n\n${contextText}`,
+        }),
+        batchSize,
+        ctx,
+      ),
+    );
 
-    const { questions } = parseQuestions(result.content);
-    const { extracted } = clean(questions);
+    const extracted = dedupeQuestions(batchResults.flatMap((r) => r.extracted)).slice(0, req.count);
     // The model is asked for exact marks/chapter/type, but normalize here too in case it drifts.
-    return extracted.slice(0, req.count).map((q) => ({
+    return extracted.map((q) => ({
       ...q,
       marks: req.marks,
       chapterName: req.chapterName,

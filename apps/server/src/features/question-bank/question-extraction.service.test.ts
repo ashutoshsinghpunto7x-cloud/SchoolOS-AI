@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { flattenBlocksToText, blocksToMarkdown, normalizeBlock, parseStructuredPage } from './question-extraction.service';
+import {
+  flattenBlocksToText, blocksToMarkdown, normalizeBlock, parseStructuredPage,
+  splitIntoBatches, allocateByWeight, chunkText, salvageTruncatedQuestions, dedupeQuestions,
+} from './question-extraction.service';
 import type { ContentBlock } from '@schoolos/types';
+import type { ExtractedQuestionDraft } from './question-extraction.service';
 
 describe('normalizeBlock', () => {
   it('accepts a well-formed heading block', () => {
@@ -186,5 +190,98 @@ describe('blocksToMarkdown', () => {
   it('wraps equations in $ delimiters', () => {
     const blocks: ContentBlock[] = [{ type: 'equation', latex: 'E = mc^2' }];
     expect(blocksToMarkdown(blocks)).toContain('$E = mc^2$');
+  });
+});
+
+describe('splitIntoBatches', () => {
+  it('splits a large count into batches capped at maxBatch that sum back to the original count', () => {
+    expect(splitIntoBatches(20, 8)).toEqual([8, 8, 4]);
+    expect(splitIntoBatches(8, 8)).toEqual([8]);
+    expect(splitIntoBatches(1, 8)).toEqual([1]);
+    expect(splitIntoBatches(0, 8)).toEqual([]);
+  });
+});
+
+describe('allocateByWeight', () => {
+  it('distributes a total proportionally to each weight and always sums back to the total', () => {
+    const result = allocateByWeight(10, [100, 100]);
+    expect(result).toEqual([5, 5]);
+    expect(result.reduce((a, b) => a + b, 0)).toBe(10);
+  });
+
+  it('gives more to a longer chunk without losing any of the total to rounding', () => {
+    const result = allocateByWeight(7, [9000, 1000]);
+    expect(result.reduce((a, b) => a + b, 0)).toBe(7);
+    expect(result[0]).toBeGreaterThan(result[1]);
+  });
+
+  it('handles a single chunk by giving it everything', () => {
+    expect(allocateByWeight(50, [12000])).toEqual([50]);
+  });
+});
+
+describe('chunkText', () => {
+  it('returns the whole text as one chunk when under the limit', () => {
+    expect(chunkText('short document', 100)).toEqual(['short document']);
+  });
+
+  it('splits long text on paragraph boundaries instead of mid-sentence', () => {
+    const text = `${'A'.repeat(40)}\n\n${'B'.repeat(40)}\n\n${'C'.repeat(40)}`;
+    const chunks = chunkText(text, 50);
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const c of chunks) expect(c.length).toBeLessThanOrEqual(50);
+    // no content lost across the split
+    expect(chunks.join('')).toContain('A'.repeat(40));
+    expect(chunks.join('')).toContain('C'.repeat(40));
+  });
+
+  it('hard-slices a single paragraph that alone exceeds maxChars rather than looping forever', () => {
+    const text = 'X'.repeat(250);
+    const chunks = chunkText(text, 100);
+    expect(chunks).toEqual(['X'.repeat(100), 'X'.repeat(100), 'X'.repeat(50)]);
+  });
+
+  it('returns no chunks for empty/whitespace-only text', () => {
+    expect(chunkText('   \n\n  ', 100)).toEqual([]);
+  });
+});
+
+describe('salvageTruncatedQuestions', () => {
+  it('recovers complete question objects from a response cut off mid-string (the actual production failure shape)', () => {
+    // Mirrors the real truncated payload seen in production logs: a valid opening, two complete
+    // question objects, then a third cut off mid-string with no closing brace.
+    const truncated = '{"pageText":"...","questions":[' +
+      '{"questionText":"What can an elephant lift with?","questionType":"very_short","difficulty":"easy","marks":1,"estimatedTimeMinutes":1,"bloomsLevel":"remember","keywords":["elephant","trunk"],"chapterName":"Be Alert"},' +
+      '{"questionText":"What does ivory mean?","questionType":"very_short","difficulty":"easy","marks":1,"estimatedTimeMinutes":1,"bloomsLevel":"understand","keywords":["ivory"],"chapterName":"Be Alert"},' +
+      '{"questionText":"Where did Kishan go with his mot';
+    const recovered = salvageTruncatedQuestions(truncated);
+    expect(recovered).toHaveLength(2);
+    expect(recovered[0].questionText).toBe('What can an elephant lift with?');
+    expect(recovered[1].questionText).toBe('What does ivory mean?');
+  });
+
+  it('does not let a brace inside a quoted string confuse the depth tracking', () => {
+    const truncated = '{"questions":[{"questionText":"What does { mean } in math?","chapterName":"Sets"},{"questionText":"cut off';
+    const recovered = salvageTruncatedQuestions(truncated);
+    expect(recovered).toHaveLength(1);
+    expect(recovered[0].questionText).toBe('What does { mean } in math?');
+  });
+
+  it('returns an empty array when nothing complete could be recovered', () => {
+    expect(salvageTruncatedQuestions('{"questions":[{"questionText":"cut off half')).toEqual([]);
+    expect(salvageTruncatedQuestions('not json at all')).toEqual([]);
+  });
+});
+
+describe('dedupeQuestions', () => {
+  const q = (text: string): ExtractedQuestionDraft => ({
+    questionText: text, questionType: 'short', difficulty: 'easy', marks: 1,
+    estimatedTimeMinutes: 1, bloomsLevel: 'remember', keywords: [], chapterName: 'Ch 1',
+  });
+
+  it('drops exact and whitespace/case-insensitive duplicates, keeping the first occurrence', () => {
+    const result = dedupeQuestions([q('What is light?'), q('what   is  light?'), q('What is sound?')]);
+    expect(result).toHaveLength(2);
+    expect(result.map((r) => r.questionText)).toEqual(['What is light?', 'What is sound?']);
   });
 });

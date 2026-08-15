@@ -3,6 +3,7 @@ import { logger } from '../../lib/logger';
 import { AuthContext } from '../../lib/auth-context';
 import { notificationService } from '../notifications/notification.service';
 import { plannerRepository } from './planner.repository';
+import { withLeaderLock } from '../../lib/redis-lock';
 
 function isSameDay(a: Date, b: Date): boolean {
   return a.toDateString() === b.toDateString();
@@ -52,11 +53,22 @@ export async function runPlannerReminders(): Promise<{ notified: number }> {
   return { notified };
 }
 
+// node-cron has no cross-instance coordination — every server instance runs
+// its own timer, so without a lock a multi-instance deploy would send every
+// teacher's reminder once per instance. withLeaderLock makes only one
+// instance actually execute a given tick; the 10-minute TTL comfortably
+// covers a full run and self-clears well before next weekday's 07:00 tick,
+// so a crash mid-run can't strand the lock and skip a future day.
+const LEADER_LOCK_KEY = 'locks:planner-reminders';
+const LEADER_LOCK_TTL_SECONDS = 600;
+
 /** Weekday mornings, 07:00 server time — registered once at process start
  *  (server.ts only, not app.ts, so a serverless import never owns a timer). */
 export function startPlannerScheduler(): void {
   cron.schedule('0 7 * * 1-5', () => {
-    runPlannerReminders().catch((err) => logger.error('[PlannerNotifications] Scheduled run failed', { err }));
+    withLeaderLock(LEADER_LOCK_KEY, LEADER_LOCK_TTL_SECONDS, async () => {
+      await runPlannerReminders();
+    }).catch((err) => logger.error('[PlannerNotifications] Scheduled run failed', { err }));
   });
   logger.info('[PlannerNotifications] Scheduler registered (weekdays 07:00)');
 }

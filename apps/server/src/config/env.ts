@@ -10,6 +10,12 @@ const envSchema = z.object({
   PORT: z.string().default('5000'),
   MONGODB_URI: z.string({ required_error: 'MONGODB_URI is required' }),
   FRONTEND_URL: z.string().default('http://localhost:5173'),
+  // Shared cache backend for feature flags / maintenance mode / module restrictions
+  // (see lib/redis.ts). Optional: unset locally, each cache falls back to a
+  // process-local Map, same behavior as before Redis existed. Required once
+  // running more than one server instance, otherwise instances can disagree
+  // on flag/maintenance state for up to the cache TTL after a write.
+  REDIS_URL: z.string().optional(),
   // Optional: when set, real n8n webhook is triggered. When unset, P0 simulation runs.
   N8N_WEBHOOK_URL: z.string().url().optional(),
   // Optional: shared secret n8n sends in X-Automation-Secret header for webhook validation.
