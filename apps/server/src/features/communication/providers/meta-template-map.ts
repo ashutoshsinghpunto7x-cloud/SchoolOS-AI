@@ -32,7 +32,11 @@ export const META_TEMPLATE_MAP: Partial<Record<NotificationType, MetaTemplateCon
   FEE_PAYMENT_RECEIPT: {
     templateName: 'fee_payment_receipt',
     languageCode: 'en',
-    paramKeys: ['student_name', 'amount', 'receipt_number', 'payment_date', 'school_name'],
+    // Matches the Meta-approved body exactly: {{1}} student_name, {{2}} amount,
+    // {{3}} receipt_number, {{4}} payment_date. The school name ("FNIC Inter
+    // College") is hardcoded text in the approved template, not a variable —
+    // do not add school_name here or Meta rejects the send with error 132000.
+    paramKeys: ['student_name', 'amount', 'receipt_number', 'payment_date'],
     hasDocumentHeader: true,
   },
 };
