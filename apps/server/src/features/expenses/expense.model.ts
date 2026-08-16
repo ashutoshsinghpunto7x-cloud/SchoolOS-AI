@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import type { PaymentMode } from '../fees/fee.model';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -8,6 +9,8 @@ export type ExpenseCategory = 'electricity' | 'maintenance' | 'fuel' | 'supplies
 // without migration — 'other' + notes covers ad-hoc categories for now.
 
 export type ExpenseStatus = 'pending' | 'approved';
+
+const PAYMENT_MODES: PaymentMode[] = ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'];
 
 // ── Document Interface ────────────────────────────────────────────────────────
 
@@ -19,6 +22,9 @@ export interface IExpenseRecord extends Document {
   amount: number;
   date: Date;
   status: ExpenseStatus;
+  /** Optional — older records predate this field and are excluded from mode-split
+   *  aggregations rather than treated as an error. */
+  paymentMode?: PaymentMode;
 
   notes?: string;
 
@@ -47,6 +53,7 @@ const expenseRecordSchema = new Schema<IExpenseRecord>(
     amount:   { type: Number, required: true, min: 0 },
     date:     { type: Date, required: true },
     status:   { type: String, enum: EXPENSE_STATUSES, default: 'pending' },
+    paymentMode: { type: String, enum: PAYMENT_MODES },
 
     notes:    { type: String, trim: true, maxlength: 1000 },
 

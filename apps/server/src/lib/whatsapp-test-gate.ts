@@ -14,9 +14,13 @@ import { ForbiddenError } from '../middlewares/errorHandler';
  */
 const DEMO_SCHOOL_ID = 'DEMO_SCHOOL';
 
+export function isWhatsAppSendAllowed(schoolId: string): boolean {
+  if (process.env.WHATSAPP_LIVE_FOR_ALL_SCHOOLS === 'true') return true;
+  return schoolId === DEMO_SCHOOL_ID;
+}
+
 export function assertWhatsAppSendAllowed(schoolId: string): void {
-  if (process.env.WHATSAPP_LIVE_FOR_ALL_SCHOOLS === 'true') return;
-  if (schoolId === DEMO_SCHOOL_ID) return;
+  if (isWhatsAppSendAllowed(schoolId)) return;
   throw new ForbiddenError(
     'WhatsApp sending is currently in testing and only available on the demo workspace.',
   );

@@ -1,4 +1,5 @@
 import { ExpenseRecord, IExpenseRecord, ExpenseCategory, ExpenseStatus } from './expense.model';
+import type { PaymentMode } from '../fees/fee.model';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ export interface CreateExpenseData {
   category: ExpenseCategory;
   amount: number;
   date: Date;
+  paymentMode?: PaymentMode;
   notes?: string;
   createdBy: string;
 }
@@ -116,5 +118,17 @@ export const expenseRepository = {
       if (row._id === 'approved') { totalApproved = row.total; approvedCount = row.count; }
     }
     return { totalPending, totalApproved, pendingCount, approvedCount };
+  },
+
+  /** Payment-mode split (by createdAt) within [start, end) — feeds the dashboard's net cash/bank
+   *  position. Records with no paymentMode set (pre-dating this field) are excluded, not errored. */
+  async getModeSplitBetween(schoolId: string, start: Date, end: Date): Promise<Record<PaymentMode, number>> {
+    const agg = await ExpenseRecord.aggregate<{ _id: PaymentMode; total: number }>([
+      { $match: { schoolId, isDeleted: false, createdAt: { $gte: start, $lt: end }, paymentMode: { $exists: true } } },
+      { $group: { _id: '$paymentMode', total: { $sum: '$amount' } } },
+    ]);
+    const result: Record<PaymentMode, number> = { cash: 0, cheque: 0, bank_transfer: 0, online: 0, demand_draft: 0 };
+    for (const row of agg) result[row._id] = row.total;
+    return result;
   },
 };

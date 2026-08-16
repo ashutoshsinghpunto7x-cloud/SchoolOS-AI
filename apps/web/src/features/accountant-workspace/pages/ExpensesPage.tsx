@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Plus, X, Loader2, AlertCircle, Receipt, CheckCircle2, Zap, Wrench, Fuel, Package, MoreHorizontal,
+  Banknote, CreditCard,
 } from 'lucide-react';
 import {
   useExpenseList, useExpenseSummary, useCreateExpenseRecord, useUpdateExpenseRecord,
 } from '../hooks/useExpense';
-import type { ExpenseRecord, ExpenseCategory } from '@schoolos/types';
+import type { ExpenseRecord, ExpenseCategory, PaymentMode } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>
@@ -24,6 +25,14 @@ const CATEGORIES: { value: ExpenseCategory; label: string; icon: React.ElementTy
 ];
 
 const categoryMeta = (c: ExpenseCategory) => CATEGORIES.find((x) => x.value === c) ?? CATEGORIES[4];
+
+type SimpleMode = 'cash' | 'upi';
+const MODES: { value: SimpleMode; label: string; icon: React.ElementType }[] = [
+  { value: 'cash', label: 'Cash',   icon: Banknote },
+  { value: 'upi',  label: 'Online', icon: CreditCard },
+];
+const toSimpleMode = (m?: PaymentMode): SimpleMode => (m === 'online' ? 'upi' : 'cash');
+const toPaymentMode = (m: SimpleMode): PaymentMode => (m === 'upi' ? 'online' : 'cash');
 
 // ── Expense row ────────────────────────────────────────────────────────────────
 
@@ -74,6 +83,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
   const [category, setCategory] = useState<ExpenseCategory>(existing?.category ?? 'other');
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '');
   const [date, setDate] = useState(existing?.date.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+  const [mode, setMode] = useState<SimpleMode>(toSimpleMode(existing?.paymentMode));
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [localErr, setLocalErr] = useState('');
 
@@ -86,10 +96,11 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
     if (!title.trim()) return setLocalErr('Expense name is required.');
     if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
 
+    const paymentMode = toPaymentMode(mode);
     if (existing) {
-      await update({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, notes: notes.trim() || undefined });
+      await update({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: notes.trim() || undefined });
     } else {
-      await create({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, notes: notes.trim() || undefined });
+      await create({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: notes.trim() || undefined });
     }
     onClose();
   }
@@ -134,6 +145,24 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
             <div>
               <label className={labelCls}>Date</label>
               <input type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Payment Mode</label>
+            <div className="grid grid-cols-2 gap-2">
+              {MODES.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMode(value)}
+                  className={cn(
+                    'flex items-center justify-center gap-1.5 h-10 rounded-xl border text-xs font-semibold transition-colors',
+                    mode === value ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                  )}
+                >
+                  <Icon className="w-4 h-4" /> {label}
+                </button>
+              ))}
             </div>
           </div>
           <div>

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const EXPENSE_CATEGORIES = ['electricity', 'maintenance', 'fuel', 'supplies', 'other'] as const;
 export const EXPENSE_STATUSES = ['pending', 'approved'] as const;
+export const PAYMENT_MODES = ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'] as const;
 
 const currency = (label: string) =>
   z.number({ required_error: `${label} is required` }).positive(`${label} must be positive`)
@@ -14,6 +15,7 @@ export const createExpenseRecordSchema = z.object({
   category: z.enum(EXPENSE_CATEGORIES, { required_error: 'category is required' }),
   amount:   currency('amount'),
   date:     z.string({ required_error: 'date is required' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
+  paymentMode: z.enum(PAYMENT_MODES).optional(),
   notes:    z.string().max(1000).trim().optional(),
 });
 
@@ -25,6 +27,7 @@ export const updateExpenseRecordSchema = z.object({
   amount:   z.number().positive().multipleOf(0.01).optional(),
   date:     z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   status:   z.enum(EXPENSE_STATUSES).optional(),
+  paymentMode: z.enum(PAYMENT_MODES).optional(),
   notes:    z.string().max(1000).trim().optional(),
 });
 

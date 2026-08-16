@@ -20,6 +20,7 @@ import { schoolSettingsService } from '../school-settings/school-settings.servic
 import { feeReceiptNotificationService } from '../communication/fee-receipt-notification.service';
 import { generateReceiptPdf } from './fee-receipt-pdf.service';
 import { logger } from '../../lib/logger';
+import { isWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 
 // ── Academic-year month helpers (Indian school year: April → March) ────────────
 
@@ -77,6 +78,7 @@ async function ensureOverdueMarked(): Promise<void> {
 // failure must never touch the (already-successful) fee transaction. See
 // FeeReceiptNotificationService for the send/idempotency/retry logic itself.
 async function triggerFeeReceiptWhatsApp(record: IFeeRecord, payment: IFeePayment, ctx: AuthContext): Promise<void> {
+  if (!isWhatsAppSendAllowed(ctx.schoolId)) return; // still in testing — see whatsapp-test-gate.ts
   try {
     const settings = await schoolSettingsService.getSettings(ctx.schoolId);
     if (!settings.communicationSettings.whatsappEnabled) return;

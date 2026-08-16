@@ -19,6 +19,7 @@ export const expenseService = {
       category: data.category,
       amount:   data.amount,
       date:     new Date(data.date),
+      paymentMode: data.paymentMode,
       notes:    data.notes,
       createdBy: ctx.displayName,
     };

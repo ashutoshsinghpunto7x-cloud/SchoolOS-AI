@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertCircle, ChevronRight, Loader2, UserRound, CalendarCheck2
+  AlertCircle, ChevronRight, Loader2, UserRound, CalendarCheck2,
+  Receipt, Store, FilePlus2, IndianRupee, Banknote, CreditCard, Landmark,
 } from 'lucide-react';
 import { useAccountantDashboard, useGroupedDefaulters } from '../hooks/useAccountantWorkspace';
 import { SendDefaultersModal } from '../components/SendDefaultersModal';
@@ -187,6 +188,7 @@ export function AccountantDashboard() {
     () => [...(data?.defaulters ?? [])].sort((a, b) => b.daysOverdue - a.daysOverdue).slice(0, 5),
     [data?.defaulters],
   );
+  const overdueVendorBills = useMemo(() => (data?.overdueVendorBills ?? []).slice(0, 5), [data?.overdueVendorBills]);
 
   const groupFor = (classLabel: string, section: string) =>
     groupedDefaulters?.find((g) => g.class === classLabel && g.section === section) ?? null;
@@ -242,6 +244,61 @@ export function AccountantDashboard() {
       </div>
 
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
+
+        {/* ── Quick actions — the four things an accountant starts their day
+            doing. No data of its own; pure navigation shortcuts. ──────────── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Collect Fee',      icon: IndianRupee, path: '/accountant/collect-fee' },
+            { label: 'Record Expense',   icon: Receipt,     path: '/accountant/expenses' },
+            { label: 'Add Vendor',       icon: Store,       path: '/accountant/vendors' },
+            { label: 'Record Purchase',  icon: FilePlus2,   path: '/accountant/vendors' },
+          ].map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              onClick={() => navigate(action.path)}
+              className="flex items-center gap-2.5 h-14 px-4 rounded-[14px] bg-white border border-[#E8E8E8] hover:border-[#A855F7]/30 hover:shadow-[0_4px_16px_rgba(168,85,247,0.08)] transition-all"
+            >
+              <span className="w-8 h-8 rounded-lg bg-[#A855F7]/10 flex items-center justify-center shrink-0">
+                <action.icon className="w-4 h-4 text-[#5B21B6]" strokeWidth={1.75} />
+              </span>
+              <span className="text-[13px] font-semibold text-gray-800">{action.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ── Today's Position — net cash/bank split (fee collections in,
+            minus expenses and vendor payments out), by payment mode. ──────── */}
+        {!isError && (
+          <div className="bg-white rounded-[18px] border border-[#E8E8E8] shadow-[0_4px_24px_rgba(0,0,0,0.015)] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Today's Position</h2>
+                <p className="text-[12px] text-gray-400 font-medium mt-0.5">Net cash/bank movement — collections minus expenses and vendor payments</p>
+              </div>
+              <p className={`text-2xl font-bold ${((data?.todayCashBankSplit.total ?? 0) >= 0) ? 'text-gray-900' : 'text-red-600'}`}>
+                {isLoading ? '—' : fmt(data?.todayCashBankSplit.total ?? 0)}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[
+                { label: 'Cash',    icon: Banknote,   value: data?.todayCashBankSplit.cash },
+                { label: 'UPI/Online', icon: CreditCard, value: data?.todayCashBankSplit.online },
+                { label: 'Bank Transfer', icon: Landmark, value: data?.todayCashBankSplit.bankTransfer },
+              ].map((row) => (
+                <div key={row.label} className="rounded-xl bg-gray-50 px-3.5 py-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                    <row.icon className="w-3.5 h-3.5" /> {row.label}
+                  </div>
+                  <p className={`text-lg font-bold mt-1 ${((row.value ?? 0) >= 0) ? 'text-gray-900' : 'text-red-600'}`}>
+                    {isLoading ? '—' : fmt(row.value ?? 0)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── KPI Cards ───────────────────────────────────────────────────────
             4 tiles, one per entry in buildKpiCards() above: Fees Collected
@@ -323,8 +380,8 @@ export function AccountantDashboard() {
           >
             <div className="flex items-center justify-between pb-4 border-b border-[#E8E8E8]">
               <div>
-                <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Fee Defaulters by Class</h2>
-                <p className="text-[12px] text-gray-400 font-medium mt-0.5">Students with pending fees</p>
+                <h2 className="text-[15px] font-semibold text-gray-900 tracking-tight">Needs Attention</h2>
+                <p className="text-[12px] text-gray-400 font-medium mt-0.5">Fee defaulters and overdue vendor bills</p>
               </div>
               <button
                 onClick={() => navigate('/accountant/pending-fees')}
@@ -340,10 +397,10 @@ export function AccountantDashboard() {
                 <div className="space-y-0.5">
                   {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} />)}
                 </div>
-              ) : !topDefaulters.length ? (
+              ) : !topDefaulters.length && !overdueVendorBills.length ? (
                 <div className="h-full flex flex-col items-center justify-center py-6">
                   <p className="text-[15px] font-semibold text-gray-800">All clear!</p>
-                  <p className="text-[12px] text-gray-400 mt-0.5">No pending fees at this time</p>
+                  <p className="text-[12px] text-gray-400 mt-0.5">No pending fees or overdue bills right now</p>
                 </div>
               ) : (
                 <div className="divide-y divide-[#E8E8E8]/60">
@@ -356,7 +413,7 @@ export function AccountantDashboard() {
                           Class {d.class}{d.section} · {d.feeHead === 'miscellaneous' && d.description ? d.description : (FEE_HEAD_LABELS[d.feeHead] ?? d.feeHead)}
                         </p>
                       </div>
-                      
+
                       {/* Balance amount & Overdue Button */}
                       <div className="flex items-center gap-4 ml-4 shrink-0">
                         <p className="text-[13px] font-semibold text-red-600">{fmt(d.balance)}</p>
@@ -369,6 +426,23 @@ export function AccountantDashboard() {
                           ) : (
                             'Remind'
                           )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {overdueVendorBills.map((bill) => (
+                    <div key={bill._id} className="flex items-center justify-between py-3.5 transition-colors group">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-gray-800 truncate">{bill.vendorName}</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5 truncate">{bill.description}</p>
+                      </div>
+                      <div className="flex items-center gap-4 ml-4 shrink-0">
+                        <p className="text-[13px] font-semibold text-red-600">{fmt(bill.balance)}</p>
+                        <button
+                          onClick={() => navigate(`/accountant/vendors/${bill.vendorId}`)}
+                          className="h-7 px-2.5 rounded-lg bg-white border border-[#E8E8E8] text-[11px] font-semibold text-gray-500 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25 hover:text-[#5B21B6] transition-all duration-200"
+                        >
+                          Pay
                         </button>
                       </div>
                     </div>

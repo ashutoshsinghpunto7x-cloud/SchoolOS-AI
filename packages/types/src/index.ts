@@ -1228,6 +1228,7 @@ export interface ExpenseRecord extends BaseEntity {
   amount: number;
   date: string;
   status: ExpenseStatus;
+  paymentMode?: PaymentMode;
   notes?: string;
   isDeleted: boolean;
   createdBy: string;
@@ -1239,6 +1240,7 @@ export interface CreateExpenseRecordPayload {
   category: ExpenseCategory;
   amount: number;
   date: string;
+  paymentMode?: PaymentMode;
   notes?: string;
 }
 
@@ -1248,6 +1250,7 @@ export interface UpdateExpenseRecordPayload {
   amount?: number;
   date?: string;
   status?: ExpenseStatus;
+  paymentMode?: PaymentMode;
   notes?: string;
 }
 
@@ -1266,6 +1269,151 @@ export interface ExpenseSummary {
   totalApproved: number;
   pendingCount: number;
   approvedCount: number;
+}
+
+// ── Vendors ───────────────────────────────────────────────────────────────────
+
+export type VendorCategory = 'supplies' | 'services' | 'maintenance' | 'utilities' | 'other';
+export type VendorStatus = 'active' | 'inactive';
+export type VendorBillStatus = 'unpaid' | 'partially_paid' | 'paid';
+
+export interface Vendor extends BaseEntity {
+  name: string;
+  category: VendorCategory;
+  status: VendorStatus;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstNumber?: string;
+  notes?: string;
+  isDeleted: boolean;
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface CreateVendorPayload {
+  name: string;
+  category: VendorCategory;
+  status?: VendorStatus;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstNumber?: string;
+  notes?: string;
+}
+
+export interface UpdateVendorPayload {
+  name?: string;
+  category?: VendorCategory;
+  status?: VendorStatus;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  gstNumber?: string;
+  notes?: string;
+}
+
+export interface VendorListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: VendorCategory;
+  status?: VendorStatus;
+}
+
+export interface VendorBill extends BaseEntity {
+  vendorId: string;
+  vendorName: string;
+  billNumber?: string;
+  description: string;
+  category: VendorCategory;
+  amount: number;
+  paidAmount: number;
+  balance: number;
+  billDate: string;
+  dueDate?: string;
+  status: VendorBillStatus;
+  notes?: string;
+  isDeleted: boolean;
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface CreateVendorBillPayload {
+  billNumber?: string;
+  description: string;
+  category: VendorCategory;
+  amount: number;
+  billDate: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface VendorPayment extends BaseEntity {
+  vendorId: string;
+  billId?: string;
+  amount: number;
+  paymentDate: string;
+  paymentMode: PaymentMode;
+  referenceNumber?: string;
+  remarks?: string;
+  recordedById: string;
+  recordedByName: string;
+  receiptNumber?: string;
+  idempotencyKey?: string;
+}
+
+export interface RecordVendorPaymentPayload {
+  billId?: string;
+  amount: number;
+  paymentDate: string;
+  paymentMode: PaymentMode;
+  referenceNumber?: string;
+  remarks?: string;
+  idempotencyKey?: string;
+}
+
+export interface VendorFinancialSummary {
+  totalBilled: number;
+  totalPaid: number;
+  outstandingBalance: number;
+  lastPaymentDate?: string;
+}
+
+export interface VendorProfile {
+  vendor: Vendor;
+  summary: VendorFinancialSummary;
+}
+
+export interface VendorLedgerEntry {
+  _id: string;
+  type: 'bill' | 'payment';
+  date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+  reference?: string;
+}
+
+export interface VendorLedgerData {
+  vendor: Vendor;
+  entries: VendorLedgerEntry[];
+  summary: VendorFinancialSummary;
+}
+
+/** Net cash/bank position by payment mode — fee collections in, minus expenses and vendor
+ *  payments out, all within the same window. 'online' covers UPI/online transfers. */
+export interface CashBankSplit {
+  cash: number;
+  online: number;
+  bankTransfer: number;
+  cheque: number;
+  demandDraft: number;
+  total: number;
 }
 
 // ── Accountant Workspace: Dashboard ──────────────────────────────────────────
@@ -1314,6 +1462,9 @@ export interface AccountantDashboardData {
   recentCollections: RecentFeeCollection[];
   defaulters: FeeDefaulter[];
   recentActivity: AccountingActivityEntry[];
+  vendorOutstandingTotal: number;
+  overdueVendorBills: VendorBill[];
+  todayCashBankSplit: CashBankSplit;
   generatedAt: string;
 }
 

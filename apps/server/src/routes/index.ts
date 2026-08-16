@@ -24,6 +24,7 @@ import teacherWorkspaceRouter from '../features/teacher-workspace/teacher-worksp
 import salaryRouter from '../features/salary/salary.routes';
 import expenseRouter from '../features/expenses/expense.routes';
 import accountantWorkspaceRouter from '../features/accountant-workspace/accountant-workspace.routes';
+import vendorRouter from '../features/vendors/vendor.routes';
 import parentWorkspaceRouter from '../features/parent-workspace/parent-workspace.routes';
 import notificationRouter from '../features/notifications/notification.routes';
 import classTeacherRouter from '../features/classes/class-teacher.routes';
@@ -86,6 +87,7 @@ router.use('/teacher-workspace', teacherWorkspaceRouter);
 router.use('/salary', salaryRouter);
 router.use('/expenses', expenseRouter);
 router.use('/accountant-workspace', accountantWorkspaceRouter);
+router.use('/vendors', vendorRouter);
 router.use('/parent-workspace', parentWorkspaceRouter);
 router.use('/notifications', notificationRouter);
 router.use('/classes', classTeacherRouter);

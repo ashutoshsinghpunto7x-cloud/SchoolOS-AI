@@ -106,6 +106,17 @@ export const feePaymentRepository = {
     return agg[0]?.total ?? 0;
   },
 
+  /** Payment-mode split (by createdAt) within [start, end) — feeds the dashboard's net cash/bank position. */
+  async getModeSplitBetween(schoolId: string, start: Date, end: Date): Promise<Record<PaymentMode, number>> {
+    const agg = await FeePayment.aggregate<{ _id: PaymentMode; total: number }>([
+      { $match: { schoolId, isDeleted: false, createdAt: { $gte: start, $lt: end } } },
+      { $group: { _id: '$paymentMode', total: { $sum: '$amount' } } },
+    ]);
+    const result: Record<PaymentMode, number> = { cash: 0, cheque: 0, bank_transfer: 0, online: 0, demand_draft: 0 };
+    for (const row of agg) result[row._id] = row.total;
+    return result;
+  },
+
   /** Most recent payments joined with their fee record for student/class display. */
   async getRecentWithStudent(schoolId: string, limit: number): Promise<RecentCollection[]> {
     const rows = await FeePayment.aggregate<{

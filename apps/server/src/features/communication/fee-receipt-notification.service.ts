@@ -10,6 +10,7 @@ import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { logger } from '../../lib/logger';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
+import { assertWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 
 const NOTIFICATION_TYPE = 'FEE_PAYMENT_RECEIPT' as const;
 
@@ -32,6 +33,12 @@ export const feeReceiptNotificationService = {
    */
   async sendReceipt(record: IFeeRecord, payment: IFeePayment, ctx: AuthContext): Promise<INotificationLog> {
     const paymentId = payment._id.toString();
+    // WhatsApp sending is still in testing — see whatsapp-test-gate.ts. This
+    // was previously missing here, unlike every other WhatsApp send path
+    // (attendance alerts, the accountant ledger reminder, the legacy
+    // /communications/whatsapp endpoint), so the automatic fee receipt could
+    // fire for a real school. Throws ForbiddenError outside DEMO_SCHOOL.
+    assertWhatsAppSendAllowed(ctx.schoolId);
 
     const existing = await notificationLogRepository.findBySource(ctx.schoolId, NOTIFICATION_TYPE, paymentId);
     if (existing) return existing;
@@ -127,6 +134,7 @@ export const feeReceiptNotificationService = {
    * hammered indefinitely.
    */
   async retrySend(record: IFeeRecord, payment: IFeePayment, ctx: AuthContext): Promise<INotificationLog> {
+    assertWhatsAppSendAllowed(ctx.schoolId);
     const paymentId = payment._id.toString();
     const log = await notificationLogRepository.findBySource(ctx.schoolId, NOTIFICATION_TYPE, paymentId);
     if (!log) throw new NotFoundError('WhatsApp receipt notification');

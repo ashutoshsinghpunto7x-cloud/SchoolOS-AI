@@ -697,6 +697,14 @@ const TeacherDirectoryPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/TeacherDirectoryPage'),
   'TeacherDirectoryPage',
 );
+const VendorDirectoryPage = lazyPage(
+  () => import('@/features/vendors/pages/VendorDirectoryPage'),
+  'VendorDirectoryPage',
+);
+const VendorProfilePage = lazyPage(
+  () => import('@/features/vendors/pages/VendorProfilePage'),
+  'VendorProfilePage',
+);
 const AccountantTeacherSearchPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantTeacherSearchPage'),
   'AccountantTeacherSearchPage',
@@ -991,6 +999,8 @@ export const router = createBrowserRouter([
                       { path: 'accountant/employees/:id',  element: <EmployeeDirectoryProfilePage basePath="/accountant/employees" /> },
                       { path: 'accountant/salary',        element: <SalaryPage /> },
                       { path: 'accountant/expenses',      element: <ExpensesPage /> },
+                      { path: 'accountant/vendors',       element: <VendorDirectoryPage /> },
+                      { path: 'accountant/vendors/:vendorId', element: <VendorProfilePage /> },
                       { path: 'accountant/reports',       element: <AccountantReportsPage /> },
                     ],
                   },

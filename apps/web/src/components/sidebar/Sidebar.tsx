@@ -33,6 +33,7 @@ import {
   CreditCard,
   QrCode,
   ScanLine,
+  Store,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -82,21 +83,40 @@ const NAV_ITEMS_TEACHER_QUICK_ACTIONS = [
   { label: 'Add Students',  icon: UserPlus,         path: '/teacher/add-student' },
 ] as const;
 
-const NAV_ITEMS_ACCOUNTANT = [
-  { label: 'Dashboard',     icon: LayoutDashboard, path: '/accountant',               end: true  },
-  { label: 'Collect Fee',   icon: IndianRupee,     path: '/accountant/collect-fee',   end: false },
-  { label: 'Fee Records',   icon: ClipboardList,   path: '/accountant/fee-records',   end: false },
-  { label: 'Pending Fees',  icon: Wallet,          path: '/accountant/pending-fees',  end: false },
-  { label: 'Students',      icon: GraduationCap,   path: '/accountant/student-directory', end: false },
-  { label: 'Teachers',      icon: Users,           path: '/accountant/teachers',       end: false },
-  { label: 'Employees',     icon: Users,           path: '/accountant/employees',      end: false },
-  { label: 'Import',         icon: Upload,          path: '/import',                   end: false },
-  { label: 'Classes',       icon: Settings2,       path: '/classes',                  end: false },
-  { label: 'Fee Structure', icon: IndianRupee,     path: '/accountant/fee-structure', end: false },
-  { label: 'Salary',        icon: FileBarChart,    path: '/accountant/salary',        end: false },
-  { label: 'Expenses',      icon: Receipt,         path: '/accountant/expenses',      end: false },
-  { label: 'Reports',       icon: FileBarChart2,   path: '/accountant/reports',       end: false },
-  { label: 'Messages',      icon: Mail,            path: '/messages',                 end: false },
+// Accountant nav is grouped into sections (Fees / Expenses / Vendors / Reports / Other)
+// rather than one flat list — see project_accountant_workspace memory for why (an
+// action-first rework of the whole workspace, not just navigation).
+const NAV_ITEMS_ACCOUNTANT_MAIN = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/accountant', end: true },
+] as const;
+
+const NAV_ITEMS_ACCOUNTANT_FEES = [
+  { label: 'Collect Fee',   icon: IndianRupee,   path: '/accountant/collect-fee',   end: false },
+  { label: 'Fee Records',   icon: ClipboardList, path: '/accountant/fee-records',   end: false },
+  { label: 'Pending Fees',  icon: Wallet,        path: '/accountant/pending-fees',  end: false },
+  { label: 'Fee Structure', icon: IndianRupee,   path: '/accountant/fee-structure', end: false },
+] as const;
+
+const NAV_ITEMS_ACCOUNTANT_EXPENSES = [
+  { label: 'Expenses', icon: Receipt,      path: '/accountant/expenses', end: false },
+  { label: 'Salary',   icon: FileBarChart, path: '/accountant/salary',   end: false },
+] as const;
+
+const NAV_ITEMS_ACCOUNTANT_VENDORS = [
+  { label: 'Vendors', icon: Store, path: '/accountant/vendors', end: false },
+] as const;
+
+const NAV_ITEMS_ACCOUNTANT_REPORTS = [
+  { label: 'Reports', icon: FileBarChart2, path: '/accountant/reports', end: false },
+] as const;
+
+const NAV_ITEMS_ACCOUNTANT_OTHER = [
+  { label: 'Students',  icon: GraduationCap, path: '/accountant/student-directory', end: false },
+  { label: 'Teachers',  icon: Users,         path: '/accountant/teachers',          end: false },
+  { label: 'Employees', icon: Users,         path: '/accountant/employees',         end: false },
+  { label: 'Import',    icon: Upload,        path: '/import',                       end: false },
+  { label: 'Classes',   icon: Settings2,     path: '/classes',                      end: false },
+  { label: 'Messages',  icon: Mail,          path: '/messages',                     end: false },
 ] as const;
 
 const NAV_ITEMS_ADMIN = [
@@ -276,14 +296,34 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop, forceHiddenOnDeskto
             <p className="px-3 pb-3 text-[10px] font-bold text-white/50 uppercase tracking-widest">
               Accountant Portal
             </p>
-            {NAV_ITEMS_ACCOUNTANT.map((item) => (
-              <SidebarNavItem
-                key={item.path}
-                to={item.path}
-                icon={item.icon}
-                label={item.label}
-                end={item.end}
-              />
+            {NAV_ITEMS_ACCOUNTANT_MAIN.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
+            ))}
+
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">Fees</p>
+            {NAV_ITEMS_ACCOUNTANT_FEES.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
+            ))}
+
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">Expenses</p>
+            {NAV_ITEMS_ACCOUNTANT_EXPENSES.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
+            ))}
+
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">Vendors</p>
+            {NAV_ITEMS_ACCOUNTANT_VENDORS.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
+            ))}
+            <p className="px-3 py-1.5 text-xs text-white/30 italic">Inventory — coming soon</p>
+
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">Reports</p>
+            {NAV_ITEMS_ACCOUNTANT_REPORTS.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
+            ))}
+
+            <p className="px-3 pb-1 pt-4 text-[10px] font-bold text-white/50 uppercase tracking-widest">Other</p>
+            {NAV_ITEMS_ACCOUNTANT_OTHER.map((item) => (
+              <SidebarNavItem key={item.path} to={item.path} icon={item.icon} label={item.label} end={item.end} />
             ))}
           </>
         ) : user?.role === 'principal' ? (

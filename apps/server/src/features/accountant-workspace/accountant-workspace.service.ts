@@ -3,6 +3,10 @@ import { feePaymentRepository } from '../fees/fee.payment.repository';
 import { feeService } from '../fees/fee.service';
 import { salaryRepository } from '../salary/salary.repository';
 import { expenseRepository } from '../expenses/expense.repository';
+import { vendorRepository } from '../vendors/vendor.repository';
+import { vendorBillRepository } from '../vendors/vendor.bill.repository';
+import { vendorPaymentRepository } from '../vendors/vendor.payment.repository';
+import type { PaymentMode } from '../fees/fee.model';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { classTeacherRepository } from '../classes/class-teacher.repository';
 import { studentRepository } from '../students/student.repository';
@@ -27,6 +31,8 @@ import type {
   StudentLedgerData,
   ClassFeeSummary,
   ClassFeeStudentRow,
+  CashBankSplit,
+  VendorBill,
 } from '@schoolos/types';
 import type { IFeeRecord } from '../fees/fee.model';
 
@@ -34,6 +40,7 @@ const ACCOUNTING_ACTIONS = [
   'fee.payment_recorded', 'fee.created', 'fee.updated',
   'salary.created', 'salary.paid', 'salary.bulk_paid', 'salary.updated',
   'expense.created', 'expense.approved', 'expense.updated',
+  'vendor.created', 'vendor_bill.created', 'vendor_payment.recorded',
 ] as const;
 
 const ACTIVITY_DESCRIPTIONS: Record<string, (details: Record<string, unknown>) => string> = {
@@ -47,7 +54,26 @@ const ACTIVITY_DESCRIPTIONS: Record<string, (details: Record<string, unknown>) =
   'expense.created':      (d) => `Recorded expense: ${d.title} (₹${d.amount})`,
   'expense.approved':     () => 'Approved an expense',
   'expense.updated':      () => 'Updated an expense',
+  'vendor.created':          (d) => `Added vendor: ${d.name}`,
+  'vendor_bill.created':     (d) => `Recorded bill from ${d.vendorName} (₹${d.amount})`,
+  'vendor_payment.recorded': (d) => `Paid vendor (₹${d.amount})`,
 };
+
+/** Combines fee collections (in) against expenses and vendor payments (out), by payment
+ *  mode, into a single net position — the dashboard's "Today's Position" split. */
+function netModeSplit(
+  feeIn: Record<PaymentMode, number>,
+  expenseOut: Record<PaymentMode, number>,
+  vendorOut: Record<PaymentMode, number>,
+): CashBankSplit {
+  const net = (mode: PaymentMode) => feeIn[mode] - expenseOut[mode] - vendorOut[mode];
+  const cash = net('cash');
+  const online = net('online');
+  const bankTransfer = net('bank_transfer');
+  const cheque = net('cheque');
+  const demandDraft = net('demand_draft');
+  return { cash, online, bankTransfer, cheque, demandDraft, total: cash + online + bankTransfer + cheque + demandDraft };
+}
 
 function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -89,6 +115,11 @@ export const accountantWorkspaceService = {
       recentCollectionsRaw,
       outstanding,
       recentAuditLogs,
+      vendorOutstandingTotal,
+      overdueVendorBillsRaw,
+      feeModeSplitToday,
+      expenseModeSplitToday,
+      vendorModeSplitToday,
     ] = await Promise.all([
       feePaymentRepository.getTotalCollectedBetween(ctx.schoolId, today, tomorrow),
       // Dashboard-only: "Pending Fees" should only count fees whose due date has
@@ -98,13 +129,19 @@ export const accountantWorkspaceService = {
       // regardless of due date.
       feeRepository.getSummary(ctx.schoolId, { dueOnOrBefore: today }),
       salaryRepository.getSummary(ctx.schoolId),
-      expenseRepository.getSummary(ctx.schoolId),
+      // Scoped to today (was previously an unbounded all-time total — a bug).
+      expenseRepository.getSummary(ctx.schoolId, { dateFrom: today.toISOString(), dateTo: tomorrow.toISOString() }),
       feePaymentRepository.getRecentWithStudent(ctx.schoolId, 8),
       feeRepository.findOutstanding(ctx.schoolId, { page: 1, limit: 8 }),
       AuditLog.find({ schoolId: ctx.schoolId, action: { $in: ACCOUNTING_ACTIONS } })
         .sort({ createdAt: -1 })
         .limit(10)
         .lean(),
+      vendorRepository.getOutstandingTotal(ctx.schoolId),
+      vendorBillRepository.getOverdue(ctx.schoolId, today),
+      feePaymentRepository.getModeSplitBetween(ctx.schoolId, today, tomorrow),
+      expenseRepository.getModeSplitBetween(ctx.schoolId, today, tomorrow),
+      vendorPaymentRepository.getModeSplitBetween(ctx.schoolId, today, tomorrow),
     ]);
 
     const recentCollections: RecentFeeCollection[] = recentCollectionsRaw.map((r) => ({
@@ -133,6 +170,9 @@ export const accountantWorkspaceService = {
       };
     });
 
+    const overdueVendorBills = overdueVendorBillsRaw as unknown as VendorBill[];
+    const todayCashBankSplit = netModeSplit(feeModeSplitToday, expenseModeSplitToday, vendorModeSplitToday);
+
     return {
       feesCollectedToday,
       feeSummary,
@@ -141,6 +181,9 @@ export const accountantWorkspaceService = {
       recentCollections,
       defaulters,
       recentActivity,
+      vendorOutstandingTotal,
+      overdueVendorBills,
+      todayCashBankSplit,
       generatedAt: now.toISOString(),
     };
   },
