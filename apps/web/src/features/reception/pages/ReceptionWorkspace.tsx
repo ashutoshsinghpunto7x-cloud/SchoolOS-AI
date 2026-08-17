@@ -111,19 +111,61 @@ const ACTION_ROUTES: Record<string, string> = {
 
 // ── ReceptionWorkspace ───────────────────────────────────────────────────────
 
+// This route is shared by two audiences: the reception role's own home page,
+// and admin's broader "Reception" nav link (see NAV_ITEMS_ALL in Sidebar.tsx).
+// Reception's nav was trimmed to just Visitor Log + Attendance Records
+// (2026-08-17) — this page mirrors that for the reception role specifically,
+// while admin still gets the fuller dashboard below unchanged.
 export const ReceptionWorkspace = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isReception = user?.role === 'reception';
 
   // Today's attendance, as submitted by teachers across every class — admin
   // needs visibility into this without having to open the separate
   // Attendance workspace. Reception's own GET access to this endpoint isn't
-  // role-restricted server-side either, so this renders for both roles.
-  const { data: attendanceSummary } = useAttendanceSummary({
-    dateFrom: new Date().toISOString().slice(0, 10),
-    dateTo: new Date().toISOString().slice(0, 10),
-  });
+  // role-restricted server-side either, but reception gets the trimmed view
+  // below and never renders this, so there's no need to fetch it for them.
+  const { data: attendanceSummary } = useAttendanceSummary(
+    {
+      dateFrom: new Date().toISOString().slice(0, 10),
+      dateTo: new Date().toISOString().slice(0, 10),
+    },
+    isAdmin,
+  );
+
+  if (isReception) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col gap-6">
+          <PrincipalHeaderWidget showWeather={false} />
+          <WorkspaceSection>
+            <SectionHeader
+              title="Today's Work"
+              subtitle="Quick actions for your reception duties"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ReceptionActionCard
+                title="Visitor Log"
+                description="Record a visitor check-in with their purpose of visit, and check them out."
+                buttonLabel="Open Visitor Log"
+                accent="blue"
+                onClick={() => navigate('/reception/visitors')}
+              />
+              <ReceptionActionCard
+                title="Attendance Records"
+                description="View any class's attendance and print or save it as a PDF for offline records."
+                buttonLabel="View Attendance"
+                accent="amber"
+                onClick={() => navigate('/reception/attendance')}
+              />
+            </div>
+          </WorkspaceSection>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

@@ -24,12 +24,13 @@ function readStoredTheme(): Theme {
  *  variant only activates for teacher pages nested inside it. */
 export function TeacherThemeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  // Principal dashboard isn't designed/tested for dark mode yet — lock it to
-  // light regardless of what's in localStorage (e.g. left over from a teacher
-  // session on the same browser), and ignore toggle attempts. The toggle UI
-  // itself is also hidden in Settings for principal; this is the enforcement
-  // behind that, in case it's ever reachable another way.
-  const isPrincipal = user?.role === 'principal';
+  // Principal and accountant dashboards aren't designed/tested for dark mode
+  // yet — lock them to light regardless of what's in localStorage (e.g. left
+  // over from a teacher session on the same browser), and ignore toggle
+  // attempts. The toggle UI itself is also hidden in Settings for these
+  // roles; this is the enforcement behind that, in case it's ever reachable
+  // another way.
+  const isLockedLight = user?.role === 'principal' || user?.role === 'accountant';
 
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -40,7 +41,7 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
-    if (isPrincipal) return;
+    if (isLockedLight) return;
 
     // Clear any in-flight transition timer
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -52,9 +53,9 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
     transitionTimer.current = setTimeout(() => {
       setIsTransitioning(false);
     }, 400);
-  }, [isPrincipal]);
+  }, [isLockedLight]);
 
-  const effectiveTheme: Theme = isPrincipal ? 'light' : theme;
+  const effectiveTheme: Theme = isLockedLight ? 'light' : theme;
 
   return (
     <TeacherThemeContext.Provider value={{ theme: effectiveTheme, toggleTheme, isTransitioning }}>

@@ -26,6 +26,25 @@ const CATEGORIES: { value: ExpenseCategory; label: string; icon: React.ElementTy
 
 const categoryMeta = (c: ExpenseCategory) => CATEGORIES.find((x) => x.value === c) ?? CATEGORIES[4];
 
+// 'other' has no dedicated backend category — a user-typed label is folded into
+// the `notes` field instead (see server-side ExpenseRecord model comment) so no
+// schema change is needed. This prefix marks that first line as the label.
+const CUSTOM_CATEGORY_RE = /^\[Category: ([^\]]+)\]\n?/;
+
+function parseCustomCategory(notes?: string): { custom?: string; rest: string } {
+  if (!notes) return { rest: '' };
+  const m = notes.match(CUSTOM_CATEGORY_RE);
+  if (!m) return { rest: notes };
+  return { custom: m[1], rest: notes.slice(m[0].length) };
+}
+
+function buildNotes(custom: string, rest: string): string | undefined {
+  const parts: string[] = [];
+  if (custom.trim()) parts.push(`[Category: ${custom.trim()}]`);
+  if (rest.trim()) parts.push(rest.trim());
+  return parts.length ? parts.join('\n') : undefined;
+}
+
 type SimpleMode = 'cash' | 'upi';
 const MODES: { value: SimpleMode; label: string; icon: React.ElementType }[] = [
   { value: 'cash', label: 'Cash',   icon: Banknote },
@@ -40,6 +59,8 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
   const { mutate: approve, isPending } = useUpdateExpenseRecord(exp._id);
   const meta = categoryMeta(exp.category);
   const Icon = meta.icon;
+  const { custom: customCategory } = parseCustomCategory(exp.notes);
+  const categoryLabel = exp.category === 'other' && customCategory ? customCategory : meta.label;
 
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3 hover:border-[#A855F7]/30 transition-colors">
@@ -49,7 +70,7 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-900 truncate">{exp.title}</p>
-          <p className="text-xs text-gray-400">{meta.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <p className="text-xs text-gray-400">{categoryLabel} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
         </div>
       </button>
       <div className="text-right shrink-0">
@@ -79,12 +100,15 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
   const { mutateAsync: create, isPending: creating, error: createErr } = useCreateExpenseRecord();
   const { mutateAsync: update, isPending: updating, error: updateErr } = useUpdateExpenseRecord(existing?._id ?? '');
 
+  const parsedNotes = parseCustomCategory(existing?.notes);
+
   const [title, setTitle] = useState(existing?.title ?? '');
   const [category, setCategory] = useState<ExpenseCategory>(existing?.category ?? 'other');
   const [amount, setAmount] = useState(existing ? String(existing.amount) : '');
   const [date, setDate] = useState(existing?.date.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
   const [mode, setMode] = useState<SimpleMode>(toSimpleMode(existing?.paymentMode));
-  const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [notes, setNotes] = useState(parsedNotes.rest);
+  const [customCategory, setCustomCategory] = useState(parsedNotes.custom ?? '');
   const [localErr, setLocalErr] = useState('');
 
   const isPending = creating || updating;
@@ -97,10 +121,11 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
     if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
 
     const paymentMode = toPaymentMode(mode);
+    const finalNotes = buildNotes(category === 'other' ? customCategory : '', notes);
     if (existing) {
-      await update({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: notes.trim() || undefined });
+      await update({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: finalNotes });
     } else {
-      await create({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: notes.trim() || undefined });
+      await create({ title: title.trim(), category, amount: Math.round(amt * 100) / 100, date, paymentMode, notes: finalNotes });
     }
     onClose();
   }
@@ -136,6 +161,16 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
                 </button>
               ))}
             </div>
+            {category === 'other' && (
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                className={cn(inputCls, 'mt-2')}
+                placeholder="Type a category name (e.g. Photocopying)"
+                maxLength={40}
+              />
+            )}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

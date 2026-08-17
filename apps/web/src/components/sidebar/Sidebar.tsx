@@ -44,16 +44,13 @@ import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 // Reception gets its own dedicated nav, focused on front-desk tasks — not
-// the full admin operational toolbox.
+// the full admin operational toolbox. Trimmed to just the two things
+// reception actually does day-to-day (2026-08-17); the dashboard itself
+// still exists as their post-login home (see roleHome.ts) and is still
+// reachable via the logo, it's just not a persistent nav item anymore.
 const NAV_ITEMS_RECEPTION = [
-  { label: 'Dashboard',           icon: LayoutDashboard, path: '/reception',            end: true  },
   { label: 'Visitor Log',         icon: UserPlus,        path: '/reception/visitors',   end: false },
   { label: 'Attendance Records',  icon: CalendarCheck,   path: '/reception/attendance', end: false },
-  { label: 'Students',            icon: GraduationCap,   path: '/students',             end: false },
-  { label: 'Admissions',          icon: ClipboardList,   path: '/enquiries',            end: false },
-  { label: 'Teachers',            icon: Users,           path: '/teachers',             end: false },
-  { label: 'Communication',       icon: MessageSquare,   path: '/communication',        end: false },
-  { label: 'Messages',            icon: Mail,            path: '/messages',             end: false },
 ] as const;
 
 const NAV_ITEMS_ALL = [
