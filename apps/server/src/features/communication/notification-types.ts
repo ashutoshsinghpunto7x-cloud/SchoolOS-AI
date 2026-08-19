@@ -24,7 +24,10 @@ export type NotificationType =
   | 'HOLIDAY_ANNOUNCEMENT'
   | 'ADMISSION_FOLLOWUP'
   | 'EMERGENCY_ALERT'
-  | 'GENERAL_BROADCAST';
+  | 'GENERAL_BROADCAST'
+  // Mock Test Engine — not yet sent for real, see providers/meta-template-map.ts
+  // and mock-test-whatsapp.stub.ts (log-only stub pending Meta template approval).
+  | 'MOCK_TEST_LINK';
 
 interface NotificationTypeMeta {
   label: string;
@@ -95,6 +98,12 @@ export const NOTIFICATION_TYPES: Record<NotificationType, NotificationTypeMeta> 
   GENERAL_BROADCAST: {
     label: 'General Broadcast',
     placeholders: ['school_name'],
+    defaultChannel: 'whatsapp',
+  },
+  // Not sent through this general engine today — see mock-test-whatsapp.stub.ts.
+  MOCK_TEST_LINK: {
+    label: 'Mock Test Link',
+    placeholders: ['student_name', 'test_title', 'test_link'],
     defaultChannel: 'whatsapp',
   },
 };

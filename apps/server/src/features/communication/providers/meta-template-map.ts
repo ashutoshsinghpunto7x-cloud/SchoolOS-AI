@@ -39,4 +39,14 @@ export const META_TEMPLATE_MAP: Partial<Record<NotificationType, MetaTemplateCon
     paramKeys: ['student_name', 'amount', 'receipt_number', 'payment_date'],
     hasDocumentHeader: true,
   },
+  // Placeholder only — the Mock Test Engine's WhatsApp delivery is a log-only
+  // stub for now (see ../mock-test-whatsapp.stub.ts) and never reads this
+  // entry. Registered here ahead of time so wiring the real send later is a
+  // one-line swap once Meta approves this template.
+  // TODO(whatsapp-template-approval): confirm the real approved template name/params match this once submitted to Meta.
+  MOCK_TEST_LINK: {
+    templateName: 'mock_test_link',
+    languageCode: 'en',
+    paramKeys: ['student_name', 'test_title', 'test_link'],
+  },
 };

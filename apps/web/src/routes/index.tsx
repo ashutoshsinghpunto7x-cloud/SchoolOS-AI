@@ -153,6 +153,10 @@ const OpsChapterCaptureUsagePage = lazyPage(
   () => import('@/features/ops-center/pages/OpsChapterCaptureUsagePage'),
   'OpsChapterCaptureUsagePage',
 );
+const OpsTestEnginePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsTestEnginePage'),
+  'OpsTestEnginePage',
+);
 const OpsSchoolDetailPage = lazyPage(
   () => import('@/features/ops-center/pages/OpsSchoolDetailPage'),
   'OpsSchoolDetailPage',
@@ -408,6 +412,10 @@ const PrincipalTeacherDirectoryPage = lazyPage(
 const DiscountApprovalsPage = lazyPage(
   () => import('@/features/principal/pages/DiscountApprovalsPage'),
   'DiscountApprovalsPage',
+);
+const TestApprovalsPage = lazyPage(
+  () => import('@/features/principal/pages/TestApprovalsPage'),
+  'TestApprovalsPage',
 );
 const ReportsWorkspace = lazyPage(
   () => import('@/features/reports/pages/ReportsWorkspace'),
@@ -794,6 +802,14 @@ const ParentReportCardPage = lazyPage(
   () => import('@/features/parent-workspace/pages/ReportCardPage'),
   'ReportCardPage',
 );
+const ParentTestsPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/TestsPage'),
+  'TestsPage',
+);
+const ParentTakeTestPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/TakeTestPage'),
+  'TakeTestPage',
+);
 
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
@@ -912,6 +928,7 @@ export const router = createBrowserRouter([
                   { path: 'audit-trail', element: <OpsAuditTrailPage /> },
                   { path: 'applications', element: <OpsApplicationsPage /> },
                   { path: 'chapter-capture-usage', element: <OpsChapterCaptureUsagePage /> },
+                  { path: 'test-engine', element: <OpsTestEnginePage /> },
                   { path: 'performance', element: <OpsPerformancePage /> },
                 ],
               },
@@ -1017,6 +1034,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
                   { path: 'principal/leave-approvals', element: <LeaveApprovalsPage /> },
                   { path: 'principal/discount-approvals', element: <DiscountApprovalsPage /> },
+                  { path: 'principal/test-approvals', element: <TestApprovalsPage /> },
                   { path: 'principal/class-teachers', element: <ClassTeachersPage backTo="/principal" backLabel="Principal Dashboard" /> },
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
@@ -1042,6 +1060,8 @@ export const router = createBrowserRouter([
                       { path: 'parent/academics/report-card', element: <ParentReportCardPage /> },
                       { path: 'parent/attendance', element: <ParentAttendancePage /> },
                       { path: 'parent/fees', element: <ParentFeesPage /> },
+                      { path: 'parent/tests', element: <ParentTestsPage /> },
+                      { path: 'parent/tests/:id/take', element: <ParentTakeTestPage /> },
                       { path: 'parent/more', element: <ParentMorePage /> },
                     ],
                   },

@@ -59,6 +59,7 @@ import maintenanceRouter from '../features/maintenance/maintenance.routes';
 import maintenancePublicRouter from '../features/maintenance/maintenance.public.routes';
 import moduleAccessRouter from '../features/module-access/module-restriction.routes';
 import moduleAccessPublicRouter from '../features/module-access/module-restriction.public.routes';
+import mockTestRouter from '../features/mock-tests/mock-test.routes';
 
 const router = Router();
 
@@ -122,5 +123,6 @@ router.use('/ops/maintenance', maintenanceRouter);
 router.use('/maintenance', maintenancePublicRouter);
 router.use('/ops/module-access', moduleAccessRouter);
 router.use('/module-access', moduleAccessPublicRouter);
+router.use('/mock-tests', mockTestRouter);
 
 export default router;

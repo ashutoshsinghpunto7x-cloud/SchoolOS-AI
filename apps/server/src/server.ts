@@ -3,11 +3,13 @@ import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './lib/logger';
 import { startPlannerScheduler } from './features/teacher-planner/planner-notifications.job';
+import { startMockTestScheduler } from './features/mock-tests/mock-test-scheduler.job';
 import { resumeStuckBulkJobs } from './features/communication/queue/bulk-processor';
 
 const start = async (): Promise<void> => {
   await connectDatabase();
   startPlannerScheduler();
+  startMockTestScheduler();
   // Picks back up any bulk send left mid-run by a crash/restart on this or
   // another instance — see bulk-processor.ts#resumeStuckBulkJobs.
   resumeStuckBulkJobs().catch((err) => logger.error('[BulkProcessor] Startup resume scan failed', { err }));

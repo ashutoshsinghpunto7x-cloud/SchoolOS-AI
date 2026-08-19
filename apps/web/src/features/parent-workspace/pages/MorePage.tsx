@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Headphones,
   MessageCircle,
   LogOut,
   ChevronRight,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
@@ -53,6 +55,7 @@ function MenuRow({
 export function MorePage() {
   const { user, logout } = useAuth();
   const { data: workspace } = useParentWorkspace();
+  const navigate = useNavigate();
 
   const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : workspace?.parent.name ?? 'Parent';
   const initials = fullName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
@@ -98,6 +101,10 @@ export function MorePage() {
             </div>
           </motion.section>
         )}
+
+        <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
+          <MenuRow icon={ClipboardList} label="Mock Tests" sub="Live and upcoming tests" onClick={() => navigate('/parent/tests')} />
+        </motion.div>
 
         <motion.div variants={fadeUp} transition={{ duration: 0.25 }} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-3">
           <button
