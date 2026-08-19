@@ -629,13 +629,21 @@ const PlannerHubPage = lazyPage(
   () => import('@/features/teacher-planner/pages/PlannerHubPage'),
   'PlannerHubPage',
 );
-const PlannerUploadPage = lazyPage(
-  () => import('@/features/teacher-planner/pages/PlannerUploadPage'),
-  'PlannerUploadPage',
+const PlannerBuildPage = lazyPage(
+  () => import('@/features/teacher-planner/pages/PlannerBuildPage'),
+  'PlannerBuildPage',
 );
 const PlannerDashboardPage = lazyPage(
   () => import('@/features/teacher-planner/pages/PlannerDashboardPage'),
   'PlannerDashboardPage',
+);
+const PrincipalPlannerPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalPlannerPage'),
+  'PrincipalPlannerPage',
+);
+const PrincipalPlannerDetailPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalPlannerDetailPage'),
+  'PrincipalPlannerDetailPage',
 );
 const MarksEntryPage = lazyPage(
   () => import('@/features/marks/pages/MarksEntryPage'),
@@ -971,7 +979,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
                       { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
-                      { path: 'teacher/planner/:cls/:subject/upload',                 element: <PlannerUploadPage /> },
+                      { path: 'teacher/planner/:cls/:subject/build',                  element: <PlannerBuildPage /> },
                       { path: 'teacher/syllabus-tracker',                             element: <SyllabusTrackerPage /> },
                       { path: 'teacher/worksheet-generator',                          element: <WorksheetHubPage /> },
                       { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },
@@ -1039,6 +1047,8 @@ export const router = createBrowserRouter([
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
                   { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
+                  { path: 'principal/planner', element: <PrincipalPlannerPage /> },
+                  { path: 'principal/planner/:teacherId/:cls/:subject', element: <PrincipalPlannerDetailPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },

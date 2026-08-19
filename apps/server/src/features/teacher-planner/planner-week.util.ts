@@ -72,12 +72,11 @@ export async function computeTeachingWeeks(schoolId: string, start: Date, end: D
     });
 }
 
-/** Spreads a week's tasks evenly across its weekdays (Mon-Fri within the
- *  week's start/end range) so each task gets a due date for the "today's
- *  tasks" view — an approximation that doesn't re-exclude a mid-week holiday
- *  the way computeTeachingWeeks does, which is an acceptable trade-off for
- *  what's just a due-date spread, not a scheduling guarantee. */
-export function distributeDueDates(startDate: Date, endDate: Date, taskCount: number): Date[] {
+/** Lists the Mon-Fri weekdays between start/end (inclusive) — does not
+ *  re-exclude holidays the way computeTeachingWeeks does, which is an
+ *  acceptable trade-off for what's just a due-date spread, not a
+ *  scheduling guarantee. */
+export function listWeekdays(startDate: Date, endDate: Date): Date[] {
   const weekdays: Date[] = [];
   const cur = new Date(startDate);
   while (cur <= endDate) {
@@ -86,6 +85,12 @@ export function distributeDueDates(startDate: Date, endDate: Date, taskCount: nu
     cur.setDate(cur.getDate() + 1);
   }
   if (weekdays.length === 0) weekdays.push(new Date(startDate));
+  return weekdays;
+}
 
+/** Spreads a week's tasks evenly across its weekdays so each task gets a due
+ *  date for the "today's tasks" view. */
+export function distributeDueDates(startDate: Date, endDate: Date, taskCount: number): Date[] {
+  const weekdays = listWeekdays(startDate, endDate);
   return Array.from({ length: taskCount }, (_, i) => weekdays[i % weekdays.length]);
 }

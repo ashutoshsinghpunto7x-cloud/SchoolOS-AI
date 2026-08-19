@@ -1,47 +1,41 @@
 import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
-import { fileToDataUri } from '../../lib/image-upload';
 import { sendSuccess, sendCreated } from '../../lib/response';
-import { ValidationError } from '../../middlewares/errorHandler';
-import { plannerExtractionService } from './planner-extraction.service';
-import { plannerService, getSchoolAcademicYear } from './planner.service';
-import { extractionTargetSchema, confirmPlannerSchema, toggleTaskSchema, plannerTargetSchema } from './planner.validation';
+import { plannerService } from './planner.service';
+import { confirmPlannerSchema, toggleTaskSchema, plannerTargetSchema, generatePlannerSchema } from './planner.validation';
 
 export const plannerController = {
-  /** POST /teacher-planner/extract/image?class=8&subject=Science */
-  async extractFromImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  /** GET /teacher-planner/chapters?class=8&subject=Science */
+  async listChapters(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.file) throw new ValidationError('An image file is required');
-      const target = extractionTargetSchema.parse(req.query);
+      const query = plannerTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
-      const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
-      const job = await plannerExtractionService.enqueueExtractFromImage(target.class, target.subject, start, end, fileToDataUri(req.file), ctx);
-      sendCreated(res, job, 'Reading the planner…');
+      const chapters = await plannerService.listChapters(query, ctx);
+      sendSuccess(res, chapters);
     } catch (err) { next(err); }
   },
 
-  /** POST /teacher-planner/extract/pdf?class=8&subject=Science */
-  async extractFromPdf(req: Request, res: Response, next: NextFunction): Promise<void> {
+  /** GET /teacher-planner/teaching-weeks?class=8&subject=Science */
+  async getTeachingWeeks(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      if (!req.file) throw new ValidationError('A PDF file is required');
-      const target = extractionTargetSchema.parse(req.query);
+      const query = plannerTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
-      const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
-      const job = await plannerExtractionService.enqueueExtractFromPdf(target.class, target.subject, start, end, req.file.buffer, ctx);
-      sendCreated(res, job, 'Reading the document…');
+      const info = await plannerService.getTeachingWeeksInfo(query, ctx);
+      sendSuccess(res, info);
     } catch (err) { next(err); }
   },
 
-  /** GET /teacher-planner/extract/jobs/:id */
-  async getExtractionJob(req: Request, res: Response, next: NextFunction): Promise<void> {
+  /** POST /teacher-planner/generate — build a draft plan from selected chapters + durations */
+  async generate(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      const data = generatePlannerSchema.parse(req.body);
       const ctx = buildAuthContext(req.user!);
-      const job = await plannerExtractionService.getExtractionJob(req.params.id, ctx);
-      sendSuccess(res, job);
+      const draft = await plannerService.generateDraft(data, ctx);
+      sendSuccess(res, draft, 'Draft plan generated — review before saving');
     } catch (err) { next(err); }
   },
 
-  /** POST /teacher-planner/confirm — save reviewed draft weeks as the teacher's planner */
+  /** POST /teacher-planner/confirm — save reviewed/edited draft weeks (first save or a later edit) */
   async confirmPlanner(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const data = confirmPlannerSchema.parse(req.body);
@@ -86,6 +80,27 @@ export const plannerController = {
       const ctx = buildAuthContext(req.user!);
       const pace = await plannerService.getPace(req.params.id, ctx);
       sendSuccess(res, pace);
+    } catch (err) { next(err); }
+  },
+
+  // ── Principal (read-only) ────────────────────────────────────────────────
+
+  /** GET /teacher-planner/principal/overview */
+  async getPrincipalOverview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const overview = await plannerService.getPrincipalOverview(ctx);
+      sendSuccess(res, overview);
+    } catch (err) { next(err); }
+  },
+
+  /** GET /teacher-planner/principal/:teacherId?class=&subject= */
+  async getForTeacher(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = plannerTargetSchema.parse(req.query);
+      const ctx = buildAuthContext(req.user!);
+      const result = await plannerService.getForTeacher(req.params.teacherId, query, ctx);
+      sendSuccess(res, result);
     } catch (err) { next(err); }
   },
 };

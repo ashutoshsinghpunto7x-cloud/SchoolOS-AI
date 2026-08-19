@@ -2,11 +2,6 @@ import { z } from 'zod';
 
 export const TASK_TYPES = ['explain', 'activity', 'worksheet', 'homework', 'doubt_session', 'revision', 'unit_test', 'other'] as const;
 
-export const extractionTargetSchema = z.object({
-  class:   z.string({ required_error: 'class is required' }).min(1).trim(),
-  subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
-});
-
 const draftTaskSchema = z.object({
   title: z.string().min(1),
   type: z.enum(TASK_TYPES),
@@ -35,7 +30,22 @@ export const plannerTargetSchema = z.object({
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
 });
 
-export type ExtractionTargetInput = z.infer<typeof extractionTargetSchema>;
+const chapterPlanSchema = z.object({
+  chapterId: z.string().min(1),
+  weeks: z.number().int().min(1).max(52),
+});
+
+export const generatePlannerSchema = z.object({
+  class:        z.string({ required_error: 'class is required' }).min(1).trim(),
+  subject:      z.string({ required_error: 'subject is required' }).min(1).trim(),
+  chapterPlans: z.array(chapterPlanSchema).min(1, 'Select at least one chapter'),
+  // How many teaching weeks are already spoken for by weeks staged in the
+  // review screen (e.g. adding more chapters to an existing/edited plan) —
+  // generation resumes after that point instead of restarting from week 1.
+  startFromWeek: z.number().int().min(0).optional(),
+});
+
 export type ConfirmPlannerInput = z.infer<typeof confirmPlannerSchema>;
 export type ToggleTaskInput = z.infer<typeof toggleTaskSchema>;
 export type PlannerTargetInput = z.infer<typeof plannerTargetSchema>;
+export type GeneratePlannerInput = z.infer<typeof generatePlannerSchema>;

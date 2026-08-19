@@ -1,18 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherPlannerApi } from '../api/teacher-planner.api';
-import type { ConfirmPlannerPayload } from '@schoolos/types';
+import type { ConfirmPlannerPayload, GeneratePlannerPayload } from '@schoolos/types';
 
 export const teacherPlannerKeys = {
-  all:      ['teacher-planner']                                    as const,
-  mine:     (cls: string, subject: string) => [...teacherPlannerKeys.all, 'mine', cls, subject] as const,
-  progress: (id: string) => [...teacherPlannerKeys.all, 'progress', id] as const,
-  pace:     (id: string) => [...teacherPlannerKeys.all, 'pace', id] as const,
+  all:          ['teacher-planner']                                    as const,
+  mine:         (cls: string, subject: string) => [...teacherPlannerKeys.all, 'mine', cls, subject] as const,
+  chapters:     (cls: string, subject: string) => [...teacherPlannerKeys.all, 'chapters', cls, subject] as const,
+  teachingWeeks: (cls: string, subject: string) => [...teacherPlannerKeys.all, 'teaching-weeks', cls, subject] as const,
+  progress:     (id: string) => [...teacherPlannerKeys.all, 'progress', id] as const,
+  pace:         (id: string) => [...teacherPlannerKeys.all, 'pace', id] as const,
+  principalOverview: ['teacher-planner', 'principal', 'overview'] as const,
+  principalDetail:   (teacherId: string, cls: string, subject: string) => ['teacher-planner', 'principal', 'detail', teacherId, cls, subject] as const,
 };
 
 export const useMyPlanner = (cls: string, subject: string) =>
   useQuery({
     queryKey: teacherPlannerKeys.mine(cls, subject),
     queryFn:  () => teacherPlannerApi.getMine(cls, subject),
+    enabled:  !!cls && !!subject,
+  });
+
+export const useSavedChapters = (cls: string, subject: string) =>
+  useQuery({
+    queryKey: teacherPlannerKeys.chapters(cls, subject),
+    queryFn:  () => teacherPlannerApi.getChapters(cls, subject),
+    enabled:  !!cls && !!subject,
+  });
+
+export const useTeachingWeeksInfo = (cls: string, subject: string) =>
+  useQuery({
+    queryKey: teacherPlannerKeys.teachingWeeks(cls, subject),
+    queryFn:  () => teacherPlannerApi.getTeachingWeeks(cls, subject),
     enabled:  !!cls && !!subject,
   });
 
@@ -29,6 +47,10 @@ export const usePlannerPace = (plannerId: string) =>
     queryFn:  () => teacherPlannerApi.getPace(plannerId),
     enabled:  !!plannerId,
   });
+
+// Never saves anything — just computes a draft for review.
+export const useGeneratePlanner = () =>
+  useMutation({ mutationFn: (payload: GeneratePlannerPayload) => teacherPlannerApi.generate(payload) });
 
 export const useConfirmPlanner = () => {
   const qc = useQueryClient();
@@ -50,9 +72,17 @@ export const useToggleTask = (plannerId: string) => {
   });
 };
 
-// AI extraction never saves anything, so no query invalidation on success.
-export const useExtractPlannerFromImage = () =>
-  useMutation({ mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => teacherPlannerApi.extractFromImage(target, file) });
+// ── Principal (read-only) ─────────────────────────────────────────────────────
 
-export const useExtractPlannerFromPdf = () =>
-  useMutation({ mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => teacherPlannerApi.extractFromPdf(target, file) });
+export const usePrincipalPlannerOverview = () =>
+  useQuery({
+    queryKey: teacherPlannerKeys.principalOverview,
+    queryFn:  () => teacherPlannerApi.getPrincipalOverview(),
+  });
+
+export const usePrincipalPlannerDetail = (teacherId: string, cls: string, subject: string) =>
+  useQuery({
+    queryKey: teacherPlannerKeys.principalDetail(teacherId, cls, subject),
+    queryFn:  () => teacherPlannerApi.getForTeacher(teacherId, cls, subject),
+    enabled:  !!teacherId && !!cls && !!subject,
+  });

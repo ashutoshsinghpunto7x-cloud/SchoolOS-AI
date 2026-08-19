@@ -6,9 +6,10 @@ import { Teacher } from '../teachers/teacher.model';
 import { SchoolSettings } from '../school-settings/school-settings.model';
 import { chapterRepository } from '../question-bank/chapter.repository';
 import { plannerRepository } from './planner.repository';
-import { computeTeachingWeeks, distributeDueDates } from './planner-week.util';
+import { computeTeachingWeeks, listWeekdays, distributeDueDates } from './planner-week.util';
 import { ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
-import { ConfirmPlannerInput } from './planner.validation';
+import { ConfirmPlannerInput, GeneratePlannerInput } from './planner.validation';
+import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, TeachingWeeksInfo } from '@schoolos/types';
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
 // Same shape as question-bank's assertTeacherCanManageQuestionBank — kept as
@@ -49,6 +50,70 @@ function isSameDay(a: Date, b: Date): boolean {
   return a.toDateString() === b.toDateString();
 }
 
+// ── Pure progress/pace math — shared by the teacher's own view and the
+// principal's read-only view, so both compute percentages identically. ────────
+
+function pct(list: IPlannerTask[]): number {
+  return list.length === 0 ? 0 : Math.round((list.filter((t) => t.status === 'completed').length / list.length) * 100);
+}
+
+export function computeProgress(planner: ITeacherPlanner, today: Date = new Date()) {
+  const allTasks = planner.weeks.flatMap((w) => w.tasks);
+
+  const monthTasks = allTasks.filter((t) => t.dueDate.getMonth() === today.getMonth() && t.dueDate.getFullYear() === today.getFullYear());
+  const currentWeek = planner.weeks.find((w) => todayIn(w, today));
+  const weekTasks = currentWeek?.tasks ?? [];
+
+  // Half-yearly split: the academic year cut in two at its midpoint date —
+  // there's no separate term-date config to key off instead.
+  const midpoint = new Date((planner.academicYearStart.getTime() + planner.academicYearEnd.getTime()) / 2);
+  const inSecondHalf = today >= midpoint;
+  const halfYearTasks = allTasks.filter((t) => (t.dueDate >= midpoint) === inSecondHalf);
+
+  const todayTasks = planner.weeks.flatMap((w) => w.tasks.filter((t) => isSameDay(t.dueDate, today)).map((task) => ({ weekNumber: w.weekNumber, task })));
+
+  return {
+    yearPercent: pct(allTasks),
+    monthPercent: pct(monthTasks),
+    weekPercent: pct(weekTasks),
+    halfYearPercent: pct(halfYearTasks),
+    todayTasks,
+    _completedCount: allTasks.filter((t) => t.status === 'completed').length,
+    _totalCount: allTasks.length,
+  };
+}
+
+export function computePace(planner: ITeacherPlanner, today: Date = new Date()) {
+  const sortedWeeks = [...planner.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+
+  let expectedWeekNumber = 0;
+  for (const w of sortedWeeks) {
+    if (today >= w.startDate) expectedWeekNumber = w.weekNumber;
+  }
+
+  let actualWeekNumber = 0;
+  for (const w of sortedWeeks) {
+    const allDone = w.tasks.length === 0 || w.tasks.every((t) => t.status === 'completed');
+    if (allDone) actualWeekNumber = w.weekNumber;
+    else break;
+  }
+
+  const teachingDaysBehind = (expectedWeekNumber - actualWeekNumber) * 5;
+  const suggestions: string[] = [];
+  if (teachingDaysBehind <= 0) {
+    suggestions.push(teachingDaysBehind < 0 ? "You're ahead of schedule — nice work." : "You're on track with your plan.");
+  } else if (teachingDaysBehind <= 5) {
+    suggestions.push('Complete one extra period this week to catch up.');
+  } else if (teachingDaysBehind <= 15) {
+    suggestions.push('Consider combining revision for two chapters.');
+    suggestions.push('Add an extra period this week if possible.');
+  } else {
+    suggestions.push('You are significantly behind — consider skipping a revision activity or combining chapters to catch up.');
+  }
+
+  return { expectedWeekNumber, actualWeekNumber, teachingDaysBehind, suggestions };
+}
+
 export const plannerService = {
   async getAcademicYear(ctx: AuthContext) {
     return getSchoolAcademicYear(ctx.schoolId);
@@ -60,7 +125,71 @@ export const plannerService = {
     return plannerRepository.findOne(ctx.schoolId, ctx.userId, query.class, query.subject);
   },
 
-  /** Persists reviewed/edited AI-extracted draft weeks — never called automatically, only on explicit teacher confirmation. */
+  /** GET /teacher-planner/chapters — chapters the teacher has already saved
+   *  in the Question Bank chapter bank, for this class/subject. */
+  async listChapters(rawQuery: unknown, ctx: AuthContext): Promise<SavedChapterOption[]> {
+    const query = rawQuery as { class: string; subject: string };
+    await assertTeacherCanManagePlanner(ctx, query.class, query.subject);
+    const chapters = await chapterRepository.findAll(ctx.schoolId, query.class, query.subject);
+    return chapters.map((c) => ({ _id: String(c._id), chapterName: c.chapterName, topics: c.topics }));
+  },
+
+  /** GET /teacher-planner/teaching-weeks — powers the duration-allocation UI. */
+  async getTeachingWeeksInfo(rawQuery: unknown, ctx: AuthContext): Promise<TeachingWeeksInfo> {
+    const query = rawQuery as { class: string; subject: string };
+    await assertTeacherCanManagePlanner(ctx, query.class, query.subject);
+    const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
+    const teachingWeeks = await computeTeachingWeeks(ctx.schoolId, start, end);
+    return {
+      totalTeachingWeeks: teachingWeeks.length,
+      academicYearStart: start.toISOString(),
+      academicYearEnd: end.toISOString(),
+    };
+  },
+
+  /** POST /teacher-planner/generate — deterministic (no AI) draft builder.
+   *  Teacher picks saved chapters + a week-count each; this walks the
+   *  school's teaching weeks in order, assigning each chapter its requested
+   *  span, and drops one task per teaching day so daily tick-off works out
+   *  of the box. Never persisted here — same review/confirm flow as before. */
+  async generateDraft(input: GeneratePlannerInput, ctx: AuthContext): Promise<PlannerExtractionResult> {
+    await assertTeacherCanManagePlanner(ctx, input.class, input.subject);
+    const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
+    const teachingWeeks = await computeTeachingWeeks(ctx.schoolId, start, end);
+
+    const chapters = await chapterRepository.findByIds(ctx.schoolId, input.chapterPlans.map((p) => p.chapterId));
+    const chapterById = new Map(chapters.map((c) => [String(c._id), c]));
+
+    const warnings: string[] = [];
+    const weeks: PlannerDraftWeek[] = [];
+    let cursor = input.startFromWeek ?? 0;
+
+    for (const plan of input.chapterPlans) {
+      const chapter = chapterById.get(plan.chapterId);
+      if (!chapter) { warnings.push('One of the selected chapters could not be found — skipped.'); continue; }
+
+      for (let i = 0; i < plan.weeks; i++) {
+        if (cursor >= teachingWeeks.length) {
+          warnings.push(`Not enough teaching weeks left for "${chapter.chapterName}" — ${plan.weeks - i} week(s) couldn't be scheduled.`);
+          break;
+        }
+        const tw = teachingWeeks[cursor];
+        cursor += 1;
+
+        const tasks = listWeekdays(tw.startDate, tw.endDate).map(() => ({ title: chapter.chapterName, type: 'explain' as const }));
+        weeks.push({ weekNumber: tw.weekNumber, chapterName: chapter.chapterName, topic: chapter.topics[0], tasks });
+      }
+    }
+
+    if (cursor < teachingWeeks.length) {
+      warnings.push(`${teachingWeeks.length - cursor} teaching week(s) remain unassigned — add more chapters or increase durations to fill the year.`);
+    }
+
+    return { sourceType: 'manual', totalTeachingWeeks: teachingWeeks.length, weeks, warnings };
+  },
+
+  /** Persists reviewed/edited draft weeks as the teacher's planner — used both
+   *  for the first save and for later edits (upsert replaces weeks wholesale). */
   async confirmPlanner(data: ConfirmPlannerInput, ctx: AuthContext): Promise<ITeacherPlanner> {
     await assertTeacherCanManagePlanner(ctx, data.class, data.subject);
     const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
@@ -122,62 +251,79 @@ export const plannerService = {
     const planner = await plannerRepository.findById(plannerId, ctx.schoolId);
     if (!planner) throw new NotFoundError('Planner');
     await assertTeacherCanManagePlanner(ctx, planner.class, planner.subject);
-
-    const today = new Date();
-    const allTasks = planner.weeks.flatMap((w) => w.tasks);
-    const completed = allTasks.filter((t) => t.status === 'completed');
-
-    const monthTasks = allTasks.filter((t) => t.dueDate.getMonth() === today.getMonth() && t.dueDate.getFullYear() === today.getFullYear());
-    const currentWeek = planner.weeks.find((w) => todayIn(w, today));
-    const weekTasks = currentWeek?.tasks ?? [];
-
-    const pct = (list: IPlannerTask[]): number => (list.length === 0 ? 0 : Math.round((list.filter((t) => t.status === 'completed').length / list.length) * 100));
-
-    const todayTasks = planner.weeks.flatMap((w) => w.tasks.filter((t) => isSameDay(t.dueDate, today)).map((task) => ({ weekNumber: w.weekNumber, task })));
-
-    return {
-      yearPercent: pct(allTasks),
-      monthPercent: pct(monthTasks),
-      weekPercent: pct(weekTasks),
-      todayTasks,
-      _completedCount: completed.length,
-      _totalCount: allTasks.length,
-    };
+    return computeProgress(planner);
   },
 
   async getPace(plannerId: string, ctx: AuthContext) {
     const planner = await plannerRepository.findById(plannerId, ctx.schoolId);
     if (!planner) throw new NotFoundError('Planner');
     await assertTeacherCanManagePlanner(ctx, planner.class, planner.subject);
+    return computePace(planner);
+  },
 
-    const today = new Date();
-    const sortedWeeks = [...planner.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+  // ── Principal (read-only, any teacher) ───────────────────────────────────
 
-    let expectedWeekNumber = 0;
-    for (const w of sortedWeeks) {
-      if (today >= w.startDate) expectedWeekNumber = w.weekNumber;
+  /** GET /teacher-planner/principal/overview — every teacher's saved
+   *  planners, with progress/pace. Teachers with none get a single
+   *  `hasPlanner: false` marker row (class/subject blank) rather than a
+   *  guessed list of class/subject combos — `Teacher.assignedClasses` stores
+   *  section-qualified labels (e.g. "6A") while planners key on the
+   *  timetable's bare-grade `class` field (e.g. "6"), so the two can't be
+   *  matched up reliably; only real planners are trustworthy here. */
+  async getPrincipalOverview(ctx: AuthContext) {
+    const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false })
+      .select('fullName email')
+      .lean() as { _id: unknown; fullName: string; email?: string }[];
+
+    const entries: {
+      teacherId: string; teacherName: string; class: string; subject: string;
+      plannerId: string | null; hasPlanner: boolean; yearPercent: number; teachingDaysBehind: number;
+    }[] = [];
+
+    for (const teacher of teachers) {
+      // Planners are keyed by the User document's _id (the JWT's ctx.userId,
+      // same field confirmPlanner writes), not the Teacher document's own
+      // _id — the two collections link only by email (see
+      // assertTeacherCanManagePlanner and the known Teacher/Employee mirror
+      // gap), so that's what has to be resolved and used here.
+      if (!teacher.email) continue;
+      const user = await User.findOne({ schoolId: ctx.schoolId, email: teacher.email }).select('_id').lean() as { _id: unknown } | null;
+      if (!user) continue;
+      const teacherId = String(user._id);
+
+      const planners = await plannerRepository.findAllByTeacher(ctx.schoolId, teacherId);
+
+      if (planners.length === 0) {
+        entries.push({
+          teacherId, teacherName: teacher.fullName, class: '', subject: '',
+          plannerId: null, hasPlanner: false, yearPercent: 0, teachingDaysBehind: 0,
+        });
+        continue;
+      }
+
+      for (const planner of planners) {
+        entries.push({
+          teacherId,
+          teacherName: teacher.fullName,
+          class: planner.class,
+          subject: planner.subject,
+          plannerId: String(planner._id),
+          hasPlanner: true,
+          yearPercent: computeProgress(planner).yearPercent,
+          teachingDaysBehind: computePace(planner).teachingDaysBehind,
+        });
+      }
     }
 
-    let actualWeekNumber = 0;
-    for (const w of sortedWeeks) {
-      const allDone = w.tasks.length === 0 || w.tasks.every((t) => t.status === 'completed');
-      if (allDone) actualWeekNumber = w.weekNumber;
-      else break;
-    }
+    return entries;
+  },
 
-    const teachingDaysBehind = (expectedWeekNumber - actualWeekNumber) * 5;
-    const suggestions: string[] = [];
-    if (teachingDaysBehind <= 0) {
-      suggestions.push(teachingDaysBehind < 0 ? "You're ahead of schedule — nice work." : "You're on track with your plan.");
-    } else if (teachingDaysBehind <= 5) {
-      suggestions.push('Complete one extra period this week to catch up.');
-    } else if (teachingDaysBehind <= 15) {
-      suggestions.push('Consider combining revision for two chapters.');
-      suggestions.push('Add an extra period this week if possible.');
-    } else {
-      suggestions.push('You are significantly behind — consider skipping a revision activity or combining chapters to catch up.');
-    }
-
-    return { expectedWeekNumber, actualWeekNumber, teachingDaysBehind, suggestions };
+  /** GET /teacher-planner/principal/:teacherId?class=&subject= — read-only,
+   *  no ownership assertion (route is already role-gated to principal/admin). */
+  async getForTeacher(teacherId: string, rawQuery: unknown, ctx: AuthContext) {
+    const query = rawQuery as { class: string; subject: string };
+    const planner = await plannerRepository.findOne(ctx.schoolId, teacherId, query.class, query.subject);
+    if (!planner) throw new NotFoundError('Planner');
+    return { planner, progress: computeProgress(planner), pace: computePace(planner) };
   },
 };

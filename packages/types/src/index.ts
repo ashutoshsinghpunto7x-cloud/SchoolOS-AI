@@ -148,6 +148,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'question-bank', label: 'Question Bank', routePrefixes: ['/teacher/question-bank'] },
   { key: 'worksheet-generator', label: 'Worksheet Generator', routePrefixes: ['/teacher/worksheet-generator'] },
   { key: 'planner', label: 'Teacher Planner', routePrefixes: ['/teacher/planner'] },
+  { key: 'principal-planner', label: 'Principal Planner', routePrefixes: ['/principal/planner'] },
   { key: 'syllabus-tracker', label: 'Syllabus Tracker', routePrefixes: ['/teacher/syllabus-tracker'] },
 ];
 
@@ -4166,6 +4167,7 @@ export interface PlannerProgress {
   yearPercent: number;
   monthPercent: number;
   weekPercent: number;
+  halfYearPercent: number;
   todayTasks: PlannerTodayTask[];
 }
 
@@ -4176,7 +4178,7 @@ export interface PacePosition {
   suggestions: string[];
 }
 
-// ── Planner extraction (AI upload → draft → review → confirm) ────────────────
+// ── Planner generation (saved chapters + duration → draft → review → confirm) ─
 
 export interface PlannerDraftTask {
   title: string;
@@ -4191,7 +4193,7 @@ export interface PlannerDraftWeek {
 }
 
 export interface PlannerExtractionResult {
-  sourceType: 'image' | 'pdf_text';
+  sourceType: 'manual';
   totalTeachingWeeks: number;
   weeks: PlannerDraftWeek[];
   warnings: string[];
@@ -4201,6 +4203,49 @@ export interface ConfirmPlannerPayload {
   class: string;
   subject: string;
   weeks: PlannerDraftWeek[];
+}
+
+export interface SavedChapterOption {
+  _id: string;
+  chapterName: string;
+  topics: string[];
+}
+
+export interface TeachingWeeksInfo {
+  totalTeachingWeeks: number;
+  academicYearStart: string;
+  academicYearEnd: string;
+}
+
+export interface ChapterPlanInput {
+  chapterId: string;
+  weeks: number;
+}
+
+export interface GeneratePlannerPayload {
+  class: string;
+  subject: string;
+  chapterPlans: ChapterPlanInput[];
+  startFromWeek?: number;
+}
+
+// ── Principal Planner (read-only) ─────────────────────────────────────────────
+
+export interface PrincipalPlannerOverviewEntry {
+  teacherId: string;
+  teacherName: string;
+  class: string;
+  subject: string;
+  plannerId: string | null;
+  hasPlanner: boolean;
+  yearPercent: number;
+  teachingDaysBehind: number;
+}
+
+export interface PrincipalPlannerDetail {
+  planner: TeacherPlanner;
+  progress: PlannerProgress;
+  pace: PacePosition;
 }
 
 // ── Worksheet Generator ────────────────────────────────────────────────────────
