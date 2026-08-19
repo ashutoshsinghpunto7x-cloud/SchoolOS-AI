@@ -4279,3 +4279,169 @@ export interface SyllabusActivityDay {
   date: string;
   count: number;
 }
+
+// ── Mock Test Engine (Ops-authored MCQ tests, principal-approval-gated) ──────
+// Authored entirely by the internal ops team in Ops Center from already-captured
+// Question Bank chapter text — never by school teachers. v1 is MCQ-only,
+// auto-graded. See apps/server/src/features/mock-tests/ for the server side.
+
+export type MockTestStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'live' | 'closed';
+
+export type MockTestMode = 'anonymous' | 'ranked';
+
+export interface MockTestQuestion {
+  _id: string;
+  questionText: string;
+  options: string[];
+  /** Index into `options` — never sent to the parent/student client. */
+  correctOptionIndex: number;
+  marks: number;
+}
+
+/** Shape returned to a parent/student taking the test — correctOptionIndex stripped server-side. */
+export type MockTestQuestionForTaking = Omit<MockTestQuestion, 'correctOptionIndex'>;
+
+export interface MockTest extends BaseEntity {
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  chapterNames: string[];
+  title: string;
+  questions: MockTestQuestion[];
+  durationMinutes: number;
+  scheduledStart: string;
+  /** Explicit close time. Independent of the taking window (start + duration) — the link stays valid
+   *  until this time even if a student starts late; a student who starts within the taking window
+   *  still gets their full duration to finish, capped at scheduledEnd. */
+  scheduledEnd: string;
+  mode: MockTestMode;
+  status: MockTestStatus;
+  createdBy: string;
+  submittedForApprovalAt?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectedBy?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  /** Anonymous-mode participation stats — no per-student record kept, just a running count/average. */
+  anonymousSubmissionCount: number;
+  anonymousAverageScorePercent?: number;
+}
+
+export interface GenerateMockTestPayload {
+  /** Ops Center is cross-tenant (internal staff accounts have no real schoolId of their own —
+   *  see INTERNAL_SCHOOL_ID) — the target school is picked explicitly, not inferred from the caller. */
+  schoolId: string;
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  questionCount: number;
+  difficulty: QuestionDifficulty | 'mixed';
+}
+
+/** Draft MCQ set returned by AI generation, before it's saved as a MockTest — ops reviews/edits these first. */
+export interface GeneratedMockTestQuestion {
+  questionText: string;
+  options: string[];
+  correctOptionIndex: number;
+  marks: number;
+}
+
+export interface GenerateMockTestResult {
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  chapterNames: string[];
+  questions: GeneratedMockTestQuestion[];
+  warnings: string[];
+}
+
+export interface CreateMockTestPayload {
+  schoolId: string;
+  class: string;
+  subject: string;
+  chapterIds: string[];
+  chapterNames: string[];
+  title: string;
+  questions: GeneratedMockTestQuestion[];
+  durationMinutes: number;
+  scheduledStart: string;
+  scheduledEnd: string;
+  mode: MockTestMode;
+}
+
+export type UpdateMockTestPayload = Partial<Omit<CreateMockTestPayload, 'chapterIds' | 'chapterNames' | 'schoolId'>>;
+
+export interface RejectMockTestPayload {
+  reason?: string;
+}
+
+export interface MockTestListOptions {
+  schoolId?: string;
+  status?: MockTestStatus;
+  class?: string;
+  subject?: string;
+}
+
+// ── Test attempts (ranked mode only — anonymous mode never persists a per-student record) ──
+
+export interface TestAttemptAnswer {
+  questionId: string;
+  selectedOptionIndex: number;
+}
+
+export interface TestAttempt extends BaseEntity {
+  testId: string;
+  studentId: string;
+  studentName: string;
+  class: string;
+  section: string;
+  answers: TestAttemptAnswer[];
+  score: number;
+  totalMarks: number;
+  correctCount: number;
+  totalQuestions: number;
+  submittedAt: string;
+}
+
+export interface SubmitMockTestPayload {
+  childId: string;
+  answers: TestAttemptAnswer[];
+}
+
+export interface SubmitMockTestResult {
+  mode: MockTestMode;
+  score: number;
+  totalMarks: number;
+  correctCount: number;
+  totalQuestions: number;
+  scorePercent: number;
+  /** Only present for ranked mode, once the attempt is persisted. */
+  rank?: number;
+}
+
+export interface MockTestLeaderboardEntry {
+  studentId: string;
+  studentName: string;
+  score: number;
+  totalMarks: number;
+  rank: number;
+  submittedAt: string;
+}
+
+/** Test list item as seen by a parent — no correct answers, no other students' data. */
+export interface ParentMockTestSummary {
+  _id: string;
+  title: string;
+  subject: string;
+  class: string;
+  durationMinutes: number;
+  scheduledStart: string;
+  scheduledEnd: string;
+  mode: MockTestMode;
+  status: MockTestStatus;
+  questionCount: number;
+  totalMarks: number;
+  /** Whether this parent's linked child already has a ranked attempt on record. */
+  alreadyAttempted?: boolean;
+}

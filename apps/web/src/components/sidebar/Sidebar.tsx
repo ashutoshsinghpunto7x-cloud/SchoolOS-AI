@@ -34,6 +34,7 @@ import {
   QrCode,
   ScanLine,
   Store,
+  FileCheck2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -145,6 +146,7 @@ const NAV_ITEMS_PRINCIPAL = [
   { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/leave-approvals',       end: false },
   { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
   { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
+  { label: 'Test Approvals',      icon: FileCheck2,      path: '/principal/test-approvals',        end: false },
   { label: 'Teachers',            icon: Users,           path: '/principal/teachers',              end: false },
   { label: 'Employees',           icon: Users,           path: '/principal/employees',             end: false },
   { label: 'Class Timetable',     icon: LayoutGrid,      path: '/timetable',                       end: true  },

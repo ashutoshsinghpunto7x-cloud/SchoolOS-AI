@@ -86,4 +86,10 @@ export const DEFAULT_TEMPLATE_BODIES: Record<NotificationType, string> = {
     'Dear Parent,\n\n' +
     'This is an important announcement from {{school_name}}.\n\n' +
     'Regards,\n{{school_name}}',
+
+  // Placeholder only — not sent through this engine today, see mock-test-whatsapp.stub.ts.
+  MOCK_TEST_LINK:
+    'Dear Parent,\n\n' +
+    'A mock test "{{test_title}}" is now live for {{student_name}}. Take it here: {{test_link}}\n\n' +
+    'Regards,\n{{school_name}}',
 };
