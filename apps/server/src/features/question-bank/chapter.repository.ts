@@ -1,4 +1,5 @@
 import { SyllabusChapter, ISyllabusChapter } from './chapter.model';
+import { classNameKey } from '../../lib/class-name';
 
 function normalize(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -22,8 +23,14 @@ function levenshtein(a: string, b: string): number {
 }
 
 export const chapterRepository = {
+  // `class` is matched via classNameKey (not the raw string) on both read and
+  // write — Question Bank's class dropdown and the Timetable-derived class
+  // values Planner queries with aren't guaranteed to agree on digit vs Roman
+  // numeral for the same grade ("1" vs "I"), which otherwise makes a chapter
+  // tagged from one surface invisible from the other. See
+  // [[project_planner_chapter_403_bug]].
   async findAll(schoolId: string, cls: string, subject: string): Promise<ISyllabusChapter[]> {
-    return SyllabusChapter.find({ schoolId, class: cls, subject }).sort({ order: 1, chapterName: 1 }).lean<ISyllabusChapter[]>();
+    return SyllabusChapter.find({ schoolId, class: classNameKey(cls), subject }).sort({ order: 1, chapterName: 1 }).lean<ISyllabusChapter[]>();
   },
 
   async findByIds(schoolId: string, ids: string[]): Promise<ISyllabusChapter[]> {
@@ -32,7 +39,8 @@ export const chapterRepository = {
 
   /** Fuzzy-matches chapterName against existing chapters for this class+subject, creating one if none matches closely enough. */
   async findOrCreate(schoolId: string, cls: string, subject: string, chapterName: string, topic?: string): Promise<ISyllabusChapter> {
-    const existing = await SyllabusChapter.find({ schoolId, class: cls, subject }).lean<ISyllabusChapter[]>();
+    const classKey = classNameKey(cls);
+    const existing = await SyllabusChapter.find({ schoolId, class: classKey, subject }).lean<ISyllabusChapter[]>();
     const nameKey = normalize(chapterName);
     const maxDistance = nameKey.length <= 10 ? 1 : 3;
 
@@ -56,7 +64,7 @@ export const chapterRepository = {
 
     return SyllabusChapter.create({
       schoolId,
-      class: cls,
+      class: classKey,
       subject,
       chapterName: chapterName.trim(),
       topics: topic ? [topic] : [],
