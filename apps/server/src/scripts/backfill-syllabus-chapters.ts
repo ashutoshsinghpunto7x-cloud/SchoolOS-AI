@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import { classNameKey } from '../lib/class-name';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -14,6 +15,11 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
  * question-bank.service.ts / question-extraction.service.ts now register the
  * chapter on every *new* chapter-name assignment; this script closes the gap
  * for uploads tagged before that fix. Idempotent — safe to re-run.
+ *
+ * `class` is stored/matched via classNameKey (Roman numeral -> digit), same
+ * as chapter.repository.ts now does — otherwise a source tagged with class
+ * "I" would create a chapter Planner (querying by whatever the Timetable
+ * uses) still can't find. See [[project_planner_chapter_403_bug]].
  */
 
 function normalize(s: string): string {
@@ -38,7 +44,7 @@ async function backfill() {
 
   for (const s of tagged) {
     const schoolId = s.schoolId;
-    const cls = s.class;
+    const cls = classNameKey(s.class);
     const subject = s.subject;
     const nameKey = normalize(s.chapterName);
 
