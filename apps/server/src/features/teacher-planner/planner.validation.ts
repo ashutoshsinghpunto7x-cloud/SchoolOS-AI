@@ -20,10 +20,15 @@ export const confirmPlannerSchema = z.object({
   weeks: z.array(draftWeekSchema).min(1, 'At least one week is required'),
 });
 
-export const toggleTaskSchema = z.object({
+export const updateTaskSchema = z.object({
   taskId: z.string({ required_error: 'taskId is required' }).min(1),
-  status: z.enum(['pending', 'completed']),
-});
+  status: z.enum(['pending', 'completed']).optional(),
+  title: z.string().min(1).trim().optional(),
+  dueDate: z.coerce.date().optional(),
+}).refine(
+  (d) => d.status !== undefined || d.title !== undefined || d.dueDate !== undefined,
+  { message: 'Provide at least one of status, title, or dueDate to update' },
+);
 
 export const plannerTargetSchema = z.object({
   class:   z.string({ required_error: 'class is required' }).min(1).trim(),
@@ -46,6 +51,6 @@ export const generatePlannerSchema = z.object({
 });
 
 export type ConfirmPlannerInput = z.infer<typeof confirmPlannerSchema>;
-export type ToggleTaskInput = z.infer<typeof toggleTaskSchema>;
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type PlannerTargetInput = z.infer<typeof plannerTargetSchema>;
 export type GeneratePlannerInput = z.infer<typeof generatePlannerSchema>;

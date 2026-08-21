@@ -41,11 +41,21 @@ export const plannerRepository = {
     return TeacherPlanner.find({ schoolId, teacherId }).sort({ class: 1, subject: 1 }).lean<ITeacherPlanner[]>();
   },
 
-  async setTaskStatus(plannerId: string, schoolId: string, taskId: string, status: 'pending' | 'completed'): Promise<ITeacherPlanner | null> {
-    const completedAt = status === 'completed' ? new Date() : undefined;
+  async updateTask(
+    plannerId: string, schoolId: string, taskId: string,
+    patch: { status?: 'pending' | 'completed'; title?: string; dueDate?: Date },
+  ): Promise<ITeacherPlanner | null> {
+    const set: Record<string, unknown> = {};
+    if (patch.status !== undefined) {
+      set['weeks.$[].tasks.$[t].status'] = patch.status;
+      set['weeks.$[].tasks.$[t].completedAt'] = patch.status === 'completed' ? new Date() : undefined;
+    }
+    if (patch.title !== undefined) set['weeks.$[].tasks.$[t].title'] = patch.title;
+    if (patch.dueDate !== undefined) set['weeks.$[].tasks.$[t].dueDate'] = patch.dueDate;
+
     return TeacherPlanner.findOneAndUpdate(
       { _id: plannerId, schoolId, 'weeks.tasks.taskId': taskId },
-      { $set: { 'weeks.$[].tasks.$[t].status': status, 'weeks.$[].tasks.$[t].completedAt': completedAt } },
+      { $set: set },
       { new: true, arrayFilters: [{ 't.taskId': taskId }] },
     ).lean<ITeacherPlanner>();
   },

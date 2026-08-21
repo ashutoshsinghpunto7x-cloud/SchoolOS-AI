@@ -4205,6 +4205,16 @@ export interface ConfirmPlannerPayload {
   weeks: PlannerDraftWeek[];
 }
 
+/** PATCH /teacher-planner/:id/tasks/:taskId — any subset of fields; at least
+ *  one must be present. `status` toggles complete/pending (tap-to-check),
+ *  `title`/`dueDate` let a teacher correct or reschedule a generated task
+ *  in place, without rebuilding the whole plan. */
+export interface UpdateTaskPayload {
+  status?: PlannerTaskStatus;
+  title?: string;
+  dueDate?: string;
+}
+
 export interface SavedChapterOption {
   _id: string;
   chapterName: string;

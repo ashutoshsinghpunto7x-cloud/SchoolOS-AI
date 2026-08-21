@@ -1,8 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, CalendarClock, Pencil, Loader2 } from 'lucide-react';
-import { useMyPlanner, usePlannerProgress, usePlannerPace, useToggleTask } from '../hooks/useTeacherPlanner';
+import { useMyPlanner, usePlannerProgress, usePlannerPace, useUpdateTask } from '../hooks/useTeacherPlanner';
 import { PlannerView } from '../components/PlannerView';
+import type { UpdateTaskPayload } from '@schoolos/types';
 
 export function PlannerDashboardPage() {
   const { cls = '', subject = '' } = useParams();
@@ -12,13 +13,21 @@ export function PlannerDashboardPage() {
   const plannerId = planner?._id ?? '';
   const { data: progress, isLoading: progressLoading } = usePlannerProgress(plannerId);
   const { data: pace, isLoading: paceLoading } = usePlannerPace(plannerId);
-  const toggleTask = useToggleTask(plannerId);
+  const updateTask = useUpdateTask(plannerId);
 
   async function handleToggle(taskId: string, current: 'pending' | 'completed') {
     try {
-      await toggleTask.mutateAsync({ taskId, status: current === 'completed' ? 'pending' : 'completed' });
+      await updateTask.mutateAsync({ taskId, status: current === 'completed' ? 'pending' : 'completed' });
     } catch (err) {
       toast.error('Could not update task', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
+  async function handleEdit(taskId: string, patch: UpdateTaskPayload) {
+    try {
+      await updateTask.mutateAsync({ taskId, ...patch });
+    } catch (err) {
+      toast.error('Could not save task', { description: err instanceof Error ? err.message : undefined });
     }
   }
 
@@ -76,7 +85,7 @@ export function PlannerDashboardPage() {
             <div className="h-16 bg-gray-50 dark:bg-white/5 rounded-2xl animate-pulse" />
           </div>
         ) : (
-          <PlannerView planner={planner} progress={progress} pace={pace} onToggleTask={handleToggle} />
+          <PlannerView planner={planner} progress={progress} pace={pace} onToggleTask={handleToggle} onEditTask={handleEdit} />
         )}
       </div>
     </div>

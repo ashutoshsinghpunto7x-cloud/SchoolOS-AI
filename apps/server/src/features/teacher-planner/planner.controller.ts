@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { plannerService } from './planner.service';
-import { confirmPlannerSchema, toggleTaskSchema, plannerTargetSchema, generatePlannerSchema } from './planner.validation';
+import { confirmPlannerSchema, updateTaskSchema, plannerTargetSchema, generatePlannerSchema } from './planner.validation';
 
 export const plannerController = {
   /** GET /teacher-planner/chapters?class=8&subject=Science */
@@ -55,12 +55,13 @@ export const plannerController = {
     } catch (err) { next(err); }
   },
 
-  /** PATCH /teacher-planner/:id/tasks/:taskId */
-  async toggleTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+  /** PATCH /teacher-planner/:id/tasks/:taskId — status toggle and/or an
+   *  in-place edit of the task's title/due date. */
+  async updateTask(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { status } = toggleTaskSchema.parse({ taskId: req.params.taskId, status: req.body?.status });
+      const { status, title, dueDate } = updateTaskSchema.parse({ ...req.body, taskId: req.params.taskId });
       const ctx = buildAuthContext(req.user!);
-      const planner = await plannerService.toggleTask(req.params.id, req.params.taskId, status, ctx);
+      const planner = await plannerService.updateTask(req.params.id, req.params.taskId, { status, title, dueDate }, ctx);
       sendSuccess(res, planner, 'Task updated');
     } catch (err) { next(err); }
   },

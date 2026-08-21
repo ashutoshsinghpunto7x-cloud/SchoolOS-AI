@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, CheckCircle2, Circle, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
-import type { TeacherPlanner, PlannerProgress, PacePosition } from '@schoolos/types';
+import { TrendingUp, TrendingDown, CheckCircle2, Circle, ChevronDown, ChevronUp, Lightbulb, Pencil } from 'lucide-react';
+import type { TeacherPlanner, PlannerProgress, PacePosition, PlannerTask, UpdateTaskPayload } from '@schoolos/types';
 
 function ProgressBar({ label, percent }: { label: string; percent: number }) {
   return (
@@ -20,19 +20,116 @@ function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function formatDueDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
+
+function toDateInputValue(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+interface TaskRowProps {
+  task: PlannerTask;
+  readOnly?: boolean;
+  showDate?: boolean;
+  onToggle: () => void;
+  onEdit: (patch: UpdateTaskPayload) => void;
+}
+
+/** One task row — tap the circle/title to mark done, tap the pencil to
+ *  correct the title or move it to a different day. Edit controls are always
+ *  visible (not hover-only) so this stays usable on touch devices. */
+function TaskRow({ task, readOnly, showDate, onToggle, onEdit }: TaskRowProps) {
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState(task.title);
+  const [dueDate, setDueDate] = useState(toDateInputValue(task.dueDate));
+
+  function startEdit() {
+    setTitle(task.title);
+    setDueDate(toDateInputValue(task.dueDate));
+    setEditing(true);
+  }
+
+  function save() {
+    const patch: UpdateTaskPayload = {};
+    const trimmed = title.trim();
+    if (trimmed && trimmed !== task.title) patch.title = trimmed;
+    if (dueDate && dueDate !== toDateInputValue(task.dueDate)) patch.dueDate = dueDate;
+    if (Object.keys(patch).length > 0) onEdit(patch);
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 px-2 py-2 rounded-lg bg-gray-50 dark:bg-white/5">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="flex-1 min-w-[8rem] text-sm bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-md px-2 py-1.5 text-gray-800 dark:text-white/80"
+          placeholder="Task title"
+        />
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="text-xs bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-md px-1.5 py-1.5 text-gray-700 dark:text-white/70"
+        />
+        <button type="button" onClick={save} className="text-xs font-semibold text-[#6D4AFF] px-2 py-1.5 rounded-md hover:bg-[#6D4AFF]/10">
+          Save
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className="text-xs font-medium text-gray-400 px-2 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-white/5">
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 px-1 py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5">
+      <button
+        type="button" disabled={readOnly} onClick={onToggle}
+        className="flex items-center gap-2.5 flex-1 min-w-0 text-left px-1 py-1 rounded-lg disabled:cursor-default"
+      >
+        {task.status === 'completed'
+          ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+          : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
+        <span className={`text-sm flex-1 min-w-0 truncate ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800 dark:text-white/80'}`}>
+          {task.title}
+        </span>
+      </button>
+      {showDate && (
+        <span className="text-[10px] font-medium text-gray-400 shrink-0">{formatDueDate(task.dueDate)}</span>
+      )}
+      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/50 shrink-0">
+        {labelize(task.type)}
+      </span>
+      {!readOnly && (
+        <button
+          type="button" onClick={startEdit} aria-label="Edit task"
+          className="shrink-0 p-1.5 rounded-md text-gray-300 hover:text-gray-600 hover:bg-gray-100 dark:text-white/30 dark:hover:text-white/70 dark:hover:bg-white/10"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface PlannerViewProps {
   planner: TeacherPlanner;
   progress: PlannerProgress;
   pace: PacePosition;
-  /** Principal view: no tap-to-toggle on tasks. */
+  /** Principal view: no tap-to-toggle or editing on tasks. */
   readOnly?: boolean;
   onToggleTask?: (taskId: string, currentStatus: 'pending' | 'completed') => void;
+  /** Edit a task's title and/or reassign its due date in place. */
+  onEditTask?: (taskId: string, patch: UpdateTaskPayload) => void;
 }
 
 /** Shared progress/pace/weeks body — used interactively by the teacher's own
  *  dashboard and read-only by the principal's per-teacher detail page, so
  *  both always show identical numbers. */
-export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }: PlannerViewProps) {
+export function PlannerView({ planner, progress, pace, readOnly, onToggleTask, onEditTask }: PlannerViewProps) {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
   const behind = pace.teachingDaysBehind > 0;
   const ahead = pace.teachingDaysBehind < 0;
@@ -40,6 +137,11 @@ export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }:
   function handleToggle(taskId: string, current: 'pending' | 'completed') {
     if (readOnly) return;
     onToggleTask?.(taskId, current);
+  }
+
+  function handleEdit(taskId: string, patch: UpdateTaskPayload) {
+    if (readOnly) return;
+    onEditTask?.(taskId, patch);
   }
 
   return (
@@ -76,21 +178,13 @@ export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }:
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Today's Tasks</p>
           <div className="space-y-1.5">
             {progress.todayTasks.map(({ task }) => (
-              <button
-                key={task.taskId} type="button" disabled={readOnly}
-                onClick={() => handleToggle(task.taskId, task.status)}
-                className="w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:hover:bg-transparent disabled:cursor-default"
-              >
-                {task.status === 'completed'
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
-                <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-800 dark:text-white/80'}`}>
-                  {task.title}
-                </span>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/50">
-                  {labelize(task.type)}
-                </span>
-              </button>
+              <TaskRow
+                key={task.taskId}
+                task={task}
+                readOnly={readOnly}
+                onToggle={() => handleToggle(task.taskId, task.status)}
+                onEdit={(patch) => handleEdit(task.taskId, patch)}
+              />
             ))}
           </div>
         </div>
@@ -117,21 +211,14 @@ export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }:
               {expanded && (
                 <div className="px-3.5 pb-3 space-y-1.5">
                   {w.tasks.map((task) => (
-                    <button
-                      key={task.taskId} type="button" disabled={readOnly}
-                      onClick={() => handleToggle(task.taskId, task.status)}
-                      className="w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:hover:bg-transparent disabled:cursor-default"
-                    >
-                      {task.status === 'completed'
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
-                      <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700 dark:text-white/70'}`}>
-                        {task.title}
-                      </span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/50">
-                        {labelize(task.type)}
-                      </span>
-                    </button>
+                    <TaskRow
+                      key={task.taskId}
+                      task={task}
+                      readOnly={readOnly}
+                      showDate
+                      onToggle={() => handleToggle(task.taskId, task.status)}
+                      onEdit={(patch) => handleEdit(task.taskId, patch)}
+                    />
                   ))}
                 </div>
               )}

@@ -10,6 +10,7 @@ import type {
   TeachingWeeksInfo,
   PrincipalPlannerOverviewEntry,
   PrincipalPlannerDetail,
+  UpdateTaskPayload,
 } from '@schoolos/types';
 
 const BASE = '/teacher-planner';
@@ -50,9 +51,9 @@ export const teacherPlannerApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  toggleTask: async (plannerId: string, taskId: string, status: 'pending' | 'completed'): Promise<TeacherPlanner> => {
+  updateTask: async (plannerId: string, taskId: string, patch: UpdateTaskPayload): Promise<TeacherPlanner> => {
     try {
-      const res = await apiClient.patch<{ data: TeacherPlanner }>(`${BASE}/${plannerId}/tasks/${taskId}`, { status });
+      const res = await apiClient.patch<{ data: TeacherPlanner }>(`${BASE}/${plannerId}/tasks/${taskId}`, patch);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

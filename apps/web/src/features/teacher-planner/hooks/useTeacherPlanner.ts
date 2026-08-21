@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherPlannerApi } from '../api/teacher-planner.api';
-import type { ConfirmPlannerPayload, GeneratePlannerPayload } from '@schoolos/types';
+import type { ConfirmPlannerPayload, GeneratePlannerPayload, UpdateTaskPayload } from '@schoolos/types';
 
 export const teacherPlannerKeys = {
   all:          ['teacher-planner']                                    as const,
@@ -60,11 +60,11 @@ export const useConfirmPlanner = () => {
   });
 };
 
-export const useToggleTask = (plannerId: string) => {
+export const useUpdateTask = (plannerId: string) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: 'pending' | 'completed' }) =>
-      teacherPlannerApi.toggleTask(plannerId, taskId, status),
+    mutationFn: ({ taskId, ...patch }: { taskId: string } & UpdateTaskPayload) =>
+      teacherPlannerApi.updateTask(plannerId, taskId, patch),
     // Invalidates the whole feature key, not just progress/pace — the weeks
     // accordion reads task status from the "mine" planner query directly, so
     // that needs to refetch too or it shows stale per-week completion counts.

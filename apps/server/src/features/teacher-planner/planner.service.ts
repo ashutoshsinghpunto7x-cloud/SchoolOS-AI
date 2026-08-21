@@ -246,12 +246,26 @@ export const plannerService = {
     });
   },
 
-  async toggleTask(plannerId: string, taskId: string, status: 'pending' | 'completed', ctx: AuthContext): Promise<ITeacherPlanner> {
+  /** PATCH /teacher-planner/:id/tasks/:taskId — status toggle (tap-to-check),
+   *  and/or an in-place edit of a generated task's title or due date, so
+   *  teachers don't have to rebuild the whole plan to fix or reschedule one
+   *  day's task. Task stays in its original week's chapter grouping — only
+   *  `dueDate` moves, so the "Today's Tasks" flat scan and per-week accordion
+   *  both pick up the new date automatically. */
+  async updateTask(
+    plannerId: string, taskId: string,
+    patch: { status?: 'pending' | 'completed'; title?: string; dueDate?: Date },
+    ctx: AuthContext,
+  ): Promise<ITeacherPlanner> {
     const existing = await plannerRepository.findById(plannerId, ctx.schoolId);
     if (!existing) throw new NotFoundError('Planner');
     await assertTeacherCanManagePlanner(ctx, existing.class, existing.subject);
 
-    const updated = await plannerRepository.setTaskStatus(plannerId, ctx.schoolId, taskId, status);
+    if (patch.dueDate && (patch.dueDate < existing.academicYearStart || patch.dueDate > existing.academicYearEnd)) {
+      throw new ValidationError('Due date must fall within the current academic year.');
+    }
+
+    const updated = await plannerRepository.updateTask(plannerId, ctx.schoolId, taskId, patch);
     if (!updated) throw new NotFoundError('Task');
     return updated;
   },

@@ -19,7 +19,7 @@ router.post('/confirm',                      plannerController.confirmPlanner);
 
 router.get('/mine',                          plannerController.getMine);
 
-router.patch('/:id/tasks/:taskId',           plannerController.toggleTask);
+router.patch('/:id/tasks/:taskId',           plannerController.updateTask);
 router.get('/:id/progress',                  plannerController.getProgress);
 router.get('/:id/pace',                      plannerController.getPace);
 
