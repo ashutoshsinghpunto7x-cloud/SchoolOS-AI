@@ -5,6 +5,7 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { SchoolSettings } from '../school-settings/school-settings.model';
 import { chapterRepository } from '../question-bank/chapter.repository';
+import { timetableRepository } from '../timetable/timetable.repository';
 import { plannerRepository } from './planner.repository';
 import { computeTeachingWeeks, listWeekdays, distributeDueDates } from './planner-week.util';
 import { ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
@@ -12,9 +13,15 @@ import { ConfirmPlannerInput, GeneratePlannerInput } from './planner.validation'
 import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, TeachingWeeksInfo } from '@schoolos/types';
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
-// Same shape as question-bank's assertTeacherCanManageQuestionBank — kept as
-// its own copy rather than a shared import across unrelated features, same
-// precedent as that guard's own relationship to marks' assertTeacherCanEnterMarks.
+// Originally checked Teacher.subjects/assignedClasses, same shape as
+// question-bank's (now-removed) assertTeacherCanManageQuestionBank. Those two
+// fields are only kept up to date by the Teachers workspace UI — a teacher
+// whose subjects are assigned purely via the Timetable (the normal path;
+// PlannerHubPage itself lists class/subject options straight from the
+// timetable-derived weekly schedule, not from these fields) has them empty,
+// so this guard 403'd every planner request for them even though the Planner
+// Hub screen had just shown that exact class/subject as theirs to pick. Now
+// checks the same timetable source PlannerHubPage reads from.
 async function assertTeacherCanManagePlanner(ctx: AuthContext, cls: string, subject: string): Promise<void> {
   if (ctx.role !== 'teacher') return;
 
@@ -22,13 +29,15 @@ async function assertTeacherCanManagePlanner(ctx: AuthContext, cls: string, subj
   if (!user?.email) throw new ForbiddenError('Your account has no email — cannot verify class/subject assignment');
 
   const teacher = await Teacher.findOne({ schoolId: ctx.schoolId, email: user.email, isDeleted: false })
-    .select('subjects assignedClasses')
-    .lean() as { subjects: string[]; assignedClasses: string[] } | null;
+    .select('_id')
+    .lean() as { _id: { toString(): string } } | null;
   if (!teacher) throw new ForbiddenError('Teacher profile not found');
 
-  const teachesSubject = teacher.subjects.includes(subject);
-  const teachesClass = teacher.assignedClasses.some((c) => c === cls || c.startsWith(cls));
-  if (!teachesSubject || !teachesClass) {
+  const timetables = await timetableRepository.getTeacherSchedule(ctx.schoolId, String(teacher._id));
+  const teachesThis = timetables.some(
+    (tt) => tt.class === cls && tt.entries.some((e) => e.teacherId === String(teacher._id) && e.subjectName === subject),
+  );
+  if (!teachesThis) {
     throw new ForbiddenError('You are not assigned to teach this subject/class');
   }
 }

@@ -150,12 +150,13 @@ export const questionBankService = {
     return questionExtractionService.enqueueReExtractFromSource(source, options, ctx);
   },
 
-  /** Sets the chapter this upload belongs to — pre-fills every question drafted from it from then on. */
+  /** Sets the chapter this upload belongs to — pre-fills every question drafted from it from then on, and registers the chapter in the syllabus chapter bank (so it shows up for Planner too) rather than waiting on question generation. */
   async updateSourceChapter(id: string, chapterName: string, ctx: AuthContext): Promise<IQuestionSource> {
     const source = await questionSourceRepository.findById(id, ctx.schoolId);
     if (!source) throw new NotFoundError('Upload');
     const updated = await questionSourceRepository.updateChapterName(id, ctx.schoolId, chapterName);
     if (!updated) throw new NotFoundError('Upload');
+    await chapterRepository.findOrCreate(ctx.schoolId, source.class, source.subject, chapterName);
     return updated;
   },
 
@@ -173,13 +174,17 @@ export const questionBankService = {
         reviewStatus: data.reviewStatus,
       });
       if (!updated) throw new NotFoundError('Upload');
-      if (data.chapterName) return (await questionSourceRepository.updateChapterName(id, ctx.schoolId, data.chapterName)) ?? updated;
+      if (data.chapterName) {
+        await chapterRepository.findOrCreate(ctx.schoolId, source.class, source.subject, data.chapterName);
+        return (await questionSourceRepository.updateChapterName(id, ctx.schoolId, data.chapterName)) ?? updated;
+      }
       return updated;
     }
 
     if (data.chapterName) {
       const updated = await questionSourceRepository.updateChapterName(id, ctx.schoolId, data.chapterName);
       if (!updated) throw new NotFoundError('Upload');
+      await chapterRepository.findOrCreate(ctx.schoolId, source.class, source.subject, data.chapterName);
       return updated;
     }
 

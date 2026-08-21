@@ -7,6 +7,7 @@ import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
 import { extractionJobRepository } from './extraction-job.repository';
 import { questionSourceRepository } from './question-source.repository';
+import { chapterRepository } from './chapter.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
 import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions } from '@schoolos/types';
@@ -1031,6 +1032,13 @@ export const questionExtractionService = {
       chapterName: data.chapterName,
       reviewStatus: 'saved',
     });
+
+    // Register in the syllabus chapter bank too — otherwise this chapter only shows up
+    // in Question Bank's upload list and never in Planner, which reads exclusively from
+    // SyllabusChapter (only previously populated by generating/confirming questions).
+    if (data.chapterName?.trim()) {
+      await chapterRepository.findOrCreate(ctx.schoolId, cls, subject, data.chapterName.trim());
+    }
 
     usageEventRepository.record({
       userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'chapter_saved',
