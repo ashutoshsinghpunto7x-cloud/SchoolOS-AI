@@ -22,8 +22,10 @@ import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, Tea
 // so this guard 403'd every planner request for them even though the Planner
 // Hub screen had just shown that exact class/subject as theirs to pick. Now
 // checks the same timetable source PlannerHubPage reads from.
-async function assertTeacherCanManagePlanner(ctx: AuthContext, cls: string, subject: string): Promise<void> {
-  if (ctx.role !== 'teacher') return;
+// Returns null for non-teacher roles (nothing to check/count). Returns [] if
+// the teacher has no periods for this exact class+subject this week.
+async function getMatchingTimetableEntries(ctx: AuthContext, cls: string, subject: string) {
+  if (ctx.role !== 'teacher') return null;
 
   const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
   if (!user?.email) throw new ForbiddenError('Your account has no email — cannot verify class/subject assignment');
@@ -34,10 +36,14 @@ async function assertTeacherCanManagePlanner(ctx: AuthContext, cls: string, subj
   if (!teacher) throw new ForbiddenError('Teacher profile not found');
 
   const timetables = await timetableRepository.getTeacherSchedule(ctx.schoolId, String(teacher._id));
-  const teachesThis = timetables.some(
-    (tt) => tt.class === cls && tt.entries.some((e) => e.teacherId === String(teacher._id) && e.subjectName === subject),
-  );
-  if (!teachesThis) {
+  const tt = timetables.find((t) => t.class === cls);
+  if (!tt) return [];
+  return tt.entries.filter((e) => e.teacherId === String(teacher._id) && e.subjectName === subject);
+}
+
+async function assertTeacherCanManagePlanner(ctx: AuthContext, cls: string, subject: string): Promise<void> {
+  const entries = await getMatchingTimetableEntries(ctx, cls, subject);
+  if (entries !== null && entries.length === 0) {
     throw new ForbiddenError('You are not assigned to teach this subject/class');
   }
 }
@@ -143,24 +149,37 @@ export const plannerService = {
     return chapters.map((c) => ({ _id: String(c._id), chapterName: c.chapterName, topics: c.topics }));
   },
 
-  /** GET /teacher-planner/teaching-weeks — powers the duration-allocation UI. */
+  /** GET /teacher-planner/teaching-weeks — powers the duration-allocation UI.
+   *  `suggestedLecturesPerWeek` reads the teacher's real timetable (periods
+   *  for this exact class+subject, once/week) so the build screen can
+   *  default the lectures-per-week field to what's actually scheduled,
+   *  rather than assuming a lecture every school day. */
   async getTeachingWeeksInfo(rawQuery: unknown, ctx: AuthContext): Promise<TeachingWeeksInfo> {
     const query = rawQuery as { class: string; subject: string };
     await assertTeacherCanManagePlanner(ctx, query.class, query.subject);
     const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
     const teachingWeeks = await computeTeachingWeeks(ctx.schoolId, start, end);
+    const entries = await getMatchingTimetableEntries(ctx, query.class, query.subject);
     return {
       totalTeachingWeeks: teachingWeeks.length,
       academicYearStart: start.toISOString(),
       academicYearEnd: end.toISOString(),
+      suggestedLecturesPerWeek: entries?.length ?? 0,
     };
   },
 
   /** POST /teacher-planner/generate — deterministic (no AI) draft builder.
-   *  Teacher picks saved chapters + a week-count each; this walks the
-   *  school's teaching weeks in order, assigning each chapter its requested
-   *  span, and drops one task per teaching day so daily tick-off works out
-   *  of the box. Never persisted here — same review/confirm flow as before. */
+   *  Teacher picks saved chapters + a week-count each, optionally a
+   *  lectures-per-week count too; this walks the school's teaching weeks in
+   *  order, assigning each chapter its requested span, and drops one task
+   *  per lecture — exactly the count requested, never fewer — so daily
+   *  tick-off works out of the box. Falls back to one task per teaching day
+   *  if no count was given. A lecturesPerWeek higher than that week's actual
+   *  school days still lands entirely inside that one week (confirmPlanner's
+   *  distributeDueDates wraps extra lectures onto days that already have
+   *  one, it never spills into the next week) — the teacher asked for N
+   *  weeks and gets exactly N weeks, not N+1. Never persisted here — same
+   *  review/confirm flow as before. */
   async generateDraft(input: GeneratePlannerInput, ctx: AuthContext): Promise<PlannerExtractionResult> {
     await assertTeacherCanManagePlanner(ctx, input.class, input.subject);
     const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
@@ -185,7 +204,14 @@ export const plannerService = {
         const tw = teachingWeeks[cursor];
         cursor += 1;
 
-        const tasks = listWeekdays(tw.startDate, tw.endDate).map(() => ({ title: chapter.chapterName, type: 'explain' as const }));
+        const weekdayCount = listWeekdays(tw.startDate, tw.endDate).length;
+        const taskCount = plan.lecturesPerWeek || weekdayCount;
+        if (plan.lecturesPerWeek && plan.lecturesPerWeek > weekdayCount) {
+          warnings.push(
+            `"${chapter.chapterName}" week ${tw.weekNumber}: ${plan.lecturesPerWeek} lecture(s) requested but only ${weekdayCount} school day(s) that week — some days will get more than one lecture, all still within this one week.`,
+          );
+        }
+        const tasks = Array.from({ length: taskCount }, () => ({ title: chapter.chapterName, type: 'explain' as const }));
         weeks.push({ weekNumber: tw.weekNumber, chapterName: chapter.chapterName, topic: chapter.topics[0], tasks });
       }
     }

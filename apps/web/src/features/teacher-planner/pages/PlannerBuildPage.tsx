@@ -22,6 +22,7 @@ export function PlannerBuildPage() {
   const confirm = useConfirmPlanner();
 
   const [durations, setDurations] = useState<Record<string, number>>({});
+  const [lecturesPerWeek, setLecturesPerWeek] = useState<Record<string, number>>({});
   const [warnings, setWarnings] = useState<string[]>([]);
   const [weeks, setWeeks] = useState<PlannerDraftWeek[] | null>(null);
   const [seeded, setSeeded] = useState(false);
@@ -54,20 +55,38 @@ export function PlannerBuildPage() {
       else delete next[chapterId];
       return next;
     });
+    setLecturesPerWeek((prev) => {
+      const next = { ...prev };
+      // Default to what the real timetable actually schedules for this
+      // class+subject each week (clamped to the 1-10 range the backend
+      // accepts — a subject's total weekly periods can run higher than
+      // that if multiple chapters/sections share slots); teacher can still
+      // override it below.
+      if (checked) next[chapterId] = next[chapterId] ?? Math.min(10, Math.max(1, teachingWeeks?.suggestedLecturesPerWeek || 5));
+      else delete next[chapterId];
+      return next;
+    });
   }
 
   function setDuration(chapterId: string, value: number) {
     setDurations((prev) => ({ ...prev, [chapterId]: Math.max(1, value) }));
   }
 
+  function setChapterLecturesPerWeek(chapterId: string, value: number) {
+    setLecturesPerWeek((prev) => ({ ...prev, [chapterId]: Math.min(10, Math.max(1, value)) }));
+  }
+
   async function handleGenerate() {
-    const chapterPlans = Object.entries(durations).map(([chapterId, weeksCount]) => ({ chapterId, weeks: weeksCount }));
+    const chapterPlans = Object.entries(durations).map(([chapterId, weeksCount]) => ({
+      chapterId, weeks: weeksCount, lecturesPerWeek: lecturesPerWeek[chapterId],
+    }));
     if (chapterPlans.length === 0) return;
     try {
       const result = await generate.mutateAsync({ class: cls, subject, chapterPlans, startFromWeek: usedWeeks });
       setWeeks((prev) => [...(prev ?? []), ...result.weeks]);
       setWarnings(result.warnings);
       setDurations({});
+      setLecturesPerWeek({});
       if (result.weeks.length === 0) toast.error('Nothing generated — check the durations picked');
       else toast.success(`${result.weeks.length} week(s) added — review below before saving`);
     } catch (err) {
@@ -143,7 +162,12 @@ export function PlannerBuildPage() {
         )}
 
         <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Pick chapters &amp; duration</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Pick chapters &amp; duration</p>
+          <p className="text-[11px] text-gray-400 mb-3">
+            {teachingWeeks?.suggestedLecturesPerWeek
+              ? <>Your timetable has <strong className="text-gray-600 dark:text-white/60">{teachingWeeks.suggestedLecturesPerWeek}</strong> period(s)/week for this subject — used as the default below, edit if it's not right for a chapter.</>
+              : 'Set how many periods/week each chapter gets — defaults to 5 if left as-is.'}
+          </p>
           {chaptersLoading ? (
             <div className="h-16 bg-gray-50 dark:bg-white/5 rounded-xl animate-pulse" />
           ) : !chapters || chapters.length === 0 ? (
@@ -178,6 +202,13 @@ export function PlannerBuildPage() {
                           className="w-14 h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs text-center"
                         />
                         <span className="text-[11px] text-gray-400">week(s)</span>
+                        <input
+                          type="number" min={1} max={10} value={lecturesPerWeek[c._id] ?? 5}
+                          onChange={(e) => setChapterLecturesPerWeek(c._id, Number(e.target.value) || 1)}
+                          title="Lectures per week — how many periods this chapter gets each week"
+                          className="w-14 h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs text-center"
+                        />
+                        <span className="text-[11px] text-gray-400">lec/wk</span>
                       </div>
                     )}
                   </div>

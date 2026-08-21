@@ -4225,11 +4225,17 @@ export interface TeachingWeeksInfo {
   totalTeachingWeeks: number;
   academicYearStart: string;
   academicYearEnd: string;
+  /** Periods/week the teacher's real timetable has for this class+subject —
+   *  a default suggestion for `ChapterPlanInput.lecturesPerWeek`, 0 if none. */
+  suggestedLecturesPerWeek: number;
 }
 
 export interface ChapterPlanInput {
   chapterId: string;
   weeks: number;
+  /** Lecture periods/week for this chapter — caps tasks generated per week.
+   *  Omit to fall back to one task per teaching day. */
+  lecturesPerWeek?: number;
 }
 
 export interface GeneratePlannerPayload {

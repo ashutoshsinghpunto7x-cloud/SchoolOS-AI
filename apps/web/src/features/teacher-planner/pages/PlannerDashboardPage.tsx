@@ -1,19 +1,34 @@
+import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, CalendarClock, Pencil, Loader2 } from 'lucide-react';
+import { ArrowLeft, CalendarClock, Pencil, Download, Loader2 } from 'lucide-react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useMyPlanner, usePlannerProgress, usePlannerPace, useUpdateTask } from '../hooks/useTeacherPlanner';
 import { PlannerView } from '../components/PlannerView';
+import { PlannerPrintDocument } from '../components/PlannerPrintDocument';
 import type { UpdateTaskPayload } from '@schoolos/types';
 
 export function PlannerDashboardPage() {
   const { cls = '', subject = '' } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [printing, setPrinting] = useState(false);
+  const printAreaId = `planner-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: planner, isLoading: plannerLoading } = useMyPlanner(cls, subject);
   const plannerId = planner?._id ?? '';
   const { data: progress, isLoading: progressLoading } = usePlannerProgress(plannerId);
   const { data: pace, isLoading: paceLoading } = usePlannerPace(plannerId);
   const updateTask = useUpdateTask(plannerId);
+
+  useEffect(() => {
+    if (!printing) return;
+    const reset = () => { setPrinting(false); window.removeEventListener('afterprint', reset); };
+    window.addEventListener('afterprint', reset);
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => window.print()); });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.removeEventListener('afterprint', reset); };
+  }, [printing]);
 
   async function handleToggle(taskId: string, current: 'pending' | 'completed') {
     try {
@@ -63,13 +78,32 @@ export function PlannerDashboardPage() {
     );
   }
 
+  const dataReady = !progressLoading && !paceLoading && !!progress && !!pace;
+
   return (
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
-      <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
+      {printing && (
+        <style>{`
+          @page { size: A4 portrait; margin: 0; }
+          @media print {
+            body * { visibility: hidden; }
+            #${printAreaId}, #${printAreaId} * { visibility: visible; }
+            #${printAreaId} { position: absolute; top: 0; left: 0; }
+          }
+        `}</style>
+      )}
+
+      <div className="print:hidden sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Class {cls} · {subject}</h1>
+        <button
+          type="button" onClick={() => setPrinting(true)} disabled={!dataReady}
+          className="h-9 px-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <Download className="w-3.5 h-3.5" /> Download
+        </button>
         <button
           type="button" onClick={() => navigate(`/teacher/planner/${cls}/${encodeURIComponent(subject)}/build`)}
           className="h-9 px-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5"
@@ -79,7 +113,7 @@ export function PlannerDashboardPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6">
-        {progressLoading || paceLoading || !progress || !pace ? (
+        {!dataReady ? (
           <div className="space-y-3">
             <div className="h-24 bg-gray-50 dark:bg-white/5 rounded-2xl animate-pulse" />
             <div className="h-16 bg-gray-50 dark:bg-white/5 rounded-2xl animate-pulse" />
@@ -88,6 +122,17 @@ export function PlannerDashboardPage() {
           <PlannerView planner={planner} progress={progress} pace={pace} onToggleTask={handleToggle} onEditTask={handleEdit} />
         )}
       </div>
+
+      {printing && dataReady && (
+        <div id={printAreaId} className="hidden print:block">
+          <PlannerPrintDocument
+            planner={planner}
+            progress={progress}
+            pace={pace}
+            teacherName={user ? `${user.firstName} ${user.lastName}`.trim() : ''}
+          />
+        </div>
+      )}
     </div>
   );
 }

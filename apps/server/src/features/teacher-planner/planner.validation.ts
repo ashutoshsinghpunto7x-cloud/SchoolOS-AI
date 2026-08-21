@@ -38,6 +38,9 @@ export const plannerTargetSchema = z.object({
 const chapterPlanSchema = z.object({
   chapterId: z.string().min(1),
   weeks: z.number().int().min(1).max(52),
+  // How many lecture periods a week for this chapter — caps the number of
+  // tasks generated per week. Omit to fall back to one task per teaching day.
+  lecturesPerWeek: z.number().int().min(1).max(10).optional(),
 });
 
 export const generatePlannerSchema = z.object({
