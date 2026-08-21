@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Camera, FileText, Loader2, ChevronRight, Image as ImageIcon, BookOpen } from 'lucide-react';
 import { useExtractQuestionsFromImage, useExtractQuestionsFromPdf, useQuestionSources } from '../hooks/useQuestionBank';
+import { useTeacherSubjectOptions } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
 
 export function QuestionUploadPage() {
   const navigate = useNavigate();
@@ -11,6 +12,19 @@ export function QuestionUploadPage() {
 
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
+
+  // Picked from the teacher's own timetable, not typed — see the same note
+  // in ChapterCapturePage.tsx / useTeacherSubjectOptions.
+  const { options, classes, isLoading: optionsLoading } = useTeacherSubjectOptions();
+  const subjectsForClass = useMemo(
+    () => options.filter((o) => o.cls === cls).map((o) => o.subjectName),
+    [options, cls],
+  );
+
+  function handleClassChange(next: string) {
+    setCls(next);
+    if (!options.some((o) => o.cls === next && o.subjectName === subject)) setSubject('');
+  }
 
   const extractImage = useExtractQuestionsFromImage();
   const extractPdf = useExtractQuestionsFromPdf();
@@ -52,18 +66,32 @@ export function QuestionUploadPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
-            <input value={cls} onChange={(e) => setCls(e.target.value)} placeholder="e.g. 8"
-              className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+        {!optionsLoading && classes.length === 0 ? (
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+            <p className="text-xs text-amber-600">
+              Your principal hasn't assigned you a subject on the timetable yet — that's needed before you can upload here.
+            </p>
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Science"
-              className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+        ) : (
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
+              <select value={cls} onChange={(e) => handleClassChange(e.target.value)} disabled={optionsLoading}
+                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-50">
+                <option value="">{optionsLoading ? 'Loading…' : 'Select class'}</option>
+                {classes.map((c) => <option key={c} value={c}>Class {c}</option>)}
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
+              <select value={subject} onChange={(e) => setSubject(e.target.value)} disabled={!cls}
+                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-50">
+                <option value="">{cls ? 'Select subject' : 'Pick a class first'}</option>
+                {subjectsForClass.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
           </div>
-        </div>
+        )}
 
         <p className="text-xs text-gray-400 dark:text-white/30 -mt-2">
           Uploading only reads and saves the text — you'll generate questions from it on the next screen, as many times as you like.

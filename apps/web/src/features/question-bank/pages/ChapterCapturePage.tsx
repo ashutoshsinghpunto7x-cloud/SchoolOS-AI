@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Camera, ImagePlus, Loader2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { CameraCapture } from '../components/ChapterCapture/CameraCapture';
 import { PageList, type CapturedPage } from '../components/ChapterCapture/PageList';
 import { useExtractChapter } from '../hooks/useQuestionBank';
 import { setChapterCaptureSession } from '../lib/chapterCaptureSession';
+import { useTeacherSubjectOptions } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
 
 let idCounter = 0;
 const nextId = () => `page-${Date.now()}-${idCounter++}`;
@@ -19,6 +20,21 @@ export function ChapterCapturePage() {
   const [pages, setPages] = useState<CapturedPage[]>([]);
   const [cameraOpen, setCameraOpen] = useState(false);
   const extractChapter = useExtractChapter();
+
+  // Class/subject are picked from the teacher's own timetable, not typed —
+  // free text let "8"/"VIII" (or a plain typo) for the same class end up as
+  // two different strings, which made a chapter invisible to Planner even
+  // though it was tagged and saved correctly. See useTeacherSubjectOptions.
+  const { options, classes, isLoading: optionsLoading } = useTeacherSubjectOptions();
+  const subjectsForClass = useMemo(
+    () => options.filter((o) => o.cls === cls).map((o) => o.subjectName),
+    [options, cls],
+  );
+
+  function handleClassChange(next: string) {
+    setCls(next);
+    if (!options.some((o) => o.cls === next && o.subjectName === subject)) setSubject('');
+  }
 
   const targetReady = !!cls.trim() && !!subject.trim();
 
@@ -68,18 +84,30 @@ export function ChapterCapturePage() {
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
         <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-3">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
-              <input value={cls} onChange={(e) => setCls(e.target.value)} placeholder="e.g. 8"
-                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+          {!optionsLoading && classes.length === 0 ? (
+            <p className="text-xs text-amber-600">
+              Your principal hasn't assigned you a subject on the timetable yet — that's needed before you can tag an upload.
+            </p>
+          ) : (
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Class</label>
+                <select value={cls} onChange={(e) => handleClassChange(e.target.value)} disabled={optionsLoading}
+                  className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-50">
+                  <option value="">{optionsLoading ? 'Loading…' : 'Select class'}</option>
+                  {classes.map((c) => <option key={c} value={c}>Class {c}</option>)}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
+                <select value={subject} onChange={(e) => setSubject(e.target.value)} disabled={!cls}
+                  className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-50">
+                  <option value="">{cls ? 'Select subject' : 'Pick a class first'}</option>
+                  {subjectsForClass.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Subject</label>
-              <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Science"
-                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
-            </div>
-          </div>
+          )}
           <div>
             <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Chapter name (optional)</label>
             <input value={chapterName} onChange={(e) => setChapterName(e.target.value)} placeholder="e.g. Chapter 4 — Light"

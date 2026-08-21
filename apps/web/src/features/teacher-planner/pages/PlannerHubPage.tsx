@@ -1,13 +1,7 @@
-import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CalendarClock, AlertCircle, ChevronRight } from 'lucide-react';
-import { useTeacherWorkspace } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
+import { useTeacherSubjectOptions } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
 import { cn } from '@/lib/utils';
-
-interface SubjectEntry {
-  cls: string;
-  subjectName: string;
-}
 
 const ACCENTS = [
   { bg: 'bg-[#EAF6FF]', text: 'text-[#0284C7]' },
@@ -22,20 +16,7 @@ function SkeletonCard() {
 
 export function PlannerHubPage() {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useTeacherWorkspace();
-
-  const entries = useMemo<SubjectEntry[]>(() => {
-    if (!data) return [];
-    const seen = new Map<string, SubjectEntry>();
-    for (const day of data.weekSchedule) {
-      for (const e of day.entries) {
-        if (!e.subjectName) continue;
-        const key = `${e.class}||${e.subjectName}`;
-        seen.set(key, { cls: e.class, subjectName: e.subjectName });
-      }
-    }
-    return Array.from(seen.values()).sort((a, b) => `${a.cls}${a.subjectName}`.localeCompare(`${b.cls}${b.subjectName}`));
-  }, [data]);
+  const { options: entries, isLoading, isError } = useTeacherSubjectOptions();
 
   return (
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
