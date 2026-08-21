@@ -578,6 +578,20 @@ async function completeQuestionsWithRetry(
   return { extracted: [], warnings: [] };
 }
 
+// ── User-facing error sanitization ──────────────────────────────────────────────
+// Chapter capture reports page/job failures as plain *data* (ChapterPage.pageError,
+// ExtractionJob.error) rather than as thrown HTTP errors, so they never pass through the
+// central errorHandler's "unknown error -> generic 500 message" fallback (see
+// middlewares/errorHandler.ts) — anything stored here goes to the teacher's screen verbatim.
+// ValidationError messages are deliberately teacher-facing (e.g. "no readable text found") and
+// pass through unchanged; everything else (OpenAI/network/provider errors — rate limits,
+// timeouts, outages) is replaced with one calm, retryable message. Full detail is always logged
+// server-side by the caller before this runs, so nothing is lost for debugging.
+function toUserSafeErrorMessage(err: unknown): string {
+  if (err instanceof ValidationError) return err.message;
+  return "We couldn't process this page right now — please try again.";
+}
+
 function parseTranscription(raw: string): string {
   try {
     const body = JSON.parse(raw);
@@ -823,7 +837,7 @@ export const questionExtractionService = {
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background image extraction failed', { jobId, err });
-        extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+        extractionJobRepository.markFailed(jobId, toUserSafeErrorMessage(err)).catch(() => {});
       });
 
     return { jobId };
@@ -839,7 +853,7 @@ export const questionExtractionService = {
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background PDF extraction failed', { jobId, err });
-        extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+        extractionJobRepository.markFailed(jobId, toUserSafeErrorMessage(err)).catch(() => {});
       });
 
     return { jobId };
@@ -854,7 +868,7 @@ export const questionExtractionService = {
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background re-extraction failed', { jobId, err });
-        extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+        extractionJobRepository.markFailed(jobId, toUserSafeErrorMessage(err)).catch(() => {});
       });
 
     return { jobId };
@@ -958,7 +972,7 @@ export const questionExtractionService = {
           });
         } catch (err) {
           logger.error('[QuestionExtraction] Chapter capture page failed', { jobId, pageNumber, err });
-          pages[index] = { pageNumber, blocks: [], pageError: err instanceof Error ? err.message : 'Could not read this page' };
+          pages[index] = { pageNumber, blocks: [], pageError: toUserSafeErrorMessage(err) };
           usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed', pagesProcessed: 1, status: 'failed' });
         } finally {
           completed += 1;
@@ -974,7 +988,7 @@ export const questionExtractionService = {
       await extractionJobRepository.markCompleted(jobId, { documentTitle, language, pages, totalPages, completedPages: completed });
     })().catch((err) => {
       logger.error('[QuestionExtraction] Chapter capture batch failed', { jobId, err });
-      extractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Chapter capture failed').catch(() => {});
+      extractionJobRepository.markFailed(jobId, toUserSafeErrorMessage(err)).catch(() => {});
     });
 
     return { jobId };

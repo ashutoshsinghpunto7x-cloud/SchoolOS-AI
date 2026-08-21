@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { ILLMProvider, LLMCompletionInput, LLMCompletionOutput } from './llm-provider.interface';
 import { env } from '../../../../config/env';
 import { logger } from '../../../../lib/logger';
+import { Semaphore } from '../../../../lib/semaphore';
 
 // ── Cost map: USD per 1M tokens (input / output) ──────────────────────────────
 const COST_MAP: Record<string, [number, number]> = {
@@ -34,6 +35,59 @@ function getClient(): OpenAI {
   return _client;
 }
 
+// ── Global concurrency + rate-limit backoff ─────────────────────────────────────
+// A per-job concurrency cap (e.g. "5 pages at a time" in chapter capture) only bounds one
+// teacher's one job — it does nothing to stop ten jobs across ten teachers from summing to
+// far more than the org's shared tokens-per-minute budget. This semaphore is process-wide, so
+// no matter how many jobs are in flight at once, only AI_MAX_CONCURRENCY OpenAI calls are ever
+// actually running; everything else queues instead of firing and colliding into a 429.
+const aiConcurrency = new Semaphore(env.AI_MAX_CONCURRENCY);
+
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const RATE_LIMIT_BASE_BACKOFF_MS = 1500;
+const RATE_LIMIT_MAX_BACKOFF_MS = 30_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRateLimitError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { status?: number }).status === 429;
+}
+
+/** Reads a numeric Retry-After header (seconds) off an OpenAI APIError, if the response sent one. */
+function retryAfterMs(err: unknown): number | null {
+  const headers = (err as { headers?: Record<string, string> } | undefined)?.headers;
+  const raw = headers?.['retry-after'];
+  const seconds = raw ? Number(raw) : NaN;
+  return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
+
+/**
+ * Runs one OpenAI call inside the global concurrency slot, with its own backoff-and-retry loop
+ * for 429s on top of the SDK's own (smaller) retry budget — this is what makes extraction jobs
+ * survive a sustained burst of load instead of surfacing a rate-limit error to the teacher. The
+ * slot is released between attempts (not held for the whole backoff) so a slow-recovering call
+ * doesn't also starve every other queued request of concurrency while it waits.
+ */
+async function callWithBackoff<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 1; attempt <= RATE_LIMIT_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await aiConcurrency.run(fn);
+    } catch (err) {
+      const isLastAttempt = attempt === RATE_LIMIT_MAX_ATTEMPTS;
+      if (!isRateLimitError(err) || isLastAttempt) throw err;
+
+      const backoff = retryAfterMs(err)
+        ?? Math.min(RATE_LIMIT_MAX_BACKOFF_MS, RATE_LIMIT_BASE_BACKOFF_MS * 2 ** (attempt - 1)) + Math.random() * 500;
+      logger.warn('[OpenAIProvider] Rate limited — backing off and retrying', { attempt, backoffMs: Math.round(backoff) });
+      await sleep(backoff);
+    }
+  }
+  // Unreachable (the loop always returns or throws on its last attempt) — satisfies TypeScript.
+  throw new Error('Rate limit retry loop exited without resolving');
+}
+
 // ── Provider ──────────────────────────────────────────────────────────────────
 
 export const openaiProvider: ILLMProvider = {
@@ -56,7 +110,7 @@ export const openaiProvider: ILLMProvider = {
           ]
         : input.userPrompt;
 
-      const response = await getClient().chat.completions.create({
+      const response = await callWithBackoff(() => getClient().chat.completions.create({
         model,
         temperature: input.temperature ?? 0.4,
         max_tokens: input.maxTokens ?? 600,
@@ -65,7 +119,7 @@ export const openaiProvider: ILLMProvider = {
           { role: 'system', content: input.systemPrompt },
           { role: 'user', content: userContent },
         ],
-      });
+      }));
 
       const choice = response.choices[0];
       const content = choice.message.content ?? '';

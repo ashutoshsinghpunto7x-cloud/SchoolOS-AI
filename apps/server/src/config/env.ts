@@ -35,6 +35,12 @@ const envSchema = z.object({
   // AI — OpenAI
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  // Caps how many OpenAI calls this server instance has in flight at once, across every
+  // concurrent teacher/job — the actual defense against a burst of extraction jobs blowing
+  // through the org's shared tokens-per-minute budget (a per-job concurrency cap alone doesn't
+  // help once enough jobs are running at the same time). Tune down if still hitting 429s at
+  // your org's TPM tier, up if requests are queuing longer than necessary.
+  AI_MAX_CONCURRENCY: z.coerce.number().default(4),
   // AI — Vapi (Voice)
   VAPI_API_KEY: z.string().optional(),
   VAPI_PHONE_NUMBER_ID: z.string().optional(),
