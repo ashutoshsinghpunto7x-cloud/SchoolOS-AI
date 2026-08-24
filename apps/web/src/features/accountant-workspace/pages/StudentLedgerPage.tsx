@@ -47,7 +47,8 @@ const FEE_HEAD_LABELS: Record<string, string> = {
 };
 
 const MODE_LABELS: Record<string, string> = {
-  cash: 'Cash', cheque: 'Cheque', bank_transfer: 'Bank Transfer', online: 'Online', demand_draft: 'Demand Draft',
+  cash: 'Cash', upi: 'UPI', sse_upi: 'SSE UPI', online: 'Online', sse_online: 'SSE Online',
+  challan: 'Challan', cheque: 'Cheque', bank_transfer: 'Bank Transfer', demand_draft: 'DD', card: 'Card',
 };
 
 // ── Editable Tuition Fee ──────────────────────────────────────────────────────
@@ -780,7 +781,11 @@ export function StudentLedgerPage() {
   const invalidateLedger = useInvalidateStudentLedger(studentId!);
   const [payFee, setPayFee] = useState<FeeRecord | null>(null);
   const [showDiscountRequest, setShowDiscountRequest] = useState(false);
-  const [showProcessPayment, setShowProcessPayment] = useState(false);
+  // Opens straight into Collect Fee — the ledger view (history, WhatsApp/email
+  // reminders, discount requests, etc.) is one click away via "Back to Ledger"
+  // below, but the accountant no longer has to click through it first just to
+  // take a payment, which is the overwhelmingly common reason to land here.
+  const [showProcessPayment, setShowProcessPayment] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   if (isLoading) {

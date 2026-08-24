@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ArrowLeft, ChevronRight, ChevronDown, Clock, PanelLeftClose, PanelLeftOpen, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, ArrowLeft, ChevronRight, ChevronDown, Clock, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -251,13 +251,9 @@ function ProfileMenu({ displayName, onClose }: { displayName: string; onClose: (
 
 interface TopbarProps {
   onMenuToggle: () => void;
-  /** Accountant-only: shows a desktop-visible sidebar collapse/expand button. */
-  showDesktopCollapseToggle?: boolean;
-  desktopCollapsed?: boolean;
-  onToggleDesktopCollapse?: () => void;
 }
 
-export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollapsed, onToggleDesktopCollapse }: TopbarProps) => {
+export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -326,40 +322,23 @@ export const Topbar = ({ onMenuToggle, showDesktopCollapseToggle, desktopCollaps
         // of the wider accountant/principal max-w-7xl.
         isTeacher ? "sm:max-w-md sm:mx-auto" : usePillTopbar && "max-w-7xl mx-auto",
       )}>
-        {/* Menu toggle — teacher portal has no sidebar; principal's sidebar is an
-            overlay at every breakpoint, so it stays visible past lg too */}
-        {!isTeacher && (
+        {/* Menu toggle — teacher portal has no sidebar; accountant's own top nav
+            (AccountantTopNav) carries its own mobile menu button instead;
+            principal's sidebar is an overlay at every breakpoint, so it stays
+            visible past lg too */}
+        {!isTeacher && !isAccountant && (
           <button
             onClick={onMenuToggle}
             className={cn(
               "p-2 -ml-1 rounded-xl transition-colors",
               !isPrincipal && "lg:hidden",
-              isAccountantDashboard
-                ? "text-white/70 hover:bg-white/10 hover:text-white"
-                : usePillTopbar
+              usePillTopbar
                 ? "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
                 : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
             )}
             aria-label="Toggle navigation"
           >
             <Menu className="w-5 h-5" />
-          </button>
-        )}
-
-        {/* Desktop sidebar collapse — accountant only, frees up page width */}
-        {showDesktopCollapseToggle && (
-          <button
-            onClick={onToggleDesktopCollapse}
-            className={cn(
-              "hidden lg:flex p-2 -ml-1 rounded-xl transition-colors",
-              isAccountantDashboard
-                ? "text-white/70 hover:bg-white/10 hover:text-white"
-                : "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
-            )}
-            aria-label={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
-            title={desktopCollapsed ? 'Show sidebar' : 'Hide sidebar'}
-          >
-            {desktopCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </button>
         )}
 

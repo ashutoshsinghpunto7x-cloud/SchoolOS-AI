@@ -7,6 +7,7 @@ import type {
   UpdateSalaryRecordPayload,
   MarkSalaryPaidPayload,
   BulkMarkSalaryPaidPayload,
+  RecordSecurityDepositPayload,
 } from '@schoolos/types';
 
 export const salaryKeys = {
@@ -89,6 +90,18 @@ export const useForcePendingSalary = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => salaryApi.forcePending(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salaryKeys.all });
+      qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.dashboard });
+    },
+  });
+};
+
+export const useRecordSecurityDeposit = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: RecordSecurityDepositPayload }) =>
+      salaryApi.recordSecurityDeposit(id, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: salaryKeys.all });
       qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.dashboard });

@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { Topbar } from '@/components/topbar/Topbar';
+import { AccountantTopNav } from '@/features/accountant-workspace/components/AccountantTopNav';
 import { NotificationNudge } from '@/features/notifications/components/NotificationNudge';
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
@@ -17,10 +18,6 @@ import { ModuleRestrictedNotice } from '@/components/ModuleRestrictedNotice';
 // Inner layout — rendered inside TeacherThemeProvider so it can read the theme
 function AppLayoutInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Accountant-only: fully collapses the sidebar on desktop for more page
-  // width. Separate from `sidebarOpen` (which drives the mobile overlay) so
-  // toggling one never affects the other.
-  const [accountantSidebarCollapsed, setAccountantSidebarCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
@@ -87,29 +84,26 @@ function AppLayoutInner() {
         />
       )}
 
-      {/* Sidebar — teacher portal and Parent Workspace have no sidebar; their
-          own bottom nav + header cover this role */}
-      {!isTeacher && !isParentWorkspace && (
+      {/* Sidebar — teacher portal, Parent Workspace, and Accountant have no left
+          sidebar; teacher/parent cover navigation with their own bottom nav +
+          header, and Accountant uses a top nav bar with dropdowns instead
+          (see AccountantTopNav) so its dense pages get the full page width. */}
+      {!isTeacher && !isParentWorkspace && !isAccountant && (
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
-          forceHiddenOnDesktop={isAccountant && accountantSidebarCollapsed}
         />
       )}
 
-      {/* Main content — offset by sidebar on desktop (not for teacher/parent, whose sidebar doesn't apply; not for accountant while manually collapsed) */}
+      {/* Main content — offset by sidebar on desktop (not for teacher/parent/accountant, whose sidebar doesn't apply) */}
       <div className={cn(
         'flex flex-1 flex-col min-h-screen overflow-hidden',
-        !isTeacher && !isParentWorkspace && !(isAccountant && accountantSidebarCollapsed) && 'lg:ml-[260px]'
+        !isTeacher && !isParentWorkspace && !isAccountant && 'lg:ml-[260px]'
       )}>
         {!isParentWorkspace && (
-          <Topbar
-            onMenuToggle={() => setSidebarOpen(prev => !prev)}
-            showDesktopCollapseToggle={isAccountant}
-            desktopCollapsed={accountantSidebarCollapsed}
-            onToggleDesktopCollapse={() => setAccountantSidebarCollapsed((v) => !v)}
-          />
+          <Topbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
         )}
+        {isAccountant && <AccountantTopNav />}
 
         <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col">
           {activeRestriction ? (

@@ -11,10 +11,15 @@ interface Props {
 
 const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
   { value: 'cash',          label: 'Cash' },
+  { value: 'upi',           label: 'UPI' },
+  { value: 'sse_upi',       label: 'SSE UPI' },
+  { value: 'online',        label: 'Online' },
+  { value: 'sse_online',    label: 'SSE Online' },
+  { value: 'challan',       label: 'Challan' },
   { value: 'cheque',        label: 'Cheque' },
   { value: 'bank_transfer', label: 'Bank Transfer' },
-  { value: 'online',        label: 'Online' },
-  { value: 'demand_draft',  label: 'Demand Draft' },
+  { value: 'demand_draft',  label: 'DD' },
+  { value: 'card',          label: 'Card' },
 ];
 
 const fmt = (amount: number) =>

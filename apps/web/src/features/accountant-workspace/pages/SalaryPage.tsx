@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil, CheckSquare, ShieldCheck } from 'lucide-react';
 import {
   useSalaryList, useSalarySummary, useCreateSalaryRecord, useMarkSalaryPaid, useForcePendingSalary,
-  useUpdateSalaryRecord, useBulkMarkSalaryPaid,
+  useUpdateSalaryRecord, useBulkMarkSalaryPaid, useRecordSecurityDeposit,
 } from '../hooks/useSalary';
 import { BulkAddSalaryModal } from '../components/BulkAddSalaryModal';
 import { AuditLogPanel } from '@/features/audit/components/AuditLogPanel';
-import type { SalaryRecord, PaymentMode, SalaryStatus } from '@schoolos/types';
+import type { SalaryRecord, PaymentMode, SalaryStatus, SecurityDepositMode } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
 const fmt = (n: number) =>
@@ -35,6 +35,24 @@ function safeDateInputValue(value: string | Date | undefined | null): string {
   return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
 }
 
+function daysInMonth(month: string, year: number): number {
+  const idx = MONTHS.indexOf(month);
+  if (idx < 0) return 30;
+  return new Date(year, idx + 1, 0).getDate();
+}
+
+/** Suggested LWP deduction — per-day rate (salary ÷ days in month) × leave days. Editable, not enforced. */
+function suggestLwpAmount(amount: number, month: string, year: number, lwpDays: number): number {
+  if (!amount || !lwpDays) return 0;
+  const perDay = amount / daysInMonth(month, year);
+  return Math.round(perDay * lwpDays * 100) / 100;
+}
+
+const SECURITY_MODES: { value: SecurityDepositMode; label: string }[] = [
+  { value: 'one_time', label: 'One-time' },
+  { value: 'installments', label: 'Installments' },
+];
+
 // ── Add Salary Modal ──────────────────────────────────────────────────────────
 
 function AddSalaryModal({ onClose }: { onClose: () => void }) {
@@ -46,7 +64,24 @@ function AddSalaryModal({ onClose }: { onClose: () => void }) {
   const [year, setYear] = useState(now.getFullYear());
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState(defaultDueDate());
+  const [lwpDays, setLwpDays] = useState('');
+  const [lwpAmount, setLwpAmount] = useState('');
+  const [lwpAmountTouched, setLwpAmountTouched] = useState(false);
+  const [securityEnabled, setSecurityEnabled] = useState(false);
+  const [securityTotal, setSecurityTotal] = useState('');
+  const [securityMode, setSecurityMode] = useState<SecurityDepositMode>('one_time');
+  const [securityInstallments, setSecurityInstallments] = useState('');
   const [localErr, setLocalErr] = useState('');
+
+  // Auto-fill the suggested LWP deduction whenever days/salary/month change,
+  // unless the accountant has already typed their own amount.
+  useEffect(() => {
+    if (lwpAmountTouched) return;
+    const days = parseFloat(lwpDays);
+    const amt = parseFloat(amount);
+    if (!days || !amt) { setLwpAmount(''); return; }
+    setLwpAmount(String(suggestLwpAmount(amt, month, year, days)));
+  }, [lwpDays, amount, month, year, lwpAmountTouched]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,10 +91,23 @@ function AddSalaryModal({ onClose }: { onClose: () => void }) {
     if (!designation.trim()) return setLocalErr('Role/designation is required.');
     if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
     if (!dueDate) return setLocalErr('Set a due date.');
+    let securityDeposit: { totalAmount: number; mode: SecurityDepositMode; installmentCount?: number } | undefined;
+    if (securityEnabled) {
+      const total = parseFloat(securityTotal);
+      if (isNaN(total) || total <= 0) return setLocalErr('Enter a valid security deposit amount.');
+      const installmentCount = securityMode === 'installments' ? parseInt(securityInstallments, 10) : undefined;
+      if (securityMode === 'installments' && (!installmentCount || installmentCount < 1)) {
+        return setLocalErr('Enter the number of installments for the security deposit.');
+      }
+      securityDeposit = { totalAmount: Math.round(total * 100) / 100, mode: securityMode, installmentCount };
+    }
 
     await mutateAsync({
       employeeName: employeeName.trim(), designation: designation.trim(), month, year,
       amount: Math.round(amt * 100) / 100, dueDate,
+      lwpDays: lwpDays ? parseFloat(lwpDays) : undefined,
+      lwpAmount: lwpAmount ? Math.round(parseFloat(lwpAmount) * 100) / 100 : undefined,
+      securityDeposit,
     });
     onClose();
   }
@@ -103,6 +151,50 @@ function AddSalaryModal({ onClose }: { onClose: () => void }) {
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
             <p className="text-xs text-gray-400 mt-1">This salary stays scheduled until this date, then automatically becomes pending.</p>
           </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-gray-100">
+            <div>
+              <label className={labelCls}>LWP (days)</label>
+              <input type="number" min={0} step={0.5} value={lwpDays} onChange={(e) => setLwpDays(e.target.value)} className={inputCls} placeholder="0" />
+            </div>
+            <div>
+              <label className={labelCls}>Sum of LWP (₹)</label>
+              <input
+                type="number" min={0} step={0.01} value={lwpAmount}
+                onChange={(e) => { setLwpAmount(e.target.value); setLwpAmountTouched(true); }}
+                className={inputCls} placeholder="0.00"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 -mt-2">Deduction auto-suggested from salary ÷ days in month — edit if it differs.</p>
+
+          <div className="pt-1 border-t border-gray-100">
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+              <input type="checkbox" checked={securityEnabled} onChange={(e) => setSecurityEnabled(e.target.checked)} className="rounded" />
+              Security Money
+            </label>
+            {securityEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Amount (₹)</label>
+                  <input type="number" min={0} step={0.01} value={securityTotal} onChange={(e) => setSecurityTotal(e.target.value)} className={inputCls} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelCls}>Collection</label>
+                  <select value={securityMode} onChange={(e) => setSecurityMode(e.target.value as SecurityDepositMode)} className={inputCls}>
+                    {SECURITY_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
+                {securityMode === 'installments' && (
+                  <div className="col-span-2">
+                    <label className={labelCls}>Number of Installments</label>
+                    <input type="number" min={1} step={1} value={securityInstallments} onChange={(e) => setSecurityInstallments(e.target.value)} className={inputCls} placeholder="e.g. 3" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {displayErr && (
             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
@@ -127,7 +219,15 @@ function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: (
   const [year, setYear] = useState(record.year);
   const [amount, setAmount] = useState(String(record.amount));
   const [dueDate, setDueDate] = useState(safeDateInputValue(record.dueDate));
+  const [lwpDays, setLwpDays] = useState(record.lwpDays != null ? String(record.lwpDays) : '');
+  const [lwpAmount, setLwpAmount] = useState(record.lwpAmount != null ? String(record.lwpAmount) : '');
+  const [securityEnabled, setSecurityEnabled] = useState(!!record.securityDeposit);
+  const [securityTotal, setSecurityTotal] = useState(record.securityDeposit ? String(record.securityDeposit.totalAmount) : '');
+  const [securityMode, setSecurityMode] = useState<SecurityDepositMode>(record.securityDeposit?.mode ?? 'one_time');
+  const [securityInstallments, setSecurityInstallments] = useState(record.securityDeposit?.installmentCount != null ? String(record.securityDeposit.installmentCount) : '');
   const [localErr, setLocalErr] = useState('');
+
+  const hasCollected = (record.securityDeposit?.collectedAmount ?? 0) > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -137,10 +237,23 @@ function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: (
     if (!designation.trim()) return setLocalErr('Role/designation is required.');
     if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
     if (!dueDate) return setLocalErr('Set a due date.');
+    let securityDeposit: { totalAmount: number; mode: SecurityDepositMode; installmentCount?: number } | undefined;
+    if (securityEnabled) {
+      const total = parseFloat(securityTotal);
+      if (isNaN(total) || total <= 0) return setLocalErr('Enter a valid security deposit amount.');
+      const installmentCount = securityMode === 'installments' ? parseInt(securityInstallments, 10) : undefined;
+      if (securityMode === 'installments' && (!installmentCount || installmentCount < 1)) {
+        return setLocalErr('Enter the number of installments for the security deposit.');
+      }
+      securityDeposit = { totalAmount: Math.round(total * 100) / 100, mode: securityMode, installmentCount };
+    }
 
     await mutateAsync({
       employeeName: employeeName.trim(), designation: designation.trim(), month, year,
       amount: Math.round(amt * 100) / 100, dueDate,
+      lwpDays: lwpDays ? parseFloat(lwpDays) : undefined,
+      lwpAmount: lwpAmount ? Math.round(parseFloat(lwpAmount) * 100) / 100 : undefined,
+      securityDeposit,
     });
     onClose();
   }
@@ -183,6 +296,50 @@ function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: (
             <label className={labelCls}>Due Date</label>
             <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
           </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-gray-100">
+            <div>
+              <label className={labelCls}>LWP (days)</label>
+              <input type="number" min={0} step={0.5} value={lwpDays} onChange={(e) => setLwpDays(e.target.value)} className={inputCls} placeholder="0" />
+            </div>
+            <div>
+              <label className={labelCls}>Sum of LWP (₹)</label>
+              <input type="number" min={0} step={0.01} value={lwpAmount} onChange={(e) => setLwpAmount(e.target.value)} className={inputCls} placeholder="0.00" />
+            </div>
+          </div>
+
+          <div className="pt-1 border-t border-gray-100">
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
+              <input type="checkbox" checked={securityEnabled} onChange={(e) => setSecurityEnabled(e.target.checked)} className="rounded" />
+              Security Money
+            </label>
+            {securityEnabled && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Amount (₹)</label>
+                  <input type="number" min={0} step={0.01} value={securityTotal} onChange={(e) => setSecurityTotal(e.target.value)} className={inputCls} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelCls}>Collection</label>
+                  <select value={securityMode} onChange={(e) => setSecurityMode(e.target.value as SecurityDepositMode)} className={inputCls}>
+                    {SECURITY_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                </div>
+                {securityMode === 'installments' && (
+                  <div className="col-span-2">
+                    <label className={labelCls}>Number of Installments</label>
+                    <input type="number" min={1} step={1} value={securityInstallments} onChange={(e) => setSecurityInstallments(e.target.value)} className={inputCls} placeholder="e.g. 3" />
+                  </div>
+                )}
+                {hasCollected && (
+                  <p className="col-span-2 text-xs text-gray-400">
+                    ₹{record.securityDeposit?.collectedAmount.toLocaleString('en-IN')} already collected — that stays intact when you change these terms.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {displayErr && (
             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
@@ -307,24 +464,28 @@ function BulkMarkPaidModal({ records, onClose }: { records: SalaryRecord[]; onCl
 // ── Inline-editable field — click to edit, Enter/blur to save ──────────────────
 
 function EditableField({
-  record, field, type = 'text', displayValue,
+  record, field, type = 'text', displayValue, emptyValue,
 }: {
   record: SalaryRecord;
-  field: 'employeeName' | 'designation' | 'amount' | 'dueDate';
+  field: 'employeeName' | 'designation' | 'amount' | 'dueDate' | 'lwpDays' | 'lwpAmount';
   type?: 'text' | 'number' | 'date';
   /** Override what's shown when not editing (e.g. "Due 7 Apr" instead of the raw ISO date). */
   displayValue?: string;
+  /** Shown when the field is empty and not being edited (defaults to the raw "—" fallback). */
+  emptyValue?: string;
 }) {
   const { mutateAsync, isPending } = useUpdateSalaryRecord(record._id);
   const [editing, setEditing] = useState(false);
+  const isNumericAllowEmpty = field === 'lwpDays' || field === 'lwpAmount';
   const rawValue = field === 'dueDate' ? safeDateInputValue(record.dueDate) : record[field];
-  const [value, setValue] = useState(String(rawValue));
+  const [value, setValue] = useState(rawValue == null ? '' : String(rawValue));
 
-  useEffect(() => { setValue(String(rawValue)); }, [rawValue]);
+  useEffect(() => { setValue(rawValue == null ? '' : String(rawValue)); }, [rawValue]);
 
   async function save() {
     setEditing(false);
-    if (value === String(rawValue)) return;
+    const prev = rawValue == null ? '' : String(rawValue);
+    if (value === prev) return;
     if (field === 'amount') {
       const amt = parseFloat(value);
       if (isNaN(amt) || amt <= 0) return;
@@ -332,15 +493,22 @@ function EditableField({
     } else if (field === 'dueDate') {
       if (!value) return;
       await mutateAsync({ dueDate: value });
+    } else if (isNumericAllowEmpty) {
+      // LWP days/amount may be cleared back to "not set" — an empty value is valid here.
+      if (!value.trim()) { await mutateAsync({ [field]: undefined }); return; }
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0) return;
+      await mutateAsync({ [field]: Math.round(num * 100) / 100 });
     } else {
       if (!value.trim()) return;
       await mutateAsync({ [field]: value.trim() });
     }
   }
 
-  // Due date stays editable even after payment (an accountant may need to
-  // correct it for record-keeping), unlike the other fields which lock once paid.
-  if (record.status === 'paid' && field !== 'dueDate') {
+  // Due date, LWP days and Sum of LWP stay editable even after payment — an
+  // accountant may need to correct leave/deduction records after the fact.
+  const locksOnPaid = field !== 'dueDate' && field !== 'lwpDays' && field !== 'lwpAmount';
+  if (record.status === 'paid' && locksOnPaid) {
     return <span>{field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue)}</span>;
   }
 
@@ -359,10 +527,116 @@ function EditableField({
     );
   }
 
+  if (rawValue == null && !editing) {
+    return (
+      <button type="button" onClick={() => setEditing(true)} className="text-left hover:bg-gray-50 rounded px-1 -mx-1 text-gray-300" title="Click to edit">
+        {emptyValue ?? '—'}
+      </button>
+    );
+  }
+
   return (
     <button type="button" onClick={() => setEditing(true)} className="text-left hover:bg-gray-50 rounded px-1 -mx-1" title="Click to edit">
       {displayValue ?? (field === 'amount' ? Number(rawValue).toLocaleString('en-IN') : String(rawValue))}
     </button>
+  );
+}
+
+// ── Collect Security Deposit Modal ───────────────────────────────────────────
+
+function CollectSecurityDepositModal({ record, onClose }: { record: SalaryRecord; onClose: () => void }) {
+  const { mutateAsync, isPending, error } = useRecordSecurityDeposit();
+  const deposit = record.securityDeposit!;
+  const remaining = Math.max(0, Math.round((deposit.totalAmount - deposit.collectedAmount) * 100) / 100);
+  const [amount, setAmount] = useState(
+    deposit.mode === 'installments' && deposit.installmentCount
+      ? String(Math.min(remaining, Math.round((deposit.totalAmount / deposit.installmentCount) * 100) / 100))
+      : String(remaining),
+  );
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [note, setNote] = useState('');
+  const [localErr, setLocalErr] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLocalErr('');
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt <= 0) return setLocalErr('Enter a valid amount.');
+    if (amt > remaining) return setLocalErr(`Amount can't exceed the remaining ₹${remaining.toLocaleString('en-IN')}.`);
+    await mutateAsync({ id: record._id, payload: { amount: Math.round(amt * 100) / 100, date, note: note.trim() || undefined } });
+    onClose();
+  }
+
+  const displayErr = localErr || (error instanceof Error ? error.message : null);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-base font-bold text-gray-900 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-gray-400" /> Collect Security Money</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          {record.employeeName} · ₹{deposit.collectedAmount.toLocaleString('en-IN')} of ₹{deposit.totalAmount.toLocaleString('en-IN')} collected
+          {deposit.mode === 'installments' && deposit.installmentCount ? ` (${deposit.installmentCount} installments)` : ''}
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className={labelCls}>Amount Collected Now (₹)</label>
+            <input type="number" min={0.01} max={remaining} step={0.01} value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
+            <p className="text-xs text-gray-400 mt-1">₹{remaining.toLocaleString('en-IN')} remaining</p>
+          </div>
+          <div>
+            <label className={labelCls}>Date</label>
+            <input type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Note (optional)</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} className={inputCls} placeholder="e.g. Installment 2 of 3" />
+          </div>
+          {displayErr && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
+            </div>
+          )}
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-gray-900 hover:bg-black disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Record Collection
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Security Money cell — compact status + amount, click to collect ────────────
+
+function SecurityMoneyCell({ record, onCollect }: { record: SalaryRecord; onCollect: () => void }) {
+  const deposit = record.securityDeposit;
+  if (!deposit) return <span className="text-gray-300">—</span>;
+
+  const modeLabel = deposit.mode === 'one_time' ? 'One-time' : `Installments${deposit.installmentCount ? ` (${deposit.installmentCount})` : ''}`;
+
+  if (deposit.status === 'collected') {
+    return (
+      <div className="text-xs">
+        <p className="font-semibold text-gray-900">₹{deposit.totalAmount.toLocaleString('en-IN')}</p>
+        <p className="text-gray-400">{modeLabel} · Collected</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-xs">
+      <p className="font-semibold text-gray-900">₹{deposit.collectedAmount.toLocaleString('en-IN')} / ₹{deposit.totalAmount.toLocaleString('en-IN')}</p>
+      <p className="text-gray-400 mb-1">{modeLabel} · {deposit.status === 'in_progress' ? 'Partially collected' : 'Pending'}</p>
+      <button
+        type="button"
+        onClick={onCollect}
+        className="h-6 px-2 rounded-md border border-gray-300 text-[11px] font-semibold text-gray-700 hover:bg-gray-50"
+      >
+        Collect
+      </button>
+    </div>
   );
 }
 
@@ -389,6 +663,7 @@ export function SalaryPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [payingRecord, setPayingRecord] = useState<SalaryRecord | null>(null);
   const [editingRecord, setEditingRecord] = useState<SalaryRecord | null>(null);
+  const [collectingRecord, setCollectingRecord] = useState<SalaryRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkPayOpen, setBulkPayOpen] = useState(false);
   const { mutate: forcePending, isPending: forcingId } = useForcePendingSalary();
@@ -457,7 +732,7 @@ export function SalaryPage() {
         </button>
       </div>
 
-      <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+      <div className="px-4 py-4 max-w-6xl mx-auto space-y-4">
         {/* Summary — neutral, no color coding */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
@@ -515,7 +790,7 @@ export function SalaryPage() {
           </button>
         )}
 
-        {/* List */}
+        {/* List — table, columns: Name · Salary · LWP · Sum of LWP · Security Money · Status/Actions */}
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}</div>
         ) : !records.length ? (
@@ -524,78 +799,105 @@ export function SalaryPage() {
             <p className="text-sm font-semibold text-gray-700">No salary records{designation ? ` for ${designation}` : ''}</p>
           </div>
         ) : (
-          <div className="space-y-2 pb-16">
-            {records.map((rec) => (
-              <div key={rec._id} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
-                {rec.status !== 'paid' && (
-                  <button
-                    type="button"
-                    onClick={() => toggleSelected(rec._id)}
-                    className={cn(
-                      'w-4.5 h-4.5 rounded border flex items-center justify-center shrink-0 transition-colors',
-                      selectedIds.has(rec._id) ? 'bg-[#5B21B6] border-[#5B21B6]' : 'border-gray-300',
-                    )}
-                    title="Select for bulk payment"
-                  >
-                    {selectedIds.has(rec._id) && <CheckSquare className="w-3 h-3 text-white" strokeWidth={3} />}
-                  </button>
-                )}
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700 font-bold text-sm shrink-0">
-                  {rec.employeeName.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 truncate"><EditableField record={rec} field="employeeName" /></p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1 flex-wrap">
-                    <EditableField record={rec} field="designation" /> · {rec.month} {rec.year} · Due{' '}
-                    <EditableField
-                      record={rec}
-                      field="dueDate"
-                      type="date"
-                      displayValue={
-                        safeDateInputValue(rec.dueDate)
-                          ? new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                          : '—'
-                      }
-                    />
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-gray-800">₹<EditableField record={rec} field="amount" type="number" /></p>
-                  <div className="mt-1 flex items-center justify-end gap-2">
-                    <StatusLabel status={rec.status} />
-                  </div>
-                  <div className="flex gap-1.5 mt-1.5 justify-end">
-                    {rec.status !== 'paid' && (
-                      <button
-                        onClick={() => setEditingRecord(rec)}
-                        title="Edit details"
-                        className="h-8 px-2.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
-                      >
-                        <Pencil className="w-3.5 h-3.5" /> Edit
-                      </button>
-                    )}
-                    {rec.status === 'scheduled' && (
-                      <button
-                        onClick={() => forcePending(rec._id)}
-                        disabled={forcingId}
-                        title="Move to pending before the due date"
-                        className="h-8 px-2.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
-                      >
-                        <ArrowUpCircle className="w-3.5 h-3.5" /> Make Pending Now
-                      </button>
-                    )}
-                    {rec.status !== 'paid' && (
-                      <button
-                        onClick={() => setPayingRecord(rec)}
-                        className="h-8 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold"
-                      >
-                        Mark Paid
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto pb-16">
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="text-left text-xs font-semibold text-gray-500 border-b border-gray-200">
+                  <th className="py-2.5 pl-4 pr-2 w-8"></th>
+                  <th className="py-2.5 pr-3">Name</th>
+                  <th className="py-2.5 pr-3">Salary</th>
+                  <th className="py-2.5 pr-3">LWP</th>
+                  <th className="py-2.5 pr-3">Sum of LWP</th>
+                  <th className="py-2.5 pr-3">Security Money</th>
+                  <th className="py-2.5 pr-3">Status</th>
+                  <th className="py-2.5 pr-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((rec) => (
+                  <tr key={rec._id} className="border-b border-gray-100 align-top">
+                    <td className="py-3 pl-4 pr-2">
+                      {rec.status !== 'paid' && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSelected(rec._id)}
+                          className={cn(
+                            'w-4.5 h-4.5 rounded border flex items-center justify-center shrink-0 transition-colors',
+                            selectedIds.has(rec._id) ? 'bg-[#5B21B6] border-[#5B21B6]' : 'border-gray-300',
+                          )}
+                          title="Select for bulk payment"
+                        >
+                          {selectedIds.has(rec._id) && <CheckSquare className="w-3 h-3 text-white" strokeWidth={3} />}
+                        </button>
+                      )}
+                    </td>
+                    <td className="py-3 pr-3 min-w-[180px]">
+                      <p className="text-sm font-bold text-gray-900"><EditableField record={rec} field="employeeName" /></p>
+                      <p className="text-xs text-gray-400 flex items-center gap-1 flex-wrap">
+                        <EditableField record={rec} field="designation" /> · {rec.month} {rec.year} · Due{' '}
+                        <EditableField
+                          record={rec}
+                          field="dueDate"
+                          type="date"
+                          displayValue={
+                            safeDateInputValue(rec.dueDate)
+                              ? new Date(rec.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                              : '—'
+                          }
+                        />
+                      </p>
+                    </td>
+                    <td className="py-3 pr-3 font-bold text-gray-800 whitespace-nowrap">₹<EditableField record={rec} field="amount" type="number" /></td>
+                    <td className="py-3 pr-3 text-gray-700 whitespace-nowrap">
+                      <EditableField
+                        record={rec} field="lwpDays" type="number"
+                        displayValue={rec.lwpDays != null ? `${rec.lwpDays} day${rec.lwpDays === 1 ? '' : 's'}` : undefined}
+                      />
+                    </td>
+                    <td className="py-3 pr-3 text-gray-700 whitespace-nowrap">
+                      <EditableField
+                        record={rec} field="lwpAmount" type="number"
+                        displayValue={rec.lwpAmount != null ? `₹${rec.lwpAmount.toLocaleString('en-IN')}` : undefined}
+                        emptyValue="—"
+                      />
+                    </td>
+                    <td className="py-3 pr-3"><SecurityMoneyCell record={rec} onCollect={() => setCollectingRecord(rec)} /></td>
+                    <td className="py-3 pr-3"><StatusLabel status={rec.status} /></td>
+                    <td className="py-3 pr-4">
+                      <div className="flex gap-1.5 justify-end">
+                        {rec.status !== 'paid' && (
+                          <button
+                            onClick={() => setEditingRecord(rec)}
+                            title="Edit details"
+                            className="h-8 px-2.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
+                          >
+                            <Pencil className="w-3.5 h-3.5" /> Edit
+                          </button>
+                        )}
+                        {rec.status === 'scheduled' && (
+                          <button
+                            onClick={() => forcePending(rec._id)}
+                            disabled={forcingId}
+                            title="Move to pending before the due date"
+                            className="h-8 px-2.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
+                          >
+                            <ArrowUpCircle className="w-3.5 h-3.5" /> Make Pending Now
+                          </button>
+                        )}
+                        {rec.status !== 'paid' && (
+                          <button
+                            onClick={() => setPayingRecord(rec)}
+                            className="h-8 px-3 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-semibold whitespace-nowrap"
+                          >
+                            Mark Paid
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -629,6 +931,7 @@ export function SalaryPage() {
       {historyOpen && <AuditLogPanel resource="salary" title="Salary Change History" onClose={() => setHistoryOpen(false)} />}
       {payingRecord && <MarkPaidModal record={payingRecord} onClose={() => setPayingRecord(null)} />}
       {editingRecord && <EditSalaryModal record={editingRecord} onClose={() => setEditingRecord(null)} />}
+      {collectingRecord && <CollectSecurityDepositModal record={collectingRecord} onClose={() => setCollectingRecord(null)} />}
       {bulkPayOpen && (
         <BulkMarkPaidModal
           records={selectedRecords}

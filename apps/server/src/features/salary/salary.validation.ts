@@ -2,10 +2,17 @@ import { z } from 'zod';
 
 export const SALARY_STATUSES = ['scheduled', 'pending', 'paid'] as const;
 export const PAYMENT_MODES = ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'] as const;
+export const SECURITY_DEPOSIT_MODES = ['one_time', 'installments'] as const;
 
 const currency = (label: string) =>
   z.number({ required_error: `${label} is required` }).positive(`${label} must be positive`)
     .multipleOf(0.01, `${label} must have at most 2 decimal places`);
+
+const securityDepositSchema = z.object({
+  totalAmount:      z.number().positive('Security deposit amount must be positive').multipleOf(0.01),
+  mode:             z.enum(SECURITY_DEPOSIT_MODES, { required_error: 'mode is required' }),
+  installmentCount: z.coerce.number().int().min(1).max(60).optional(),
+});
 
 // ── Create ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +25,9 @@ export const createSalaryRecordSchema = z.object({
   amount:       currency('amount'),
   dueDate:      z.string({ required_error: 'dueDate is required' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'dueDate must be YYYY-MM-DD'),
   notes:        z.string().max(1000).trim().optional(),
+  lwpDays:      z.coerce.number().min(0).max(31).optional(),
+  lwpAmount:    z.number().min(0).multipleOf(0.01).optional(),
+  securityDeposit: securityDepositSchema.optional(),
 });
 
 // ── Bulk Create ───────────────────────────────────────────────────────────────
@@ -36,6 +46,17 @@ export const updateSalaryRecordSchema = z.object({
   amount:       z.number().positive().multipleOf(0.01).optional(),
   dueDate:      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'dueDate must be YYYY-MM-DD').optional(),
   notes:        z.string().max(1000).trim().optional(),
+  lwpDays:      z.coerce.number().min(0).max(31).optional(),
+  lwpAmount:    z.number().min(0).multipleOf(0.01).optional(),
+  securityDeposit: securityDepositSchema.optional(),
+});
+
+// ── Record Security Deposit Collection ───────────────────────────────────────
+
+export const recordSecurityDepositSchema = z.object({
+  amount: z.number({ required_error: 'amount is required' }).positive('amount must be positive').multipleOf(0.01),
+  date:   z.string({ required_error: 'date is required' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
+  note:   z.string().max(500).trim().optional(),
 });
 
 // ── Mark Paid ─────────────────────────────────────────────────────────────────
@@ -74,3 +95,4 @@ export type UpdateSalaryRecordInput = z.infer<typeof updateSalaryRecordSchema>;
 export type MarkSalaryPaidInput     = z.infer<typeof markSalaryPaidSchema>;
 export type BulkMarkPaidInput       = z.infer<typeof bulkMarkPaidSchema>;
 export type ListSalaryInput         = z.infer<typeof listSalarySchema>;
+export type RecordSecurityDepositInput = z.infer<typeof recordSecurityDepositSchema>;

@@ -18,10 +18,15 @@ const fmtDate = (d: Date): string => new Date(d).toLocaleDateString('en-IN', { d
 
 const PAYMENT_MODE_LABELS: Record<string, string> = {
   cash: 'Cash',
+  upi: 'UPI',
+  sse_upi: 'SSE UPI',
+  online: 'Online',
+  sse_online: 'SSE Online',
+  challan: 'Challan',
   cheque: 'Cheque',
   bank_transfer: 'Bank Transfer',
-  online: 'Online',
-  demand_draft: 'Demand Draft',
+  demand_draft: 'DD',
+  card: 'Card',
 };
 
 // Mirrors apps/web/src/features/accountant-workspace/components/FeeReceipt.tsx

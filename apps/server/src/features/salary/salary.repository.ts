@@ -1,4 +1,4 @@
-import { SalaryRecord, ISalaryRecord, SalaryStatus } from './salary.model';
+import { SalaryRecord, ISalaryRecord, SalaryStatus, ISecurityDepositInfo, SecurityDepositMode } from './salary.model';
 import type { PaymentMode } from '../fees/fee.model';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,13 +40,22 @@ export interface CreateSalaryData {
   status: SalaryStatus;
   notes?: string;
   createdBy: string;
+  lwpDays?: number;
+  lwpAmount?: number;
+  securityDeposit?: { totalAmount: number; mode: SecurityDepositMode; installmentCount?: number };
 }
 
 // ── Repository ────────────────────────────────────────────────────────────────
 
 export const salaryRepository = {
   async create(data: CreateSalaryData): Promise<ISalaryRecord> {
-    const record = new SalaryRecord(data);
+    const { securityDeposit, ...rest } = data;
+    const record = new SalaryRecord({
+      ...rest,
+      securityDeposit: securityDeposit
+        ? { ...securityDeposit, collectedAmount: 0, status: 'not_collected', history: [] }
+        : undefined,
+    });
     return record.save();
   },
 
@@ -122,6 +131,26 @@ export const salaryRepository = {
       { $set: { status: 'paid', paidDate, paymentMode, notes, updatedBy } },
     );
     return result.modifiedCount;
+  },
+
+  /** Appends one collection entry to an existing security deposit and bumps
+   *  `collectedAmount`/`status` accordingly. Assumes `securityDeposit` is already
+   *  set on the record (the service checks this first). */
+  async recordSecurityDeposit(
+    id: string,
+    schoolId: string,
+    entry: { amount: number; date: Date; note?: string; recordedBy: string },
+    newCollectedAmount: number,
+    newStatus: ISecurityDepositInfo['status'],
+  ): Promise<ISalaryRecord | null> {
+    return SalaryRecord.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false, securityDeposit: { $exists: true } },
+      {
+        $push: { 'securityDeposit.history': entry },
+        $set: { 'securityDeposit.collectedAmount': newCollectedAmount, 'securityDeposit.status': newStatus, updatedBy: entry.recordedBy },
+      },
+      { new: true },
+    ).lean<ISalaryRecord>();
   },
 
   async softDelete(id: string, schoolId: string, deletedBy: string): Promise<boolean> {

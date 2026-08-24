@@ -1,4 +1,4 @@
-import { IndianRupee, CreditCard, Landmark, Smartphone, FileCheck, Banknote } from 'lucide-react';
+import { IndianRupee, CreditCard, Landmark, Smartphone, FileCheck, Banknote, FileStack } from 'lucide-react';
 import type { FeePayment, PaymentMode } from '@schoolos/types';
 
 interface Props {
@@ -7,10 +7,15 @@ interface Props {
 
 const MODE_CONFIG: Record<PaymentMode, { label: string; icon: React.ReactNode }> = {
   cash:          { label: 'Cash',          icon: <Banknote    className="w-4 h-4" /> },
+  upi:           { label: 'UPI',           icon: <Smartphone  className="w-4 h-4" /> },
+  sse_upi:       { label: 'SSE UPI',       icon: <Smartphone  className="w-4 h-4" /> },
+  online:        { label: 'Online',        icon: <Smartphone  className="w-4 h-4" /> },
+  sse_online:    { label: 'SSE Online',    icon: <Smartphone  className="w-4 h-4" /> },
+  challan:       { label: 'Challan',       icon: <FileStack   className="w-4 h-4" /> },
   cheque:        { label: 'Cheque',        icon: <FileCheck   className="w-4 h-4" /> },
   bank_transfer: { label: 'Bank Transfer', icon: <Landmark    className="w-4 h-4" /> },
-  online:        { label: 'Online',        icon: <Smartphone  className="w-4 h-4" /> },
-  demand_draft:  { label: 'Demand Draft',  icon: <CreditCard  className="w-4 h-4" /> },
+  demand_draft:  { label: 'DD',            icon: <CreditCard  className="w-4 h-4" /> },
+  card:          { label: 'Card',          icon: <CreditCard  className="w-4 h-4" /> },
 };
 
 const fmt = (amount: number) =>

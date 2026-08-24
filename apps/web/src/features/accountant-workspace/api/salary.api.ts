@@ -9,6 +9,7 @@ import type {
   MarkSalaryPaidPayload,
   BulkMarkSalaryPaidPayload,
   SalaryListOptions,
+  RecordSecurityDepositPayload,
 } from '@schoolos/types';
 
 const BASE = '/salary';
@@ -73,6 +74,13 @@ export const salaryApi = {
   async forcePending(id: string): Promise<SalaryRecord> {
     try {
       const res = await apiClient.patch<ApiResponse<SalaryRecord>>(`${BASE}/${id}/force-pending`, {});
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async recordSecurityDeposit(id: string, payload: RecordSecurityDepositPayload): Promise<SalaryRecord> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SalaryRecord>>(`${BASE}/${id}/security-deposit`, payload);
       return res.data.data!;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

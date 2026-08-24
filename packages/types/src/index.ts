@@ -973,10 +973,15 @@ export type FeeStatus =
 
 export type PaymentMode =
   | 'cash'
+  | 'upi'
+  | 'sse_upi'
+  | 'online'
+  | 'sse_online'
+  | 'challan'
   | 'cheque'
   | 'bank_transfer'
-  | 'online'
-  | 'demand_draft';
+  | 'demand_draft'
+  | 'card';
 
 export interface FeeRecord extends BaseEntity {
   studentId: string;
@@ -1142,6 +1147,29 @@ export interface FeeRecordWithPayments {
 
 export type SalaryStatus = 'scheduled' | 'pending' | 'paid';
 
+/** 'one_time' — the full deposit is collected in a single payment.
+ *  'installments' — the deposit is collected gradually; `collectedAmount`
+ *  tracks the running total against `totalAmount`. */
+export type SecurityDepositMode = 'one_time' | 'installments';
+export type SecurityDepositStatus = 'not_collected' | 'in_progress' | 'collected';
+
+export interface SecurityDepositEntry {
+  amount: number;
+  date: string;
+  note?: string;
+  recordedBy: string;
+}
+
+export interface SecurityDepositInfo {
+  totalAmount: number;
+  mode: SecurityDepositMode;
+  /** Target number of installments — informational only when mode is 'installments'. */
+  installmentCount?: number;
+  collectedAmount: number;
+  status: SecurityDepositStatus;
+  history: SecurityDepositEntry[];
+}
+
 export interface SalaryRecord extends BaseEntity {
   employeeName: string;
   designation: string;
@@ -1155,6 +1183,15 @@ export interface SalaryRecord extends BaseEntity {
   paidDate?: string;
   paymentMode?: PaymentMode;
   notes?: string;
+
+  /** Leave-without-pay days for this month, entered manually by the accountant. */
+  lwpDays?: number;
+  /** Rupee amount to deduct for those LWP days — a per-day suggestion is offered
+   *  on entry (amount ÷ days in month × lwpDays) but the accountant can override it. */
+  lwpAmount?: number;
+
+  securityDeposit?: SecurityDepositInfo;
+
   isDeleted: boolean;
   createdBy: string;
   updatedBy?: string;
@@ -1169,6 +1206,13 @@ export interface CreateSalaryRecordPayload {
   amount: number;
   dueDate: string;
   notes?: string;
+  lwpDays?: number;
+  lwpAmount?: number;
+  securityDeposit?: {
+    totalAmount: number;
+    mode: SecurityDepositMode;
+    installmentCount?: number;
+  };
 }
 
 export interface UpdateSalaryRecordPayload {
@@ -1179,6 +1223,19 @@ export interface UpdateSalaryRecordPayload {
   amount?: number;
   dueDate?: string;
   notes?: string;
+  lwpDays?: number;
+  lwpAmount?: number;
+  securityDeposit?: {
+    totalAmount: number;
+    mode: SecurityDepositMode;
+    installmentCount?: number;
+  };
+}
+
+export interface RecordSecurityDepositPayload {
+  amount: number;
+  date: string;
+  note?: string;
 }
 
 export interface MarkSalaryPaidPayload {

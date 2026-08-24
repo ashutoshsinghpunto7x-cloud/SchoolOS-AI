@@ -78,6 +78,14 @@ export const salaryController = {
     } catch (err) { next(err); }
   },
 
+  async recordSecurityDeposit(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const record = await salaryService.recordSecurityDeposit(req.params.id, req.body, ctx);
+      sendSuccess(res, record, 'Security deposit collection recorded');
+    } catch (err) { next(err); }
+  },
+
   async deleteSalaryRecord(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);

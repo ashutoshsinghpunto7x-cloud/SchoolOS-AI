@@ -37,7 +37,7 @@ export interface IFeePayment extends Document {
 // ── Schema ────────────────────────────────────────────────────────────────────
 
 const PAYMENT_MODES: PaymentMode[] = [
-  'cash', 'cheque', 'bank_transfer', 'online', 'demand_draft',
+  'cash', 'upi', 'sse_upi', 'online', 'sse_online', 'challan', 'cheque', 'bank_transfer', 'demand_draft', 'card',
 ];
 
 const feePaymentSchema = new Schema<IFeePayment>(

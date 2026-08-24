@@ -21,6 +21,7 @@ router.get('/:id',              salaryController.getById);
 router.patch('/:id',            salaryController.update);
 router.patch('/:id/mark-paid',  salaryController.markPaid);
 router.patch('/:id/force-pending', salaryController.forcePending);
+router.patch('/:id/security-deposit', salaryController.recordSecurityDeposit);
 router.delete('/:id', authorize('admin'), salaryController.deleteSalaryRecord);
 
 export default router;

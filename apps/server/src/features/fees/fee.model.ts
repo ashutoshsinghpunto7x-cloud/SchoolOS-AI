@@ -22,12 +22,17 @@ export type FeeStatus =
 
 export type PaymentMode =
   | 'cash'
+  | 'upi'
+  | 'sse_upi'
+  | 'online'
+  | 'sse_online'
+  | 'challan'
   | 'cheque'
   | 'bank_transfer'
-  | 'online'
-  | 'demand_draft';
+  | 'demand_draft'
+  | 'card';
 
-// Extension point: add 'upi' | 'gateway_razorpay' | 'gateway_paytm' for online payments.
+// Extension point: add 'gateway_razorpay' | 'gateway_paytm' for online gateway payments.
 
 // ── Document Interface ────────────────────────────────────────────────────────
 

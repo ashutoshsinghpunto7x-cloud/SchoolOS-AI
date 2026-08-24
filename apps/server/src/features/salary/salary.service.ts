@@ -7,6 +7,7 @@ import {
   markSalaryPaidSchema,
   bulkMarkPaidSchema,
   listSalarySchema,
+  recordSecurityDepositSchema,
 } from './salary.validation';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
@@ -44,6 +45,9 @@ export const salaryService = {
       status:       initialStatus,
       notes:        data.notes,
       createdBy:    ctx.displayName,
+      lwpDays:      data.lwpDays,
+      lwpAmount:    data.lwpAmount,
+      securityDeposit: data.securityDeposit,
     };
     const record = await salaryRepository.create(createData);
 
@@ -78,6 +82,9 @@ export const salaryService = {
         status:       initialStatus,
         notes:        data.notes,
         createdBy:    ctx.displayName,
+        lwpDays:      data.lwpDays,
+        lwpAmount:    data.lwpAmount,
+        securityDeposit: data.securityDeposit,
       };
       return salaryRepository.create(createData);
     }));
@@ -118,14 +125,30 @@ export const salaryService = {
     // "what was changed" needs the values themselves, not just the field names.
     const changes: Record<string, { from: unknown; to: unknown }> = {};
     for (const field of Object.keys(data) as (keyof typeof data)[]) {
+      if (field === 'securityDeposit') continue; // diffed separately below
       const before = field === 'dueDate' ? existing.dueDate.toISOString().slice(0, 10) : existing[field as keyof ISalaryRecord];
       const after = data[field];
       if (before !== after) changes[field] = { from: before, to: after };
     }
 
+    // Editing security deposit terms (amount/mode/installments) must preserve
+    // whatever has already been collected — it's not a fresh object each time.
+    let securityDeposit: ISalaryRecord['securityDeposit'] | undefined;
+    if (data.securityDeposit) {
+      const collectedAmount = existing.securityDeposit?.collectedAmount ?? 0;
+      securityDeposit = {
+        ...data.securityDeposit,
+        collectedAmount,
+        status: collectedAmount <= 0 ? 'not_collected' : collectedAmount >= data.securityDeposit.totalAmount ? 'collected' : 'in_progress',
+        history: existing.securityDeposit?.history ?? [],
+      };
+      changes.securityDeposit = { from: existing.securityDeposit ?? null, to: data.securityDeposit };
+    }
+
     const record = await salaryRepository.update(id, ctx.schoolId, {
       ...data,
       dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      securityDeposit,
       updatedBy: ctx.displayName,
     });
     if (!record) throw new NotFoundError('Salary record');
@@ -204,6 +227,41 @@ export const salaryService = {
     });
 
     return { updatedCount };
+  },
+
+  /** Records one collection towards a record's security deposit (a single
+   *  payment when mode is 'one_time', or one installment when 'installments'). */
+  async recordSecurityDeposit(id: string, rawInput: unknown, ctx: AuthContext): Promise<ISalaryRecord> {
+    const data = recordSecurityDepositSchema.parse(rawInput);
+
+    const existing = await salaryRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Salary record');
+    if (!existing.securityDeposit) throw new ValidationError('This record has no security deposit set up');
+    if (existing.securityDeposit.status === 'collected') {
+      throw new ValidationError('This security deposit is already fully collected');
+    }
+
+    const newCollectedAmount = Math.min(
+      existing.securityDeposit.totalAmount,
+      Math.round((existing.securityDeposit.collectedAmount + data.amount) * 100) / 100,
+    );
+    const newStatus = newCollectedAmount >= existing.securityDeposit.totalAmount ? 'collected' : 'in_progress';
+
+    const record = await salaryRepository.recordSecurityDeposit(
+      id, ctx.schoolId,
+      { amount: data.amount, date: new Date(data.date), note: data.note, recordedBy: ctx.displayName },
+      newCollectedAmount, newStatus,
+    );
+    if (!record) throw new NotFoundError('Salary record');
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'salary.security_deposit_collected', resource: 'salary', resourceId: id,
+      details: { employeeName: existing.employeeName, amount: data.amount, newCollectedAmount, status: newStatus },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return record;
   },
 
   async deleteSalaryRecord(id: string, ctx: AuthContext): Promise<void> {

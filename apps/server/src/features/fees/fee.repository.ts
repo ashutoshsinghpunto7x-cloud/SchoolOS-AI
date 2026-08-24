@@ -1,5 +1,6 @@
 import { ClientSession } from 'mongoose';
 import { FeeRecord, IFeeRecord, FeeStatus, FeeHead } from './fee.model';
+import { classNameVariants } from '../../lib/class-name';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -132,7 +133,7 @@ export const feeRepository = {
   /** All fee records for a class+section, across every fee head — no pagination, used
    * to compute each student's overall balance for the class-wise Fee Records view. */
   async findByClassSection(schoolId: string, klass: string, section: string): Promise<IFeeRecord[]> {
-    return FeeRecord.find({ schoolId, class: klass, section, isDeleted: false }).lean<IFeeRecord[]>();
+    return FeeRecord.find({ schoolId, class: { $in: classNameVariants(klass) }, section, isDeleted: false }).lean<IFeeRecord[]>();
   },
 
   /** Collected vs. pending totals for every class+section that has at least one fee
@@ -156,7 +157,13 @@ export const feeRepository = {
     academicYear: string,
     month?: string | null,
   ): Promise<IFeeRecord[]> {
-    const query: Record<string, unknown> = { schoolId, class: klass, feeHead, academicYear, isDeleted: false };
+    // Matched via classNameVariants — a fee record's `class` and the fee
+    // structure's class param aren't guaranteed to agree on digit vs Roman
+    // numeral for the same grade, which otherwise causes an amount update to
+    // silently skip every already-existing numeral-class record.
+    const query: Record<string, unknown> = {
+      schoolId, class: { $in: classNameVariants(klass) }, feeHead, academicYear, isDeleted: false,
+    };
     if (month) query.month = month;
     else query.month = { $in: [null, undefined] };
     return FeeRecord.find(query).lean<IFeeRecord[]>();

@@ -1,6 +1,7 @@
 import { ClientSession } from 'mongoose';
 import { Student, IStudent, AdmissionStatus } from './student.model';
 import { CreateStudentInput, UpdateStudentInput } from './student.validation';
+import { classNameVariants } from '../../lib/class-name';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -55,9 +56,10 @@ export const studentRepository = {
         { fatherName: regex },
         { motherName: regex },
         { parentPhone: regex },
+        { alternatePhone: regex },
       ];
     }
-    if (opts.class) query.class = opts.class;
+    if (opts.class) query.class = { $in: classNameVariants(opts.class) };
     if (opts.section) query.section = opts.section;
     if (opts.status) query.admissionStatus = opts.status;
     if (opts.gender) query.gender = opts.gender;
@@ -93,18 +95,43 @@ export const studentRepository = {
     return Student.find({ _id: { $in: ids }, schoolId, isDeleted: false }).lean<IStudent[]>();
   },
 
-  /** Used by the Excel import pipeline to upsert — re-uploading a file updates existing students instead of duplicating them. */
   /** Every active student in a class, across all sections — used to generate
    *  fee records for a class-wide fee structure entry. Lean projection since
    *  callers only need identity fields, not the full document. */
   async findActiveByClass(schoolId: string, klass: string): Promise<Pick<IStudent, '_id' | 'fullName' | 'admissionNumber' | 'class' | 'section'>[]> {
-    return Student.find({ schoolId, class: klass, isDeleted: false })
+    // Matched via classNameVariants, not the raw string — the class catalog
+    // and a student's own `class` field aren't guaranteed to agree on digit
+    // vs Roman numeral for the same grade ("10" vs "X"), which otherwise
+    // silently excludes every numeral class from fee-structure generation.
+    return Student.find({ schoolId, class: { $in: classNameVariants(klass) }, isDeleted: false })
       .select('_id fullName admissionNumber class section')
       .lean<Pick<IStudent, '_id' | 'fullName' | 'admissionNumber' | 'class' | 'section'>[]>();
   },
 
+  /** Used by the Excel import pipeline to upsert — re-uploading a file updates existing students instead of duplicating them. */
   async findByAdmissionNumber(admissionNumber: string, schoolId: string): Promise<IStudent | null> {
     return Student.findOne({ admissionNumber, schoolId, isDeleted: false }).lean<IStudent>();
+  },
+
+  /** Fallback match for the Excel import pipeline when a row has no admission
+   *  number (e.g. a name/class-only original import, later re-uploaded to
+   *  fill in the rest) — matches by exact name (case-insensitive) + class
+   *  (Roman/digit-normalized) + section, so re-importing merges into the
+   *  existing student instead of creating a duplicate. Returns null (not an
+   *  error) when more than one student matches, since a silent pick between
+   *  ambiguous candidates is worse than falling through to "create new". */
+  async findByNameAndClass(
+    fullName: string, klass: string, section: string, schoolId: string,
+  ): Promise<IStudent | null> {
+    const nameRegex = new RegExp(`^${fullName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const matches = await Student.find({
+      schoolId,
+      fullName: nameRegex,
+      class: { $in: classNameVariants(klass) },
+      section: section.trim(),
+      isDeleted: false,
+    }).lean<IStudent[]>();
+    return matches.length === 1 ? matches[0] : null;
   },
 
   /** Only ever set from an approved FeeDiscountRequest — never a general profile edit. */

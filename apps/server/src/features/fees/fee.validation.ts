@@ -9,7 +9,7 @@ export const FEE_STATUSES = [
 ] as const;
 
 export const PAYMENT_MODES = [
-  'cash', 'cheque', 'bank_transfer', 'online', 'demand_draft',
+  'cash', 'upi', 'sse_upi', 'online', 'sse_online', 'challan', 'cheque', 'bank_transfer', 'demand_draft', 'card',
 ] as const;
 
 // ── Currency helper (positive, max 2 decimal places) ─────────────────────────

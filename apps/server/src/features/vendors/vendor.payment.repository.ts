@@ -64,7 +64,9 @@ export const vendorPaymentRepository = {
       { $match: { schoolId, isDeleted: false, createdAt: { $gte: start, $lt: end } } },
       { $group: { _id: '$paymentMode', total: { $sum: '$amount' } } },
     ]);
-    const result: Record<PaymentMode, number> = { cash: 0, cheque: 0, bank_transfer: 0, online: 0, demand_draft: 0 };
+    const result: Record<PaymentMode, number> = {
+      cash: 0, upi: 0, sse_upi: 0, online: 0, sse_online: 0, challan: 0, cheque: 0, bank_transfer: 0, demand_draft: 0, card: 0,
+    };
     for (const row of agg) result[row._id] = row.total;
     return result;
   },

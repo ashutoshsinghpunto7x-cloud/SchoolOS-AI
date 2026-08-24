@@ -1,6 +1,6 @@
 import { useMemo, useState, useId, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Layers, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, Layers, Loader2, CalendarRange } from 'lucide-react';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
 import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { studentsApi } from '@/features/students/api/students.api';
@@ -15,6 +15,16 @@ const STATUS_LABEL: Record<AttendanceStatus, string> = {
   late:           'Late',
   half_day:       'Half Day',
   leave_approved: 'On Leave',
+};
+
+// Compact single/double-letter codes for the multi-date register grid — there
+// isn't room for full words once a row has one column per day.
+const STATUS_CODE: Record<AttendanceStatus, string> = {
+  present:        'P',
+  absent:         'A',
+  late:           'L',
+  half_day:       'H',
+  leave_approved: 'O',
 };
 
 function todayStr() {
@@ -35,7 +45,49 @@ type ClassRegister = {
   summary: Record<string, number>;
 };
 
+/** One row per student, one column per date, for date-range printing —
+ *  built so a week/fortnight/month of attendance fits on one register page
+ *  instead of a separate printout per day. */
+type RangeRegister = {
+  cls: string;
+  section: string;
+  dates: string[];
+  rows: {
+    studentId: string;
+    fullName: string;
+    admissionNumber: string;
+    statuses: Record<string, AttendanceStatus | undefined>;
+  }[];
+};
+
 const PRINT_ROWS_PER_COLUMN = 32;
+const MAX_RANGE_DAYS = 31;
+
+/** Local YYYY-MM-DD — `toISOString` converts to UTC first, which silently
+ *  shifts the date back a day in any timezone ahead of UTC (e.g. IST). */
+function toLocalIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Inclusive list of YYYY-MM-DD strings from `from` to `to`. */
+function datesBetween(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(`${from}T00:00:00`);
+  const end = new Date(`${to}T00:00:00`);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return dates;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(toLocalIsoDate(d));
+  }
+  return dates;
+}
+
+function shortDate(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
 
 function buildRows(
   students: { _id: string; fullName: string; admissionNumber: string }[],
@@ -68,6 +120,7 @@ export function ReceptionAttendancePage() {
   const navigate = useNavigate();
   const printAreaId = `reception-attendance-print-${useId().replace(/[:]/g, '')}`;
   const printAllAreaId = `reception-attendance-print-all-${useId().replace(/[:]/g, '')}`;
+  const printRangeAreaId = `reception-attendance-print-range-${useId().replace(/[:]/g, '')}`;
   const prevTitleRef = useRef<string | null>(null);
 
   const [cls, setCls] = useState('');
@@ -78,6 +131,17 @@ export function ReceptionAttendancePage() {
   const [allRegisters, setAllRegisters] = useState<ClassRegister[] | null>(null);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [printingAll, setPrintingAll] = useState(false);
+
+  // Date-range register — a separate "To" date that, once it differs from
+  // the single "date" above, lets the front desk print several days'
+  // attendance for one class/section as one multi-column sheet instead of
+  // running the single-day print once per day.
+  const [toDate, setToDate] = useState(todayStr());
+  const [rangeRegister, setRangeRegister] = useState<RangeRegister | null>(null);
+  const [generatingRange, setGeneratingRange] = useState(false);
+  const [printingRange, setPrintingRange] = useState(false);
+  const isRange = toDate > date;
+  const rangeDates = useMemo(() => (isRange ? datesBetween(date, toDate) : []), [isRange, date, toDate]);
 
   const { data: classes, isLoading: classesLoading } = useSchoolClasses();
   const { data: schoolSettings } = useSchoolSettings();
@@ -135,7 +199,7 @@ export function ReceptionAttendancePage() {
   const ready = !!cls && !!section;
   const loading = classesLoading || (ready && (studentsLoading || recordsLoading));
 
-  const activePrintAreaId = printingAll ? printAllAreaId : printAreaId;
+  const activePrintAreaId = printingRange ? printRangeAreaId : printingAll ? printAllAreaId : printAreaId;
 
   // Browser print sets its own header/footer (date, page title, URL, page
   // number) outside the page's control — CSS can't remove it, only the
@@ -144,28 +208,65 @@ export function ReceptionAttendancePage() {
   // print is in flight, instead of leaving it on whatever page was last
   // titled (e.g. "Sign In").
   useEffect(() => {
-    if (!printing && !printingAll) return;
+    if (!printing && !printingAll && !printingRange) return;
     prevTitleRef.current = document.title;
-    document.title = printingAll
+    document.title = printingRange
+      ? `${schoolSettings?.schoolName ?? 'School'} — Attendance — Class ${cls} ${section} — ${date} to ${toDate}`
+      : printingAll
       ? `${schoolSettings?.schoolName ?? 'School'} — Attendance — All Classes — ${date}`
       : `${schoolSettings?.schoolName ?? 'School'} — Attendance — Class ${cls} ${section} — ${date}`;
     return () => {
       if (prevTitleRef.current !== null) document.title = prevTitleRef.current;
     };
-  }, [printing, printingAll, schoolSettings?.schoolName, cls, section, date]);
+  }, [printing, printingAll, printingRange, schoolSettings?.schoolName, cls, section, date, toDate]);
 
   useEffect(() => {
-    if (!printing && !printingAll) return;
+    if (!printing && !printingAll && !printingRange) return;
     const reset = () => {
       setPrinting(false);
       setPrintingAll(false);
+      setPrintingRange(false);
       window.removeEventListener('afterprint', reset);
     };
     window.addEventListener('afterprint', reset);
     let raf2 = 0;
     const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => window.print()); });
     return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.removeEventListener('afterprint', reset); };
-  }, [printing, printingAll]);
+  }, [printing, printingAll, printingRange]);
+
+  async function handleGenerateRange() {
+    if (!ready || generatingRange || rangeDates.length === 0) return;
+    if (rangeDates.length > MAX_RANGE_DAYS) {
+      window.alert(`Pick a range of at most ${MAX_RANGE_DAYS} days.`);
+      return;
+    }
+    setGeneratingRange(true);
+    try {
+      const studentsRes = await studentsApi.listPaginated({ class: cls, section, limit: 200, status: 'active' });
+      const rangeStudents = (studentsRes.data ?? []).slice().sort((a, b) => a.fullName.localeCompare(b.fullName));
+      if (rangeStudents.length === 0) {
+        window.alert('No students found in this class/section.');
+        return;
+      }
+      const perDateRecords = await Promise.all(
+        rangeDates.map((d) => attendanceApi.getClassAttendance(cls, section, d)),
+      );
+      const rows = rangeStudents.map((s) => {
+        const statuses: Record<string, AttendanceStatus | undefined> = {};
+        rangeDates.forEach((d, i) => {
+          const rec = perDateRecords[i]?.find((r) => r.studentId === s._id);
+          statuses[d] = rec?.status;
+        });
+        return { studentId: s._id, fullName: s.fullName, admissionNumber: s.admissionNumber, statuses };
+      });
+      setRangeRegister({ cls, section, dates: rangeDates, rows });
+      setPrintingRange(true);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Failed to generate the date-range register.');
+    } finally {
+      setGeneratingRange(false);
+    }
+  }
 
   async function handleGenerateAll() {
     if (!classes || classes.length === 0 || generatingAll) return;
@@ -197,9 +298,11 @@ export function ReceptionAttendancePage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
-      {(printing || printingAll) && (
+      {(printing || printingAll || printingRange) && (
         <style>{`
-          @page { size: A4 portrait; margin: 16mm; }
+          /* Range register is wide (one column per date) — landscape gives it
+             room without shrinking student names down to nothing. */
+          @page { size: A4 ${printingRange ? 'landscape' : 'portrait'}; margin: 14mm; }
           @media print {
             body * { visibility: hidden; }
             #${activePrintAreaId}, #${activePrintAreaId} * { visibility: visible; }
@@ -252,23 +355,51 @@ export function ReceptionAttendancePage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Date</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">Date{isRange ? ' (from)' : ''}</label>
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setDate(e.target.value);
+              if (toDate < e.target.value) setToDate(e.target.value);
+            }}
             max={todayStr()}
             className="h-10 px-3 rounded-lg border border-gray-200 text-sm"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => setPrinting(true)}
-          disabled={!ready || loading || rows.length === 0}
-          className="h-10 px-4 rounded-lg bg-[#1C2B4A] text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
-        >
-          <Printer className="w-4 h-4" /> Print / Save PDF
-        </button>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">To (optional)</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            min={date}
+            max={todayStr()}
+            className="h-10 px-3 rounded-lg border border-gray-200 text-sm"
+            title="Pick a later date to print several days' attendance as one register"
+          />
+        </div>
+        {isRange ? (
+          <button
+            type="button"
+            onClick={handleGenerateRange}
+            disabled={!ready || generatingRange || rangeDates.length === 0}
+            className="h-10 px-4 rounded-lg bg-[#1C2B4A] text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+            title={`Print attendance for ${date} to ${toDate} (${rangeDates.length} day${rangeDates.length === 1 ? '' : 's'}) as one register`}
+          >
+            {generatingRange ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarRange className="w-4 h-4" />}
+            Print Range ({rangeDates.length}d)
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPrinting(true)}
+            disabled={!ready || loading || rows.length === 0}
+            className="h-10 px-4 rounded-lg bg-[#1C2B4A] text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
+          >
+            <Printer className="w-4 h-4" /> Print / Save PDF
+          </button>
+        )}
         <button
           type="button"
           onClick={handleGenerateAll}
@@ -279,6 +410,12 @@ export function ReceptionAttendancePage() {
           {generatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
           Generate All
         </button>
+        {isRange && (
+          <p className="w-full text-xs text-gray-400">
+            {rangeDates.length} day register for Class {cls || '—'} {section}. In the print dialog, turn on
+            "Print on both sides" (duplex) to keep it to fewer sheets of paper — this app can't set that for you.
+          </p>
+        )}
       </div>
 
       {/* ── Records ─────────────────────────────────────────────────────── */}
@@ -441,6 +578,54 @@ export function ReceptionAttendancePage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Print-only date-range register: one row per student, one column per
+          date, so N days of attendance print as a single sheet (landscape)
+          instead of N separate single-day printouts. */}
+      {printingRange && rangeRegister && (
+        <div id={printRangeAreaId} className="hidden print:block">
+          <div className="mb-4">
+            <p className="text-base font-bold text-gray-900">{schoolSettings?.schoolName ?? 'School'}</p>
+            <p className="text-sm text-gray-700">
+              Attendance — Class {rangeRegister.cls} / {rangeRegister.section} — {shortDate(rangeRegister.dates[0])} to{' '}
+              {shortDate(rangeRegister.dates[rangeRegister.dates.length - 1])}
+            </p>
+          </div>
+          <table className="w-full text-[10px] border-collapse">
+            <thead>
+              <tr className="text-left font-semibold text-gray-500 border-b border-gray-300">
+                <th className="py-1 pr-2 w-8">#</th>
+                <th className="py-1 pr-2 min-w-[110px]">Student Name</th>
+                {rangeRegister.dates.map((d) => (
+                  <th key={d} className="py-1 px-1 text-center whitespace-nowrap">{shortDate(d)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rangeRegister.rows.map((r, i) => (
+                <tr key={r.studentId} className="border-b border-gray-100">
+                  <td className="py-1 pr-2 text-gray-500">{i + 1}</td>
+                  <td className="py-1 pr-2 font-medium text-gray-900 whitespace-nowrap">{r.fullName}</td>
+                  {rangeRegister.dates.map((d) => (
+                    <td key={d} className="py-1 px-1 text-center text-gray-700">
+                      {r.statuses[d] ? STATUS_CODE[r.statuses[d]!] : '—'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-300 text-[10px] font-semibold text-gray-900">
+            <span>Total Students: {rangeRegister.rows.length}</span>
+            <span>P = Present</span>
+            <span>A = Absent</span>
+            <span>L = Late</span>
+            <span>H = Half Day</span>
+            <span>O = On Leave</span>
+            <span>— = Unmarked</span>
+          </div>
         </div>
       )}
     </div>

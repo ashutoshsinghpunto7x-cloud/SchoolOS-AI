@@ -4,6 +4,48 @@ import type { PaymentMode } from '../fees/fee.model';
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
 export type SalaryStatus = 'scheduled' | 'pending' | 'paid';
+export type SecurityDepositMode = 'one_time' | 'installments';
+export type SecurityDepositStatus = 'not_collected' | 'in_progress' | 'collected';
+
+// ── Sub-documents ─────────────────────────────────────────────────────────────
+
+export interface ISecurityDepositEntry {
+  amount: number;
+  date: Date;
+  note?: string;
+  recordedBy: string;
+}
+
+export interface ISecurityDepositInfo {
+  totalAmount: number;
+  mode: SecurityDepositMode;
+  installmentCount?: number;
+  collectedAmount: number;
+  status: SecurityDepositStatus;
+  history: ISecurityDepositEntry[];
+}
+
+const securityDepositEntrySchema = new Schema<ISecurityDepositEntry>(
+  {
+    amount:     { type: Number, required: true, min: 0 },
+    date:       { type: Date, required: true },
+    note:       { type: String, trim: true, maxlength: 500 },
+    recordedBy: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const securityDepositSchema = new Schema<ISecurityDepositInfo>(
+  {
+    totalAmount:      { type: Number, required: true, min: 0 },
+    mode:             { type: String, enum: ['one_time', 'installments'], required: true },
+    installmentCount: { type: Number, min: 1 },
+    collectedAmount:  { type: Number, default: 0, min: 0 },
+    status:           { type: String, enum: ['not_collected', 'in_progress', 'collected'], default: 'not_collected' },
+    history:          { type: [securityDepositEntrySchema], default: [] },
+  },
+  { _id: false },
+);
 
 // ── Document Interface ────────────────────────────────────────────────────────
 
@@ -27,6 +69,13 @@ export interface ISalaryRecord extends Document {
   paymentMode?: PaymentMode;
 
   notes?: string;
+
+  /** Leave-without-pay days for this month, entered manually by the accountant. */
+  lwpDays?: number;
+  /** Rupee amount to deduct for those LWP days. */
+  lwpAmount?: number;
+
+  securityDeposit?: ISecurityDepositInfo;
 
   isDeleted: boolean;
   deletedAt?: Date;
@@ -61,6 +110,11 @@ const salaryRecordSchema = new Schema<ISalaryRecord>(
     paymentMode:  { type: String, enum: ['cash', 'cheque', 'bank_transfer', 'online', 'demand_draft'] },
 
     notes:        { type: String, trim: true, maxlength: 1000 },
+
+    lwpDays:      { type: Number, min: 0 },
+    lwpAmount:    { type: Number, min: 0 },
+
+    securityDeposit: { type: securityDepositSchema },
 
     isDeleted:    { type: Boolean, default: false },
     deletedAt:    { type: Date },

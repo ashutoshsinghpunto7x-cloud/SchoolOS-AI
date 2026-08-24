@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  ArrowLeft, Loader2, AlertCircle, Banknote, CreditCard, Landmark, FileText,
-  Printer, GraduationCap, User as UserIcon, Hash,
+  ArrowLeft, Loader2, AlertCircle, Printer, Save,
+  GraduationCap, User as UserIcon, Hash,
 } from 'lucide-react';
 import { useUpdateAnyFeeRecord, useCreateFeeRecord, useRecordPayment } from '@/features/fees/hooks/useFees';
 import { FeeReceiptSuccessScreen, type CollectContext, type ReceiptLineItem } from './FeeReceipt';
@@ -128,61 +128,122 @@ function buildPayableLines(feeRecords: FeeRecord[]): PayableLine[] {
   return [...existingLines, ...tuitionLines].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
 }
 
-// ── Payment method tiles ─────────────────────────────────────────────────────
+// ── Payment mode dropdown — mirrors the school's existing paper register (Cash,
+// UPI, SSE UPI, Online, SSE Online, Challan, Cheque, DD, Card) so the accountant
+// picks the same wording they already know. ────────────────────────────────────
 
-type MethodKey = 'cash' | 'card' | 'bank_transfer' | 'cheque';
-
-const METHODS: { key: MethodKey; label: string; icon: React.ElementType; mode: PaymentMode }[] = [
-  { key: 'cash',          label: 'Cash',          icon: Banknote,   mode: 'cash' },
-  { key: 'card',          label: 'Card',          icon: CreditCard, mode: 'online' },
-  { key: 'bank_transfer', label: 'Bank Transfer', icon: Landmark,   mode: 'bank_transfer' },
-  { key: 'cheque',        label: 'Cheque',        icon: FileText,   mode: 'cheque' },
+const MODES: { value: PaymentMode; label: string }[] = [
+  { value: 'cash',          label: 'Cash' },
+  { value: 'upi',           label: 'UPI' },
+  { value: 'sse_upi',       label: 'SSE UPI' },
+  { value: 'online',        label: 'Online' },
+  { value: 'sse_online',    label: 'SSE Online' },
+  { value: 'challan',       label: 'Challan' },
+  { value: 'cheque',        label: 'Cheque' },
+  { value: 'demand_draft',  label: 'DD' },
+  { value: 'card',          label: 'Card' },
 ];
 
-// ── One selectable line row ────────────────────────────────────────────────
+const MODE_NEEDS_REF = new Set<PaymentMode>(['cheque', 'demand_draft', 'card', 'challan']);
 
-function LineRow({
-  line, checked, amount, onToggle, onAmountChange,
-}: { line: PayableLine; checked: boolean; amount: number; onToggle: () => void; onAmountChange: (v: number) => void }) {
-  const status = line.existing?.status;
-  const isOverdue = status === 'overdue';
+// ── Per-line editable amounts — Discount/Fine/Paid are always visible, always
+// editable, and additive on top of whatever the fee record already carries
+// (mirrors a paper collection register: today's entry, not a running total).
+
+interface LineValues {
+  discount: number;
+  fine: number;
+  paid: number;
+}
+const EMPTY_VALUES: LineValues = { discount: 0, fine: 0, paid: 0 };
+
+type InstallmentStatus = 'paid' | 'partial' | 'unpaid';
+
+const STATUS_BADGES: Record<InstallmentStatus, { label: string; classes: string }> = {
+  paid:    { label: 'Fully Paid',     classes: 'bg-emerald-100 text-emerald-700' },
+  partial: { label: 'Partially Paid', classes: 'bg-amber-100 text-amber-700' },
+  unpaid:  { label: 'Unpaid',         classes: 'bg-red-100 text-red-600' },
+};
+
+// Number inputs with the native spinner hidden and mouse-wheel scrolling
+// disabled — pure click-and-type, no accidental value changes.
+const cellInputCls =
+  'w-20 h-8 px-2 rounded-md border border-gray-200 text-[13px] text-right ' +
+  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] ' +
+  '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
+function preventWheelChange(e: React.WheelEvent<HTMLInputElement>) {
+  e.currentTarget.blur();
+}
+
+// ── One installment row of the fee grid — a compact spreadsheet-style row
+// (Fee / Disc / Fine / Paid / Due), matching the register the accountants
+// already collect fees on. Discount, Fine and Paid are always live inputs —
+// nothing appears or disappears on click, and Due recalculates on every
+// keystroke: Due = (Fee balance − Discount + Fine) − Paid. ───────────────────
+
+function InstallmentRow({
+  line, feeAmount, values, due, onDiscChange, onFineChange, onPaidChange,
+}: {
+  line: PayableLine;
+  feeAmount: number;
+  values: LineValues;
+  due: number;
+  onDiscChange: (v: number) => void;
+  onFineChange: (v: number) => void;
+  onPaidChange: (v: number) => void;
+}) {
+  const rec = line.existing;
+  const alreadyPaid = rec?.paidAmount ?? 0;
+  const touchedPaid = values.paid > 0;
+
+  const status: InstallmentStatus =
+    due <= 0.004 && (touchedPaid || alreadyPaid > 0) ? 'paid'
+    : (touchedPaid || alreadyPaid > 0) ? 'partial'
+    : 'unpaid';
+  const badge = STATUS_BADGES[status];
+
   return (
-    <div
-      className={cn(
-        'flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-colors',
-        checked ? 'bg-[#A855F7]/5 border-[#A855F7]/40' : 'bg-white border-gray-200 hover:border-gray-300',
-      )}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onToggle}
-        className="w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-[#A855F7]/40 shrink-0"
-      />
-      <label className="flex-1 min-w-0 cursor-pointer" onClick={(e) => { e.preventDefault(); onToggle(); }}>
-        <p className="text-sm font-semibold text-gray-900">{line.label}</p>
-        <p className="text-xs text-gray-400 mt-0.5">Due {fmtDate(line.dueDate)}</p>
-      </label>
-      {checked ? (
+    <tr className="border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
+      <td className="py-2 pl-3 pr-2">
+        <p className="text-[13px] font-semibold text-gray-900 leading-tight">{line.label}</p>
+        <p className="text-[10px] text-gray-400 leading-tight">{line.monthLabel} · Due {fmtDate(line.dueDate)}</p>
+        <span className={cn('inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded', badge.classes)}>{badge.label}</span>
+      </td>
+      <td className="py-2 px-2 text-right text-[13px] text-gray-700 whitespace-nowrap">{fmt(feeAmount)}</td>
+      <td className="py-2 px-2 text-right whitespace-nowrap">
         <input
-          type="number" min={0} step={0.01} value={amount}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onAmountChange(parseFloat(e.target.value) || 0)}
-          className="w-28 h-9 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] shrink-0"
+          type="number" min={0} step={0.01} value={values.discount || ''}
+          onWheel={preventWheelChange}
+          onChange={(e) => onDiscChange(parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          className={cellInputCls}
         />
-      ) : (
-        <div className="text-right shrink-0">
-          <p className="text-sm font-bold text-gray-900">{fmt(line.existing ? line.existing.balance : amount)}</p>
-        </div>
-      )}
-      <div className="shrink-0">
-        {isOverdue ? (
-          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-red-50 text-red-600">OVERDUE</span>
-        ) : (
-          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide bg-blue-50 text-blue-600">PENDING</span>
-        )}
-      </div>
-    </div>
+      </td>
+      <td className="py-2 px-2 text-right whitespace-nowrap">
+        <input
+          type="number" min={0} step={0.01} value={values.fine || ''}
+          onWheel={preventWheelChange}
+          onChange={(e) => onFineChange(parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          className={cellInputCls}
+        />
+      </td>
+      <td className="py-2 px-2 text-right whitespace-nowrap">
+        <input
+          type="number" min={0} step={0.01} value={values.paid || ''}
+          onWheel={preventWheelChange}
+          onChange={(e) => onPaidChange(parseFloat(e.target.value) || 0)}
+          placeholder="0"
+          className={cn(cellInputCls, 'font-semibold')}
+        />
+      </td>
+      <td className="py-2 pl-2 pr-3 text-right whitespace-nowrap">
+        <span className={cn('text-[13px] font-bold', due > 0.004 ? 'text-red-600' : 'text-emerald-600')}>
+          {fmt(Math.max(0, due))}
+        </span>
+      </td>
+    </tr>
   );
 }
 
@@ -192,7 +253,7 @@ interface Props {
   student: Student;
   feeRecords: FeeRecord[];
   lastPaymentDate?: string;
-  /** Month already chosen on the ledger screen (e.g. "July") — when set, its fee line(s) are pre-selected here so the accountant isn't asked to pick them again. */
+  /** Month already chosen on the ledger screen (e.g. "July") — when set, its fee line(s) are pre-filled with the full outstanding amount here so the accountant isn't asked to type it again. */
   initialMonth?: string | null;
   onBack: () => void;
   /** Called once the payment has actually been recorded, so the caller can refresh its ledger data. */
@@ -202,20 +263,22 @@ interface Props {
 export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, initialMonth, onBack, onPaid }: Props) {
   const lines = useMemo(() => buildPayableLines(feeRecords), [feeRecords]);
 
-  const [selected, setSelected] = useState<Record<string, number>>(() => {
+  const [values, setValues] = useState<Record<string, LineValues>>(() => {
     if (!initialMonth) return {};
-    const preSelected: Record<string, number> = {};
+    const init: Record<string, LineValues> = {};
     for (const line of lines) {
       if (line.month === initialMonth) {
-        preSelected[line.key] = line.existing ? line.existing.balance : (student.monthlyTuitionFee ?? 0);
+        const due = line.existing ? line.existing.balance : (student.monthlyTuitionFee ?? 0);
+        init[line.key] = { discount: 0, fine: 0, paid: due };
       }
     }
-    return preSelected;
+    return init;
   });
-  const [discount, setDiscount] = useState('');
   const [remarks, setRemarks] = useState('');
-  const [method, setMethod] = useState<MethodKey>('cash');
+  const [mode, setMode] = useState<PaymentMode>('cash');
   const [refNumber, setRefNumber] = useState('');
+  const [bankBranch, setBankBranch] = useState('');
+  const [receiptDate, setReceiptDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [error, setError] = useState('');
   const [success, setSuccess] = useState<{ lineItems: ReceiptLineItem[]; total: number; paymentMode: string; receiptNumber?: string; paymentIds: string[] } | null>(null);
 
@@ -225,30 +288,40 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
   const isPending = updating || creating || paying;
 
-  function toggle(line: PayableLine) {
-    setSelected((prev) => {
-      const next = { ...prev };
-      if (line.key in next) { delete next[line.key]; return next; }
-      next[line.key] = line.existing ? line.existing.balance : (student.monthlyTuitionFee ?? 0);
-      return next;
-    });
+  function updateValue(key: string, field: keyof LineValues, v: number) {
+    setValues((prev) => ({ ...prev, [key]: { ...(prev[key] ?? EMPTY_VALUES), [field]: v } }));
   }
 
-  // Group lines by month for display.
-  const grouped = useMemo(() => {
-    const map = new Map<string, PayableLine[]>();
+  // Live, per-line numbers — recomputed on every keystroke, no blur/Enter/button
+  // needed. Due = (current outstanding balance − Discount + Fine) − Paid, so an
+  // installment that already carries a due from a previous partial payment
+  // keeps showing that carried-over balance until it's fully cleared.
+  const computed = useMemo(() => {
+    const map = new Map<string, { feeAmount: number; due: number }>();
     for (const line of lines) {
-      const arr = map.get(line.monthLabel) ?? [];
-      arr.push(line);
-      map.set(line.monthLabel, arr);
+      const v = values[line.key] ?? EMPTY_VALUES;
+      const rec = line.existing;
+      const feeAmount = rec ? rec.totalAmount : (student.monthlyTuitionFee ?? 0);
+      const balance = rec ? rec.balance : feeAmount;
+      const due = Math.round((balance + v.fine - v.discount - v.paid) * 100) / 100;
+      map.set(line.key, { feeAmount, due });
     }
-    return Array.from(map.entries());
-  }, [lines]);
+    return map;
+  }, [lines, values, student.monthlyTuitionFee]);
 
-  const selectedLines = lines.filter((l) => l.key in selected);
-  const subtotal = Object.values(selected).reduce((a, b) => a + b, 0);
-  const discountNum = Math.min(Math.max(parseFloat(discount) || 0, 0), subtotal);
-  const total = Math.round((subtotal - discountNum) * 100) / 100;
+  // A line is "in" this transaction the moment the accountant types anything
+  // into Discount, Fine, or Paid for it — no separate select step.
+  const activeLines = useMemo(
+    () => lines.filter((l) => { const v = values[l.key]; return v && (v.paid > 0 || v.discount > 0 || v.fine > 0); }),
+    [lines, values],
+  );
+
+  const totalDiscount = activeLines.reduce((s, l) => s + (values[l.key]?.discount ?? 0), 0);
+  const totalFine = activeLines.reduce((s, l) => s + (values[l.key]?.fine ?? 0), 0);
+  const totalPaid = Math.round(activeLines.reduce((s, l) => s + (values[l.key]?.paid ?? 0), 0) * 100) / 100;
+  const totalRemainingDue = Math.round(
+    activeLines.reduce((s, l) => s + Math.max(0, computed.get(l.key)?.due ?? 0), 0) * 100,
+  ) / 100;
 
   const status = STATUS_LABELS[student.admissionStatus] ?? { label: student.admissionStatus, classes: 'bg-gray-100 text-gray-600' };
   const guardian = student.fatherName || student.motherName || '—';
@@ -256,29 +329,27 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
   async function handleSubmit() {
     setError('');
-    if (!selectedLines.length) return setError('Select at least one fee item to collect.');
-    if (method !== 'cash' && !refNumber.trim()) return setError('Enter a reference / transaction number for this payment method.');
+    if (!activeLines.some((l) => (values[l.key]?.paid ?? 0) > 0)) {
+      return setError('Enter a paid amount for at least one installment.');
+    }
+    if (MODE_NEEDS_REF.has(mode) && !refNumber.trim()) return setError('Enter a cheque / DD / card / transaction number for this payment mode.');
 
-    const paymentMode = METHODS.find((m) => m.key === method)!.mode;
-    const today = new Date().toISOString().slice(0, 10);
+    const paymentMode = mode;
+    const paymentDate = receiptDate;
+    const combinedRemarks = bankBranch.trim()
+      ? [remarks.trim(), `Bank/Branch: ${bankBranch.trim()}`].filter(Boolean).join(' — ')
+      : remarks.trim();
 
-    // Split the entered discount proportionally across the selected items so
-    // each fee record's own balance/discountAmount stays accurate for the
-    // ledger — the last item absorbs the rounding remainder so allocations
-    // sum exactly.
-    let remainingDiscount = discountNum;
     const lineItems: ReceiptLineItem[] = [];
     const receiptNumbers: string[] = [];
     const paymentIds: string[] = [];
 
     try {
-      for (let i = 0; i < selectedLines.length; i++) {
-        const line = selectedLines[i];
-        const isLast = i === selectedLines.length - 1;
-        const requestedAmount = selected[line.key];
-        const share = subtotal > 0 ? requestedAmount / subtotal : 0;
-        const allocated = isLast ? remainingDiscount : Math.round(discountNum * share * 100) / 100;
-        remainingDiscount = Math.round((remainingDiscount - allocated) * 100) / 100;
+      for (const line of activeLines) {
+        const input = values[line.key]!;
+        const discountDelta = input.discount || 0;
+        const fineDelta = input.fine || 0;
+        const paidAmount = input.paid || 0;
 
         let record = line.existing;
         if (!record) {
@@ -294,32 +365,46 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
             month: candidate.month,
             dueDate: candidate.dueDate,
             totalAmount: amount,
-            discountAmount: allocated || undefined,
+            discountAmount: discountDelta || undefined,
+            fineAmount: fineDelta || undefined,
           });
-        } else if (allocated > 0) {
-          record = await updateFeeRecord({ id: record._id, payload: { discountAmount: (record.discountAmount || 0) + allocated } });
+        } else if (discountDelta > 0 || fineDelta > 0) {
+          record = await updateFeeRecord({
+            id: record._id,
+            payload: {
+              discountAmount: (record.discountAmount || 0) + discountDelta,
+              fineAmount: (record.fineAmount || 0) + fineDelta,
+            },
+          });
         }
 
-        const amountToPay = Math.min(requestedAmount - allocated, record.balance);
-        if (amountToPay <= 0) continue;
+        if (discountDelta > 0) lineItems.push({ label: `${line.label} — Discount`, amount: -discountDelta });
+        if (fineDelta > 0) lineItems.push({ label: `${line.label} — Fine`, amount: fineDelta });
 
-        const result = await recordPayment({
-          feeRecordId: record._id,
-          amount: Math.round(amountToPay * 100) / 100,
-          paymentDate: today,
-          paymentMode,
-          referenceNumber: method === 'cash' ? undefined : refNumber.trim(),
-          remarks: remarks.trim() || undefined,
-        });
+        if (paidAmount > 0) {
+          const amountToPay = Math.min(paidAmount, record.balance);
+          if (amountToPay > 0) {
+            const result = await recordPayment({
+              feeRecordId: record._id,
+              amount: Math.round(amountToPay * 100) / 100,
+              paymentDate,
+              paymentMode,
+              referenceNumber: refNumber.trim() || undefined,
+              remarks: combinedRemarks || undefined,
+            });
 
-        lineItems.push({ label: line.label, amount: Math.round((amountToPay + allocated) * 100) / 100 });
-        if (result.payment.receiptNumber) receiptNumbers.push(result.payment.receiptNumber);
-        paymentIds.push(result.payment._id);
+            lineItems.push({ label: line.label, amount: Math.round(amountToPay * 100) / 100 });
+            if (result.payment.receiptNumber) receiptNumbers.push(result.payment.receiptNumber);
+            paymentIds.push(result.payment._id);
+          }
+        }
       }
 
-      if (discountNum > 0) lineItems.push({ label: 'Discount', amount: -discountNum });
-
-      setSuccess({ lineItems, total, paymentMode: method === 'card' ? 'card' : paymentMode, receiptNumber: receiptNumbers.join(' / ') || undefined, paymentIds });
+      setSuccess({
+        lineItems, total: totalPaid,
+        paymentMode: MODES.find((m) => m.value === paymentMode)?.label ?? paymentMode,
+        receiptNumber: receiptNumbers.join(' / ') || undefined, paymentIds,
+      });
       onPaid();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to record payment.');
@@ -346,167 +431,213 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <button onClick={onBack} className="text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-2">
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <button onClick={onBack} className="text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-1.5">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Ledger
         </button>
-        <h1 className="text-lg font-bold text-gray-900">Process Fee Payment</h1>
+        <h1 className="text-base font-bold text-gray-900">Fee Collection</h1>
       </div>
 
-      <div className="px-4 py-5 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-        {/* Left column: student card + fee selection */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-gray-200">
-              <div className="w-14 h-14 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden shrink-0">
+      <div className="p-3 max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-3 items-start">
+        {/* Left: compact student strip + installment grid */}
+        <div className="space-y-3">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-[#5B21B6] flex items-center justify-center overflow-hidden shrink-0">
                 {student.photoUrl ? (
                   <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-lg font-bold text-white">{initials}</span>
+                  <span className="text-sm font-bold text-white">{initials}</span>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
+              <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-gray-900 truncate">{student.fullName}</h2>
-                  <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold shrink-0', status.classes)}>
+                  <h2 className="text-sm font-bold text-gray-900">{student.fullName}</h2>
+                  <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shrink-0', status.classes)}>
                     {status.label}
                   </span>
                 </div>
+                <p className="text-[11px] text-gray-400 flex items-center gap-1"><Hash className="w-2.5 h-2.5" />{student.admissionNumber}</p>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 pt-4 text-sm">
-              <div>
-                <p className="flex items-center gap-1 text-[11px] text-gray-400"><Hash className="w-3 h-3" /> Student ID</p>
-                <p className="font-semibold text-gray-800 mt-0.5">{student.admissionNumber}</p>
-              </div>
-              <div>
-                <p className="flex items-center gap-1 text-[11px] text-gray-400"><GraduationCap className="w-3 h-3" /> Class &amp; Section</p>
-                <p className="font-semibold text-gray-800 mt-0.5">{student.class} - {student.section}</p>
-              </div>
-              <div>
-                <p className="flex items-center gap-1 text-[11px] text-gray-400"><UserIcon className="w-3 h-3" /> Guardian</p>
-                <p className="font-semibold text-gray-800 mt-0.5 truncate">{guardian}</p>
-              </div>
-              <div>
-                <p className="text-[11px] text-gray-400">Last Payment</p>
-                <p className="font-semibold text-gray-800 mt-0.5">{fmtDate(lastPaymentDate)}</p>
-              </div>
+            <div className="text-xs">
+              <p className="text-[10px] text-gray-400 flex items-center gap-1"><GraduationCap className="w-3 h-3" /> Class &amp; Section</p>
+              <p className="font-semibold text-gray-800">{student.class} - {student.section}</p>
+            </div>
+            <div className="text-xs">
+              <p className="text-[10px] text-gray-400 flex items-center gap-1"><UserIcon className="w-3 h-3" /> Guardian</p>
+              <p className="font-semibold text-gray-800">{guardian}</p>
+            </div>
+            <div className="text-xs">
+              <p className="text-[10px] text-gray-400">Last Payment</p>
+              <p className="font-semibold text-gray-800">{fmtDate(lastPaymentDate)}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-gray-900 mb-1">Select Fee(s) to Collect</h3>
-            <p className="text-xs text-gray-400 mb-3">Every outstanding fee category — Tuition, Admission, Examination, Transport, Hostel, Annual Maintenance — is listed by month. Pick any combination, including arrears or advance tuition months.</p>
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             {lines.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">No outstanding fees for this student.</p>
+              <p className="text-sm text-gray-400 text-center py-8">No outstanding fees for this student.</p>
             ) : (
-              <div className="space-y-4 max-h-[480px] overflow-y-auto pr-1">
-                {grouped.map(([groupLabel, groupLines]) => (
-                  <div key={groupLabel}>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">{groupLabel}</p>
-                    <div className="space-y-2">
-                      {groupLines.map((line) => (
-                        <LineRow
+              <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-[#F4F0FB] z-10">
+                    <tr className="text-left">
+                      <th className="py-2 pl-3 pr-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide">Installment</th>
+                      <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Fee</th>
+                      <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Discount</th>
+                      <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Fine</th>
+                      <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Paid</th>
+                      <th className="py-2 pl-2 pr-3 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Due</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lines.map((line) => {
+                      const c = computed.get(line.key)!;
+                      return (
+                        <InstallmentRow
                           key={line.key}
                           line={line}
-                          checked={line.key in selected}
-                          amount={selected[line.key] ?? 0}
-                          onToggle={() => toggle(line)}
-                          onAmountChange={(v) => setSelected((prev) => ({ ...prev, [line.key]: v }))}
+                          feeAmount={c.feeAmount}
+                          values={values[line.key] ?? EMPTY_VALUES}
+                          due={c.due}
+                          onDiscChange={(v) => updateValue(line.key, 'discount', v)}
+                          onFineChange={(v) => updateValue(line.key, 'fine', v)}
+                          onPaidChange={(v) => updateValue(line.key, 'paid', v)}
                         />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right column: payment summary */}
-        <div className="lg:col-span-2 lg:sticky lg:top-5">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">Payment Summary</h3>
+        {/* Right: receipt panel */}
+        <div className="xl:sticky xl:top-3">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Receipt Details</h3>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Subtotal ({selectedLines.length} item{selectedLines.length === 1 ? '' : 's'})</span>
-                <span className="text-sm font-semibold text-gray-800">{fmt(subtotal)}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-gray-500 shrink-0">Discount (₹)</span>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 mb-1">Receipt No.</label>
                 <input
-                  type="number" min={0} max={subtotal} step={0.01} value={discount}
-                  onChange={(e) => setDiscount(e.target.value)}
-                  placeholder="0"
-                  className="w-28 h-8 px-2.5 rounded-lg border border-gray-200 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  type="text" value="Auto-generated on save" disabled readOnly
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 bg-gray-50 text-xs text-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 mb-1">Receipt Date</label>
+                <input
+                  type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)}
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
-              <span className="text-sm font-bold text-gray-900">Total Amount</span>
-              <span className="text-xl font-bold text-gray-900">{fmt(total)}</span>
-            </div>
-
-            <div className="mt-3">
-              <p className="text-xs font-semibold text-gray-600 mb-1.5">Select Payment Method</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {METHODS.map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setMethod(key)}
-                    title={label}
-                    className={cn(
-                      'flex flex-col items-center justify-center gap-1 h-12 rounded-xl border-2 font-semibold text-[10px] transition-colors',
-                      method === key ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
-                    )}
-                  >
-                    <Icon className="w-3.5 h-3.5" /> {label}
-                  </button>
+            <div className="mt-2.5">
+              <label className="block text-[11px] font-semibold text-gray-500 mb-1">Payment Mode</label>
+              <select
+                value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)}
+                className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+              >
+                {MODES.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
-            {method !== 'cash' && (
-              <div className="mt-2">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  {method === 'card' ? 'Transaction / UTR Number' : method === 'cheque' ? 'Cheque Number' : 'Transaction Reference'}
+            <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 mb-1">
+                  Cheque/DD/Card/Txn No.{MODE_NEEDS_REF.has(mode) && <span className="text-red-500"> *</span>}
                 </label>
                 <input
                   type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
-                  className="w-full h-9 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                   placeholder="e.g. 123456789012" maxLength={30}
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
                 />
               </div>
-            )}
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 mb-1">Bank/Branch Name</label>
+                <input
+                  type="text" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                />
+              </div>
+            </div>
 
-            <div className="mt-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Remarks / Notes</label>
+            <div className="mt-2.5">
+              <label className="block text-[11px] font-semibold text-gray-500 mb-1">Remarks / Notes</label>
               <textarea
                 rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter transaction details or notes…"
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                className="w-full px-2.5 py-2 rounded-md border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
               />
             </div>
 
+            {/* Installment Details / total strip — mirrors the paper register's summary line */}
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-1.5">Installment Details</p>
+              {activeLines.length === 0 ? (
+                <p className="text-xs text-gray-400">No amounts entered yet.</p>
+              ) : (
+                <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                  {activeLines.map((line) => (
+                    <div key={line.key} className="flex items-center justify-between bg-red-50 text-red-700 rounded px-2 py-1 text-xs font-medium">
+                      <span className="truncate">{line.monthLabel} — {line.label}</span>
+                      <span className="shrink-0 font-semibold">{fmt(values[line.key]?.paid ?? 0)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-sm text-gray-500">Total Discount</span>
+                <span className="text-sm font-semibold text-gray-800">{fmt(totalDiscount)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-sm text-gray-500">Total Fine</span>
+                <span className="text-sm font-semibold text-gray-800">{fmt(totalFine)}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
+                <span className="text-sm font-bold text-gray-900">Total Payment</span>
+                <span className="text-lg font-bold text-gray-900">{fmt(totalPaid)}</span>
+              </div>
+              {totalRemainingDue > 0.004 && (
+                <div className="flex items-center justify-between mt-1.5 bg-red-50 border border-red-100 rounded-lg px-2.5 py-1.5">
+                  <span className="text-xs font-semibold text-red-600">Will still be due after this payment</span>
+                  <span className="text-sm font-bold text-red-600">{fmt(totalRemainingDue)}</span>
+                </div>
+              )}
+            </div>
+
             {error && (
-              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2 mt-2">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mt-3">
                 <AlertCircle className="w-4 h-4 shrink-0" /> {error}
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isPending || !selectedLines.length}
-              className="w-full h-11 mt-3 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
-            >
-              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-              {isPending ? 'Collecting…' : 'Collect & Print Receipt'}
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isPending || !activeLines.length}
+                title="Save & print receipt"
+                className="h-11 px-4 rounded-lg border-2 border-orange-400 text-orange-600 font-semibold text-sm flex items-center justify-center gap-1.5 hover:bg-orange-50 disabled:opacity-50 transition-colors"
+              >
+                <Printer className="w-4 h-4" /> Print
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isPending || !activeLines.length}
+                className="flex-1 h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
