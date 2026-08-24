@@ -256,7 +256,7 @@ export function PendingFeesPage() {
         </button>
       </div>
 
-      <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 py-4 w-full space-y-4">
         {/* The only filter — per design, this page shows every unpaid fee up to one date */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
           <CalendarClock className="w-4 h-4 text-gray-400 shrink-0" />

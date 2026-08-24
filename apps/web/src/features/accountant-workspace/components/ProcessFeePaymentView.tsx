@@ -438,7 +438,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
         <h1 className="text-base font-bold text-gray-900">Fee Collection</h1>
       </div>
 
-      <div className="p-3 max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-3 items-start">
+      <div className="p-3 lg:p-6 w-full grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-3 items-start">
         {/* Left: compact student strip + installment grid */}
         <div className="space-y-3">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">

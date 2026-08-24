@@ -100,7 +100,12 @@ function AppLayoutInner() {
         'flex flex-1 flex-col min-h-screen overflow-hidden',
         !isTeacher && !isParentWorkspace && !isAccountant && 'lg:ml-[260px]'
       )}>
-        {!isParentWorkspace && (
+        {/* Accountant gets one combined header (AccountantTopNav: nav boxes +
+            clock/date/notifications/profile) instead of the generic Topbar
+            stacked above it — the Topbar's breadcrumb only ever repeated
+            "Accountant Workspace", which AccountantTopNav's own nav already
+            makes obvious. */}
+        {!isParentWorkspace && !isAccountant && (
           <Topbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
         )}
         {isAccountant && <AccountantTopNav />}

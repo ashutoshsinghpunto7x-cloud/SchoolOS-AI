@@ -732,7 +732,7 @@ export function SalaryPage() {
         </button>
       </div>
 
-      <div className="px-4 py-4 max-w-6xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 py-4 w-full space-y-4">
         {/* Summary — neutral, no color coding */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">

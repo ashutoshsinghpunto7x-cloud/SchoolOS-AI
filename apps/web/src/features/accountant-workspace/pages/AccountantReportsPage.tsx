@@ -177,7 +177,7 @@ export function AccountantReportsPage() {
         </button>
       </div>
 
-      <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 py-4 w-full space-y-4">
         {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1 print:hidden">
           {TABS.map(({ id, label, icon: Icon }) => (

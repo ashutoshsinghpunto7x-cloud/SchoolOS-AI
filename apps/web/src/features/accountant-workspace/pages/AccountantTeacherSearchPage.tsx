@@ -40,7 +40,7 @@ export function AccountantTeacherSearchPage() {
         </div>
       </div>
 
-      <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 py-4 w-full space-y-4">
         {/* Search */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
           <div className="flex flex-wrap items-center gap-2.5">

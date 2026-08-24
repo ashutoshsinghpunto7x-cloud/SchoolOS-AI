@@ -21,7 +21,7 @@ export function AccountantDashboard() {
   return (
     <div className="min-h-screen bg-white">
 
-      <div className="p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="p-8 space-y-6 w-full">
 
         {/* ── Quick actions — the four things an accountant starts their day
             doing. No data of its own; pure navigation shortcuts. ──────────── */}

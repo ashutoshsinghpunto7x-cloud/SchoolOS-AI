@@ -856,7 +856,7 @@ export function StudentLedgerPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-5 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
+      <div className="w-full px-4 lg:px-8 py-5 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 items-start">
         {/* Left column: main content */}
         <div className="space-y-4 min-w-0">
           <StudentProfileCard ledger={ledger} />
