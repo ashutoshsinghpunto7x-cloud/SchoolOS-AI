@@ -86,6 +86,20 @@ export const useBulkMarkSalaryPaid = () => {
   });
 };
 
+// No dedicated bulk-due-date endpoint on the server — reuse the per-record PATCH
+// across all selected ids in parallel, then invalidate once everything settles.
+export const useBulkUpdateDueDate = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ids, dueDate }: { ids: string[]; dueDate: string }) =>
+      Promise.all(ids.map((id) => salaryApi.update(id, { dueDate }))),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: salaryKeys.all });
+      qc.invalidateQueries({ queryKey: accountantWorkspaceKeys.dashboard });
+    },
+  });
+};
+
 export const useForcePendingSalary = () => {
   const qc = useQueryClient();
   return useMutation({

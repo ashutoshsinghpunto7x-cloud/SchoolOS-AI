@@ -57,19 +57,41 @@ const ACTIVITY_DESCRIPTIONS: Record<string, (details: Record<string, unknown>) =
   'vendor_payment.recorded': (d) => `Paid vendor (₹${d.amount})`,
 };
 
-/** Combines fee collections (in) against expenses and vendor payments (out), by payment
- *  mode, into a single net position — the dashboard's "Today's Position" split. */
-function netModeSplit(
-  feeIn: Record<PaymentMode, number>,
-  expenseOut: Record<PaymentMode, number>,
-  vendorOut: Record<PaymentMode, number>,
-): CashBankSplit {
-  const net = (mode: PaymentMode) => feeIn[mode] - expenseOut[mode] - vendorOut[mode];
-  const cash = net('cash');
-  const online = net('online');
-  const bankTransfer = net('bank_transfer');
-  const cheque = net('cheque');
-  const demandDraft = net('demand_draft');
+/** Reshapes a raw per-mode record (keyed by PaymentMode) into the dashboard's named
+ *  CashBankSplit shape, with a total across all modes. */
+function toCashBankSplit(byMode: Record<PaymentMode, number>): CashBankSplit {
+  const cash = byMode.cash;
+  const online = byMode.online;
+  const bankTransfer = byMode.bank_transfer;
+  const cheque = byMode.cheque;
+  const demandDraft = byMode.demand_draft;
+  return { cash, online, bankTransfer, cheque, demandDraft, total: cash + online + bankTransfer + cheque + demandDraft };
+}
+
+/** Adds two per-mode records together, mode by mode. */
+function addModeSplits(a: Record<PaymentMode, number>, b: Record<PaymentMode, number>): Record<PaymentMode, number> {
+  return {
+    cash: a.cash + b.cash,
+    upi: a.upi + b.upi,
+    sse_upi: a.sse_upi + b.sse_upi,
+    online: a.online + b.online,
+    sse_online: a.sse_online + b.sse_online,
+    challan: a.challan + b.challan,
+    cheque: a.cheque + b.cheque,
+    bank_transfer: a.bank_transfer + b.bank_transfer,
+    demand_draft: a.demand_draft + b.demand_draft,
+    card: a.card + b.card,
+  };
+}
+
+/** Nets a per-mode "in" record against a per-mode "out" record, mode by mode — the
+ *  dashboard's "Today's Position" split. */
+function netModeSplit(inSplit: CashBankSplit, outSplit: CashBankSplit): CashBankSplit {
+  const cash = inSplit.cash - outSplit.cash;
+  const online = inSplit.online - outSplit.online;
+  const bankTransfer = inSplit.bankTransfer - outSplit.bankTransfer;
+  const cheque = inSplit.cheque - outSplit.cheque;
+  const demandDraft = inSplit.demandDraft - outSplit.demandDraft;
   return { cash, online, bankTransfer, cheque, demandDraft, total: cash + online + bankTransfer + cheque + demandDraft };
 }
 
@@ -169,7 +191,9 @@ export const accountantWorkspaceService = {
     });
 
     const overdueVendorBills = overdueVendorBillsRaw as unknown as VendorBill[];
-    const todayCashBankSplit = netModeSplit(feeModeSplitToday, expenseModeSplitToday, vendorModeSplitToday);
+    const todayCollected = toCashBankSplit(feeModeSplitToday);
+    const todayPaidOut = toCashBankSplit(addModeSplits(expenseModeSplitToday, vendorModeSplitToday));
+    const todayCashBankSplit = netModeSplit(todayCollected, todayPaidOut);
 
     return {
       feesCollectedToday,
@@ -182,6 +206,8 @@ export const accountantWorkspaceService = {
       vendorOutstandingTotal,
       overdueVendorBills,
       todayCashBankSplit,
+      todayCollected,
+      todayPaidOut,
       generatedAt: now.toISOString(),
     };
   },

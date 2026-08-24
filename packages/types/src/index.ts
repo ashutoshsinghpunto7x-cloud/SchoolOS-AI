@@ -1529,6 +1529,11 @@ export interface AccountantDashboardData {
   vendorOutstandingTotal: number;
   overdueVendorBills: VendorBill[];
   todayCashBankSplit: CashBankSplit;
+  /** Money in today, by mode — fee collections only. Same shape as todayCashBankSplit
+   *  but unnetted, so the dashboard can show "collected" and "paid out" side by side. */
+  todayCollected: CashBankSplit;
+  /** Money out today, by mode — expenses plus vendor payments. */
+  todayPaidOut: CashBankSplit;
   generatedAt: string;
 }
 

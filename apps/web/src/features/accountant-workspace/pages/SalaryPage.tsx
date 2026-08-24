@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil, CheckSquare, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Plus, X, Loader2, AlertCircle, IndianRupee, CheckCircle2, Clock, ArrowUpCircle, Users, History, Pencil, CheckSquare, ShieldCheck, CalendarClock } from 'lucide-react';
 import {
   useSalaryList, useSalarySummary, useCreateSalaryRecord, useMarkSalaryPaid, useForcePendingSalary,
-  useUpdateSalaryRecord, useBulkMarkSalaryPaid, useRecordSecurityDeposit,
+  useUpdateSalaryRecord, useBulkMarkSalaryPaid, useRecordSecurityDeposit, useBulkUpdateDueDate,
 } from '../hooks/useSalary';
 import { BulkAddSalaryModal } from '../components/BulkAddSalaryModal';
 import { AuditLogPanel } from '@/features/audit/components/AuditLogPanel';
@@ -46,6 +46,14 @@ function suggestLwpAmount(amount: number, month: string, year: number, lwpDays: 
   if (!amount || !lwpDays) return 0;
   const perDay = amount / daysInMonth(month, year);
   return Math.round(perDay * lwpDays * 100) / 100;
+}
+
+/** Net payable — salary minus LWP deduction minus any Security Money collected so far (it's
+ * withheld from the employee's pay, so a "Collect" against it lowers what's actually paid out). */
+function netPayable(rec: SalaryRecord): number {
+  const lwp = rec.lwpAmount ?? 0;
+  const securityCollected = rec.securityDeposit?.collectedAmount ?? 0;
+  return Math.max(0, Math.round((rec.amount - lwp - securityCollected) * 100) / 100);
 }
 
 const SECURITY_MODES: { value: SecurityDepositMode; label: string }[] = [
@@ -461,6 +469,58 @@ function BulkMarkPaidModal({ records, onClose }: { records: SalaryRecord[]; onCl
   );
 }
 
+// ── Bulk Edit Due Date Modal — set one due date across every selected record ──
+
+function BulkEditDueDateModal({ records, onClose }: { records: SalaryRecord[]; onClose: () => void }) {
+  const { mutateAsync, isPending, error } = useBulkUpdateDueDate();
+  const [dueDate, setDueDate] = useState(defaultDueDate());
+  const [localErr, setLocalErr] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLocalErr('');
+    if (!dueDate) return setLocalErr('Pick a due date.');
+    await mutateAsync({ ids: records.map((r) => r._id), dueDate });
+    onClose();
+  }
+
+  const displayErr = localErr || (error instanceof Error ? error.message : null);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-900">Edit Due Date for {records.length}</h3>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"><X className="w-4 h-4 text-gray-500" /></button>
+        </div>
+        <div className="max-h-32 overflow-y-auto space-y-1 mb-4 bg-gray-50 rounded-xl p-3">
+          {records.map((r) => (
+            <div key={r._id} className="flex items-center justify-between text-xs">
+              <span className="text-gray-600 truncate">{r.employeeName}</span>
+              <span className="text-gray-400 shrink-0 ml-2">{r.month} {r.year}</span>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div>
+            <label className={labelCls}>New Due Date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputCls} />
+            <p className="text-xs text-gray-400 mt-1">Applied to all {records.length} selected records.</p>
+          </div>
+          {displayErr && (
+            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">
+              <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
+            </div>
+          )}
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-gray-900 hover:bg-black disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarClock className="w-4 h-4" />} Update {records.length} Due Dates
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Inline-editable field — click to edit, Enter/blur to save ──────────────────
 
 function EditableField({
@@ -666,6 +726,7 @@ export function SalaryPage() {
   const [collectingRecord, setCollectingRecord] = useState<SalaryRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkPayOpen, setBulkPayOpen] = useState(false);
+  const [bulkDateOpen, setBulkDateOpen] = useState(false);
   const { mutate: forcePending, isPending: forcingId } = useForcePendingSalary();
 
   const { data, isLoading } = useSalaryList({ status: status === 'all' ? undefined : status, limit: 100 });
@@ -800,7 +861,7 @@ export function SalaryPage() {
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto pb-16">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[1000px] text-sm">
               <thead>
                 <tr className="text-left text-xs font-semibold text-gray-500 border-b border-gray-200">
                   <th className="py-2.5 pl-4 pr-2 w-8"></th>
@@ -809,6 +870,7 @@ export function SalaryPage() {
                   <th className="py-2.5 pr-3">LWP</th>
                   <th className="py-2.5 pr-3">Sum of LWP</th>
                   <th className="py-2.5 pr-3">Security Money</th>
+                  <th className="py-2.5 pr-3">Total</th>
                   <th className="py-2.5 pr-3">Status</th>
                   <th className="py-2.5 pr-4 text-right">Actions</th>
                 </tr>
@@ -862,6 +924,9 @@ export function SalaryPage() {
                       />
                     </td>
                     <td className="py-3 pr-3"><SecurityMoneyCell record={rec} onCollect={() => setCollectingRecord(rec)} /></td>
+                    <td className="py-3 pr-3 font-bold text-gray-900 whitespace-nowrap" title="Salary − Sum of LWP − Security Money collected">
+                      {fmt(netPayable(rec))}
+                    </td>
                     <td className="py-3 pr-3"><StatusLabel status={rec.status} /></td>
                     <td className="py-3 pr-4">
                       <div className="flex gap-1.5 justify-end">
@@ -918,6 +983,13 @@ export function SalaryPage() {
           </button>
           <button
             type="button"
+            onClick={() => setBulkDateOpen(true)}
+            className="h-9 px-3 border border-gray-600 text-white rounded-xl text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5"
+          >
+            <CalendarClock className="w-3.5 h-3.5" /> Edit Due Dates
+          </button>
+          <button
+            type="button"
             onClick={() => setBulkPayOpen(true)}
             className="h-9 px-4 bg-white text-gray-900 rounded-xl text-xs font-bold hover:bg-gray-100"
           >
@@ -936,6 +1008,12 @@ export function SalaryPage() {
         <BulkMarkPaidModal
           records={selectedRecords}
           onClose={() => { setBulkPayOpen(false); setSelectedIds(new Set()); }}
+        />
+      )}
+      {bulkDateOpen && (
+        <BulkEditDueDateModal
+          records={selectedRecords}
+          onClose={() => { setBulkDateOpen(false); setSelectedIds(new Set()); }}
         />
       )}
     </div>

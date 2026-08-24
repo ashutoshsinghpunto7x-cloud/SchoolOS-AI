@@ -154,6 +154,10 @@ interface LineValues {
   discount: number;
   fine: number;
   paid: number;
+  /** True while Paid hasn't been hand-edited — it stays synced to (balance − discount + fine) so
+   * typing a discount actually lowers what needs to be paid, instead of just showing a smaller Due
+   * while Paid silently overshoots. Sync stops the moment the accountant types into Paid directly. */
+  autoPaid?: boolean;
 }
 const EMPTY_VALUES: LineValues = { discount: 0, fine: 0, paid: 0 };
 
@@ -298,8 +302,38 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
   const isPending = updating || creating || paying;
 
-  function updateValue(key: string, field: keyof LineValues, v: number) {
-    setValues((prev) => ({ ...prev, [key]: { ...(prev[key] ?? EMPTY_VALUES), [field]: v } }));
+  function lineBalance(key: string): number {
+    const line = lines.find((l) => l.key === key);
+    if (!line) return 0;
+    const rec = line.existing;
+    return rec ? rec.balance : (student.monthlyTuitionFee ?? 0);
+  }
+
+  // Discount/Fine changes: as long as Paid hasn't been hand-edited (autoPaid), keep it synced to
+  // the new (balance − discount + fine) so a typed discount actually lowers what's owed instead of
+  // leaving Paid stale at the pre-discount amount.
+  function updateDiscount(key: string, v: number) {
+    setValues((prev) => {
+      const cur = prev[key] ?? EMPTY_VALUES;
+      const autoPaid = cur.autoPaid !== false;
+      const balance = lineBalance(key);
+      const paid = autoPaid ? Math.max(0, Math.round((balance + cur.fine - v) * 100) / 100) : cur.paid;
+      return { ...prev, [key]: { ...cur, discount: v, paid, autoPaid } };
+    });
+  }
+
+  function updateFine(key: string, v: number) {
+    setValues((prev) => {
+      const cur = prev[key] ?? EMPTY_VALUES;
+      const autoPaid = cur.autoPaid !== false;
+      const balance = lineBalance(key);
+      const paid = autoPaid ? Math.max(0, Math.round((balance + v - cur.discount) * 100) / 100) : cur.paid;
+      return { ...prev, [key]: { ...cur, fine: v, paid, autoPaid } };
+    });
+  }
+
+  function updatePaid(key: string, v: number) {
+    setValues((prev) => ({ ...prev, [key]: { ...(prev[key] ?? EMPTY_VALUES), paid: v, autoPaid: false } }));
   }
 
   // Checking a row selects it for this transaction and fills Paid with its
@@ -307,7 +341,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
   function toggleLine(key: string, checked: boolean, fullDue: number) {
     setValues((prev) => ({
       ...prev,
-      [key]: checked ? { discount: 0, fine: 0, paid: Math.max(0, fullDue) } : EMPTY_VALUES,
+      [key]: checked ? { discount: 0, fine: 0, paid: Math.max(0, fullDue), autoPaid: true } : EMPTY_VALUES,
     }));
   }
 
@@ -520,9 +554,9 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                           feeAmount={c.feeAmount}
                           values={values[line.key] ?? EMPTY_VALUES}
                           due={c.due}
-                          onDiscChange={(v) => updateValue(line.key, 'discount', v)}
-                          onFineChange={(v) => updateValue(line.key, 'fine', v)}
-                          onPaidChange={(v) => updateValue(line.key, 'paid', v)}
+                          onDiscChange={(v) => updateDiscount(line.key, v)}
+                          onFineChange={(v) => updateFine(line.key, v)}
+                          onPaidChange={(v) => updatePaid(line.key, v)}
                           onToggle={(checked) => toggleLine(line.key, checked, c.due)}
                         />
                       );

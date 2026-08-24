@@ -75,6 +75,37 @@ export function AccountantDashboard() {
                 </div>
               ))}
             </div>
+
+            {/* ── In / out breakdown — the net split above hides whether a mode's
+                number is small because nothing moved, or because inflows and
+                outflows happened to cancel out. These two rows show the raw
+                collected and paid-out amounts behind each net figure. ──────── */}
+            <div className="mt-4 pt-4 border-t border-[#F0F0F0] space-y-3">
+              {[
+                { label: 'Collected today', tone: 'text-emerald-600', split: data?.todayCollected },
+                { label: 'Paid out today',  tone: 'text-red-600',     split: data?.todayPaidOut },
+              ].map((section) => (
+                <div key={section.label} className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-center">
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide col-span-2 sm:col-span-3 -mb-1">
+                    {section.label}
+                  </p>
+                  {[
+                    { label: 'Cash',    icon: Banknote,   value: section.split?.cash },
+                    { label: 'UPI/Online', icon: CreditCard, value: section.split?.online },
+                    { label: 'Bank Transfer', icon: Landmark, value: section.split?.bankTransfer },
+                  ].map((row) => (
+                    <div key={row.label} className="rounded-xl bg-gray-50 px-3.5 py-2.5">
+                      <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+                        <row.icon className="w-3 h-3" /> {row.label}
+                      </div>
+                      <p className={`text-sm font-bold mt-0.5 ${section.tone}`}>
+                        {isLoading ? '—' : fmt(row.value ?? 0)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
