@@ -126,8 +126,26 @@ async function fillMarksGapsWithAi(
     const contextText = [...contextQuestions, contextSourceText].filter(Boolean).join('\n\n')
       || `Chapter topics: ${chapter.topics.join(', ') || chapter.chapterName}`;
 
-    const questionType = config.questionTypes.length === 1 ? config.questionTypes[0] : undefined;
-    tasks.push({ marks: entry.marks, count: short, chapter, contextText, questionType });
+    // A teacher's Question Types filter is a hard constraint on the whole paper, not just on
+    // which existing bank questions get picked (selectQuestions already honors it there) — the
+    // AI fill-in for an unmet marks/type combination has to stay inside that same set too.
+    // Previously this only forwarded a type when exactly one was selected, so picking e.g.
+    // "MCQ + Fill in the Blank" together silently let the gap-filler write any type (often
+    // "short answer") into a paper the teacher had explicitly restricted to those two formats.
+    // With 2+ types selected, split the shortfall across them round-robin instead of leaving it
+    // unconstrained.
+    if (config.questionTypes.length === 0) {
+      tasks.push({ marks: entry.marks, count: short, chapter, contextText, questionType: undefined });
+    } else {
+      const perType = new Map<PaperGenerationConfig['questionTypes'][number], number>();
+      for (let i = 0; i < short; i++) {
+        const t = config.questionTypes[i % config.questionTypes.length];
+        perType.set(t, (perType.get(t) ?? 0) + 1);
+      }
+      for (const [questionType, count] of perType) {
+        tasks.push({ marks: entry.marks, count, chapter, contextText, questionType });
+      }
+    }
   }
 
   if (tasks.length === 0) return [];

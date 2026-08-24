@@ -61,7 +61,7 @@ export const webauthnController = {
       const { response, challenge } = req.body as { response?: AuthenticationResponseJSON; challenge?: string };
       if (!response || !challenge) throw new ValidationError('A login response and challenge are required');
       const { refreshToken, ...result } = await webauthnService.verifyLogin(response, challenge, meta(req), origin(req));
-      setAuthCookies(res, refreshToken);
+      setAuthCookies(res, refreshToken, result.sessionId);
       sendCreated(res, result, 'Login successful');
     } catch (err) { next(err); }
   },

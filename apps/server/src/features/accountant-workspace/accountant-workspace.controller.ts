@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { accountantWorkspaceService } from './accountant-workspace.service';
 import { sendSuccess } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
-import { assertWhatsAppSendAllowed } from '../../lib/whatsapp-test-gate';
 
 export const accountantWorkspaceController = {
   async getDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -45,42 +44,11 @@ export const accountantWorkspaceController = {
     }
   },
 
-  async getStudentLedger(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const ctx  = buildAuthContext(req.user!, req.ip ?? undefined);
-      const data = await accountantWorkspaceService.getStudentLedger(req.params, ctx);
-      sendSuccess(res, data, 'Student ledger loaded');
-    } catch (err) {
-      next(err);
-    }
-  },
-
   async getClassFeeSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx  = buildAuthContext(req.user!, req.ip ?? undefined);
       const data = await accountantWorkspaceService.getClassFeeSummary(req.query, ctx);
       sendSuccess(res, data);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async sendLedgerWhatsAppReminder(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
-      assertWhatsAppSendAllowed(ctx.schoolId);
-      await accountantWorkspaceService.sendLedgerWhatsAppReminder(req.params, ctx);
-      sendSuccess(res, null, 'WhatsApp reminder sent');
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async sendLedgerStatementEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
-      await accountantWorkspaceService.sendLedgerStatementEmail(req.params, ctx);
-      sendSuccess(res, null, 'Statement emailed');
     } catch (err) {
       next(err);
     }

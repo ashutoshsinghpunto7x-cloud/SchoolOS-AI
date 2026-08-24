@@ -20,7 +20,21 @@ const sourceRefSchema = z.object({
   blockIndex: z.number().int().min(0).optional(),
 });
 
-const extractedQuestionDraftSchema = z.object({
+// A saved "mcq" question with fewer than 2 options prints on the exam paper with no answer
+// choices at all — nothing else catches this (PaperDocument only renders the options block when
+// `options` is truthy, and paper-validation.service only warns about coverage/marks/difficulty,
+// not per-question shape) — so it's enforced right here, at the point every question type first
+// gets accepted from a teacher.
+function requireMcqOptions<T extends z.ZodTypeAny>(schema: T) {
+  return schema.superRefine((val, ctx) => {
+    const v = val as { questionType?: string; options?: string[] | null };
+    if (v.questionType === 'mcq' && (!v.options || v.options.filter((o) => o.trim()).length < 2)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['options'], message: 'An MCQ question needs at least 2 answer options' });
+    }
+  });
+}
+
+const extractedQuestionDraftSchema = requireMcqOptions(z.object({
   questionText: z.string().min(1),
   questionType: z.enum(QUESTION_TYPES),
   options: z.array(z.string()).nullish(),
@@ -34,7 +48,7 @@ const extractedQuestionDraftSchema = z.object({
   topic: z.string().nullish(),
   source: z.string().nullish(),
   sourceRef: sourceRefSchema.nullish(),
-});
+}));
 
 export const confirmExtractedQuestionsSchema = z.object({
   class: z.string({ required_error: 'class is required' }).min(1).trim(),
@@ -44,7 +58,7 @@ export const confirmExtractedQuestionsSchema = z.object({
 
 // ── Manual CRUD ────────────────────────────────────────────────────────────────
 
-export const createQuestionSchema = z.object({
+const baseQuestionSchema = z.object({
   class: z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
   chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
@@ -61,7 +75,11 @@ export const createQuestionSchema = z.object({
   source: z.string().nullish(),
 });
 
-export const updateQuestionSchema = createQuestionSchema.partial();
+export const createQuestionSchema = requireMcqOptions(baseQuestionSchema);
+// Not run through requireMcqOptions: a partial update omitting `options` (e.g. changing only the
+// marks value) shouldn't be rejected just because the existing, already-valid question happens to
+// be an mcq — this schema has no view of the question's current saved options to check against.
+export const updateQuestionSchema = baseQuestionSchema.partial();
 
 export const listQuestionsSchema = z.object({
   class: z.string().optional(),

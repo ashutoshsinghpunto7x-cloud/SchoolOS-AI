@@ -10,6 +10,7 @@ import { questionSourceRepository } from './question-source.repository';
 import { chapterRepository } from './chapter.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
+import { normalizeOptions } from './option-text';
 import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions } from '@schoolos/types';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
@@ -627,7 +628,10 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
     extracted.push({
       questionText: entry.questionText.trim(),
       questionType,
-      options: Array.isArray(entry.options) ? entry.options : undefined,
+      // Strip any letter label ("a. ", "(b)", …) the model baked into the option text itself —
+      // PaperDocument always prepends its own (a)/(b)/… label when printing, so leaving the
+      // model's label in would double up ("(a) a. England") on the printed paper.
+      options: normalizeOptions(entry.options),
       correctAnswer: entry.correctAnswer ?? undefined,
       difficulty,
       marks: typeof marksNum === 'number' && !Number.isNaN(marksNum) ? marksNum : 1,

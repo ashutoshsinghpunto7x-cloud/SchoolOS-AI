@@ -122,7 +122,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'teachers', label: 'Teachers Directory', routePrefixes: ['/teachers'] },
   { key: 'teacher-logins', label: 'Teacher Logins', routePrefixes: ['/teacher-logins'] },
   { key: 'attendance', label: 'Attendance', routePrefixes: ['/attendance', '/teacher/attendance'] },
-  { key: 'fees', label: 'Fees', routePrefixes: ['/fees', '/accountant/collect-fee', '/accountant/pending-fees', '/accountant/fee-records', '/accountant/fee-structure', '/accountant/student-ledger'] },
+  { key: 'fees', label: 'Fees', routePrefixes: ['/fees', '/accountant/collect-fee', '/accountant/pending-fees', '/accountant/fee-records', '/accountant/fee-structure'] },
   { key: 'timetable', label: 'Timetable', routePrefixes: ['/timetable'] },
   { key: 'enquiries', label: 'Admissions / Enquiries', routePrefixes: ['/enquiries'] },
   { key: 'calendar', label: 'Calendar & Events', routePrefixes: ['/calendar'] },
@@ -265,6 +265,12 @@ export interface LoginWithPinPayload {
 
 export interface LoginResponse {
   accessToken: string;
+  // Tab-scoped session identifier — stored client-side alongside accessToken
+  // and echoed back as the X-Session-Id header on refresh/logout so the
+  // server can locate this session's refresh-token cookie instead of a
+  // single fixed one shared (and clobberable) across every tab of the
+  // browser. See apps/server/src/lib/auth-cookies.ts.
+  sessionId: string;
   user: AuthUser;
   mustResetPassword?: boolean;
   mustResetPin?: boolean;
@@ -1645,26 +1651,6 @@ export interface SendReceiptEmailPayload {
   feeDescription: string;
   amount: number;
   paymentDate: string;
-}
-
-// ── Student Fee Ledger ────────────────────────────────────────────────────────
-
-export interface StudentLedgerSummary {
-  totalFees: number;
-  totalPaid: number;
-  totalDiscount: number;
-  totalFine: number;
-  totalWaived: number;
-  remainingBalance: number;
-  netAmount: number;
-  lastPaymentDate?: string;
-}
-
-export interface StudentLedgerData {
-  student: Student;
-  feeRecords: FeeRecord[];
-  payments: FeePayment[];
-  summary: StudentLedgerSummary;
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────

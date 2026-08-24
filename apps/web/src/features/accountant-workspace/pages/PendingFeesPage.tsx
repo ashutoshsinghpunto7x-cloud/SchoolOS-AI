@@ -124,10 +124,10 @@ function StudentRow({ student, selectedDate }: { student: StudentGroup; selected
           </div>
           <button
             type="button"
-            onClick={() => navigate(`/accountant/student-ledger/${student.studentId}`)}
+            onClick={() => navigate(`/accountant/collect-fee?studentId=${student.studentId}`)}
             className="w-full h-9 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
           >
-            <IndianRupee className="w-3.5 h-3.5" /> Open Student Ledger to Collect
+            <IndianRupee className="w-3.5 h-3.5" /> Collect Fee
           </button>
         </div>
       )}

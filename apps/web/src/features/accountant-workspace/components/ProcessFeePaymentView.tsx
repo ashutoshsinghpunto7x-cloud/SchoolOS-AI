@@ -183,7 +183,7 @@ function preventWheelChange(e: React.WheelEvent<HTMLInputElement>) {
 // keystroke: Due = (Fee balance − Discount + Fine) − Paid. ───────────────────
 
 function InstallmentRow({
-  line, feeAmount, values, due, onDiscChange, onFineChange, onPaidChange,
+  line, feeAmount, values, due, onDiscChange, onFineChange, onPaidChange, onToggle,
 }: {
   line: PayableLine;
   feeAmount: number;
@@ -192,10 +192,12 @@ function InstallmentRow({
   onDiscChange: (v: number) => void;
   onFineChange: (v: number) => void;
   onPaidChange: (v: number) => void;
+  onToggle: (checked: boolean) => void;
 }) {
   const rec = line.existing;
   const alreadyPaid = rec?.paidAmount ?? 0;
   const touchedPaid = values.paid > 0;
+  const selected = values.paid > 0 || values.discount > 0 || values.fine > 0;
 
   const status: InstallmentStatus =
     due <= 0.004 && (touchedPaid || alreadyPaid > 0) ? 'paid'
@@ -204,8 +206,16 @@ function InstallmentRow({
   const badge = STATUS_BADGES[status];
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50/60 transition-colors">
-      <td className="py-2 pl-3 pr-2">
+    <tr className={cn('border-b border-gray-100 hover:bg-gray-50/60 transition-colors', selected && 'bg-violet-50/40')}>
+      <td className="py-2 pl-3 pr-1 align-top">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-2 focus:ring-[#A855F7]/30 cursor-pointer"
+        />
+      </td>
+      <td className="py-2 pr-2">
         <p className="text-[13px] font-semibold text-gray-900 leading-tight">{line.label}</p>
         <p className="text-[10px] text-gray-400 leading-tight">{line.monthLabel} · Due {fmtDate(line.dueDate)}</p>
         <span className={cn('inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded', badge.classes)}>{badge.label}</span>
@@ -290,6 +300,15 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
 
   function updateValue(key: string, field: keyof LineValues, v: number) {
     setValues((prev) => ({ ...prev, [key]: { ...(prev[key] ?? EMPTY_VALUES), [field]: v } }));
+  }
+
+  // Checking a row selects it for this transaction and fills Paid with its
+  // full outstanding due; unchecking clears Discount/Fine/Paid for that row.
+  function toggleLine(key: string, checked: boolean, fullDue: number) {
+    setValues((prev) => ({
+      ...prev,
+      [key]: checked ? { discount: 0, fine: 0, paid: Math.max(0, fullDue) } : EMPTY_VALUES,
+    }));
   }
 
   // Live, per-line numbers — recomputed on every keystroke, no blur/Enter/button
@@ -433,7 +452,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
     <div className="min-h-screen bg-white">
       <div className="bg-white border-b border-gray-200 px-4 py-3">
         <button onClick={onBack} className="text-xs font-semibold text-gray-500 hover:text-gray-700 flex items-center gap-1 mb-1.5">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Ledger
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Search
         </button>
         <h1 className="text-base font-bold text-gray-900">Fee Collection</h1>
       </div>
@@ -482,7 +501,8 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                 <table className="w-full border-collapse">
                   <thead className="sticky top-0 bg-[#F4F0FB] z-10">
                     <tr className="text-left">
-                      <th className="py-2 pl-3 pr-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide">Installment</th>
+                      <th className="py-2 pl-3 pr-1 w-8"></th>
+                      <th className="py-2 pr-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide">Installment</th>
                       <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Fee</th>
                       <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Discount</th>
                       <th className="py-2 px-2 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-right">Fine</th>
@@ -503,6 +523,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                           onDiscChange={(v) => updateValue(line.key, 'discount', v)}
                           onFineChange={(v) => updateValue(line.key, 'fine', v)}
                           onPaidChange={(v) => updateValue(line.key, 'paid', v)}
+                          onToggle={(checked) => toggleLine(line.key, checked, c.due)}
                         />
                       );
                     })}

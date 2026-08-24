@@ -26,6 +26,15 @@ export const paperValidationService = {
       ? Math.round(((chapters.length - uncovered.length) / chapters.length) * 100)
       : 100;
 
+    // ── Broken MCQs: fewer than 2 options means nothing prints for the student to choose from.
+    // New saves are blocked by question-bank.validation's requireMcqOptions, but this paper may
+    // pull in mcq questions saved before that check existed — surface it so a teacher catches a
+    // blank-choices question here rather than on the printed paper.
+    const brokenMcqs = selected.filter((q) => q.questionType === 'mcq' && (q.options?.filter((o) => o.trim()).length ?? 0) < 2);
+    for (const q of brokenMcqs) {
+      warnings.push(`"${q.questionText.slice(0, 50)}…" is an MCQ with fewer than 2 answer options — fix it in the Question Bank before printing.`);
+    }
+
     // ── Duplicate detection: near-identical question text among selected ──────
     const seen = new Map<string, string>();
     for (const q of selected) {

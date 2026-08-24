@@ -77,7 +77,7 @@ export const recoveryController = {
   async loginWithPin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { refreshToken, ...result } = await recoveryService.loginWithPin(req.body, meta(req));
-      setAuthCookies(res, refreshToken);
+      setAuthCookies(res, refreshToken, result.sessionId);
       sendCreated(res, result, 'Login successful');
     } catch (err) { next(err); }
   },

@@ -13,6 +13,12 @@ export interface AccessTokenPayload {
 
 interface RefreshTokenPayload extends AccessTokenPayload {
   tokenVersion: number;
+  // Identifies the browser tab/device this refresh token belongs to (see
+  // auth-cookies.ts). Required so concurrent logins as different accounts in
+  // different tabs of the same browser each get their own refresh cookie
+  // instead of clobbering a single shared one — see auth.service.refresh for
+  // the mismatch check this enables.
+  sessionId: string;
 }
 
 export interface DecodedRefreshToken extends RefreshTokenPayload {

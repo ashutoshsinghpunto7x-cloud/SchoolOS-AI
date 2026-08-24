@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
-import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Loader2 } from 'lucide-react';
+import { useStudentsPaginated, useStudent } from '@/features/students/hooks/useStudents';
+import { useStudentFees } from '@/features/fees/hooks/useFees';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
+import { ProcessFeePaymentView } from '../components/ProcessFeePaymentView';
 import type { Student } from '@schoolos/types';
 
 function sortByRoll(students: Student[]): Student[] {
@@ -28,21 +30,57 @@ const selectCls =
   'w-full h-11 px-3 rounded-xl border border-gray-300 bg-white text-sm text-slate-800 ' +
   'focus:outline-none focus:ring-2 focus:ring-[#1E293B]/15 focus:border-[#1E293B]/40 disabled:opacity-50';
 
+// ── Fee Collection sub-view: fetches the selected student's fee records and
+// hands off to the shared payment grid. Kept separate so the deep-link path
+// (?studentId=…) and the in-page search selection both go through it. ──────
+
+function FeeCollectionForStudent({ student, onBack }: { student: Student; onBack: () => void }) {
+  const { data: feeRecords, isLoading, isError, refetch } = useStudentFees(student._id);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !feeRecords) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center py-24 gap-4 text-center">
+        <p className="text-gray-600">Could not load this student's fee records.</p>
+        <button onClick={onBack} className="h-10 px-5 rounded-xl bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200">
+          Back to Search
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <ProcessFeePaymentView
+      student={student}
+      feeRecords={feeRecords}
+      onBack={onBack}
+      onPaid={() => void refetch()}
+    />
+  );
+}
+
 // ── Collect Fee: flexible student finder — search by name / roll no. /
 // admission no. / parent phone (any of these narrows live as you type), or
 // just browse a Class + Section without typing a name at all. Selecting a
-// student navigates straight into their ledger, where the accountant
-// reviews history and collects payment. ────────────────────────────────────
+// student opens the fee collection grid directly, in place. ────────────────
 
 export function FeeCollectionPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const preselectStudentId = searchParams.get('studentId');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Deep link support (?studentId=…): skip the search entirely.
+  // Deep link support (?studentId=…): fetch and open that student directly.
+  const { data: preselectStudent } = useStudent(preselectStudentId ?? '');
   useEffect(() => {
-    if (preselectStudentId) navigate(`/accountant/student-ledger/${preselectStudentId}`, { replace: true });
-  }, [preselectStudentId, navigate]);
+    if (preselectStudent) setSelectedStudent(preselectStudent);
+  }, [preselectStudent]);
 
   const { data: classes, isLoading: classesLoading } = useSchoolClasses();
 
@@ -101,7 +139,12 @@ export function FeeCollectionPage() {
   }, [data, parentFilter, nameInput]);
 
   function openStudent(s: Student) {
-    navigate(`/accountant/student-ledger/${s._id}`);
+    setSelectedStudent(s);
+  }
+
+  function closeStudent() {
+    setSelectedStudent(null);
+    if (preselectStudentId) setSearchParams({}, { replace: true });
   }
 
   const handleNameKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -118,11 +161,15 @@ export function FeeCollectionPage() {
     }
   }, [filtered, focusedIndex]);
 
+  if (selectedStudent) {
+    return <FeeCollectionForStudent student={selectedStudent} onBack={closeStudent} />;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4">
         <h1 className="text-base lg:text-lg font-bold text-slate-900">Collect Fee</h1>
-        <p className="text-xs lg:text-sm text-slate-400 mt-0.5">Find a student to open their ledger and collect payment.</p>
+        <p className="text-xs lg:text-sm text-slate-400 mt-0.5">Find a student to collect their fee payment.</p>
       </div>
 
       <div className="px-4 lg:px-8 py-6 w-full space-y-4">

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -131,7 +132,7 @@ export const webauthnService = {
 
   async verifyLogin(
     response: AuthenticationResponseJSON, challenge: string, meta: RequestMeta, requestOrigin?: string,
-  ): Promise<{ accessToken: string; refreshToken: string; user: AccessTokenPayload }> {
+  ): Promise<{ accessToken: string; refreshToken: string; sessionId: string; user: AccessTokenPayload }> {
     const credentialDoc = await WebAuthnCredentialModel.findOne({ credentialId: response.id });
     if (!credentialDoc) throw new UnauthorizedError('This passkey is not registered on this device.');
 
@@ -176,9 +177,11 @@ export const webauthnService = {
       details: { viaPasskey: true }, ip: meta.ip, schoolId: user.schoolId,
     });
 
+    const sessionId = crypto.randomUUID();
     return {
       accessToken: tokenService.generateAccessToken(payload),
-      refreshToken: tokenService.generateRefreshToken({ ...payload, tokenVersion: user.tokenVersion }),
+      refreshToken: tokenService.generateRefreshToken({ ...payload, tokenVersion: user.tokenVersion, sessionId }),
+      sessionId,
       user: payload,
     };
   },

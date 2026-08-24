@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { User } from '../users/user.model';
 import { userRepository } from '../users/user.repository';
@@ -23,7 +24,7 @@ export const authService = {
     rawInput: unknown,
     ip?: string
   ): Promise<{
-    accessToken: string; refreshToken: string; user: AccessTokenPayload;
+    accessToken: string; refreshToken: string; sessionId: string; user: AccessTokenPayload;
     mustResetPassword?: boolean; mustResetPin?: boolean;
   }> {
     const { identifier: rawIdentifier, password } = loginSchema.parse(rawInput);
@@ -97,9 +98,14 @@ export const authService = {
     };
 
     const accessToken = tokenService.generateAccessToken(payload);
+    // Minted fresh per login, not per user — two logins from the same account
+    // (e.g. two tabs) get two independent sessions/cookies, same as two
+    // different accounts do. See auth-cookies.ts for why this matters.
+    const sessionId = crypto.randomUUID();
     const refreshToken = tokenService.generateRefreshToken({
       ...payload,
       tokenVersion: user.tokenVersion,
+      sessionId,
     });
 
     logger.info('Login success', { userId: payload.userId, email: user.email, ip });
@@ -115,20 +121,28 @@ export const authService = {
     });
 
     return {
-      accessToken, refreshToken, user: payload,
+      accessToken, refreshToken, sessionId, user: payload,
       mustResetPassword: user.mustResetPassword || undefined,
       mustResetPin: user.mustResetPin || undefined,
     };
   },
 
   async refresh(
-    rawToken: string
+    rawToken: string,
+    expectedSessionId: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     let decoded;
     try {
       decoded = tokenService.verifyRefreshToken(rawToken);
     } catch {
       throw new UnauthorizedError('Invalid or expired refresh token');
+    }
+
+    // Defense in depth on top of the per-session cookie name: even if a
+    // refresh token somehow ended up under the wrong cookie, the token
+    // itself must also claim the session the caller says it's refreshing.
+    if (decoded.sessionId !== expectedSessionId) {
+      throw new UnauthorizedError('Session mismatch — please log in again');
     }
 
     const user = await userRepository.findByIdForAuth(decoded.userId);
@@ -149,9 +163,12 @@ export const authService = {
 
     return {
       accessToken: tokenService.generateAccessToken(payload),
+      // Same sessionId carried forward — rotation stays inside the same
+      // cookie/tab, it doesn't start a new session.
       refreshToken: tokenService.generateRefreshToken({
         ...payload,
         tokenVersion: user.tokenVersion,
+        sessionId: decoded.sessionId,
       }),
     };
   },

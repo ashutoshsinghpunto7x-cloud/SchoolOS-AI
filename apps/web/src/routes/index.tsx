@@ -697,14 +697,6 @@ const AccountantReportsPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantReportsPage'),
   'AccountantReportsPage',
 );
-const StudentLedgerSearchPage = lazyPage(
-  () => import('@/features/accountant-workspace/pages/StudentLedgerSearchPage'),
-  'StudentLedgerSearchPage',
-);
-const StudentLedgerPage = lazyPage(
-  () => import('@/features/accountant-workspace/pages/StudentLedgerPage'),
-  'StudentLedgerPage',
-);
 const StudentDirectoryPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/StudentDirectoryPage'),
   'StudentDirectoryPage',
@@ -1014,8 +1006,6 @@ export const router = createBrowserRouter([
                       { path: 'accountant/pending-fees',  element: <PendingFeesPage /> },
                       { path: 'accountant/fee-records',   element: <FeeRecordsPage /> },
                       { path: 'accountant/fee-structure', element: <FeeStructureBuilderPage /> },
-                      { path: 'accountant/student-ledger', element: <StudentLedgerSearchPage /> },
-                      { path: 'accountant/student-ledger/:studentId', element: <StudentLedgerPage /> },
                       { path: 'accountant/student-directory', element: <StudentDirectoryPage /> },
                       { path: 'accountant/teacher-directory', element: <TeacherDirectoryPage /> },
                       { path: 'accountant/teachers',       element: <AccountantTeacherSearchPage /> },

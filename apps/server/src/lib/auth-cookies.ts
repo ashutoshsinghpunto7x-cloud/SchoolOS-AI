@@ -1,7 +1,7 @@
 import { Response, Request } from 'express';
 import { env } from '../config/env';
 
-const REFRESH_COOKIE_NAME = 'refreshToken';
+const REFRESH_COOKIE_PREFIX = 'refreshToken';
 // Matches token.service.ts's REFRESH_EXPIRES ('7d') — kept as a separate
 // constant since jwt.sign wants a string ('7d') and res.cookie wants ms.
 const REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -20,6 +20,20 @@ const cookieOptions = {
   maxAge: REFRESH_MAX_AGE_MS,
 };
 
+// The cookie name is suffixed with the caller's sessionId (a random id minted
+// at login, carried client-side in sessionStorage — i.e. tab-scoped, same as
+// the access token). Cookies are NOT tab-scoped: they're shared by every tab
+// of the same browser. On a shared front-office computer, two staff logging
+// into two different accounts in two different tabs used to collide on one
+// fixed `refreshToken` cookie name — whichever login happened last silently
+// won the cookie, and the *other* tab's next token refresh would come back
+// authenticated as the wrong person (session hijack via cookie clobbering).
+// Suffixing the name lets both sessions' refresh tokens coexist as separate
+// cookies, and the caller must know its own sessionId to read its own cookie.
+function cookieName(sessionId: string): string {
+  return `${REFRESH_COOKIE_PREFIX}_${sessionId}`;
+}
+
 /**
  * Sets the refresh token as an httpOnly cookie — unreadable by JS, so an XSS
  * payload can no longer exfiltrate a 7-day-lived credential the way it could
@@ -32,14 +46,14 @@ const cookieOptions = {
  * (see middlewares/csrf.ts) — CORS already blocks any origin we didn't
  * allowlist, so requiring *any* custom header on this route is sufficient.
  */
-export function setAuthCookies(res: Response, refreshToken: string): void {
-  res.cookie(REFRESH_COOKIE_NAME, refreshToken, cookieOptions);
+export function setAuthCookies(res: Response, refreshToken: string, sessionId: string): void {
+  res.cookie(cookieName(sessionId), refreshToken, cookieOptions);
 }
 
-export function clearAuthCookies(res: Response): void {
-  res.clearCookie(REFRESH_COOKIE_NAME, { path: cookieOptions.path });
+export function clearAuthCookies(res: Response, sessionId: string): void {
+  res.clearCookie(cookieName(sessionId), { path: cookieOptions.path });
 }
 
-export function getRefreshTokenFromRequest(req: Request): string | undefined {
-  return (req.cookies as Record<string, string> | undefined)?.[REFRESH_COOKIE_NAME];
+export function getRefreshTokenFromRequest(req: Request, sessionId: string): string | undefined {
+  return (req.cookies as Record<string, string> | undefined)?.[cookieName(sessionId)];
 }

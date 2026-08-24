@@ -52,9 +52,9 @@ export const webauthnApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  async verifyLogin(response: AuthenticationResponseJSON, challenge: string): Promise<{ accessToken: string }> {
+  async verifyLogin(response: AuthenticationResponseJSON, challenge: string): Promise<{ accessToken: string; sessionId: string }> {
     try {
-      const res = await apiClient.post<ApiResponse<{ accessToken: string }>>('/auth/webauthn/login/verify', { response, challenge });
+      const res = await apiClient.post<ApiResponse<{ accessToken: string; sessionId: string }>>('/auth/webauthn/login/verify', { response, challenge });
       return res.data.data;
     } catch (err) { throw new ApiError(err); }
   },

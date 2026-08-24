@@ -13,8 +13,5 @@ router.get('/defaulters/grouped', accountantWorkspaceController.getGroupedDefaul
 router.post('/defaulters/send-to-teacher', accountantWorkspaceController.sendDefaultersToTeacher);
 router.post('/receipts/send-email', accountantWorkspaceController.sendReceiptEmail);
 router.get('/class-fee-summary', accountantWorkspaceController.getClassFeeSummary);
-router.get('/student-ledger/:studentId', accountantWorkspaceController.getStudentLedger);
-router.post('/student-ledger/:studentId/whatsapp-reminder', accountantWorkspaceController.sendLedgerWhatsAppReminder);
-router.post('/student-ledger/:studentId/email-statement', accountantWorkspaceController.sendLedgerStatementEmail);
 
 export default router;

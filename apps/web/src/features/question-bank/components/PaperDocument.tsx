@@ -1,4 +1,5 @@
 import type { GeneratedPaper, SchoolSettings } from '@schoolos/types';
+import { stripOptionLabel } from '../lib/optionText';
 
 const INK = '#14161A';
 const NAVY = '#1C2B4A';
@@ -37,7 +38,7 @@ export function PaperDocument({ paper, schoolSettings }: { paper: GeneratedPaper
                     <p><strong>Q{qNumber}.</strong> {q.questionText} <span className="text-xs" style={{ color: MUTED }}>[{q.marks}]</span></p>
                     {q.questionType === 'mcq' && q.options && (
                       <div className="grid grid-cols-2 gap-x-4 mt-1 pl-5 text-xs">
-                        {q.options.map((opt, i) => <span key={i}>({String.fromCharCode(97 + i)}) {opt}</span>)}
+                        {q.options.map((opt, i) => <span key={i}>({String.fromCharCode(97 + i)}) {stripOptionLabel(opt)}</span>)}
                       </div>
                     )}
                     <p className="text-[10px] mt-1" style={{ color: MUTED }}>

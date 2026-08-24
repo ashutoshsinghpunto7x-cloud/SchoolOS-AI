@@ -30,6 +30,13 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Tells the server which of its refresh-token cookies belongs to this
+    // tab — see auth-cookies.ts on the server for why a fixed cookie name
+    // isn't safe on a browser shared by multiple logged-in staff.
+    const sessionId = sessionStorage.getItem('sessionId');
+    if (sessionId) {
+      config.headers['X-Session-Id'] = sessionId;
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -91,6 +98,7 @@ export const resetAuthRefreshState = () => {
 
 const clearAuthAndRedirect = () => {
   sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('sessionId');
   clearProactiveRefresh();
   window.location.href = '/login';
 };
@@ -108,12 +116,26 @@ const performRefresh = async (): Promise<string> => {
   isRefreshing = true;
 
   try {
+    const sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
+      // No session recorded for this tab (e.g. it was cleared, or this tab
+      // never completed a login) — nothing to refresh. Fail closed rather
+      // than hitting the endpoint with no way to identify which refresh
+      // cookie is ours.
+      throw new Error('No session to refresh');
+    }
+
     const res = await axios.post<{
       data: { accessToken: string };
     }>(`${BASE_URL}/auth/refresh`, null, {
       withCredentials: true,
-      // Presence-only CSRF defense — see server/src/middlewares/csrf.ts.
-      headers: { 'X-CSRF-Token': '1' },
+      headers: {
+        // Presence-only CSRF defense — see server/src/middlewares/csrf.ts.
+        'X-CSRF-Token': '1',
+        // Tells the server which of its refresh cookies is this tab's own —
+        // see the request interceptor above and auth-cookies.ts.
+        'X-Session-Id': sessionId,
+      },
     });
 
     const { accessToken } = res.data.data;

@@ -10,7 +10,7 @@ export const authController = {
     try {
       const ip = req.ip ?? req.socket.remoteAddress;
       const { refreshToken, ...result } = await authService.login(req.body, ip);
-      setAuthCookies(res, refreshToken);
+      setAuthCookies(res, refreshToken, result.sessionId);
       sendCreated(res, result, 'Login successful');
     } catch (err) {
       next(err);
@@ -19,13 +19,21 @@ export const authController = {
 
   async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const refreshToken = getRefreshTokenFromRequest(req);
+      // The client (tab-scoped sessionStorage) tells us which of its own
+      // sessions it's refreshing — see auth-cookies.ts for why the cookie
+      // itself can't be looked up by a fixed name any more.
+      const sessionId = req.header('x-session-id');
+      if (!sessionId) {
+        next(new UnauthorizedError('No session — please log in again'));
+        return;
+      }
+      const refreshToken = getRefreshTokenFromRequest(req, sessionId);
       if (!refreshToken) {
         next(new UnauthorizedError('No refresh token — please log in again'));
         return;
       }
-      const tokens = await authService.refresh(refreshToken);
-      setAuthCookies(res, tokens.refreshToken);
+      const tokens = await authService.refresh(refreshToken, sessionId);
+      setAuthCookies(res, tokens.refreshToken, sessionId);
       sendSuccess(res, { accessToken: tokens.accessToken }, 'Tokens refreshed');
     } catch (err) {
       next(err);
@@ -36,7 +44,8 @@ export const authController = {
     try {
       const { userId, schoolId, firstName, lastName } = req.user!;
       await authService.logout(userId, schoolId, `${firstName} ${lastName}`, req.ip ?? undefined);
-      clearAuthCookies(res);
+      const sessionId = req.header('x-session-id');
+      if (sessionId) clearAuthCookies(res, sessionId);
       sendSuccess(res, null, 'Logged out successfully');
     } catch (err) {
       next(err);

@@ -281,7 +281,7 @@ export const recoveryService = {
 
   async loginWithPin(
     rawInput: unknown, meta: RequestMeta,
-  ): Promise<{ accessToken: string; refreshToken: string; user: AccessTokenPayload }> {
+  ): Promise<{ accessToken: string; refreshToken: string; sessionId: string; user: AccessTokenPayload }> {
     const { deviceId, pin } = loginWithPinSchema.parse(rawInput);
 
     const device = await RememberedDevice.findOne({ deviceId });
@@ -314,9 +314,11 @@ export const recoveryService = {
       details: { viaPin: true }, ip: meta.ip, schoolId: user.schoolId,
     });
 
+    const sessionId = crypto.randomUUID();
     return {
       accessToken: tokenService.generateAccessToken(payload),
-      refreshToken: tokenService.generateRefreshToken({ ...payload, tokenVersion: user.tokenVersion }),
+      refreshToken: tokenService.generateRefreshToken({ ...payload, tokenVersion: user.tokenVersion, sessionId }),
+      sessionId,
       user: payload,
     };
   },

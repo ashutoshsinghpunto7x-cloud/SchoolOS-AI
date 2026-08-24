@@ -66,7 +66,7 @@ function BrowseByClass() {
           {data.students.map((s) => (
             <button
               key={s.studentId}
-              onClick={() => navigate(`/accountant/student-ledger/${s.studentId}`)}
+              onClick={() => navigate(`/accountant/collect-fee?studentId=${s.studentId}`)}
               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors"
             >
               <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-900 font-bold text-xs shrink-0">
@@ -108,10 +108,10 @@ export function FeeRecordsPage() {
           <p className="text-xs text-gray-500">Browse students by class to view their fee records</p>
         </div>
         <button
-          onClick={() => navigate('/accountant/student-ledger')}
+          onClick={() => navigate('/accountant/collect-fee')}
           className="h-9 px-3.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700 shrink-0"
         >
-          Student Ledger
+          Collect Fee
         </button>
       </div>
 

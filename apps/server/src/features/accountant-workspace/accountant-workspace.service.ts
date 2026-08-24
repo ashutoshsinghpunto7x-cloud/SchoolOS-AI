@@ -19,7 +19,6 @@ import { AuthContext } from '../../lib/auth-context';
 import {
   sendDefaultersToTeacherSchema,
   sendReceiptEmailSchema,
-  studentLedgerParamsSchema,
   classFeeSummaryParamsSchema,
 } from './accountant-workspace.validation';
 import type {
@@ -28,7 +27,6 @@ import type {
   FeeDefaulter,
   AccountingActivityEntry,
   ClassDefaulterGroup,
-  StudentLedgerData,
   ClassFeeSummary,
   ClassFeeStudentRow,
   CashBankSplit,
@@ -314,47 +312,6 @@ export const accountantWorkspaceService = {
     });
   },
 
-  /** Full financial picture for one student: profile + every fee record + every payment, with computed totals. */
-  async getStudentLedger(rawParams: unknown, ctx: AuthContext): Promise<StudentLedgerData> {
-    const { studentId } = studentLedgerParamsSchema.parse(rawParams);
-
-    const student = await studentRepository.findById(studentId, ctx.schoolId);
-    if (!student) throw new NotFoundError('Student');
-
-    const [feeRecords, payments] = await Promise.all([
-      feeRepository.findByStudent(ctx.schoolId, studentId),
-      feePaymentRepository.findByStudent(studentId, ctx.schoolId),
-    ]);
-
-    const summary = feeRecords.reduce(
-      (acc, rec) => {
-        acc.totalFees += rec.totalAmount;
-        acc.totalPaid += rec.paidAmount;
-        acc.totalDiscount += rec.discountAmount;
-        acc.totalFine += rec.fineAmount;
-        acc.totalWaived += rec.waivedAmount;
-        acc.remainingBalance += rec.balance;
-        return acc;
-      },
-      { totalFees: 0, totalPaid: 0, totalDiscount: 0, totalFine: 0, totalWaived: 0, remainingBalance: 0 },
-    );
-
-    const sortedPayments = [...payments].sort(
-      (a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime(),
-    );
-
-    return {
-      student: student as unknown as StudentLedgerData['student'],
-      feeRecords: feeRecords as unknown as StudentLedgerData['feeRecords'],
-      payments: sortedPayments as unknown as StudentLedgerData['payments'],
-      summary: {
-        ...summary,
-        netAmount: summary.totalFees + summary.totalFine - summary.totalDiscount - summary.totalWaived,
-        lastPaymentDate: sortedPayments[0]?.paymentDate.toISOString(),
-      },
-    };
-  },
-
   /** Every student in a class+section, roll-number ordered, with their overall fee
    * balance across every fee head — the "Browse by Class" view on Fee Records. */
   async getClassFeeSummary(rawParams: unknown, ctx: AuthContext): Promise<ClassFeeSummary> {
@@ -401,75 +358,4 @@ export const accountantWorkspaceService = {
     return { class: klass, section, students: rows };
   },
 
-  /** WhatsApp fee reminder to the guardian's phone via the existing automation/WHATSAPP channel. */
-  async sendLedgerWhatsAppReminder(rawParams: unknown, ctx: AuthContext): Promise<void> {
-    const { studentId } = studentLedgerParamsSchema.parse(rawParams);
-    const student = await studentRepository.findById(studentId, ctx.schoolId);
-    if (!student) throw new NotFoundError('Student');
-    if (!student.parentPhone) throw new ValidationError('This student has no guardian phone number on file.');
-
-    const feeRecords = await feeRepository.findByStudent(ctx.schoolId, studentId);
-    const balance = feeRecords.reduce((sum, r) => sum + r.balance, 0);
-    if (balance <= 0) throw new ValidationError('This student has no outstanding balance.');
-
-    await automationService.dispatch({
-      type: 'WHATSAPP',
-      payload: {
-        to: student.parentPhone,
-        studentName: student.fullName,
-        class: student.class,
-        section: student.section,
-        balance,
-        triggeredByName: ctx.displayName,
-      },
-      referenceType: 'custom',
-      triggeredBy: ctx.userId,
-      schoolId: ctx.schoolId,
-    });
-
-    auditService.log({
-      userId: ctx.userId, userDisplayName: ctx.displayName,
-      action: 'fee.reminder_sent', resource: 'fees', resourceId: studentId,
-      details: { channel: 'whatsapp', phone: student.parentPhone, balance },
-      ip: ctx.ip, schoolId: ctx.schoolId,
-    });
-  },
-
-  /** Emails the full fee ledger statement to the guardian/student via the existing automation/EMAIL channel. */
-  async sendLedgerStatementEmail(rawParams: unknown, ctx: AuthContext): Promise<void> {
-    const { studentId } = studentLedgerParamsSchema.parse(rawParams);
-    const student = await studentRepository.findById(studentId, ctx.schoolId);
-    if (!student) throw new NotFoundError('Student');
-    if (!student.email) throw new ValidationError('This student has no email on file.');
-
-    const feeRecords = await feeRepository.findByStudent(ctx.schoolId, studentId);
-    const totalFees = feeRecords.reduce((sum, r) => sum + r.totalAmount + r.fineAmount, 0);
-    const totalPaid = feeRecords.reduce((sum, r) => sum + r.paidAmount, 0);
-    const balance = feeRecords.reduce((sum, r) => sum + r.balance, 0);
-
-    await automationService.dispatch({
-      type: 'EMAIL',
-      payload: {
-        to: student.email,
-        subject: `Fee Statement — ${student.fullName}`,
-        studentName: student.fullName,
-        class: student.class,
-        section: student.section,
-        totalFees,
-        totalPaid,
-        balance,
-        triggeredByName: ctx.displayName,
-      },
-      referenceType: 'custom',
-      triggeredBy: ctx.userId,
-      schoolId: ctx.schoolId,
-    });
-
-    auditService.log({
-      userId: ctx.userId, userDisplayName: ctx.displayName,
-      action: 'fee.statement_emailed', resource: 'fees', resourceId: studentId,
-      details: { email: student.email, balance },
-      ip: ctx.ip, schoolId: ctx.schoolId,
-    });
-  },
 };

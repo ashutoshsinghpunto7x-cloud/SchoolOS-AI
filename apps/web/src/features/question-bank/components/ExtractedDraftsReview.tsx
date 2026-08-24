@@ -1,13 +1,7 @@
 import { Loader2, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { ExtractedQuestionDraft, QuestionType, QuestionDifficulty, BloomsLevel } from '@schoolos/types';
-
-const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
-const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
-const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
-
-function labelize(s: string): string {
-  return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
+import { OptionsEditor } from './OptionsEditor';
+import { QUESTION_TYPES, DIFFICULTIES, BLOOMS_LEVELS, labelize, needsCorrectAnswerField } from '../lib/questionTypeMeta';
 
 export type DraftEdit = Omit<ExtractedQuestionDraft, 'marks' | 'estimatedTimeMinutes'> & {
   marks: number | '';
@@ -25,6 +19,8 @@ interface ExtractedDraftsReviewProps {
 
 /** Editable review list for AI-extracted question drafts, shared between the upload flow and the "generate from stored text" flow — nothing is saved to the bank until onConfirm runs. */
 export function ExtractedDraftsReview({ drafts, warnings, onUpdateDraft, onRemoveDraft, onConfirm, confirming }: ExtractedDraftsReviewProps) {
+  const hasInvalidMcq = drafts.some((d) => d.questionType === 'mcq' && (d.options ?? []).filter((o) => o.trim()).length < 2);
+
   return (
     <div className="space-y-3">
       {warnings.length > 0 && (
@@ -74,11 +70,31 @@ export function ExtractedDraftsReview({ drafts, warnings, onUpdateDraft, onRemov
                 <input value={d.topic ?? ''} onChange={(e) => onUpdateDraft(i, { topic: e.target.value })}
                   placeholder="Topic" className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs" />
               </div>
+
+              {d.questionType === 'mcq' && (
+                <OptionsEditor
+                  options={d.options ?? []}
+                  correctAnswer={d.correctAnswer ?? ''}
+                  onChange={(options, correctAnswer) => onUpdateDraft(i, { options, correctAnswer })}
+                />
+              )}
+
+              {needsCorrectAnswerField(d.questionType) && (
+                <div>
+                  <label className="text-[11px] font-semibold text-gray-400">Correct answer</label>
+                  <input
+                    value={d.correctAnswer ?? ''} onChange={(e) => onUpdateDraft(i, { correctAnswer: e.target.value })}
+                    placeholder={d.questionType === 'true_false' ? 'True or False' : 'Correct answer'}
+                    className="mt-0.5 w-full h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                  />
+                </div>
+              )}
             </div>
           ))}
 
           <button
-            type="button" onClick={onConfirm} disabled={confirming}
+            type="button" onClick={onConfirm} disabled={confirming || hasInvalidMcq}
+            title={hasInvalidMcq ? 'Fix the MCQ question(s) missing 2+ options first' : undefined}
             className="w-full h-11 rounded-xl bg-[#1C2B4A] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}

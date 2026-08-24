@@ -7,6 +7,7 @@ import { questionExtractionService, flattenBlocksToText } from './question-extra
 import { IQuestion } from './question.model';
 import { ISyllabusChapter } from './chapter.model';
 import { IQuestionSource } from './question-source.model';
+import { normalizeOptions } from './option-text';
 import {
   ConfirmExtractedQuestionsInput,
   CreateQuestionInput,
@@ -53,7 +54,7 @@ export const questionBankService = {
       topic: data.topic,
       questionText: data.questionText,
       questionType: data.questionType,
-      options: data.options ?? undefined,
+      options: normalizeOptions(data.options),
       correctAnswer: data.correctAnswer ?? undefined,
       difficulty: data.difficulty,
       marks: data.marks,
@@ -85,7 +86,7 @@ export const questionBankService = {
         topic,
         questionText: q.questionText,
         questionType: q.questionType,
-        options: q.options ?? undefined,
+        options: normalizeOptions(q.options),
         correctAnswer: q.correctAnswer ?? undefined,
         difficulty: q.difficulty,
         marks: q.marks,
@@ -117,7 +118,7 @@ export const questionBankService = {
 
     const updated = await questionRepository.update(id, ctx.schoolId, {
       ...data,
-      options: data.options ?? undefined,
+      options: normalizeOptions(data.options),
       correctAnswer: data.correctAnswer ?? undefined,
       source: data.source ?? undefined,
       chapterId,
