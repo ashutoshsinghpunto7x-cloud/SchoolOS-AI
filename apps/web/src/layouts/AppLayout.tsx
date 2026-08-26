@@ -25,6 +25,9 @@ function AppLayoutInner() {
   // Parent Workspace ships its own full-bleed shell (ParentLayout: header +
   // bottom nav) — same treatment as the teacher portal above.
   const isParentWorkspace = user?.role === 'parent';
+  // Driver Dashboard is a single full-bleed mobile page (big Start/End Route
+  // button) — same "no sidebar/topbar chrome" treatment as teacher/parent/accountant.
+  const isDriver = user?.role === 'driver';
   const mainRef = useRef<HTMLElement>(null);
 
   // Read the shared theme — safe because this component is always wrapped in
@@ -65,7 +68,7 @@ function AppLayoutInner() {
   return (
     <div className={cn(
       "flex h-screen overflow-hidden",
-      isAccountant
+      isAccountant || isDriver
         ? "bg-white"
         : isDark
           ? (isTeacher ? "teacher-aurora-bg" : "bg-[#0B0C12]")
@@ -88,24 +91,24 @@ function AppLayoutInner() {
           sidebar; teacher/parent cover navigation with their own bottom nav +
           header, and Accountant uses a top nav bar with dropdowns instead
           (see AccountantTopNav) so its dense pages get the full page width. */}
-      {!isTeacher && !isParentWorkspace && !isAccountant && (
+      {!isTeacher && !isParentWorkspace && !isAccountant && !isDriver && (
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Main content — offset by sidebar on desktop (not for teacher/parent/accountant, whose sidebar doesn't apply) */}
+      {/* Main content — offset by sidebar on desktop (not for teacher/parent/accountant/driver, whose sidebar doesn't apply) */}
       <div className={cn(
         'flex flex-1 flex-col min-h-screen overflow-hidden',
-        !isTeacher && !isParentWorkspace && !isAccountant && 'lg:ml-[260px]'
+        !isTeacher && !isParentWorkspace && !isAccountant && !isDriver && 'lg:ml-[260px]'
       )}>
         {/* Accountant gets one combined header (AccountantTopNav: nav boxes +
             clock/date/notifications/profile) instead of the generic Topbar
             stacked above it — the Topbar's breadcrumb only ever repeated
             "Accountant Workspace", which AccountantTopNav's own nav already
-            makes obvious. */}
-        {!isParentWorkspace && !isAccountant && (
+            makes obvious. Driver Dashboard has no header chrome at all. */}
+        {!isParentWorkspace && !isAccountant && !isDriver && (
           <Topbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
         )}
         {isAccountant && <AccountantTopNav />}

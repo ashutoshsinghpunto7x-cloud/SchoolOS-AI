@@ -27,8 +27,12 @@ const STATUS_CODE: Record<AttendanceStatus, string> = {
   leave_approved: 'O',
 };
 
+// Local YYYY-MM-DD — see toLocalIsoDate below for why we don't use
+// toISOString here (it shifts the date back a day in timezones ahead of
+// UTC, like IST).
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 type ClassRow = {

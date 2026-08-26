@@ -135,33 +135,33 @@ export const ReceptionWorkspace = () => {
     isAdmin,
   );
 
+  // Reception's dashboard is intentionally bare-bones — just the two action
+  // cards, no hero header/clock/weather/meetings widget (2026-08-25 feedback:
+  // that stuff was clutter reception never used).
   if (isReception) {
     return (
       <PageContainer>
         <div className="flex flex-col gap-6">
-          <PrincipalHeaderWidget showWeather={false} />
-          <WorkspaceSection>
-            <SectionHeader
-              title="Today's Work"
-              subtitle="Quick actions for your reception duties"
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Reception</h1>
+            <p className="text-sm text-gray-500">Quick actions for your reception duties</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ReceptionActionCard
+              title="Visitor Log"
+              description="Record a visitor check-in with their purpose of visit, and check them out."
+              buttonLabel="Open Visitor Log"
+              accent="blue"
+              onClick={() => navigate('/reception/visitors')}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ReceptionActionCard
-                title="Visitor Log"
-                description="Record a visitor check-in with their purpose of visit, and check them out."
-                buttonLabel="Open Visitor Log"
-                accent="blue"
-                onClick={() => navigate('/reception/visitors')}
-              />
-              <ReceptionActionCard
-                title="Attendance Records"
-                description="View any class's attendance and print or save it as a PDF for offline records."
-                buttonLabel="View Attendance"
-                accent="amber"
-                onClick={() => navigate('/reception/attendance')}
-              />
-            </div>
-          </WorkspaceSection>
+            <ReceptionActionCard
+              title="Attendance Records"
+              description="View any class's attendance and print or save it as a PDF for offline records."
+              buttonLabel="View Attendance"
+              accent="amber"
+              onClick={() => navigate('/reception/attendance')}
+            />
+          </div>
         </div>
       </PageContainer>
     );

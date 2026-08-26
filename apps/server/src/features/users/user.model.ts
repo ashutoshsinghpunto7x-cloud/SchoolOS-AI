@@ -7,6 +7,7 @@ export type UserRole =
   | 'teacher'
   | 'accountant'
   | 'parent'
+  | 'driver'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
   | 'owner'
   | 'super_admin'
@@ -69,7 +70,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
       required: true,
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },

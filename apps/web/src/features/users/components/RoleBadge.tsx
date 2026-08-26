@@ -7,6 +7,7 @@ const CONFIG: Record<UserRole, { label: string; className: string }> = {
   teacher: { label: 'Teacher', className: 'bg-green-100 text-green-700' },
   accountant: { label: 'Accountant', className: 'bg-amber-100 text-amber-700' },
   parent: { label: 'Parent', className: 'bg-pink-100 text-pink-700' },
+  driver: { label: 'Driver', className: 'bg-teal-100 text-teal-700' },
   owner: { label: 'Owner', className: 'bg-slate-100 text-slate-700' },
   super_admin: { label: 'Super Admin', className: 'bg-slate-100 text-slate-700' },
   devops: { label: 'DevOps', className: 'bg-slate-100 text-slate-700' },

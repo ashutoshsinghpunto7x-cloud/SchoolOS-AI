@@ -45,6 +45,7 @@ export const MODULE_CATALOG: ServerModuleCatalogEntry[] = [
   { key: 'worksheet-generator', label: 'Worksheet Generator' },
   { key: 'planner', label: 'Teacher Planner' },
   { key: 'syllabus-tracker', label: 'Syllabus Tracker' },
+  { key: 'transport', label: 'Transport / Live Tracking' },
 ];
 
 export const MODULE_CATALOG_KEYS: string[] = MODULE_CATALOG.map((m) => m.key);

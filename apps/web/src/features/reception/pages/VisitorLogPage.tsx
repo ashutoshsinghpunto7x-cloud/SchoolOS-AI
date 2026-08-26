@@ -19,8 +19,15 @@ const PURPOSE_LABEL: Record<VisitorPurpose, string> = Object.fromEntries(
   PURPOSE_OPTIONS.map((o) => [o.value, o.label])
 ) as Record<VisitorPurpose, string>;
 
+// Local YYYY-MM-DD — `toISOString` converts to UTC first, which silently
+// shifts the date back a day in any timezone ahead of UTC (e.g. IST),
+// desyncing this filter's default from the visitor's actual check-in day.
 function todayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function fmtTime(iso?: string) {

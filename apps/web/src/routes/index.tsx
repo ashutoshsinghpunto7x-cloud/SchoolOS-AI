@@ -810,6 +810,20 @@ const ParentTakeTestPage = lazyPage(
   () => import('@/features/parent-workspace/pages/TakeTestPage'),
   'TakeTestPage',
 );
+const ParentTransportPage = lazyPage(
+  () => import('@/features/parent-workspace/pages/ParentTransportPage'),
+  'ParentTransportPage',
+);
+
+// Transport / Live Van Tracking
+const DriverDashboardPage = lazyPage(
+  () => import('@/features/transport/pages/DriverDashboardPage'),
+  'DriverDashboardPage',
+);
+const TransportManagementPage = lazyPage(
+  () => import('@/features/transport/pages/TransportManagementPage'),
+  'TransportManagementPage',
+);
 
 const ComingSoon = lazyPage(
   () => import('@/pages/ComingSoon'),
@@ -1063,8 +1077,18 @@ export const router = createBrowserRouter([
                       { path: 'parent/tests', element: <ParentTestsPage /> },
                       { path: 'parent/tests/:id/take', element: <ParentTakeTestPage /> },
                       { path: 'parent/more', element: <ParentMorePage /> },
+                      { path: 'parent/transport', element: <ParentTransportPage /> },
                     ],
                   },
+                ],
+              },
+
+              // Driver Dashboard (driver-role only, single mobile-first page —
+              // no sidebar/topbar chrome, see AppLayout's isDriver branch)
+              {
+                element: <ProtectedRoute allowedRoles={['driver']} />,
+                children: [
+                  { path: 'driver', element: <DriverDashboardPage /> },
                 ],
               },
 
@@ -1190,6 +1214,16 @@ export const router = createBrowserRouter([
                   { path: 'term-report-cards', element: <TermReportCardHubPage /> },
                   { path: 'term-report-cards/:cls/:section/:academicYear', element: <TermReportCardRosterPage /> },
                   { path: 'term-report-cards/:cls/:section/:academicYear/student/:studentId', element: <TermReportCardPreviewPage /> },
+                ],
+              },
+
+              // Transport Management — Admin and Principal both manage vehicles,
+              // drivers, and student assignments (per user decision).
+              {
+                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                children: [
+                  { path: 'transport', element: <TransportManagementPage /> },
+                  { path: 'principal/transport', element: <TransportManagementPage /> },
                 ],
               },
 

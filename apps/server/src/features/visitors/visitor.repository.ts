@@ -30,9 +30,13 @@ export interface PaginatedVisitors {
   limit: number;
 }
 
+// Visitor check-in/out times are recorded against the school's local
+// calendar day (IST), not UTC — using a UTC midnight boundary here silently
+// dropped/misfiled any visitor checked in between 12:00–5:29 AM IST, since
+// that instant still falls on the *previous* UTC day.
 const dayBounds = (dateStr: string): { start: Date; end: Date } => {
-  const start = new Date(`${dateStr}T00:00:00.000Z`);
-  const end = new Date(`${dateStr}T23:59:59.999Z`);
+  const start = new Date(`${dateStr}T00:00:00.000+05:30`);
+  const end = new Date(`${dateStr}T23:59:59.999+05:30`);
   return { start, end };
 };
 

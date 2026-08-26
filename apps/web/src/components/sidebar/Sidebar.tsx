@@ -32,6 +32,7 @@ import {
   ScanLine,
   FileCheck2,
   CalendarClock,
+  Bus,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -93,6 +94,7 @@ const NAV_ITEMS_ADMIN = [
   { label: 'Data Import',        icon: Database,       path: '/import' },
   { label: 'Integrations',       icon: Plug,           path: '/integrations' },
   { label: 'Administration',     icon: ShieldCheck,    path: '/administration' },
+  { label: 'Transport',          icon: Bus,            path: '/transport' },
 ] as const;
 
 // Smart QR Attendance & Payroll — Phase 1 (HR admin tools) + Phase 2 (payroll UI).
@@ -125,6 +127,7 @@ const NAV_ITEMS_PRINCIPAL = [
   { label: 'Messages',            icon: Mail,             path: '/messages',                        end: false },
   { label: 'Change Password',     icon: ShieldCheck,      path: '/principal/change-password',       end: false },
   { label: 'More Insights',       icon: FileBarChart2,   path: '/principal/insights',              end: false },
+  { label: 'Transport',           icon: Bus,             path: '/principal/transport',             end: false },
 ] as const;
 
 const ROLE_LABEL: Record<string, string> = {

@@ -92,6 +92,7 @@ export type UserRole =
   | 'teacher'
   | 'accountant'
   | 'parent'
+  | 'driver'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
   | 'owner'
   | 'super_admin'
@@ -150,6 +151,7 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'planner', label: 'Teacher Planner', routePrefixes: ['/teacher/planner'] },
   { key: 'principal-planner', label: 'Principal Planner', routePrefixes: ['/principal/planner'] },
   { key: 'syllabus-tracker', label: 'Syllabus Tracker', routePrefixes: ['/teacher/syllabus-tracker'] },
+  { key: 'transport', label: 'Transport / Live Tracking', routePrefixes: ['/transport', '/driver', '/parent/transport', '/principal/transport'] },
 ];
 
 // ── User ──────────────────────────────────────────────────────────────────────

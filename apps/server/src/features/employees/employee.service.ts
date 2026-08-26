@@ -23,11 +23,12 @@ const LOGIN_SALT_ROUNDS = 12;
 
 // HR job-role → auth UserRole for the subset of employee roles that are
 // actually login-capable. Anything not in this map cannot get a login account.
-const LOGIN_CAPABLE_ROLES: Partial<Record<EmployeeRole, 'teacher' | 'principal' | 'accountant' | 'reception'>> = {
+const LOGIN_CAPABLE_ROLES: Partial<Record<EmployeeRole, 'teacher' | 'principal' | 'accountant' | 'reception' | 'driver'>> = {
   teacher: 'teacher',
   principal: 'principal',
   accountant: 'accountant',
   receptionist: 'reception',
+  driver: 'driver',
 };
 
 const QR_SIGNING_SECRET = process.env.QR_SIGNING_SECRET || env.JWT_ACCESS_SECRET;

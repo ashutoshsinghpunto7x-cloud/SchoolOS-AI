@@ -30,6 +30,7 @@ import { Enquiry } from '../features/enquiries/enquiry.model';
 import { ClassTeacherAssignment } from '../features/classes/class-teacher.model';
 import { PeriodSlot } from '../features/timetable/timetable.period.model';
 import { Timetable, ITimetableEntry } from '../features/timetable/timetable.model';
+import { Vehicle, VehicleLocation, StudentTransportAssignment } from '../features/transport/transport.model';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -82,6 +83,16 @@ const DEMO_PARENT = {
   firstName: 'Ekansh',
   lastName: 'Sharma',
 };
+
+const DEMO_DRIVER = {
+  email: 'demodriver@demo.schoolos.ai',
+  username: 'demodriver',
+  firstName: 'Suresh',
+  lastName: 'Kumar',
+};
+
+// Roughly central Delhi — arbitrary but plausible so the map pin lands somewhere real.
+const DEMO_VEHICLE_START = { latitude: 28.6139, longitude: 77.209 };
 
 // ── Name pools (kept small and clearly fictional) ──────────────────────────
 
@@ -389,6 +400,58 @@ async function main() {
   );
   console.log(`+ Parent login ready: ${DEMO_PARENT.email} / ${PASSWORD} (linked to ${demoParentLinkedStudentIds.length} students)`);
 
+  // ── 5c. Driver User login + Vehicle, assigned to the parent's first child ──
+  const driverUser = await User.findOneAndUpdate(
+    { email: DEMO_DRIVER.email },
+    {
+      firstName: DEMO_DRIVER.firstName,
+      lastName: DEMO_DRIVER.lastName,
+      email: DEMO_DRIVER.email,
+      username: DEMO_DRIVER.username,
+      passwordHash,
+      role: 'driver',
+      schoolId: SCHOOL_ID,
+      status: 'active',
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log(`+ Driver login ready: ${DEMO_DRIVER.email} / ${PASSWORD}`);
+
+  await Vehicle.deleteMany({ schoolId: SCHOOL_ID });
+  const driverName = `${DEMO_DRIVER.firstName} ${DEMO_DRIVER.lastName}`;
+  const vehicle = await Vehicle.create({
+    schoolId: SCHOOL_ID,
+    vehicleNumber: 'DL-1PC-4041',
+    routeName: 'Route 1 — Demo Colony',
+    driverUserId: driverUser._id.toString(),
+    driverName,
+    status: 'active',
+  });
+
+  await StudentTransportAssignment.deleteMany({ schoolId: SCHOOL_ID });
+  if (demoParentLinkedStudentIds[0]) {
+    await StudentTransportAssignment.create({
+      schoolId: SCHOOL_ID,
+      studentId: demoParentLinkedStudentIds[0],
+      vehicleId: vehicle._id.toString(),
+    });
+  }
+
+  // Seed a "route active" fix so the parent dashboard shows a live pin
+  // immediately, without needing the driver to actually open the app first.
+  await VehicleLocation.findOneAndUpdate(
+    { vehicleId: vehicle._id.toString() },
+    {
+      schoolId: SCHOOL_ID,
+      vehicleId: vehicle._id.toString(),
+      latitude: DEMO_VEHICLE_START.latitude,
+      longitude: DEMO_VEHICLE_START.longitude,
+      routeStatus: 'active',
+    },
+    { upsert: true, setDefaultsOnInsert: true },
+  );
+  console.log(`+ Vehicle ready: ${vehicle.vehicleNumber} (${vehicle.routeName}), driver assigned, 1 student assigned, live fix seeded`);
+
   // ── 6. A handful of admissions-pipeline enquiries ──────────────────────────
   const ENQUIRY_STAGES: Array<{ stage: string; source: string }> = [
     { stage: 'new_enquiry', source: 'website' },
@@ -439,6 +502,7 @@ async function main() {
   console.log(`  ${DEMO_PRINCIPAL.email}  (or username "${DEMO_PRINCIPAL.username}")  /  ${PASSWORD}   — principal dashboard`);
   console.log(`  ${DEMO_RECEPTION.email}  (or username "${DEMO_RECEPTION.username}")  /  ${PASSWORD}   — reception dashboard`);
   console.log(`  ${DEMO_PARENT.email}  (or username "${DEMO_PARENT.username}")  /  ${PASSWORD}   — parent dashboard`);
+  console.log(`  ${DEMO_DRIVER.email}  (or username "${DEMO_DRIVER.username}")  /  ${PASSWORD}   — driver dashboard (vehicle DL-1PC-4041)`);
 
   await mongoose.disconnect();
   console.log('\nDone.');

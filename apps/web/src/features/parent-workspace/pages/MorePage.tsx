@@ -7,6 +7,7 @@ import {
   LogOut,
   ChevronRight,
   ClipboardList,
+  Bus,
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
@@ -104,6 +105,10 @@ export function MorePage() {
 
         <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
           <MenuRow icon={ClipboardList} label="Mock Tests" sub="Live and upcoming tests" onClick={() => navigate('/parent/tests')} />
+        </motion.div>
+
+        <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
+          <MenuRow icon={Bus} label="Live Bus Tracking" sub="See your child's van on the map" onClick={() => navigate('/parent/transport')} />
         </motion.div>
 
         <motion.div variants={fadeUp} transition={{ duration: 0.25 }} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-3">
