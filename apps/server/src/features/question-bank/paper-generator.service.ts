@@ -203,6 +203,161 @@ async function fillMarksGapsWithAi(
   return created;
 }
 
+/**
+ * Marks-gap filling (above) only tops up a bucket's *count*; it never checks whether the
+ * questions that already satisfy a marks bucket are the *difficulty* the teacher actually asked
+ * for. Left alone, a paper could hit "4 questions worth 5 marks" while none of them are the
+ * "hard" ones the teacher selected — paper-validation.service would only warn about it, never
+ * fix it, and the teacher had no way to actually get the hard questions they picked.
+ *
+ * This pass runs after marks gaps are filled: for every difficulty level still short of its
+ * requested count, it swaps out selected questions from a difficulty that has a genuine surplus
+ * (pulled evenly across marks values so the marks distribution stays intact) for freshly
+ * AI-authored replacements explicitly targeted at the missing difficulty. Swaps only actually
+ * happen once the AI call for that batch succeeds — a failed/rejected call leaves the original
+ * selection untouched rather than losing questions net.
+ */
+async function fillDifficultyGapsWithAi(
+  pool: IQuestion[],
+  selected: IQuestion[],
+  chapters: ISyllabusChapter[],
+  config: PaperGenerationConfig,
+  ctx: AuthContext,
+): Promise<IQuestion[]> {
+  const requestedTotal = config.difficultyMix.easy + config.difficultyMix.medium + config.difficultyMix.hard;
+  if (requestedTotal === 0) return [];
+
+  const actual: Record<QuestionDifficulty, number> = { easy: 0, medium: 0, hard: 0 };
+  for (const q of selected) actual[q.difficulty] += 1;
+
+  const shortfall: Record<QuestionDifficulty, number> = {
+    easy: Math.max(0, config.difficultyMix.easy - actual.easy),
+    medium: Math.max(0, config.difficultyMix.medium - actual.medium),
+    hard: Math.max(0, config.difficultyMix.hard - actual.hard),
+  };
+  const surplus: Record<QuestionDifficulty, number> = {
+    easy: Math.max(0, actual.easy - config.difficultyMix.easy),
+    medium: Math.max(0, actual.medium - config.difficultyMix.medium),
+    hard: Math.max(0, actual.hard - config.difficultyMix.hard),
+  };
+
+  interface SwapTask {
+    marks: number;
+    difficulty: QuestionDifficulty;
+    questionType?: QuestionDto['questionType'];
+    count: number;
+    chapter: ISyllabusChapter;
+    victims: IQuestion[];
+  }
+  const tasks = new Map<string, SwapTask>();
+  const marksByChapter = new Map<string, number>();
+  for (const q of selected) marksByChapter.set(q.chapterId, (marksByChapter.get(q.chapterId) ?? 0) + 1);
+
+  (['hard', 'medium', 'easy'] as const).forEach((level) => {
+    let need = shortfall[level];
+    while (need > 0) {
+      // Pick the swappable selected question from whichever surplus difficulty is most over,
+      // so the swap draws down the biggest excess first rather than an arbitrary one.
+      let victimIdx = -1;
+      let bestSurplus = 0;
+      for (let i = 0; i < selected.length; i++) {
+        const d = selected[i].difficulty;
+        if (d === level || surplus[d] <= 0) continue;
+        if (surplus[d] > bestSurplus) { bestSurplus = surplus[d]; victimIdx = i; }
+      }
+      if (victimIdx === -1) break; // no more genuine surplus to draw from — can't swap further
+
+      const victim = selected[victimIdx];
+      surplus[victim.difficulty] -= 1;
+      selected.splice(victimIdx, 1);
+
+      const chapter = chapters.find((c) => String(c._id) === victim.chapterId)
+        ?? [...chapters].sort((a, b) => (marksByChapter.get(String(a._id)) ?? 0) - (marksByChapter.get(String(b._id)) ?? 0))[0];
+
+      // Key by the victim's own question type too — not just marks/difficulty — so a swap never
+      // drifts a paper's type mix. Without this, a bucket mixing e.g. mcq and fill_blank victims
+      // would collapse into one task with no questionType constraint at all, letting the AI
+      // return plain/short-answer replacements even when the teacher explicitly restricted the
+      // paper to specific formats.
+      const key = `${victim.marks}::${level}::${victim.questionType}`;
+      const task = tasks.get(key) ?? { marks: victim.marks, difficulty: level, questionType: victim.questionType, count: 0, chapter, victims: [] };
+      task.count += 1;
+      task.victims.push(victim);
+      tasks.set(key, task);
+      need -= 1;
+    }
+  });
+
+  if (tasks.size === 0) return [];
+
+  const taskList = [...tasks.values()];
+  const results = await Promise.allSettled(taskList.map((task) =>
+    questionExtractionService.synthesizeQuestions(
+      {
+        class: config.class,
+        subject: config.subject,
+        chapterName: task.chapter.chapterName,
+        marks: task.marks,
+        count: task.count,
+        difficulty: task.difficulty,
+        questionType: task.questionType,
+        contextText: pool.filter((q) => q.chapterId === String(task.chapter._id)).map((q) => q.questionText).slice(0, 10).join('\n\n'),
+      },
+      ctx,
+    ),
+  ));
+
+  const created: IQuestion[] = [];
+  for (let i = 0; i < taskList.length; i++) {
+    const task = taskList[i];
+    const result = results[i];
+
+    if (result.status === 'rejected' || result.value.length === 0) {
+      // AI couldn't produce replacements for this batch — put the victims back rather than
+      // leaving the paper with fewer questions than it started with.
+      logger.error('[PaperGenerator] AI difficulty-gap synthesis failed', {
+        schoolId: ctx.schoolId, chapterId: String(task.chapter._id), difficulty: task.difficulty, marks: task.marks,
+        error: result.status === 'rejected' ? (result.reason instanceof Error ? result.reason.message : String(result.reason)) : undefined,
+      });
+      selected.push(...task.victims);
+      continue;
+    }
+
+    const drafts = result.value;
+    const newQuestions = await questionRepository.createMany(drafts.map((d) => ({
+      schoolId: ctx.schoolId,
+      class: config.class,
+      subject: config.subject,
+      chapterId: String(task.chapter._id),
+      chapterName: task.chapter.chapterName,
+      topic: d.topic,
+      questionText: d.questionText,
+      questionType: d.questionType,
+      options: d.options,
+      correctAnswer: d.correctAnswer,
+      difficulty: task.difficulty,
+      marks: task.marks,
+      estimatedTimeMinutes: d.estimatedTimeMinutes,
+      bloomsLevel: d.bloomsLevel,
+      keywords: d.keywords,
+      source: 'AI-generated to complete a paper request',
+      createdBy: ctx.userId,
+    })));
+
+    created.push(...newQuestions);
+    selected.push(...newQuestions);
+    pool.push(...newQuestions);
+
+    // Fewer replacements came back than victims removed (e.g. dedupe trimmed the batch) — put
+    // the shortfall's worth of victims back so the paper doesn't end up net-shorter.
+    if (newQuestions.length < task.victims.length) {
+      selected.push(...task.victims.slice(newQuestions.length));
+    }
+  }
+
+  return created;
+}
+
 export const paperGeneratorService = {
   async generate(config: PaperGenerationConfig, ctx: AuthContext): Promise<GeneratedPaper> {
     const chapters = await chapterRepository.findByIds(ctx.schoolId, config.chapterIds);
@@ -212,6 +367,7 @@ export const paperGeneratorService = {
 
     const selected = selectQuestions(pool, config);
     await fillMarksGapsWithAi(pool, selected, chapters, config, ctx);
+    await fillDifficultyGapsWithAi(pool, selected, chapters, config, ctx);
 
     if (selected.length === 0) {
       throw new ValidationError('No questions in the bank for the selected class/subject/chapters yet, and AI question generation is not configured on this server — upload sources first.');
