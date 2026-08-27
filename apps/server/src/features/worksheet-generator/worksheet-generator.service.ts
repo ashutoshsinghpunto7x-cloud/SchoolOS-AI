@@ -56,15 +56,22 @@ function toWorksheetQuestion(q: IQuestion): IWorksheetQuestion {
 
 function buildAuthoringPrompt(input: GenerateWorksheetInput, chapterNames: string[], count: number): string {
   const preset = WORKSHEET_PRESETS[input.worksheetType];
+  // A preset with exactly one allowed difficulty (olympiad → hard, remedial → easy) is a hard
+  // requirement, not a suggestion — without spelling that out the model tends to judge a chapter
+  // "too basic/advanced" for the requested level and quietly writes an easier/harder question
+  // instead, or returns fewer than asked, which is how a teacher ends up with a "hard" worksheet
+  // that isn't actually hard. Force it explicitly and forbid refusing/downgrading.
+  const forcedDifficulty = preset.difficulties.length === 1 ? preset.difficulties[0] : undefined;
+
   return `You are an experienced school teacher writing ${count} new questions for a ${preset.label} for Class ${input.class} ${input.subject}, covering: ${chapterNames.join(', ')}.
 
 Write ${preset.authoringGuidance}.
-
+${forcedDifficulty ? `\nEvery single question MUST be "${forcedDifficulty}" difficulty — that is what this worksheet type requires. If the chapter content looks too simple or too advanced to naturally reach "${forcedDifficulty}", stretch the question yourself (deeper application, multi-step reasoning, an unfamiliar angle on the same concept) rather than writing an easier/harder one or skipping it. Return all ${count} questions at "${forcedDifficulty}" difficulty — never fewer.\n` : ''}
 For each question, return:
 - "questionText": the question
 - "questionType": one of ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}
 - "options": array of option strings, only if questionType is "mcq"
-- "difficulty": one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}
+- "difficulty": ${forcedDifficulty ? `must be exactly "${forcedDifficulty}"` : `one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}`}
 - "estimatedTimeMinutes": estimated minutes a student would need
 - "keywords": 2-4 key terms from the question
 
@@ -82,7 +89,11 @@ function parseAuthored(raw: string): RawAuthoredQuestion[] {
   }
 }
 
-function cleanAuthored(raw: RawAuthoredQuestion[]): WorksheetQuestionDraft[] {
+// `forcedDifficulty` is passed for presets with exactly one allowed difficulty (olympiad → hard,
+// remedial → easy) — the prompt already asks for it, but the model's self-reported "difficulty"
+// field is normalized here too, in case it drifts, so a requested difficulty is never silently
+// swapped for an easier/harder one.
+function cleanAuthored(raw: RawAuthoredQuestion[], forcedDifficulty?: QuestionDifficulty): WorksheetQuestionDraft[] {
   return raw
     .filter((q) => q.questionText?.trim())
     .map((q) => {
@@ -91,7 +102,7 @@ function cleanAuthored(raw: RawAuthoredQuestion[]): WorksheetQuestionDraft[] {
         questionText: q.questionText!.trim(),
         questionType: QUESTION_TYPES.includes(q.questionType as QuestionType) ? (q.questionType as QuestionType) : 'short',
         options: Array.isArray(q.options) ? q.options : undefined,
-        difficulty: DIFFICULTIES.includes(q.difficulty as QuestionDifficulty) ? (q.difficulty as QuestionDifficulty) : 'medium',
+        difficulty: forcedDifficulty ?? (DIFFICULTIES.includes(q.difficulty as QuestionDifficulty) ? (q.difficulty as QuestionDifficulty) : 'medium'),
         estimatedTimeMinutes: typeof timeNum === 'number' && !Number.isNaN(timeNum) ? timeNum : 3,
         keywords: Array.isArray(q.keywords) ? q.keywords : [],
         isNew: true,
@@ -115,27 +126,38 @@ export const worksheetGeneratorService = {
     const shortfall = input.questionCount - selected.length;
     let authored: WorksheetQuestionDraft[] = [];
 
+    const forcedDifficulty = preset.difficulties.length === 1 ? preset.difficulties[0] : undefined;
+
     if (shortfall > 0) {
       if (!openaiProvider.isAvailable()) {
         throw new ValidationError(`Only ${selected.length}/${input.questionCount} questions found in the bank, and AI authoring is not configured to fill the rest.`);
       }
 
-      const start = Date.now();
-      const result = await openaiProvider.complete({
-        systemPrompt: buildAuthoringPrompt(input, chapterNames, shortfall),
-        userPrompt: 'Write the questions.',
-        temperature: 0.6,
-        maxTokens: 2500,
-        jsonResponse: true,
-      });
+      // The AI is told to always return the full count, but if it still undershoots (e.g. the
+      // model trims a "hard"/"olympiad" batch it judged too demanding for the chapter), ask again
+      // for just the remainder rather than silently handing the teacher a shorter worksheet than
+      // they picked — matches "give them at any cost" for difficulty-locked presets in particular.
+      let stillNeeded = shortfall;
+      for (let attempt = 0; attempt < 2 && stillNeeded > 0; attempt++) {
+        const start = Date.now();
+        const result = await openaiProvider.complete({
+          systemPrompt: buildAuthoringPrompt(input, chapterNames, stillNeeded),
+          userPrompt: attempt === 0 ? 'Write the questions.' : `You returned fewer than ${stillNeeded} last time — write exactly ${stillNeeded} now, no fewer.`,
+          temperature: 0.6,
+          maxTokens: 2500,
+          jsonResponse: true,
+        });
 
-      aiUsageRepository.record({
-        provider: 'openai', aiModel: result.model, promptTokens: result.promptTokens, completionTokens: result.completionTokens,
-        totalTokens: result.totalTokens, estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
-        durationMs: Date.now() - start, schoolId: ctx.schoolId,
-      });
+        aiUsageRepository.record({
+          provider: 'openai', aiModel: result.model, promptTokens: result.promptTokens, completionTokens: result.completionTokens,
+          totalTokens: result.totalTokens, estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+          durationMs: Date.now() - start, schoolId: ctx.schoolId,
+        });
 
-      authored = cleanAuthored(parseAuthored(result.content));
+        const batch = cleanAuthored(parseAuthored(result.content), forcedDifficulty);
+        authored = [...authored, ...batch];
+        stillNeeded = shortfall - authored.length;
+      }
     }
 
     return { chapterNames, questions: [...selected, ...authored] };
