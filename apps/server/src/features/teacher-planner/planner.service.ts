@@ -7,7 +7,7 @@ import { SchoolSettings } from '../school-settings/school-settings.model';
 import { chapterRepository } from '../question-bank/chapter.repository';
 import { timetableRepository } from '../timetable/timetable.repository';
 import { plannerRepository } from './planner.repository';
-import { computeTeachingWeeks, listWeekdays, distributeDueDates } from './planner-week.util';
+import { computeTeachingWeeks, listWeekdays, distributeDueDates, buildChapterDayPlan } from './planner-week.util';
 import { ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
 import { ConfirmPlannerInput, GeneratePlannerInput } from './planner.validation';
 import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, TeachingWeeksInfo } from '@schoolos/types';
@@ -159,8 +159,15 @@ export const plannerService = {
   /** POST /teacher-planner/generate — deterministic (no AI) draft builder.
    *  Teacher picks saved chapters + a week-count each; this walks the
    *  school's teaching weeks in order, assigning each chapter its requested
-   *  span, and drops one task per teaching day so daily tick-off works out
-   *  of the box. Never persisted here — same review/confirm flow as before. */
+   *  span. Rather than dropping the same "explain <chapter>" task on every
+   *  single day (which is what a teacher actually complained about — it
+   *  didn't read like a real lesson plan), it builds one day-by-day sequence
+   *  per chapter block up front via buildChapterDayPlan (intro → topic
+   *  explanations → activity/worksheet → revision, sized to how many
+   *  teaching days the block actually has) and then lays that sequence
+   *  across the block's weeks in order, so "day 1 of the block" is always
+   *  the intro even when a chapter spans multiple weeks. Never persisted
+   *  here — same review/confirm flow as before. */
   async generateDraft(input: GeneratePlannerInput, ctx: AuthContext): Promise<PlannerExtractionResult> {
     await assertTeacherCanManagePlanner(ctx, input.class, input.subject);
     const { start, end } = await getSchoolAcademicYear(ctx.schoolId);
@@ -177,15 +184,25 @@ export const plannerService = {
       const chapter = chapterById.get(plan.chapterId);
       if (!chapter) { warnings.push('One of the selected chapters could not be found — skipped.'); continue; }
 
+      const blockWeeks: typeof teachingWeeks = [];
       for (let i = 0; i < plan.weeks; i++) {
         if (cursor >= teachingWeeks.length) {
           warnings.push(`Not enough teaching weeks left for "${chapter.chapterName}" — ${plan.weeks - i} week(s) couldn't be scheduled.`);
           break;
         }
-        const tw = teachingWeeks[cursor];
+        blockWeeks.push(teachingWeeks[cursor]);
         cursor += 1;
+      }
+      if (blockWeeks.length === 0) continue;
 
-        const tasks = listWeekdays(tw.startDate, tw.endDate).map(() => ({ title: chapter.chapterName, type: 'explain' as const }));
+      const weekdayGroups = blockWeeks.map((tw) => listWeekdays(tw.startDate, tw.endDate));
+      const totalDays = weekdayGroups.reduce((sum, days) => sum + days.length, 0);
+      const dayPlan = buildChapterDayPlan(chapter.chapterName, chapter.topics, totalDays);
+
+      let dayIdx = 0;
+      for (let wi = 0; wi < blockWeeks.length; wi++) {
+        const tw = blockWeeks[wi];
+        const tasks = weekdayGroups[wi].map(() => dayPlan[dayIdx++] ?? { title: chapter.chapterName, type: 'explain' as const });
         weeks.push({ weekNumber: tw.weekNumber, chapterName: chapter.chapterName, topic: chapter.topics[0], tasks });
       }
     }

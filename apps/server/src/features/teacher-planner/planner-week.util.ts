@@ -1,4 +1,5 @@
 import { eventRepository } from '../events/event.repository';
+import type { PlannerTaskType } from '@schoolos/types';
 
 export interface TeachingWeek {
   weekNumber: number;
@@ -93,4 +94,44 @@ export function listWeekdays(startDate: Date, endDate: Date): Date[] {
 export function distributeDueDates(startDate: Date, endDate: Date, taskCount: number): Date[] {
   const weekdays = listWeekdays(startDate, endDate);
   return Array.from({ length: taskCount }, (_, i) => weekdays[i % weekdays.length]);
+}
+
+/** Builds a day-by-day lesson sequence for a chapter's whole teaching block (which may span
+ *  several weeks), the way a teacher would actually pace it rather than repeating "explain
+ *  <chapter>" on every single day: an intro day, then one explanation day per topic (cycling
+ *  through the chapter's saved topics if there are more days than topics), an activity day and a
+ *  practice-worksheet day once the block is long enough to afford them, a unit test near the end
+ *  for a long block, and a revision/doubt-session day to close it out. Short blocks (1-3 days)
+ *  skip straight to whichever of these actually fit. `totalDays` is the number of teaching days
+ *  across every week assigned to this chapter, computed by the caller before this runs. */
+export function buildChapterDayPlan(
+  chapterName: string,
+  topics: string[],
+  totalDays: number,
+): { title: string; type: PlannerTaskType }[] {
+  if (totalDays <= 0) return [];
+  if (totalDays === 1) return [{ title: `${chapterName} — overview`, type: 'explain' }];
+
+  // Reserve trailing "consolidation" days from the end of the block, longest block first —
+  // each only kicks in once there's enough runway left to still leave at least one day for
+  // actual explanation.
+  const tail: { title: string; type: PlannerTaskType }[] = [];
+  if (totalDays >= 9) tail.push({ title: `${chapterName} — chapter test`, type: 'unit_test' });
+  if (totalDays >= 6) tail.push({ title: `${chapterName} — activity`, type: 'activity' });
+  if (totalDays >= 4) tail.push({ title: `${chapterName} — practice worksheet`, type: 'worksheet' });
+  tail.push({ title: `${chapterName} — revision & doubt session`, type: 'revision' });
+
+  const explainCount = Math.max(1, totalDays - tail.length);
+  const explainDays: { title: string; type: PlannerTaskType }[] = [];
+  for (let i = 0; i < explainCount; i++) {
+    if (i === 0) {
+      explainDays.push({ title: `Introduction to ${chapterName}`, type: 'explain' });
+    } else if (topics.length > 0) {
+      explainDays.push({ title: `${chapterName}: ${topics[(i - 1) % topics.length]}`, type: 'explain' });
+    } else {
+      explainDays.push({ title: `${chapterName} — key concepts (part ${i + 1})`, type: 'explain' });
+    }
+  }
+
+  return [...explainDays, ...tail].slice(0, totalDays);
 }
