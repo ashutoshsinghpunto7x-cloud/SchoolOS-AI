@@ -158,7 +158,7 @@ export function MarksHubPage() {
 
         <button
           type="button"
-          onClick={() => navigate('/teacher/report-cards')}
+          onClick={() => navigate('/term-report-cards')}
           className="w-full text-left flex items-center gap-4 rounded-2xl px-4 py-4 mt-5 shadow-sm hover:shadow-md transition-shadow"
           style={{ backgroundColor: '#1C2B4A' }}
         >
@@ -167,7 +167,7 @@ export function MarksHubPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white">Generate Report Cards</p>
-            <p className="text-xs text-white/60 mt-0.5">AI-assisted, premium report cards for any exam</p>
+            <p className="text-xs text-white/60 mt-0.5">Term report cards, using the class's approved layout</p>
           </div>
           <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />
         </button>

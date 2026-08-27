@@ -45,6 +45,10 @@ export interface ITermBlock {
   termTotalObtained: number;
   termTotalMax: number;
   termPercentage: number;
+  /** This term's own class rank/size — distinct from the overall `summary.rank`
+   *  across both terms, computed from classmates' totals for just this term. */
+  rank?: number;
+  classSize?: number;
 }
 
 export interface ITermReportCardSkillEntry {
@@ -136,6 +140,8 @@ const termBlockSchema = new Schema<ITermBlock>(
     termTotalObtained: { type: Number, required: true, default: 0 },
     termTotalMax:      { type: Number, required: true, default: 0 },
     termPercentage:    { type: Number, required: true, default: 0 },
+    rank:              { type: Number, min: 1 },
+    classSize:         { type: Number, min: 0 },
   },
   { _id: false },
 );
