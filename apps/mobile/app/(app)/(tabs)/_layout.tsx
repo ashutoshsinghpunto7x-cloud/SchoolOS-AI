@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { canViewTeacherDirectory } from '@/constants/roles';
+import { canViewTeacherDirectory, isParentRole } from '@/constants/roles';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/theme';
 
@@ -10,6 +10,10 @@ export default function TabsLayout() {
   // `href: null` removes a tab from the bar while keeping its routes
   // reachable — used instead of a second per-role tab set so the tab bar
   // doesn't grow per role (see plan: role-aware content over duplicated tabs).
+  // The screens behind "index"/"attendance"/"fees" branch on role internally
+  // (see their route files) to show parent vs. staff content; "academics" is
+  // parent-only and "teachers" is staff-only.
+  const isParent = role ? isParentRole(role) : false;
   const showTeachersTab = role ? canViewTeacherDirectory(role) : false;
 
   return (
@@ -24,8 +28,16 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: isParent ? 'Home' : 'Dashboard',
           tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="academics"
+        options={{
+          title: 'Academics',
+          href: isParent ? undefined : null,
+          tabBarIcon: ({ color, size }) => <Ionicons name="school-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

@@ -276,6 +276,12 @@ export interface LoginResponse {
   user: AuthUser;
   mustResetPassword?: boolean;
   mustResetPin?: boolean;
+  // Present only when the request carried the `X-Client-Platform: mobile`
+  // header. Web never gets this in the body — it relies solely on the
+  // httpOnly refresh-token cookie (see auth-cookies.ts) so the token is
+  // never reachable from browser JS. Mobile has no shared cookie jar to
+  // lean on, so the server includes it here instead for SecureStore.
+  refreshToken?: string;
 }
 
 export interface CreateUserPayload {

@@ -6,7 +6,21 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   reception: 'Reception',
   teacher: 'Teacher',
   accountant: 'Accountant',
+  parent: 'Parent',
+  driver: 'Driver',
+  // Internal SchoolOS staff — not expected to reach this app's Settings screen,
+  // but kept complete so ROLE_LABELS stays a total Record<UserRole, string>.
+  owner: 'Owner',
+  super_admin: 'Super Admin',
+  devops: 'DevOps',
+  developer: 'Developer',
+  support: 'Support',
 };
+
+// The mobile app's tab bar is shared across roles (see (tabs)/_layout.tsx) —
+// parents get an entirely different set of tabs (Home/Academics/Attendance/Fees)
+// from staff, rather than a hidden subset of the staff tabs.
+export const isParentRole = (role: UserRole): boolean => role === 'parent';
 
 // Roles allowed to record fee payments / view full collection tools.
 // Mirrors the backend's authorize('admin', 'principal', 'accountant') /
@@ -30,7 +44,9 @@ export const canManageTeacherPhoto = (role: UserRole): boolean => TEACHER_PHOTO_
 
 // Any staff role can browse the read-only Teacher Directory; only `teacher`
 // gets "My Workspace" instead (they view their own record, not the roster).
-export const canViewTeacherDirectory = (role: UserRole): boolean => role !== 'teacher';
+// Non-staff roles (parent, driver, internal ops) never see it at all.
+const STAFF_ROLES: readonly UserRole[] = ['admin', 'principal', 'reception', 'teacher', 'accountant'];
+export const canViewTeacherDirectory = (role: UserRole): boolean => STAFF_ROLES.includes(role) && role !== 'teacher';
 
 // Roles that see the Admissions (Enquiries) entry point on the dashboard.
 // The backend leaves /enquiries open to any authenticated role (only delete

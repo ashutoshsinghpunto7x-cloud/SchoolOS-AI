@@ -11,7 +11,14 @@ export const authController = {
       const ip = req.ip ?? req.socket.remoteAddress;
       const { refreshToken, ...result } = await authService.login(req.body, ip);
       setAuthCookies(res, refreshToken, result.sessionId);
-      sendCreated(res, result, 'Login successful');
+      // Web relies solely on the httpOnly cookie above — the browser sends it
+      // automatically, and keeping it out of the JSON body means it's never
+      // reachable from page JS. React Native has no equivalent cookie jar
+      // shared with axios/SecureStore, so mobile clients (identified by this
+      // header, set once in apps/mobile's api client) get it in the body too,
+      // to store in the OS keychain themselves. See LoginResponse.refreshToken.
+      const isMobileClient = req.header('x-client-platform') === 'mobile';
+      sendCreated(res, isMobileClient ? { ...result, refreshToken } : result, 'Login successful');
     } catch (err) {
       next(err);
     }
@@ -34,7 +41,12 @@ export const authController = {
       }
       const tokens = await authService.refresh(refreshToken, sessionId);
       setAuthCookies(res, tokens.refreshToken, sessionId);
-      sendSuccess(res, { accessToken: tokens.accessToken }, 'Tokens refreshed');
+      const isMobileClient = req.header('x-client-platform') === 'mobile';
+      sendSuccess(
+        res,
+        isMobileClient ? tokens : { accessToken: tokens.accessToken },
+        'Tokens refreshed'
+      );
     } catch (err) {
       next(err);
     }
