@@ -41,6 +41,10 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
+import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
+import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
+import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
 
 // Reception gets its own dedicated nav, focused on front-desk tasks — not
 // the full admin operational toolbox. Trimmed to just the two things
@@ -107,27 +111,48 @@ const NAV_ITEMS_HR = [
 ] as const;
 
 // Principal gets its own dedicated nav — not the admin operational toolbox.
-const NAV_ITEMS_PRINCIPAL = [
-  { label: 'Dashboard',           icon: LayoutDashboard, path: '/principal',                       end: true  },
-  { label: 'Attendance Scanner',  icon: ScanLine,        path: '/principal/attendance-scanner',    end: false },
-  { label: 'Leave Approvals',     icon: ClipboardList,   path: '/principal/leave-approvals',       end: false },
-  { label: 'Edit Requests',       icon: ClipboardCheck,  path: '/principal/approvals',              end: false },
-  { label: 'Discount Approvals',  icon: BadgePercent,    path: '/principal/discount-approvals',    end: false },
-  { label: 'Test Approvals',      icon: FileCheck2,      path: '/principal/test-approvals',        end: false },
-  { label: 'Teachers',            icon: Users,           path: '/principal/teachers',              end: false },
-  { label: 'Planner',             icon: CalendarClock,   path: '/principal/planner',               end: false },
-  { label: 'Employees',           icon: Users,           path: '/principal/employees',             end: false },
-  { label: 'Class Timetable',     icon: LayoutGrid,      path: '/timetable',                       end: true  },
-  { label: 'Teacher Timetable',   icon: UserCog,         path: '/timetable/teacher-builder',       end: false },
-  { label: 'Class Teachers',      icon: GraduationCap,   path: '/principal/class-teachers',        end: false },
-  { label: 'Exams',               icon: ClipboardList,   path: '/exams',                            end: false },
-  { label: 'Report Card Templates', icon: FileBarChart,  path: '/report-card-templates',            end: false },
-  { label: 'Report Cards',        icon: ClipboardCheck,  path: '/term-report-cards',                end: false },
-  { label: 'Calendar',            icon: CalendarDays,    path: '/calendar',                         end: false },
-  { label: 'Messages',            icon: Mail,             path: '/messages',                        end: false },
-  { label: 'Change Password',     icon: ShieldCheck,      path: '/principal/change-password',       end: false },
-  { label: 'More Insights',       icon: FileBarChart2,   path: '/principal/insights',              end: false },
-  { label: 'Transport',           icon: Bus,             path: '/principal/transport',             end: false },
+// Grouped into labeled sections (was one flat 19-item list) so the panel
+// reads as a set of related tasks instead of a wall of text. "Change
+// Password" was dropped here — it's already reachable from the profile
+// dropdown in the topbar (see Topbar.tsx ProfileMenu), so it was a dupe.
+const NAV_SECTION_PRINCIPAL_OVERVIEW = [
+  { label: 'Dashboard',  icon: LayoutDashboard, path: '/principal',           end: true  },
+] as const;
+
+// Everything a principal needs to sign off on — grouped together since it's
+// the "clear my queue" cluster, and badge-counted with live pending totals.
+const NAV_SECTION_PRINCIPAL_APPROVALS = [
+  { label: 'Leave Approvals',    icon: ClipboardList,  path: '/principal/leave-approvals',    end: false, badgeKey: 'leave' },
+  { label: 'Test Approvals',     icon: FileCheck2,     path: '/principal/test-approvals',     end: false, badgeKey: 'tests' },
+] as const;
+
+const NAV_SECTION_PRINCIPAL_ACADEMICS = [
+  { label: 'Planner',              icon: CalendarClock,  path: '/principal/planner',       end: false },
+  { label: 'Exams',                icon: ClipboardList,  path: '/exams',                    end: false },
+  { label: 'Report Card Templates', icon: FileBarChart,  path: '/report-card-templates',   end: false },
+  { label: 'Report Cards',         icon: ClipboardCheck, path: '/term-report-cards',        end: false },
+  { label: 'Calendar',             icon: CalendarDays,   path: '/calendar',                 end: false },
+] as const;
+
+const NAV_SECTION_PRINCIPAL_STAFF = [
+  { label: 'Teachers',          icon: Users,          path: '/principal/teachers',        end: false },
+  { label: 'Class Teachers',    icon: GraduationCap,  path: '/principal/class-teachers',  end: false },
+  { label: 'Teacher Timetable', icon: UserCog,        path: '/timetable/teacher-builder', end: false },
+] as const;
+
+const NAV_SECTION_PRINCIPAL_OPERATIONS = [
+  { label: 'Class Timetable',    icon: LayoutGrid, path: '/timetable',                    end: true  },
+  { label: 'Attendance Scanner', icon: ScanLine,    path: '/principal/attendance-scanner', end: false },
+  { label: 'Transport',          icon: Bus,         path: '/principal/transport',          end: false },
+  { label: 'Messages',           icon: Mail,        path: '/messages',                     end: false },
+] as const;
+
+const NAV_SECTIONS_PRINCIPAL = [
+  { title: 'Overview',   items: NAV_SECTION_PRINCIPAL_OVERVIEW },
+  { title: 'Approvals',  items: NAV_SECTION_PRINCIPAL_APPROVALS },
+  { title: 'Academics',  items: NAV_SECTION_PRINCIPAL_ACADEMICS },
+  { title: 'Staff',      items: NAV_SECTION_PRINCIPAL_STAFF },
+  { title: 'Operations', items: NAV_SECTION_PRINCIPAL_OPERATIONS },
 ] as const;
 
 const ROLE_LABEL: Record<string, string> = {
@@ -136,6 +161,48 @@ const ROLE_LABEL: Record<string, string> = {
   reception: 'Receptionist',
   teacher: 'Teacher',
   accountant: 'Accountant',
+};
+
+// Isolated so its badge-count hooks only fire for principal sessions —
+// they live here, not in Sidebar itself, so they never run (or trigger
+// network calls) for other roles.
+const PrincipalNavSections = () => {
+  const { data: leave } = usePendingLeaveRequests();
+  const { data: changeRequests } = usePendingChangeRequests();
+  const { data: discounts } = usePendingDiscounts();
+  const { data: testApprovals } = usePendingTestApprovals();
+
+  const badgeCounts: Record<string, number> = {
+    leave: leave?.length ?? 0,
+    editRequests: changeRequests?.length ?? 0,
+    discounts: discounts?.length ?? 0,
+    tests: testApprovals?.length ?? 0,
+  };
+
+  return (
+    <>
+      <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+        Principal Portal
+      </p>
+      {NAV_SECTIONS_PRINCIPAL.map((section, idx) => (
+        <div key={section.title} className={idx > 0 ? 'pt-4' : undefined}>
+          <p className="px-3 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            {section.title}
+          </p>
+          {section.items.map((item) => (
+            <SidebarNavItem
+              key={item.path}
+              to={item.path}
+              icon={item.icon}
+              label={item.label}
+              end={item.end}
+              badge={'badgeKey' in item ? badgeCounts[item.badgeKey] : undefined}
+            />
+          ))}
+        </div>
+      ))}
+    </>
+  );
 };
 
 interface SidebarProps {
@@ -257,20 +324,7 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
             ))}
           </>
         ) : user?.role === 'principal' ? (
-          <>
-            <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-              Principal Portal
-            </p>
-            {NAV_ITEMS_PRINCIPAL.map((item) => (
-              <SidebarNavItem
-                key={item.path}
-                to={item.path}
-                icon={item.icon}
-                label={item.label}
-                end={item.end}
-              />
-            ))}
-          </>
+          <PrincipalNavSections />
         ) : user?.role === 'reception' ? (
           <>
             <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
