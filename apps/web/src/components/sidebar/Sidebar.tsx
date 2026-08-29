@@ -23,7 +23,6 @@ import {
   FileBarChart,
   UserPlus,
   Mail,
-  BadgePercent,
   UserCog,
   KeyRound,
   ClipboardCheck,
