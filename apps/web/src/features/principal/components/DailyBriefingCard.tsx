@@ -59,22 +59,11 @@ export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
     if (!summaryResult) summarize();
   };
 
-  const scrollToInsights = () => {
-    document.getElementById('more-insights-section')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="bg-white rounded-[22px] border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] px-6 py-4">
       <div className="flex items-center justify-between gap-3 mb-3">
         <h3 className="text-[13px] font-semibold text-[#111827] tracking-tight">{t('briefing.title')}</h3>
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={scrollToInsights}
-            className="text-[11px] font-semibold text-[#7C3AED] hover:text-[#6D28D9] transition-colors"
-          >
-            {t('briefing.viewAllInsights')}
-          </button>
           <button
             type="button"
             onClick={handleSummarize}

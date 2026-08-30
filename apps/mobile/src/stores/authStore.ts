@@ -25,6 +25,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (identifier, password) => {
     const result = await authApi.login({ identifier, password });
+    // refreshToken is only absent if the server didn't see this app's
+    // 'X-Client-Platform: mobile' header (see services/api/client.ts) —
+    // shouldn't happen from our own apiClient, but fail loudly rather than
+    // silently drop the refresh token if it ever does.
+    if (!result.refreshToken) throw new Error('Login response missing refresh token');
     await secureStorage.setTokens(result.accessToken, result.refreshToken);
     set({ user: result.user, isAuthenticated: true });
     return result.user;
@@ -32,6 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loginWithPin: async (deviceId, pin) => {
     const result = await authApi.loginWithPin({ deviceId, pin });
+    if (!result.refreshToken) throw new Error('Login response missing refresh token');
     await secureStorage.setTokens(result.accessToken, result.refreshToken);
     set({ user: result.user, isAuthenticated: true });
     return result.user;

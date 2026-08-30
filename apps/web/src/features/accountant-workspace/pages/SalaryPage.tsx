@@ -51,7 +51,10 @@ function suggestLwpAmount(amount: number, month: string, year: number, lwpDays: 
 /** Net payable — salary minus LWP deduction minus any Security Money collected so far (it's
  * withheld from the employee's pay, so a "Collect" against it lowers what's actually paid out). */
 function netPayable(rec: SalaryRecord): number {
-  const lwp = rec.lwpAmount ?? 0;
+  // Use the stored lwpAmount if set, otherwise auto-calculate from days × daily rate
+  const lwp = rec.lwpAmount != null
+    ? rec.lwpAmount
+    : suggestLwpAmount(rec.amount, rec.month, rec.year, rec.lwpDays ?? 0);
   const securityCollected = rec.securityDeposit?.collectedAmount ?? 0;
   return Math.max(0, Math.round((rec.amount - lwp - securityCollected) * 100) / 100);
 }
@@ -234,6 +237,18 @@ function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: (
   const [securityMode, setSecurityMode] = useState<SecurityDepositMode>(record.securityDeposit?.mode ?? 'one_time');
   const [securityInstallments, setSecurityInstallments] = useState(record.securityDeposit?.installmentCount != null ? String(record.securityDeposit.installmentCount) : '');
   const [localErr, setLocalErr] = useState('');
+  // Track whether the accountant has manually overridden the LWP amount
+  const [lwpAmountTouched, setLwpAmountTouched] = useState(record.lwpAmount != null);
+
+  // Auto-fill the suggested LWP deduction whenever days/salary/month/year change,
+  // unless the accountant has already typed their own amount.
+  useEffect(() => {
+    if (lwpAmountTouched) return;
+    const days = parseFloat(lwpDays);
+    const amt = parseFloat(amount);
+    if (!days || !amt) { setLwpAmount(''); return; }
+    setLwpAmount(String(suggestLwpAmount(amt, month, year, days)));
+  }, [lwpDays, amount, month, year, lwpAmountTouched]);
 
   const hasCollected = (record.securityDeposit?.collectedAmount ?? 0) > 0;
 
@@ -312,9 +327,14 @@ function EditSalaryModal({ record, onClose }: { record: SalaryRecord; onClose: (
             </div>
             <div>
               <label className={labelCls}>Sum of LWP (₹)</label>
-              <input type="number" min={0} step={0.01} value={lwpAmount} onChange={(e) => setLwpAmount(e.target.value)} className={inputCls} placeholder="0.00" />
+              <input
+                type="number" min={0} step={0.01} value={lwpAmount}
+                onChange={(e) => { setLwpAmount(e.target.value); setLwpAmountTouched(true); }}
+                className={inputCls} placeholder="0.00"
+              />
             </div>
           </div>
+          <p className="text-xs text-gray-400 -mt-2">Deduction auto-suggested from salary ÷ days in month — edit if it differs.</p>
 
           <div className="pt-1 border-t border-gray-100">
             <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-2">
@@ -917,11 +937,28 @@ export function SalaryPage() {
                       />
                     </td>
                     <td className="py-3 pr-3 text-gray-700 whitespace-nowrap">
-                      <EditableField
-                        record={rec} field="lwpAmount" type="number"
-                        displayValue={rec.lwpAmount != null ? `₹${rec.lwpAmount.toLocaleString('en-IN')}` : undefined}
-                        emptyValue="—"
-                      />
+                      {rec.lwpDays ? (
+                        rec.lwpAmount != null ? (
+                          <EditableField
+                            record={rec} field="lwpAmount" type="number"
+                            displayValue={`₹${rec.lwpAmount.toLocaleString('en-IN')}`}
+                          />
+                        ) : (
+                          /* Auto-computed: (salary ÷ days-in-month) × LWP days */
+                          <span className="inline-flex items-center gap-1">
+                            <span className="font-semibold text-orange-700">
+                              ₹{suggestLwpAmount(rec.amount, rec.month, rec.year, rec.lwpDays).toLocaleString('en-IN')}
+                            </span>
+                            <span className="text-[10px] text-orange-400 font-medium bg-orange-50 rounded px-1">auto</span>
+                          </span>
+                        )
+                      ) : (
+                        <EditableField
+                          record={rec} field="lwpAmount" type="number"
+                          displayValue={rec.lwpAmount != null ? `₹${rec.lwpAmount.toLocaleString('en-IN')}` : undefined}
+                          emptyValue="—"
+                        />
+                      )}
                     </td>
                     <td className="py-3 pr-3"><SecurityMoneyCell record={rec} onCollect={() => setCollectingRecord(rec)} /></td>
                     <td className="py-3 pr-3 font-bold text-gray-900 whitespace-nowrap" title="Salary − Sum of LWP − Security Money collected">

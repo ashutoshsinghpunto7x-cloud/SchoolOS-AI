@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
-import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAlert } from '@schoolos/types';
 
@@ -19,11 +18,9 @@ export function PriorityCenter({ alerts, isLoading }: PriorityCenterProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { data: leave } = usePendingLeaveRequests();
-  const { data: changeRequests } = usePendingChangeRequests();
 
   const rows = [
     { label: t('priority.leaveRequests'), count: leave?.length ?? 0, path: '/principal/leave-approvals' },
-    { label: t('priority.editRequests'), count: changeRequests?.length ?? 0, path: '/principal/approvals' },
   ];
 
   const otherAlerts = (alerts ?? []).filter((a) => a.type !== 'overdue_fees');

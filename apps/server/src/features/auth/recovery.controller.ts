@@ -78,7 +78,9 @@ export const recoveryController = {
     try {
       const { refreshToken, ...result } = await recoveryService.loginWithPin(req.body, meta(req));
       setAuthCookies(res, refreshToken, result.sessionId);
-      sendCreated(res, result, 'Login successful');
+      // See authController.login for why mobile clients get this in the body too.
+      const isMobileClient = req.header('x-client-platform') === 'mobile';
+      sendCreated(res, isMobileClient ? { ...result, refreshToken } : result, 'Login successful');
     } catch (err) { next(err); }
   },
 

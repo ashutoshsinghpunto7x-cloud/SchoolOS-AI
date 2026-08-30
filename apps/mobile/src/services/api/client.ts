@@ -8,6 +8,10 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: 30_000,
   headers: {
     'Content-Type': 'application/json',
+    // Tells the server to include `refreshToken` in login/refresh JSON bodies:
+    // web relies solely on the httpOnly cookie (see auth-cookies.ts), but this
+    // app has no shared cookie jar and stores the token in SecureStore itself.
+    'X-Client-Platform': 'mobile',
   },
 });
 
@@ -93,9 +97,15 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const res = await axios.post<ApiResponse<Pick<LoginResponse, 'accessToken' | 'refreshToken'>>>(
+      // Plain `axios`, not `apiClient` — this runs from inside apiClient's own
+      // interceptor, so routing it back through apiClient would re-enter the
+      // interceptor. That means it skips apiClient's default headers too, so
+      // 'X-Client-Platform' (which tells the server to include refreshToken
+      // in the body) has to be set explicitly here.
+      const res = await axios.post<ApiResponse<Required<Pick<LoginResponse, 'accessToken' | 'refreshToken'>>>>(
         `${API_BASE_URL}/auth/refresh`,
-        { refreshToken }
+        { refreshToken },
+        { headers: { 'X-Client-Platform': 'mobile' } }
       );
 
       const tokens = res.data.data;
