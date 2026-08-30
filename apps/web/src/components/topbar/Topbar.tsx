@@ -188,7 +188,7 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
 // ── Profile dropdown (principal) ───────────────────────────────────────────────
 // Principal's Settings link lives here instead of the sidebar — see Sidebar.tsx.
 
-function ProfileMenu({ displayName, onClose }: { displayName: string; onClose: () => void }) {
+function ProfileMenu({ displayName, roleLabel, onClose }: { displayName: string; roleLabel: string; onClose: () => void }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
@@ -215,7 +215,7 @@ function ProfileMenu({ displayName, onClose }: { displayName: string; onClose: (
     >
       <div className="px-4 py-2.5 border-b border-gray-50">
         <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
-        <p className="text-xs text-gray-400">Principal</p>
+        <p className="text-xs text-gray-400">{roleLabel}</p>
       </div>
       <button
         type="button"
@@ -259,7 +259,8 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
-  const isPrincipal = user?.role === 'principal';
+  // 'incharge' mirrors 'principal' 1:1 today — same topbar behavior.
+  const isPrincipal = user?.role === 'principal' || user?.role === 'incharge';
   // Accountant, Teacher, and Principal all share the same pill/chip topbar
   // treatment, rendered in the same purple accent.
   const usePillTopbar = isAccountant || isTeacher || isPrincipal;
@@ -514,7 +515,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               {!isTeacher && <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />}
             </button>
             {isPrincipal && profileMenuOpen && (
-              <ProfileMenu displayName={displayName} onClose={() => setProfileMenuOpen(false)} />
+              <ProfileMenu displayName={displayName} roleLabel={user?.role === 'incharge' ? 'Incharge' : 'Principal'} onClose={() => setProfileMenuOpen(false)} />
             )}
           </div>
         </div>

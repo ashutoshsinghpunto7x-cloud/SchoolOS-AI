@@ -1,4 +1,4 @@
-import { TeacherPlanner, ITeacherPlanner, IPlannerWeek } from './planner.model';
+import { TeacherPlanner, ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
 
 export interface UpsertPlannerData {
   schoolId: string;
@@ -47,6 +47,16 @@ export const plannerRepository = {
       { _id: plannerId, schoolId, 'weeks.tasks.taskId': taskId },
       { $set: { 'weeks.$[].tasks.$[t].status': status, 'weeks.$[].tasks.$[t].completedAt': completedAt } },
       { new: true, arrayFilters: [{ 't.taskId': taskId }] },
+    ).lean<ITeacherPlanner>();
+  },
+
+  /** Principal/incharge inserting a task into an existing week — returns null
+   *  if the planner or that week number doesn't exist. */
+  async addTask(plannerId: string, schoolId: string, weekNumber: number, task: IPlannerTask): Promise<ITeacherPlanner | null> {
+    return TeacherPlanner.findOneAndUpdate(
+      { _id: plannerId, schoolId, 'weeks.weekNumber': weekNumber },
+      { $push: { 'weeks.$.tasks': task } },
+      { new: true },
     ).lean<ITeacherPlanner>();
   },
 };

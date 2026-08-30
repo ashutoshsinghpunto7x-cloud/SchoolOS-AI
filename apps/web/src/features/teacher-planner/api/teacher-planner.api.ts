@@ -10,6 +10,7 @@ import type {
   TeachingWeeksInfo,
   PrincipalPlannerOverviewEntry,
   PrincipalPlannerDetail,
+  AddPlannerTaskPayload,
 } from '@schoolos/types';
 
 const BASE = '/teacher-planner';
@@ -83,6 +84,13 @@ export const teacherPlannerApi = {
   getForTeacher: async (teacherId: string, cls: string, subject: string): Promise<PrincipalPlannerDetail> => {
     try {
       const res = await apiClient.get<{ data: PrincipalPlannerDetail }>(`${BASE}/principal/${teacherId}`, { params: { class: cls, subject } });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  addTaskForTeacher: async (plannerId: string, payload: AddPlannerTaskPayload): Promise<TeacherPlanner> => {
+    try {
+      const res = await apiClient.post<{ data: TeacherPlanner }>(`${BASE}/principal/${plannerId}/tasks`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherPlannerApi } from '../api/teacher-planner.api';
-import type { ConfirmPlannerPayload, GeneratePlannerPayload } from '@schoolos/types';
+import type { ConfirmPlannerPayload, GeneratePlannerPayload, AddPlannerTaskPayload } from '@schoolos/types';
 
 export const teacherPlannerKeys = {
   all:          ['teacher-planner']                                    as const,
@@ -86,3 +86,15 @@ export const usePrincipalPlannerDetail = (teacherId: string, cls: string, subjec
     queryFn:  () => teacherPlannerApi.getForTeacher(teacherId, cls, subject),
     enabled:  !!teacherId && !!cls && !!subject,
   });
+
+// Adding a task changes yearPercent/pace everywhere it's shown (this detail
+// view, the subject grouping, and the teacher overview), so invalidate the
+// whole feature key rather than just this one query.
+export const useAddPrincipalTask = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ plannerId, payload }: { plannerId: string; payload: AddPlannerTaskPayload }) =>
+      teacherPlannerApi.addTaskForTeacher(plannerId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: teacherPlannerKeys.all }),
+  });
+};

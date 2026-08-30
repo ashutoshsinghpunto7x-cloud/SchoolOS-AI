@@ -126,22 +126,21 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
       style={{ width: '297mm', minHeight: '210mm', padding: '8mm 12mm', color: '#000', fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '10px' }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-        {schoolSettings?.logoUrl && <img src={schoolSettings.logoUrl} alt={schoolName} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />}
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.02em', margin: 0 }}>{schoolName.toUpperCase()}</h1>
-          {branding?.address && <p style={{ fontSize: '9px', margin: '1px 0 0' }}>({branding.address})</p>}
+      {/* Class/section, roll no. and the verify QR sit level with the school
+       *  name — mirrors the paper card's top-right corner block — while the
+       *  student/father name row underneath runs full width. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div style={{ width: '110px' }} />
+        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+          {schoolSettings?.logoUrl && <img src={schoolSettings.logoUrl} alt={schoolName} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />}
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.02em', margin: 0 }}>{schoolName.toUpperCase()}</h1>
+            {branding?.address && <p style={{ fontSize: '9px', margin: '1px 0 0' }}>({branding.address})</p>}
+          </div>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: RULE_THICK, paddingBottom: '4px', marginTop: '5px' }}>
-        <div>
-          <p style={{ margin: '1px 0' }}><b>STUDENT&apos;S NAME&nbsp;&nbsp;</b>{student.fullName.toUpperCase()}</p>
-          <p style={{ margin: '1px 0' }}><b>FATHER&apos;S NAME&nbsp;&nbsp;</b>{(student.fatherName ?? '—').toUpperCase()}</p>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <p style={{ margin: '1px 0', fontWeight: 700 }}>CLASS/SECTION : {student.class} - {student.section}</p>
-          <p style={{ margin: '1px 0', fontWeight: 700 }}>ROLL No : {student.rollNumber ?? '—'}</p>
+        <div style={{ width: '110px', textAlign: 'right' }}>
+          <p style={{ margin: '1px 0', fontWeight: 700, fontSize: '9px' }}>CLASS/SECTION : {student.class} - {student.section}</p>
+          <p style={{ margin: '1px 0', fontWeight: 700, fontSize: '9px' }}>ROLL No : {student.rollNumber ?? '—'}</p>
           {qrDataUri && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '3px' }}>
               <img src={qrDataUri} alt="Verification QR" style={{ width: '30px', height: '30px' }} />
@@ -149,6 +148,11 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
             </div>
           )}
         </div>
+      </div>
+
+      <div style={{ borderBottom: RULE_THICK, paddingBottom: '4px', marginTop: '5px' }}>
+        <p style={{ margin: '1px 0' }}><b>STUDENT&apos;S NAME&nbsp;&nbsp;</b>{student.fullName.toUpperCase()}</p>
+        <p style={{ margin: '1px 0' }}><b>FATHER&apos;S NAME&nbsp;&nbsp;</b>{(student.fatherName ?? '—').toUpperCase()}</p>
       </div>
 
       {/* ── Marks grid + right panel ─────────────────────────────────── */}
@@ -248,20 +252,35 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
             </tbody>
           </table>
 
-          <div style={{ padding: '4px 4px', fontSize: '7.3px' }}>
-            <div style={{ marginBottom: '5px' }}>
-              <div style={{ borderBottom: RULE, height: '9px' }} />
-              <p style={{ margin: '1px 0' }}>Principal&apos;s Signature</p>
-            </div>
-            <div style={{ marginBottom: '5px' }}>
-              <div style={{ borderBottom: RULE, height: '9px' }} />
-              <p style={{ margin: '1px 0' }}>Class Teacher&apos;s Signature</p>
-            </div>
-            <div>
-              <div style={{ borderBottom: RULE, height: '9px' }} />
-              <p style={{ margin: '1px 0' }}>Parent&apos;s Signature</p>
-            </div>
-          </div>
+          {/* Signed once per term (like every other right-panel section), not
+           *  once for the whole card — matches the paper card's ruled I
+           *  Term/II Term signature columns rather than a single line. */}
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={th} />
+                <th style={th}>I Term</th>
+                <th style={th}>II Term</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Principal&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={{ ...tdNum, height: '14px' }} />
+              </tr>
+              <tr>
+                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Class Teacher&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={{ ...tdNum, height: '14px' }} />
+              </tr>
+              <tr>
+                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Parent&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={{ ...tdNum, height: '14px' }} />
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -274,7 +293,7 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
         {template.gradingKey.length > 0 && (
           <div style={{ fontSize: '8px', textAlign: 'right' }}>
             <p style={{ fontWeight: 700, margin: 0 }}>Key</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', columnGap: '14px', rowGap: '1px', justifyContent: 'end' }}>
               {template.gradingKey.map((g) => <span key={g.label}>{g.label}-{g.description}</span>)}
             </div>
           </div>

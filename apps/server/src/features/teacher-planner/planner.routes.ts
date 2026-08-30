@@ -10,6 +10,7 @@ router.use(authenticate);
 // Principal/admin read-only views — static routes before /:id to avoid param conflicts.
 const canViewPrincipalPlanner = authorize('admin', 'principal');
 router.get('/principal/overview',            canViewPrincipalPlanner, plannerController.getPrincipalOverview);
+router.post('/principal/:id/tasks',          canViewPrincipalPlanner, plannerController.addTaskForTeacher);
 router.get('/principal/:teacherId',          canViewPrincipalPlanner, plannerController.getForTeacher);
 
 router.get('/chapters',                      plannerController.listChapters);

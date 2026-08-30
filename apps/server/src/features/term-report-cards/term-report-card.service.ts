@@ -334,7 +334,7 @@ export const termReportCardService = {
 
     // A teacher may correct subject marks and write their own class-teacher remark; the
     // principal's remark and parent feedback fields are leadership-only.
-    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal';
+    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal' || ctx.role === 'incharge';
     if (!isLeadership) {
       const leadershipOnlyFields = Object.keys(data).filter((k) => k === 'principalRemark' || k === 'parentFeedback');
       if (leadershipOnlyFields.length > 0) {

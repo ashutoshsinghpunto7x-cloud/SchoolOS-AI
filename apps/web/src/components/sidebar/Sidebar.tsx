@@ -157,15 +157,16 @@ const NAV_SECTIONS_PRINCIPAL = [
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
   principal: 'Principal',
+  incharge: 'Incharge',
   reception: 'Receptionist',
   teacher: 'Teacher',
   accountant: 'Accountant',
 };
 
-// Isolated so its badge-count hooks only fire for principal sessions —
+// Isolated so its badge-count hooks only fire for principal/incharge sessions —
 // they live here, not in Sidebar itself, so they never run (or trigger
 // network calls) for other roles.
-const PrincipalNavSections = () => {
+const PrincipalNavSections = ({ portalLabel }: { portalLabel: string }) => {
   const { data: leave } = usePendingLeaveRequests();
   const { data: changeRequests } = usePendingChangeRequests();
   const { data: discounts } = usePendingDiscounts();
@@ -181,7 +182,7 @@ const PrincipalNavSections = () => {
   return (
     <>
       <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-        Principal Portal
+        {portalLabel}
       </p>
       {NAV_SECTIONS_PRINCIPAL.map((section, idx) => (
         <div key={section.title} className={idx > 0 ? 'pt-4' : undefined}>
@@ -225,7 +226,8 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
   const roleLabel = user ? (ROLE_LABEL[user.role] ?? user.role) : '';
 
   const isAccountant = user?.role === 'accountant';
-  const isPrincipal = user?.role === 'principal';
+  // 'incharge' mirrors 'principal' 1:1 today — same sidebar/dashboard.
+  const isPrincipal = user?.role === 'principal' || user?.role === 'incharge';
   // Accountant uses the same purple/pink liquid-glass panel as the teacher
   // portal so all three role sidebars share one visual language. Principal's
   // sidebar is clean white — purple/pink shows up only as accents (logo
@@ -322,8 +324,8 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
               />
             ))}
           </>
-        ) : user?.role === 'principal' ? (
-          <PrincipalNavSections />
+        ) : isPrincipal ? (
+          <PrincipalNavSections portalLabel={`${roleLabel} Portal`} />
         ) : user?.role === 'reception' ? (
           <>
             <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">

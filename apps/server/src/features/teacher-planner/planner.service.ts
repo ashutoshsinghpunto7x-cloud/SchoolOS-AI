@@ -6,10 +6,11 @@ import { Teacher } from '../teachers/teacher.model';
 import { SchoolSettings } from '../school-settings/school-settings.model';
 import { chapterRepository } from '../question-bank/chapter.repository';
 import { timetableRepository } from '../timetable/timetable.repository';
+import { notificationService } from '../notifications/notification.service';
 import { plannerRepository } from './planner.repository';
 import { computeTeachingWeeks, listWeekdays, distributeDueDates, buildChapterDayPlan } from './planner-week.util';
 import { ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
-import { ConfirmPlannerInput, GeneratePlannerInput } from './planner.validation';
+import { ConfirmPlannerInput, GeneratePlannerInput, AddPrincipalTaskInput } from './planner.validation';
 import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, TeachingWeeksInfo } from '@schoolos/types';
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
@@ -351,5 +352,35 @@ export const plannerService = {
     const planner = await plannerRepository.findOne(ctx.schoolId, teacherId, query.class, query.subject);
     if (!planner) throw new NotFoundError('Planner');
     return { planner, progress: computeProgress(planner), pace: computePace(planner) };
+  },
+
+  /** POST /teacher-planner/principal/:id/tasks — principal/incharge assigning
+   *  a task straight into a teacher's existing planner week. Notifies the
+   *  teacher (planner_reminder) so it doesn't silently appear on their
+   *  dashboard. Route is already role-gated; no ownership assertion needed. */
+  async addTaskForTeacher(plannerId: string, data: AddPrincipalTaskInput, ctx: AuthContext): Promise<ITeacherPlanner> {
+    const planner = await plannerRepository.findById(plannerId, ctx.schoolId);
+    if (!planner) throw new NotFoundError('Planner');
+
+    const task: IPlannerTask = {
+      taskId: randomUUID(),
+      title: data.title,
+      type: data.type,
+      dueDate: new Date(data.dueDate),
+      status: 'pending',
+    };
+
+    const updated = await plannerRepository.addTask(plannerId, ctx.schoolId, data.weekNumber, task);
+    if (!updated) throw new NotFoundError('Week');
+
+    await notificationService.sendToUser({
+      recipientUserId: planner.teacherId,
+      type: 'planner_reminder',
+      title: 'New planner task added',
+      body: `${ctx.displayName} added "${data.title}" to your Week ${data.weekNumber} plan (${planner.subject}, Class ${planner.class}).`,
+      payload: { plannerId, class: planner.class, subject: planner.subject },
+    }, ctx);
+
+    return updated;
   },
 };

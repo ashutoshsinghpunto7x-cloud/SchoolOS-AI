@@ -3,6 +3,9 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type UserRole =
   | 'admin'
   | 'principal'
+  // Mirrors 'principal' 1:1 today (same permissions/routes/dashboard) — kept
+  // as its own role so it can diverge from principal later without a migration.
+  | 'incharge'
   | 'reception'
   | 'teacher'
   | 'accountant'
@@ -70,7 +73,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'principal', 'reception', 'teacher', 'accountant', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      enum: ['admin', 'principal', 'incharge', 'reception', 'teacher', 'accountant', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
       required: true,
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },

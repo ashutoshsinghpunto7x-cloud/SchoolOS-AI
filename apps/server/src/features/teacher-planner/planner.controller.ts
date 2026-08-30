@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { plannerService } from './planner.service';
-import { confirmPlannerSchema, toggleTaskSchema, plannerTargetSchema, generatePlannerSchema } from './planner.validation';
+import { confirmPlannerSchema, toggleTaskSchema, plannerTargetSchema, generatePlannerSchema, addPrincipalTaskSchema } from './planner.validation';
 
 export const plannerController = {
   /** GET /teacher-planner/chapters?class=8&subject=Science */
@@ -101,6 +101,16 @@ export const plannerController = {
       const ctx = buildAuthContext(req.user!);
       const result = await plannerService.getForTeacher(req.params.teacherId, query, ctx);
       sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /teacher-planner/principal/:id/tasks */
+  async addTaskForTeacher(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = addPrincipalTaskSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const planner = await plannerService.addTaskForTeacher(req.params.id, data, ctx);
+      sendCreated(res, planner, 'Task added — teacher notified');
     } catch (err) { next(err); }
   },
 };

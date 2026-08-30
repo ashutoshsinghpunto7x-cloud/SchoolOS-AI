@@ -21,5 +21,13 @@
   },
   "dependencies": {
     "firebase": "^12.16.0"
+  },
+  "allowScripts": {
+    "@firebase/util@1.15.1": true,
+    "protobufjs@7.6.5": true,
+    "esbuild@0.21.5": true,
+    "esbuild@0.28.1": true,
+    "lightningcss@1.33.0": true,
+    "terser@5.49.0": true
   }
 }

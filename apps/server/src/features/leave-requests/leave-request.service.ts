@@ -91,7 +91,7 @@ export const leaveRequestService = {
     const request = await leaveRequestRepository.findById(id, ctx.schoolId);
     if (!request) throw new NotFoundError('Leave request');
 
-    const canReview = ctx.role === 'admin' || ctx.role === 'principal';
+    const canReview = ctx.role === 'admin' || ctx.role === 'principal' || ctx.role === 'incharge';
     if (!canReview && request.requestedByUserId !== ctx.userId) {
       throw new ForbiddenError('You can only view your own leave requests');
     }

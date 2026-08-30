@@ -39,7 +39,7 @@ export const NotificationBell = () => {
   const markAllRead = useMarkAllNotificationsRead();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const usePillStyle = user?.role === 'accountant' || user?.role === 'teacher' || user?.role === 'principal';
+  const usePillStyle = user?.role === 'accountant' || user?.role === 'teacher' || user?.role === 'principal' || user?.role === 'incharge';
 
   function handleNotificationClick(n: AppNotification) {
     if (!n.isRead) markRead.mutate(n._id);

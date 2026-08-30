@@ -88,6 +88,9 @@ export type Status = 'active' | 'inactive' | 'deleted';
 export type UserRole =
   | 'admin'
   | 'principal'
+  // Mirrors 'principal' 1:1 today (same permissions/routes/dashboard) — kept
+  // as its own role so it can diverge from principal later without a migration.
+  | 'incharge'
   | 'reception'
   | 'teacher'
   | 'accountant'
@@ -4306,6 +4309,14 @@ export interface PrincipalPlannerDetail {
   planner: TeacherPlanner;
   progress: PlannerProgress;
   pace: PacePosition;
+}
+
+/** Principal/incharge inserting a task into a teacher's existing planner week. */
+export interface AddPlannerTaskPayload {
+  weekNumber: number;
+  title: string;
+  type: PlannerTaskType;
+  dueDate: string;
 }
 
 // ── Worksheet Generator ────────────────────────────────────────────────────────

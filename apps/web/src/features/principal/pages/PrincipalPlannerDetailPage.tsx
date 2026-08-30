@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Plus, CheckCircle2 } from 'lucide-react';
 import { usePrincipalPlannerDetail } from '@/features/teacher-planner/hooks/useTeacherPlanner';
 import { PlannerView } from '@/features/teacher-planner/components/PlannerView';
+import { AddPlannerTaskModal } from '@/features/teacher-planner/components/AddPlannerTaskModal';
 
 export function PrincipalPlannerDetailPage() {
   const { teacherId = '', cls = '', subject = '' } = useParams();
   const navigate = useNavigate();
   const { data, isLoading, isError } = usePrincipalPlannerDetail(teacherId, cls, subject);
+  const [showAddTask, setShowAddTask] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
@@ -14,10 +18,26 @@ export function PrincipalPlannerDetailPage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Class {cls} · {subject} — read-only</h1>
+        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Class {cls} · {subject}</h1>
+        {data && (
+          <button
+            type="button"
+            onClick={() => { setJustAdded(false); setShowAddTask(true); }}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#6D4AFF] text-white text-xs font-bold"
+          >
+            <Plus className="w-3.5 h-3.5" /> Add Task
+          </button>
+        )}
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6">
+        {justAdded && (
+          <div className="mb-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-3.5 flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <p className="text-sm font-semibold text-emerald-800">Task added — teacher notified.</p>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
@@ -31,6 +51,14 @@ export function PrincipalPlannerDetailPage() {
           <PlannerView planner={data.planner} progress={data.progress} pace={data.pace} readOnly />
         )}
       </div>
+
+      {showAddTask && data && (
+        <AddPlannerTaskModal
+          planner={data.planner}
+          onClose={() => setShowAddTask(false)}
+          onAdded={() => { setShowAddTask(false); setJustAdded(true); }}
+        />
+      )}
     </div>
   );
 }

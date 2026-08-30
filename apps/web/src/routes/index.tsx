@@ -645,6 +645,10 @@ const PrincipalPlannerDetailPage = lazyPage(
   () => import('@/features/principal/pages/PrincipalPlannerDetailPage'),
   'PrincipalPlannerDetailPage',
 );
+const PrincipalPlannerTeacherPage = lazyPage(
+  () => import('@/features/principal/pages/PrincipalPlannerTeacherPage'),
+  'PrincipalPlannerTeacherPage',
+);
 const MarksEntryPage = lazyPage(
   () => import('@/features/marks/pages/MarksEntryPage'),
   'MarksEntryPage',
@@ -1052,6 +1056,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
                   { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
                   { path: 'principal/planner', element: <PrincipalPlannerPage /> },
+                  { path: 'principal/planner/teacher/:teacherId', element: <PrincipalPlannerTeacherPage /> },
                   { path: 'principal/planner/:teacherId/:cls/:subject', element: <PrincipalPlannerDetailPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },

@@ -346,7 +346,7 @@ export const reportCardService = {
 
     // A teacher may only correct marks directly on the card — everything else (remarks,
     // co-scholastic grades, AI remark edits) is a leadership-only structural/content change.
-    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal';
+    const isLeadership = ctx.role === 'admin' || ctx.role === 'principal' || ctx.role === 'incharge';
     if (!isLeadership) {
       const attemptedNonMarksFields = Object.keys(data).filter((k) => k !== 'subjectMarks');
       if (attemptedNonMarksFields.length > 0) {

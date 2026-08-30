@@ -14,7 +14,14 @@ interface ProtectedRouteProps {
 // already authenticated (with a still-valid token) when maintenance was
 // toggled on mid-session. The server-side login check is what stops a
 // blocked role from ever getting a session in the first place.
-const MAINTENANCE_EXEMPT_ROLES: UserRole[] = ['admin', 'principal', 'owner', 'super_admin', 'devops', 'developer', 'support'];
+const MAINTENANCE_EXEMPT_ROLES: UserRole[] = ['admin', 'principal', 'incharge', 'owner', 'super_admin', 'devops', 'developer', 'support'];
+
+// 'incharge' mirrors 'principal' 1:1 today — resolve it here so every
+// existing allowedRoles={['principal', ...]} route picks it up without
+// touching each route definition. Remove once the roles are meant to diverge.
+const ROLE_ALIASES: Partial<Record<UserRole, UserRole>> = {
+  incharge: 'principal',
+};
 
 export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading, user } = useAuthContext();
@@ -33,8 +40,12 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/forbidden" replace />;
+  if (allowedRoles && user) {
+    const aliasedRole = ROLE_ALIASES[user.role];
+    const isAllowed = allowedRoles.includes(user.role) || (aliasedRole && allowedRoles.includes(aliasedRole));
+    if (!isAllowed) {
+      return <Navigate to="/forbidden" replace />;
+    }
   }
 
   if (user && maintenanceStatus?.isActive && !MAINTENANCE_EXEMPT_ROLES.includes(user.role)) {

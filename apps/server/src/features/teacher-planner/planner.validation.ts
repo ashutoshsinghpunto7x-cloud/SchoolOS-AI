@@ -45,7 +45,16 @@ export const generatePlannerSchema = z.object({
   startFromWeek: z.number().int().min(0).optional(),
 });
 
+// Principal/incharge adding a task to a teacher's existing planner week.
+export const addPrincipalTaskSchema = z.object({
+  weekNumber: z.number().int().min(1),
+  title:      z.string({ required_error: 'title is required' }).min(1).trim(),
+  type:       z.enum(TASK_TYPES),
+  dueDate:    z.string({ required_error: 'dueDate is required' }).min(1),
+});
+
 export type ConfirmPlannerInput = z.infer<typeof confirmPlannerSchema>;
 export type ToggleTaskInput = z.infer<typeof toggleTaskSchema>;
 export type PlannerTargetInput = z.infer<typeof plannerTargetSchema>;
 export type GeneratePlannerInput = z.infer<typeof generatePlannerSchema>;
+export type AddPrincipalTaskInput = z.infer<typeof addPrincipalTaskSchema>;
