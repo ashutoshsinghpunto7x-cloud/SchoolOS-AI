@@ -1,5 +1,5 @@
-import { CircularAttendance } from '@/features/report-cards/components/CircularAttendance';
-import type { TermReportCard, ReportCardTemplate, SchoolSettings, TermReportCardTermBlock } from '@schoolos/types';
+import type { CSSProperties } from 'react';
+import type { TermReportCard, ReportCardTemplate, SchoolSettings, TermReportCardTermBlock, TermReportCardSkillEntry } from '@schoolos/types';
 
 /** Only the header fields this document actually renders — lets the parent
  *  workspace (which never fetches the full Student record) pass its own
@@ -17,16 +17,16 @@ export interface ReportCardStudentHeader {
   photoUrl?: string;
 }
 
-const INK = '#14161A';
-const NAVY = '#1C2B4A';
-const MUTED = '#6B7280';
-const FAINT = '#9CA3AF';
-const HAIRLINE = '#E5E6EA';
-const TILE_BG = '#F7F8FA';
+// This document deliberately mirrors the school's existing pre-printed paper
+// report card layout (ruled table, serif type, black-on-white) rather than a
+// modern card design — the whole point is that a class teacher can open it
+// and hit print with no extra formatting work.
+const RULE = '1px solid #000';
+const RULE_THICK = '1.5px solid #000';
 
 const PROMOTION_LABEL: Record<TermReportCard['summary']['promotionStatus'], string> = {
-  promoted: 'Promoted to Next Class',
-  not_promoted: 'Detained',
+  promoted: 'Promoted to Class',
+  not_promoted: 'Detained in Class',
   pending: 'Result Awaited',
 };
 
@@ -35,82 +35,20 @@ function fmtDate(iso?: string): string {
   return new Date(iso).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function initials(name: string): string {
-  return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+/** First subject with numeric marks, used only to read the common unit-test /
+ *  main-exam max marks for the column headers (e.g. "20", "80") — every
+ *  marks-evaluated subject on a template shares the same two max-marks values. */
+function headerMaxMarks(block: TermReportCardTermBlock): { unitTest: number; main: number } {
+  const row = block.subjectRows.find((r) => r.evaluationType !== 'grade');
+  return { unitTest: row?.unitTestMaxMarks ?? 0, main: row?.mainExamMaxMarks ?? 0 };
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] mb-2.5" style={{ color: MUTED }}>
-      {children}
-    </p>
-  );
-}
-
-function InfoField({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[8px] uppercase tracking-[0.1em]" style={{ color: FAINT }}>{label}</p>
-      <p className="text-[11px] font-medium mt-0.5" style={{ color: INK }}>{value || '—'}</p>
-    </div>
-  );
-}
-
-function StatTile({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="rounded-lg px-3.5 py-3 flex flex-col gap-0.5" style={{ backgroundColor: TILE_BG, border: `1px solid ${HAIRLINE}` }}>
-      <span className="text-[8.5px] uppercase tracking-[0.1em]" style={{ color: FAINT }}>{label}</span>
-      <span className="text-[15px] font-bold tracking-tight" style={{ color: accent ? NAVY : INK }}>{value}</span>
-    </div>
-  );
-}
-
-function TermTable({ title, unitTestLabel, mainLabel, block }: {
-  title: string; unitTestLabel: string; mainLabel: string; block: TermReportCardTermBlock;
-}) {
-  return (
-    <div className="mb-4">
-      <SectionLabel>{title}</SectionLabel>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr style={{ borderBottom: `1.5px solid ${NAVY}` }}>
-            <th className="text-left py-1.5 text-[8.5px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>Subject</th>
-            <th className="text-right py-1.5 text-[8.5px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>{unitTestLabel}</th>
-            <th className="text-right py-1.5 text-[8.5px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>{mainLabel}</th>
-            <th className="text-right py-1.5 text-[8.5px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {block.subjectRows.map((s) => {
-            const showMarks = s.evaluationType === 'marks' || s.evaluationType === 'both';
-            return (
-              <tr key={s.subjectId} style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
-                <td className="py-1.5 font-medium">{s.subjectName}</td>
-                <td className="py-1.5 text-right" style={{ color: MUTED }}>
-                  {showMarks ? `${s.bestUnitTestScore ?? '—'}/${s.unitTestMaxMarks}` : '—'}
-                </td>
-                <td className="py-1.5 text-right" style={{ color: MUTED }}>
-                  {showMarks ? `${s.mainExamScore ?? '—'}/${s.mainExamMaxMarks}` : '—'}
-                </td>
-                <td className="py-1.5 text-right font-semibold" style={{ color: NAVY }}>
-                  {showMarks ? (s.termTotal != null ? `${s.termTotal}/${s.termMaxMarks}` : '—') : (s.grade ?? '—')}
-                </td>
-              </tr>
-            );
-          })}
-          <tr>
-            <td className="pt-2 font-bold" style={{ color: INK }}>Term Total</td>
-            <td />
-            <td />
-            <td className="pt-2 text-right font-bold" style={{ color: NAVY }}>
-              {block.termTotalObtained} / {block.termTotalMax} ({block.termPercentage}%)
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-}
+const th: CSSProperties = {
+  border: RULE, padding: '1.5px 3px', fontWeight: 700, fontSize: '6.5px', textAlign: 'center',
+  verticalAlign: 'middle', lineHeight: 1.1, textTransform: 'uppercase',
+};
+const tdSubject: CSSProperties = { border: RULE, padding: '1px 4px', fontSize: '7.3px', whiteSpace: 'nowrap' };
+const tdNum: CSSProperties = { border: RULE, padding: '1px 3px', fontSize: '7.3px', textAlign: 'center' };
 
 interface TermReportCardDocumentProps {
   reportCard: TermReportCard;
@@ -124,213 +62,236 @@ interface TermReportCardDocumentProps {
 export function TermReportCardDocument({ reportCard, template, student, schoolSettings, qrDataUri, hideWarnings = true }: TermReportCardDocumentProps) {
   const branding = schoolSettings?.reportCardBranding;
   const schoolName = schoolSettings?.schoolName || 'School Name';
-  const logoUrl = schoolSettings?.logoUrl;
 
-  const skillBySection = new Map<string, typeof reportCard.skills>();
+  const skillBySection = new Map<string, TermReportCardSkillEntry[]>();
   for (const s of reportCard.skills) {
     const list = skillBySection.get(s.sectionId) ?? [];
     list.push(s);
     skillBySection.set(s.sectionId, list);
   }
 
+  const ft = headerMaxMarks(reportCard.firstTerm);
+  const xt = headerMaxMarks(reportCard.finalTerm);
+  const grandMax = ft.unitTest + ft.main + xt.unitTest + xt.main;
+
+  function cell(v: number | undefined): string {
+    return v != null ? `${v}` : '—';
+  }
+
+  function renderSubjectRow(subjectName: string, first: TermReportCardTermBlock['subjectRows'][number] | undefined, final: TermReportCardTermBlock['subjectRows'][number] | undefined, key: string) {
+    const graded = (first?.evaluationType ?? final?.evaluationType) === 'grade';
+    return (
+      <tr key={key}>
+        <td style={{ ...tdSubject, textTransform: 'uppercase' }}>{subjectName}</td>
+        {graded ? (
+          <>
+            <td style={tdNum}>{first?.grade ?? '—'}</td>
+            <td style={tdNum}>{first?.grade ?? '—'}</td>
+            <td style={tdNum}>{first?.grade ?? '—'}</td>
+            <td style={tdNum}>{final?.grade ?? '—'}</td>
+            <td style={tdNum}>{final?.grade ?? '—'}</td>
+            <td style={tdNum}>{final?.grade ?? '—'}</td>
+          </>
+        ) : (
+          <>
+            <td style={tdNum}>{cell(first?.bestUnitTestScore)}</td>
+            <td style={tdNum}>{cell(first?.mainExamScore)}</td>
+            <td style={{ ...tdNum, fontWeight: 700 }}>{cell(first?.termTotal)}</td>
+            <td style={tdNum}>{cell(final?.bestUnitTestScore)}</td>
+            <td style={tdNum}>{cell(final?.mainExamScore)}</td>
+            <td style={{ ...tdNum, fontWeight: 700 }}>{cell(final?.termTotal)}</td>
+          </>
+        )}
+        <td style={{ ...tdNum, fontWeight: 700 }}>
+          {!graded && first?.termTotal != null && final?.termTotal != null ? `${first.termTotal + final.termTotal}` : '—'}
+        </td>
+        <td style={{ ...tdNum, fontWeight: 700 }}>
+          {!graded && first?.termTotal != null && final?.termTotal != null && (first.termMaxMarks + final.termMaxMarks) > 0
+            ? `${Math.round(((first.termTotal + final.termTotal) / (first.termMaxMarks + final.termMaxMarks)) * 1000) / 10}`
+            : '—'}
+        </td>
+      </tr>
+    );
+  }
+
+  // Subject order/identity comes from the template (the principal's approved
+  // layout), not from whichever term happens to have data — a student with
+  // only First Term marks entered still sees every subject, in order.
+  const finalBySubject = new Map(reportCard.finalTerm.subjectRows.map((r) => [r.subjectId, r]));
+  const firstBySubject = new Map(reportCard.firstTerm.subjectRows.map((r) => [r.subjectId, r]));
+
   return (
     <div
-      className="bg-white mx-auto text-[11px] leading-relaxed"
-      style={{ width: '210mm', minHeight: '297mm', padding: '14mm 16mm', color: INK, fontFamily: 'Inter, sans-serif' }}
+      className="bg-white mx-auto"
+      style={{ width: '297mm', minHeight: '210mm', padding: '8mm 12mm', color: '#000', fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '10px' }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between pb-4" style={{ borderBottom: `1.5px solid ${NAVY}` }}>
-        <div className="flex items-start gap-3.5">
-          {logoUrl ? (
-            <img src={logoUrl} alt={schoolName} className="w-14 h-14 object-contain shrink-0" />
-          ) : (
-            <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: NAVY }}>
-              <span className="text-white font-bold text-[16px]">{initials(schoolName)}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+        {schoolSettings?.logoUrl && <img src={schoolSettings.logoUrl} alt={schoolName} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />}
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.02em', margin: 0 }}>{schoolName.toUpperCase()}</h1>
+          {branding?.address && <p style={{ fontSize: '9px', margin: '1px 0 0' }}>({branding.address})</p>}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: RULE_THICK, paddingBottom: '4px', marginTop: '5px' }}>
+        <div>
+          <p style={{ margin: '1px 0' }}><b>STUDENT&apos;S NAME&nbsp;&nbsp;</b>{student.fullName.toUpperCase()}</p>
+          <p style={{ margin: '1px 0' }}><b>FATHER&apos;S NAME&nbsp;&nbsp;</b>{(student.fatherName ?? '—').toUpperCase()}</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ margin: '1px 0', fontWeight: 700 }}>CLASS/SECTION : {student.class} - {student.section}</p>
+          <p style={{ margin: '1px 0', fontWeight: 700 }}>ROLL No : {student.rollNumber ?? '—'}</p>
+          {qrDataUri && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '3px' }}>
+              <img src={qrDataUri} alt="Verification QR" style={{ width: '30px', height: '30px' }} />
+              <span style={{ fontSize: '5.5px', letterSpacing: '0.08em' }}>SCAN TO VERIFY</span>
             </div>
           )}
-          <div>
-            <h1 className="text-[19px] font-bold tracking-tight leading-tight" style={{ color: NAVY }}>{schoolName}</h1>
-            {branding?.motto && <p className="text-[9.5px] italic mt-0.5" style={{ color: MUTED }}>{branding.motto}</p>}
-            <p className="text-[9px] mt-1" style={{ color: MUTED }}>
-              {[branding?.address, branding?.phone, branding?.website].filter(Boolean).join('  ·  ')}
-            </p>
-          </div>
         </div>
-
-        {qrDataUri && (
-          <div className="flex flex-col items-center shrink-0">
-            <img src={qrDataUri} alt="Verification QR" className="w-16 h-16" />
-            <span className="text-[6.5px] mt-1 tracking-wide" style={{ color: FAINT }}>SCAN TO VERIFY</span>
-          </div>
-        )}
       </div>
 
-      <div className="flex items-center justify-between mt-4 mb-5">
+      {/* ── Marks grid + right panel ─────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '68% 32%', border: RULE_THICK, marginTop: '6px' }}>
+        {/* Marks table */}
+        <div style={{ borderRight: RULE_THICK }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ ...th, width: '20%' }} rowSpan={2}>Subjects</th>
+                <th style={th} colSpan={3}>First Term</th>
+                <th style={th} colSpan={3}>Final Term</th>
+                <th style={th} rowSpan={2}>Grand<br />Total<br />{grandMax}</th>
+                <th style={th} rowSpan={2}>Average<br />100</th>
+              </tr>
+              <tr>
+                <th style={th}>Unit Test<br />{ft.unitTest}</th>
+                <th style={th}>Half Yearly<br />{ft.main}</th>
+                <th style={th}>Total<br />{ft.unitTest + ft.main}</th>
+                <th style={th}>Unit Test<br />{xt.unitTest}</th>
+                <th style={th}>Annual<br />{xt.main}</th>
+                <th style={th}>Total<br />{xt.unitTest + xt.main}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {template.subjects.map((subj) =>
+                renderSubjectRow(subj.name, firstBySubject.get(subj._id ?? ''), finalBySubject.get(subj._id ?? ''), subj._id ?? subj.name))}
+
+              <tr>
+                <td style={{ ...tdSubject, fontWeight: 700 }}>Total</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={{ ...tdNum, fontWeight: 700 }}>{reportCard.firstTerm.termTotalObtained} / {reportCard.firstTerm.termTotalMax}</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={{ ...tdNum, fontWeight: 700 }}>{reportCard.finalTerm.termTotalObtained} / {reportCard.finalTerm.termTotalMax}</td>
+                <td style={{ ...tdNum, fontWeight: 700 }}>{reportCard.grandTotalObtained} / {reportCard.grandTotalMax}</td>
+                <td style={{ ...tdNum, fontWeight: 700 }}>{reportCard.grandAveragePercent}%</td>
+              </tr>
+              <tr>
+                <td style={{ ...tdSubject, fontWeight: 700 }}>Percentage</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={tdNum}>{reportCard.firstTerm.termTotalMax > 0 ? `${reportCard.firstTerm.termPercentage}%` : '—'}</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={tdNum}>{reportCard.finalTerm.termTotalMax > 0 ? `${reportCard.finalTerm.termPercentage}%` : '—'}</td>
+                <td style={tdNum} colSpan={2} />
+              </tr>
+              <tr>
+                <td style={{ ...tdSubject, fontWeight: 700 }}>Position</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={tdNum}>{reportCard.firstTerm.rank ? `${reportCard.firstTerm.rank}/${reportCard.firstTerm.classSize}` : '—'}</td>
+                <td style={tdNum} colSpan={2} />
+                <td style={tdNum}>{reportCard.finalTerm.rank ? `${reportCard.finalTerm.rank}/${reportCard.finalTerm.classSize}` : '—'}</td>
+                <td style={tdNum} colSpan={2} />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Right panel: skills + attendance + signatures */}
         <div>
-          <p className="text-[13px] font-bold tracking-tight" style={{ color: INK }}>Annual Report Card</p>
-          <p className="text-[10px] mt-0.5" style={{ color: MUTED }}>Academic Year {reportCard.academicYear}</p>
-        </div>
-        <p className="text-[9px]" style={{ color: FAINT }}>Generated {fmtDate(reportCard.generatedAt)}</p>
-      </div>
-
-      {/* ── Student info ───────────────────────────────────────────────── */}
-      <div className="flex items-start gap-4 rounded-xl p-4 mb-5" style={{ backgroundColor: TILE_BG, border: `1px solid ${HAIRLINE}` }}>
-        <div className="w-16 h-20 rounded-md overflow-hidden shrink-0 flex items-center justify-center" style={{ backgroundColor: '#fff', border: `1px solid ${HAIRLINE}` }}>
-          {student.photoUrl ? (
-            <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-[16px] font-bold" style={{ color: NAVY }}>{initials(student.fullName)}</span>
-          )}
-        </div>
-        <div className="grid grid-cols-4 gap-x-4 gap-y-2.5 flex-1">
-          <div className="col-span-2">
-            <p className="text-[8px] uppercase tracking-[0.1em]" style={{ color: FAINT }}>Student Name</p>
-            <p className="text-[13px] font-bold mt-0.5" style={{ color: INK }}>{student.fullName}</p>
-          </div>
-          <InfoField label="Class — Section" value={`${student.class} – ${student.section}`} />
-          <InfoField label="Admission No." value={student.admissionNumber} />
-          <InfoField label="Roll No." value={student.rollNumber ?? '—'} />
-          <InfoField label="Father's Name" value={student.fatherName ?? '—'} />
-          <InfoField label="Mother's Name" value={student.motherName ?? '—'} />
-          <InfoField label="Date of Birth" value={fmtDate(student.dateOfBirth)} />
-        </div>
-      </div>
-
-      {/* ── Two term academic tables ──────────────────────────────────── */}
-      <TermTable title="First Term" unitTestLabel="Unit Test" mainLabel="Half Yearly" block={reportCard.firstTerm} />
-      <TermTable title="Final Term" unitTestLabel="Unit Test" mainLabel="Annual" block={reportCard.finalTerm} />
-
-      {/* ── Grand total ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-2.5 mb-5">
-        <StatTile label="Grand Total" value={`${reportCard.grandTotalObtained} / ${reportCard.grandTotalMax}`} accent />
-        <StatTile label="Average" value={`${reportCard.grandAveragePercent}%`} accent />
-        <StatTile label="Class Rank" value={reportCard.summary.rank ? `${reportCard.summary.rank} of ${reportCard.summary.classSize}` : '—'} />
-        <StatTile label="Result" value={PROMOTION_LABEL[reportCard.summary.promotionStatus]} />
-      </div>
-
-      {/* ── Skill sections ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-6 mb-5">
-        {template.skillSections.map((section) => (
-          <div key={section._id}>
-            <SectionLabel>{section.name}</SectionLabel>
-            <table className="w-full border-collapse">
+          {template.skillSections.map((section) => (
+            <table key={section._id} style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
-                  <th className="text-left py-1 text-[8px] uppercase tracking-wide font-semibold" style={{ color: MUTED }} />
-                  <th className="text-right py-1 text-[8px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>I Term</th>
-                  <th className="text-right py-1 text-[8px] uppercase tracking-wide font-semibold" style={{ color: MUTED }}>II Term</th>
+                <tr><th style={{ ...th, textAlign: 'left', textTransform: 'uppercase' }} colSpan={3}>{section.name}</th></tr>
+                <tr>
+                  <th style={th} />
+                  <th style={th}>I Term</th>
+                  <th style={th}>II Term</th>
                 </tr>
               </thead>
               <tbody>
                 {(skillBySection.get(section._id ?? '') ?? []).map((row) => (
-                  <tr key={row.rowId} style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
-                    <td className="py-1 text-[10px]" style={{ color: MUTED }}>{row.rowLabel}</td>
-                    <td className="py-1 text-right font-bold" style={{ color: NAVY }}>{row.firstTermGrade ?? '—'}</td>
-                    <td className="py-1 text-right font-bold" style={{ color: NAVY }}>{row.finalTermGrade ?? '—'}</td>
+                  <tr key={row.rowId}>
+                    <td style={{ ...tdSubject, fontSize: '7.3px' }}>{row.rowLabel}</td>
+                    <td style={tdNum}>{row.firstTermGrade ?? '—'}</td>
+                    <td style={tdNum}>{row.finalTermGrade ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          ))}
+
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><th style={{ ...th, textAlign: 'left' }} colSpan={3}>Attendance</th></tr>
+              <tr>
+                <th style={th} />
+                <th style={th}>I Term</th>
+                <th style={th}>II Term</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Present / Working Days</td>
+                <td style={tdNum}>{reportCard.firstTerm.attendance.present}/{reportCard.firstTerm.attendance.workingDays}</td>
+                <td style={tdNum}>{reportCard.finalTerm.attendance.present}/{reportCard.finalTerm.attendance.workingDays}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style={{ padding: '4px 4px', fontSize: '7.3px' }}>
+            <div style={{ marginBottom: '5px' }}>
+              <div style={{ borderBottom: RULE, height: '9px' }} />
+              <p style={{ margin: '1px 0' }}>Principal&apos;s Signature</p>
+            </div>
+            <div style={{ marginBottom: '5px' }}>
+              <div style={{ borderBottom: RULE, height: '9px' }} />
+              <p style={{ margin: '1px 0' }}>Class Teacher&apos;s Signature</p>
+            </div>
+            <div>
+              <div style={{ borderBottom: RULE, height: '9px' }} />
+              <p style={{ margin: '1px 0' }}>Parent&apos;s Signature</p>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* ── Attendance ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-6 mb-5">
-        <div>
-          <SectionLabel>Attendance — First Term</SectionLabel>
-          <div className="flex items-center gap-5">
-            <CircularAttendance percent={reportCard.firstTerm.attendance.percent} size={70} strokeWidth={6} />
-            <div className="text-[10px]" style={{ color: MUTED }}>
-              <p>Present: <b style={{ color: INK }}>{reportCard.firstTerm.attendance.present}</b> / {reportCard.firstTerm.attendance.workingDays}</p>
+      {/* ── Result + grading key ─────────────────────────────────────── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
+        <p style={{ fontSize: '10px', fontWeight: 700 }}>
+          {PROMOTION_LABEL[reportCard.summary.promotionStatus]}
+          {reportCard.summary.promotionStatus === 'promoted' && <span style={{ display: 'inline-block', minWidth: '70px', borderBottom: RULE, marginLeft: '4px' }}>&nbsp;</span>}
+        </p>
+        {template.gradingKey.length > 0 && (
+          <div style={{ fontSize: '8px', textAlign: 'right' }}>
+            <p style={{ fontWeight: 700, margin: 0 }}>Key</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {template.gradingKey.map((g) => <span key={g.label}>{g.label}-{g.description}</span>)}
             </div>
           </div>
-        </div>
-        <div>
-          <SectionLabel>Attendance — Final Term</SectionLabel>
-          <div className="flex items-center gap-5">
-            <CircularAttendance percent={reportCard.finalTerm.attendance.percent} size={70} strokeWidth={6} />
-            <div className="text-[10px]" style={{ color: MUTED }}>
-              <p>Present: <b style={{ color: INK }}>{reportCard.finalTerm.attendance.present}</b> / {reportCard.finalTerm.attendance.workingDays}</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-
-      {(reportCard.teacherRemark || reportCard.principalRemark || reportCard.parentFeedback) && (
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          {reportCard.teacherRemark && (
-            <div>
-              <SectionLabel>Class Teacher's Remark</SectionLabel>
-              <p className="text-[10.5px] italic" style={{ color: INK }}>&ldquo;{reportCard.teacherRemark}&rdquo;</p>
-            </div>
-          )}
-          {reportCard.principalRemark && (
-            <div>
-              <SectionLabel>Principal's Remark</SectionLabel>
-              <p className="text-[10.5px] italic" style={{ color: INK }}>&ldquo;{reportCard.principalRemark}&rdquo;</p>
-            </div>
-          )}
-          {reportCard.parentFeedback && (
-            <div>
-              <SectionLabel>Parent Feedback</SectionLabel>
-              <p className="text-[10.5px] italic" style={{ color: INK }}>&ldquo;{reportCard.parentFeedback}&rdquo;</p>
-            </div>
-          )}
-        </div>
-      )}
 
       {!hideWarnings && reportCard.warnings.length > 0 && (
-        <div className="mb-5 rounded-lg p-3" style={{ backgroundColor: '#FFF7ED', border: '1px solid #FDBA74' }}>
-          <p className="text-[9px] font-semibold uppercase tracking-wide mb-1" style={{ color: '#9A3412' }}>For teacher review only — not printed</p>
-          <ul className="text-[10px] list-disc pl-4" style={{ color: '#9A3412' }}>
+        <div style={{ marginTop: '10px', padding: '6px', border: '1px dashed #999' }}>
+          <p style={{ fontSize: '8px', fontWeight: 700, textTransform: 'uppercase' }}>For teacher review only — not printed</p>
+          <ul style={{ fontSize: '8.5px', paddingLeft: '14px' }}>
             {reportCard.warnings.map((w) => <li key={w}>{w}</li>)}
           </ul>
         </div>
       )}
 
-      {/* ── Grading key ──────────────────────────────────────────────── */}
-      {template.gradingKey.length > 0 && (
-        <div className="mb-5">
-          <SectionLabel>Grading Key</SectionLabel>
-          <div className="flex flex-wrap gap-x-5 gap-y-1">
-            {template.gradingKey.map((g) => (
-              <span key={g.label} className="text-[9.5px]" style={{ color: MUTED }}>
-                <b style={{ color: NAVY }}>{g.label}</b> – {g.description}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Signatures ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-6 mt-8 pt-5" style={{ borderTop: `1px solid ${HAIRLINE}` }}>
-        <div className="text-center">
-          <div className="h-8 flex items-end justify-center">
-            <div className="w-full" style={{ borderBottom: `1px solid ${FAINT}` }} />
-          </div>
-          <p className="text-[9px] mt-1.5" style={{ color: MUTED }}>Class Teacher</p>
-        </div>
-        <div className="text-center">
-          {branding?.principalSignatureUrl ? (
-            <img src={branding.principalSignatureUrl} alt="Principal signature" className="h-8 mx-auto object-contain" />
-          ) : (
-            <div className="h-8 flex items-end justify-center"><div className="w-full" style={{ borderBottom: `1px solid ${FAINT}` }} /></div>
-          )}
-          <p className="text-[9px] mt-1.5" style={{ color: MUTED }}>{branding?.principalName || 'Principal'}</p>
-        </div>
-        <div className="text-center">
-          {branding?.schoolSealUrl ? (
-            <img src={branding.schoolSealUrl} alt="School seal" className="h-12 mx-auto object-contain opacity-80" />
-          ) : (
-            <div className="h-8 flex items-end justify-center"><div className="w-full" style={{ borderBottom: `1px solid ${FAINT}` }} /></div>
-          )}
-          <p className="text-[9px] mt-1.5" style={{ color: MUTED }}>School Seal · {fmtDate(reportCard.generatedAt)}</p>
-        </div>
-      </div>
-
-      <p className="text-center text-[8px] mt-6" style={{ color: FAINT }}>
-        Verified by SchoolOS AI · {branding?.email || ''}
+      <p style={{ textAlign: 'center', fontSize: '7px', marginTop: '10px', color: '#555' }}>
+        Academic Year {reportCard.academicYear} · Generated {fmtDate(reportCard.generatedAt)} · Verified by SchoolOS AI
       </p>
     </div>
   );

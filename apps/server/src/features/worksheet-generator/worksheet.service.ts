@@ -4,12 +4,21 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { chapterRepository } from '../question-bank/chapter.repository';
 import { questionRepository } from '../question-bank/question.repository';
+import { timetableRepository } from '../timetable/timetable.repository';
 import { worksheetRepository, WorksheetListOptions } from './worksheet.repository';
 import { IWorksheet } from './worksheet.model';
 import { worksheetGeneratorService, GenerateWorksheetInput } from './worksheet-generator.service';
 import { SaveWorksheetInput } from './worksheet.validation';
 
-// Same shape/precedent as the other three features' teacher scope guards.
+// Same shape/precedent as teacher-planner's guard — Teacher.subjects/
+// assignedClasses are only kept up to date by the Teachers workspace UI, so
+// a teacher whose subjects are assigned purely via the Timetable (the normal
+// path; WorksheetHubPage itself lists class/subject options straight from
+// the timetable-derived weekly schedule, not from these fields) had them
+// empty, which 403'd every worksheet-generator request even though the hub
+// screen had just shown that exact class/subject as theirs to pick. Now
+// checks the same timetable source WorksheetHubPage reads from. See
+// [[project_planner_chapter_403_bug]].
 async function assertTeacherCanManageWorksheets(ctx: AuthContext, cls: string, subject: string): Promise<void> {
   if (ctx.role !== 'teacher') return;
 
@@ -17,13 +26,15 @@ async function assertTeacherCanManageWorksheets(ctx: AuthContext, cls: string, s
   if (!user?.email) throw new ForbiddenError('Your account has no email — cannot verify class/subject assignment');
 
   const teacher = await Teacher.findOne({ schoolId: ctx.schoolId, email: user.email, isDeleted: false })
-    .select('subjects assignedClasses')
-    .lean() as { subjects: string[]; assignedClasses: string[] } | null;
+    .select('_id')
+    .lean() as { _id: { toString(): string } } | null;
   if (!teacher) throw new ForbiddenError('Teacher profile not found');
 
-  const teachesSubject = teacher.subjects.includes(subject);
-  const teachesClass = teacher.assignedClasses.some((c) => c === cls || c.startsWith(cls));
-  if (!teachesSubject || !teachesClass) {
+  const timetables = await timetableRepository.getTeacherSchedule(ctx.schoolId, String(teacher._id));
+  const teachesThis = timetables.some(
+    (tt) => tt.class === cls && tt.entries.some((e) => e.teacherId === String(teacher._id) && e.subjectName === subject),
+  );
+  if (!teachesThis) {
     throw new ForbiddenError('You are not assigned to teach this subject/class');
   }
 }

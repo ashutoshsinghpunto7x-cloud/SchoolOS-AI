@@ -128,11 +128,13 @@ function derivePromotionStatus(hasFinalTermData: boolean, passPercent: number, g
 
 async function computeClassStats(
   schoolId: string, template: IReportCardTemplate, cls: string, section: string,
-): Promise<{ averages: number[]; classSize: number }> {
+): Promise<{ averages: number[]; firstTermPercents: number[]; finalTermPercents: number[]; classSize: number }> {
   const students = await Student.find({ schoolId, class: cls, section, admissionStatus: 'active', isDeleted: false })
     .select('_id').lean<{ _id: unknown }[]>();
 
   const averages: number[] = [];
+  const firstTermPercents: number[] = [];
+  const finalTermPercents: number[] = [];
   for (const s of students) {
     const studentId = String(s._id);
     const [firstTerm, finalTerm] = await Promise.all([
@@ -144,9 +146,18 @@ async function computeClassStats(
     if (grandTotalMax > 0) {
       averages.push(Math.round((grandTotalObtained / grandTotalMax) * 10000) / 100);
     }
+    if (firstTerm.block.termTotalMax > 0) firstTermPercents.push(firstTerm.block.termPercentage);
+    if (finalTerm.block.termTotalMax > 0) finalTermPercents.push(finalTerm.block.termPercentage);
   }
 
-  return { averages, classSize: students.length };
+  return { averages, firstTermPercents, finalTermPercents, classSize: students.length };
+}
+
+/** 1-based rank of `value` within `pool` (highest percentage = rank 1), or undefined if
+ *  `value` didn't clear the max-marks bar that would have put it in the pool at all. */
+function rankWithin(pool: number[], value: number, hasData: boolean): number | undefined {
+  if (!hasData) return undefined;
+  return [...pool].sort((a, b) => b - a).indexOf(value) + 1;
 }
 
 /** Re-derives a term block's totals from its (possibly just-corrected) subject rows — same
@@ -228,9 +239,15 @@ export const termReportCardService = {
     // unset unless a principal enters one via remarks/UI in a later iteration.
     const overallGrade: string | undefined = undefined;
 
-    const { averages, classSize } = await computeClassStats(ctx.schoolId, template, student.class, student.section);
+    const { averages, firstTermPercents, finalTermPercents, classSize } =
+      await computeClassStats(ctx.schoolId, template, student.class, student.section);
     const sorted = [...averages].sort((a, b) => b - a);
     const rank = grandTotalMax > 0 ? sorted.indexOf(grandAveragePercent) + 1 : undefined;
+
+    firstTerm.rank = rankWithin(firstTermPercents, firstTerm.termPercentage, firstTerm.termTotalMax > 0);
+    firstTerm.classSize = firstTerm.termTotalMax > 0 ? firstTermPercents.length : undefined;
+    finalTerm.rank = rankWithin(finalTermPercents, finalTerm.termPercentage, finalTerm.termTotalMax > 0);
+    finalTerm.classSize = finalTerm.termTotalMax > 0 ? finalTermPercents.length : undefined;
 
     const hasFinalTermData = finalTerm.termTotalMax > 0;
     const promotionStatus = derivePromotionStatus(hasFinalTermData, 33, grandAveragePercent);

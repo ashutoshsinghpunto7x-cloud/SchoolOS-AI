@@ -8,7 +8,7 @@ import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { TermReportCardDocument } from '@/features/term-report-cards/components/TermReportCardDocument';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-const DOC_WIDTH_PX = 794; // 210mm at 96dpi — the document's natural rendered width
+const DOC_WIDTH_PX = 1122; // 297mm at 96dpi — the document's natural rendered width (landscape A4)
 
 /** Scales the fixed-width A4 document down to fit whatever width is
  *  available (phones, mainly) so a parent never has to pinch-scroll
@@ -58,7 +58,7 @@ export function ReportCardPage() {
     <div className="min-h-screen bg-[#F5F5F7]">
       {printing && (
         <style>{`
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 landscape; margin: 0; }
           @media print {
             body * { visibility: hidden; }
             #${printAreaId}, #${printAreaId} * { visibility: visible; }

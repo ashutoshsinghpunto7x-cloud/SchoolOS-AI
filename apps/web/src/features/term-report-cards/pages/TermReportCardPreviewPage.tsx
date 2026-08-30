@@ -78,7 +78,7 @@ export function TermReportCardPreviewPage() {
     <div className="min-h-screen bg-[#F0F1F5] dark:bg-transparent">
       {printing && (
         <style>{`
-          @page { size: A4 portrait; margin: 0; }
+          @page { size: A4 landscape; margin: 0; }
           @media print {
             body * { visibility: hidden; }
             #${printAreaId}, #${printAreaId} * { visibility: visible; }

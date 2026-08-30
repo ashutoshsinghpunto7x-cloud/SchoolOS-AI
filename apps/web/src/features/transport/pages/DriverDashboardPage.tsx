@@ -6,7 +6,19 @@ import { useMyVehicle, useStartRoute, usePing, useEndRoute } from '../hooks/useT
 // GPS ping cadence — mid-range of the 15–30s spec.
 const PING_INTERVAL_MS = 20_000;
 
+// A fix worse than this (in meters, per the browser's own coords.accuracy)
+// is treated as too noisy to trust — common indoors / near tall buildings,
+// where Wi-Fi/cell-based positioning can be 50-100m+ off.
+const MAX_ACCEPTABLE_ACCURACY_M = 75;
+
+// A jump implying faster than this is a GPS glitch, not real movement — vans
+// don't do highway speeds on a school route; this just guards against the
+// occasional wild fix teleporting the pin.
+const MAX_PLAUSIBLE_SPEED_MPS = 40; // ~144 km/h
+
 type TrackingState = 'idle' | 'active' | 'permission_denied' | 'error';
+
+interface AcceptedFix { lat: number; lng: number; at: number }
 
 const getPosition = (): Promise<GeolocationPosition> =>
   new Promise((resolve, reject) => {
@@ -15,6 +27,31 @@ const getPosition = (): Promise<GeolocationPosition> =>
       timeout: 15_000,
     });
   });
+
+// Haversine distance in meters.
+const distanceMeters = (a: AcceptedFix, b: { lat: number; lng: number }): number => {
+  const R = 6_371_000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+};
+
+// Decides whether a raw browser fix is trustworthy enough to send as a ping.
+// With no prior accepted fix (first fix of the route) we have nothing to
+// compare against, so it always passes — the driver has to start somewhere.
+const evaluateFix = (pos: GeolocationPosition, lastAccepted: AcceptedFix | null): boolean => {
+  const accuracy = pos.coords.accuracy ?? Infinity;
+  if (lastAccepted === null) return true;
+  if (accuracy > MAX_ACCEPTABLE_ACCURACY_M) return false;
+
+  const elapsedSec = Math.max((pos.timestamp - lastAccepted.at) / 1000, 1);
+  const impliedSpeed = distanceMeters(lastAccepted, { lat: pos.coords.latitude, lng: pos.coords.longitude }) / elapsedSec;
+  return impliedSpeed <= MAX_PLAUSIBLE_SPEED_MPS;
+};
 
 export function DriverDashboardPage() {
   const { user } = useAuth();
@@ -27,6 +64,10 @@ export function DriverDashboardPage() {
   const [lastFix, setLastFix] = useState<{ lat: number; lng: number; at: Date } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Last fix that passed the accuracy/speed filter — the baseline the next
+  // fix is checked against. Cleared on End Route so the next Start doesn't
+  // compare across two unrelated trips.
+  const lastAcceptedRef = useRef<AcceptedFix | null>(null);
 
   const stopInterval = () => {
     if (intervalRef.current) {
@@ -40,8 +81,11 @@ export function DriverDashboardPage() {
   const sendPing = async () => {
     try {
       const pos = await getPosition();
+      if (!evaluateFix(pos, lastAcceptedRef.current)) return; // noisy/implausible fix — skip this ping, try again next interval
+
       const { latitude, longitude } = pos.coords;
       await ping({ latitude, longitude });
+      lastAcceptedRef.current = { lat: latitude, lng: longitude, at: pos.timestamp };
       setLastFix({ lat: latitude, lng: longitude, at: new Date() });
     } catch {
       // A single missed ping isn't fatal — the loop just tries again next
@@ -51,10 +95,12 @@ export function DriverDashboardPage() {
 
   const handleStart = async () => {
     setErrorMessage(null);
+    lastAcceptedRef.current = null;
     try {
       const pos = await getPosition();
       const { latitude, longitude } = pos.coords;
       await startRoute({ latitude, longitude });
+      lastAcceptedRef.current = { lat: latitude, lng: longitude, at: pos.timestamp };
       setLastFix({ lat: latitude, lng: longitude, at: new Date() });
       setState('active');
       intervalRef.current = setInterval(sendPing, PING_INTERVAL_MS);
@@ -71,6 +117,7 @@ export function DriverDashboardPage() {
 
   const handleEnd = async () => {
     stopInterval();
+    lastAcceptedRef.current = null;
     try {
       await endRoute();
     } finally {

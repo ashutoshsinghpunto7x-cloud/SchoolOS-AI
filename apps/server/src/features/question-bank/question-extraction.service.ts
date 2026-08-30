@@ -223,14 +223,14 @@ Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No mar
  * value — the model must never refuse for "not enough content"; it should combine/extend the
  * chapter's concepts (multi-part, detailed-answer, etc.) to legitimately reach the requested marks.
  */
-function buildSynthesisPrompt(cls: string, subject: string, chapterName: string, marks: number, count: number, questionType?: QuestionType): string {
+function buildSynthesisPrompt(cls: string, subject: string, chapterName: string, marks: number, count: number, questionType?: QuestionType, difficulty?: QuestionDifficulty): string {
   return `You are writing ${count} new, original exam question(s) for Class ${cls} ${subject}, chapter "${chapterName}", each worth exactly ${marks} mark(s)${questionType ? ` and of question type "${questionType}"` : ''}.
 
 Use the reference material below (existing questions and/or textbook excerpts from this chapter) as your syllabus content — do not invent facts outside it. You must always produce exactly ${count} question(s) worth ${marks} marks each, no matter how little reference material is given. Never refuse or claim there isn't enough content for the requested mark value: if the chapter's material is thin for a high-mark question, write a multi-part or detailed-answer question (e.g. "Explain X. Give two examples. What is its significance?") that legitimately deserves ${marks} marks by combining and extending the chapter's concepts.
-
+${difficulty ? `\nThe teacher specifically asked for "${difficulty}" difficulty here — every one of these ${count} question(s) MUST be "${difficulty}" difficulty, no exceptions. If this chapter's material looks too basic to naturally reach that difficulty, don't soften the difficulty or skip the question instead — stretch it there yourself (deeper application, a multi-step or multi-part twist, combining two ideas from the chapter, an unfamiliar scenario using the same concept) until it genuinely earns "${difficulty}". The teacher is counting on getting exactly ${count} "${difficulty}" question(s) back, not fewer and not a different difficulty.\n` : ''}
 For each question, return the same JSON shape used for extraction:
 - "questionText", "questionType", "options" (only for mcq), "correctAnswer" (if applicable)
-- "difficulty": one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}
+- "difficulty": ${difficulty ? `must be exactly "${difficulty}"` : `one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}`}
 - "marks": must be exactly ${marks}
 - "estimatedTimeMinutes", "bloomsLevel": one of ${BLOOMS_LEVELS.map((b) => `"${b}"`).join(', ')}
 - "keywords": 2-5 key terms
@@ -801,7 +801,7 @@ export const questionExtractionService = {
    * decide how to degrade further rather than hard-failing paper generation.
    */
   async synthesizeQuestions(
-    req: { class: string; subject: string; chapterName: string; marks: number; count: number; questionType?: QuestionType; contextText: string },
+    req: { class: string; subject: string; chapterName: string; marks: number; count: number; questionType?: QuestionType; difficulty?: QuestionDifficulty; contextText: string },
     ctx: AuthContext,
   ): Promise<ExtractedQuestionDraft[]> {
     if (!openaiProvider.isAvailable() || req.count <= 0) return [];
@@ -814,7 +814,7 @@ export const questionExtractionService = {
     const batchResults = await runWithConcurrency(splitIntoBatches(req.count), CHUNK_CONCURRENCY, (batchSize) =>
       completeQuestionsWithRetry(
         (count) => ({
-          systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, count, req.questionType),
+          systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, count, req.questionType, req.difficulty),
           userPrompt: `Reference material for this chapter:\n\n${contextText}`,
         }),
         batchSize,
@@ -823,12 +823,14 @@ export const questionExtractionService = {
     );
 
     const extracted = dedupeQuestions(batchResults.flatMap((r) => r.extracted)).slice(0, req.count);
-    // The model is asked for exact marks/chapter/type, but normalize here too in case it drifts.
+    // The model is asked for exact marks/chapter/type/difficulty, but normalize here too in case it drifts —
+    // a requested difficulty is a hard constraint, not a suggestion the model can quietly downgrade.
     return extracted.map((q) => ({
       ...q,
       marks: req.marks,
       chapterName: req.chapterName,
       questionType: req.questionType ?? q.questionType,
+      difficulty: req.difficulty ?? q.difficulty,
     }));
   },
 

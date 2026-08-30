@@ -3722,6 +3722,10 @@ export interface TermReportCardTermBlock {
   termTotalObtained: number;
   termTotalMax: number;
   termPercentage: number;
+  /** This term's own class rank/size — computed from classmates' totals for
+   *  just this term, distinct from the overall `summary.rank` across both terms. */
+  rank?: number;
+  classSize?: number;
 }
 
 export interface TermReportCardSkillEntry {
