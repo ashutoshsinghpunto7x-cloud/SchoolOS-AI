@@ -7,6 +7,7 @@ import { marksController } from './marks.controller';
 const router = Router();
 
 router.use(authenticate);
+router.use(authorize('admin', 'principal', 'teacher'));
 
 // Static routes first — must come before /:id to avoid param conflicts
 router.get('/entry-table',                                    marksController.getEntryTable);

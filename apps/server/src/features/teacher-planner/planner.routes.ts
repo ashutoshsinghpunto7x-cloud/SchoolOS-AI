@@ -6,6 +6,7 @@ import { plannerController } from './planner.controller';
 const router = Router();
 
 router.use(authenticate);
+router.use(authorize('admin', 'principal', 'teacher'));
 
 // Principal/admin read-only views — static routes before /:id to avoid param conflicts.
 const canViewPrincipalPlanner = authorize('admin', 'principal');

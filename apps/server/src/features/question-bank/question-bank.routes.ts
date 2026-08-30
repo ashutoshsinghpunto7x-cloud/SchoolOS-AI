@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { authenticate } from '../../middlewares/authenticate';
+import { authorize } from '../../middlewares/authorize';
 import { aiImageUploadMiddleware, chapterImagesUploadMiddleware, documentUploadMiddleware } from '../../lib/image-upload';
 import { questionBankController } from './question-bank.controller';
 
 const router = Router();
 
 router.use(authenticate);
+router.use(authorize('admin', 'principal', 'teacher'));
 
 // Extraction — static routes before /:id-style routes
 router.post('/extract/image', aiImageUploadMiddleware, questionBankController.extractFromImage);
