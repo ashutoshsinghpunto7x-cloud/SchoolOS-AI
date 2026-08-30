@@ -7,7 +7,6 @@ import {
   CalendarPlus,
   UserCog,
   ClipboardList,
-  ClipboardCheck,
   KeyRound,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +22,6 @@ const ACTIONS = [
   { labelKey: 'widget.quickActions.manageCalendar' as PrincipalTranslationKey,    icon: CalendarPlus,   path: '/calendar/new',         color: 'text-rose-600 bg-rose-50 hover:bg-rose-100' },
   { labelKey: 'widget.quickActions.viewCalendar' as PrincipalTranslationKey,      icon: CalendarDays,   path: '/calendar',             color: 'text-rose-600 bg-rose-50 hover:bg-rose-100' },
   { labelKey: 'widget.quickActions.admissionsCrm' as PrincipalTranslationKey,     icon: ClipboardList,  path: '/enquiries',            color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' },
-  { labelKey: 'widget.quickActions.reviewEditRequests' as PrincipalTranslationKey, icon: ClipboardCheck, path: '/principal/approvals', color: 'text-purple-600 bg-purple-50 hover:bg-purple-100' },
   { labelKey: 'widget.quickActions.changePassword' as PrincipalTranslationKey,    icon: KeyRound,       path: '/principal/change-password', color: 'text-gray-600 bg-gray-50 hover:bg-gray-100' },
 ] as const;
 
