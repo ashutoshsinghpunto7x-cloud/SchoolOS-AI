@@ -44,11 +44,11 @@ function headerMaxMarks(block: TermReportCardTermBlock): { unitTest: number; mai
 }
 
 const th: CSSProperties = {
-  border: RULE, padding: '1.5px 3px', fontWeight: 700, fontSize: '6.5px', textAlign: 'center',
-  verticalAlign: 'middle', lineHeight: 1.1, textTransform: 'uppercase',
+  border: RULE, padding: '3px 4px', fontWeight: 700, fontSize: '8px', textAlign: 'center',
+  verticalAlign: 'middle', lineHeight: 1.25, textTransform: 'uppercase',
 };
-const tdSubject: CSSProperties = { border: RULE, padding: '1px 4px', fontSize: '7.3px', whiteSpace: 'nowrap' };
-const tdNum: CSSProperties = { border: RULE, padding: '1px 3px', fontSize: '7.3px', textAlign: 'center' };
+const tdSubject: CSSProperties = { border: RULE, padding: '3px 5px', fontSize: '9px', whiteSpace: 'nowrap' };
+const tdNum: CSSProperties = { border: RULE, padding: '3px 4px', fontSize: '9px', textAlign: 'center' };
 
 interface TermReportCardDocumentProps {
   reportCard: TermReportCard;
@@ -123,7 +123,11 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
   return (
     <div
       className="bg-white mx-auto"
-      style={{ width: '297mm', minHeight: '210mm', padding: '8mm 12mm', color: '#000', fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '10px' }}
+      style={{
+        width: '297mm', height: '210mm', padding: '12mm 16mm', color: '#000',
+        fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '11px',
+        display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+      }}
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       {/* Class/section, roll no. and the verify QR sit level with the school
@@ -156,10 +160,13 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
       </div>
 
       {/* ── Marks grid + right panel ─────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '68% 32%', border: RULE_THICK, marginTop: '6px' }}>
+      {/* flex: 1 lets this block absorb whatever vertical room the fixed-height
+       *  page has left over — otherwise the fixed row paddings above leave the
+       *  bottom of the sheet blank once printed. */}
+      <div style={{ display: 'grid', gridTemplateColumns: '68% 32%', border: RULE_THICK, marginTop: '8px', flex: 1 }}>
         {/* Marks table */}
-        <div style={{ borderRight: RULE_THICK }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ borderRight: RULE_THICK, display: 'flex', flexDirection: 'column' }}>
+          <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th style={{ ...th, width: '20%' }} rowSpan={2}>Subjects</th>
@@ -210,8 +217,9 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
           </table>
         </div>
 
-        {/* Right panel: skills + attendance + signatures */}
-        <div>
+        {/* Right panel: skills + attendance + signatures — spread across the
+         *  full height of the marks grid rather than stacking at the top. */}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
           {template.skillSections.map((section) => (
             <table key={section._id} style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -265,19 +273,19 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
             </thead>
             <tbody>
               <tr>
-                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Principal&apos;s Signature</td>
-                <td style={{ ...tdNum, height: '14px' }} />
-                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={tdSubject}>Principal&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '26px' }} />
+                <td style={{ ...tdNum, height: '26px' }} />
               </tr>
               <tr>
-                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Class Teacher&apos;s Signature</td>
-                <td style={{ ...tdNum, height: '14px' }} />
-                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={tdSubject}>Class Teacher&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '26px' }} />
+                <td style={{ ...tdNum, height: '26px' }} />
               </tr>
               <tr>
-                <td style={{ ...tdSubject, fontSize: '7.3px' }}>Parent&apos;s Signature</td>
-                <td style={{ ...tdNum, height: '14px' }} />
-                <td style={{ ...tdNum, height: '14px' }} />
+                <td style={tdSubject}>Parent&apos;s Signature</td>
+                <td style={{ ...tdNum, height: '26px' }} />
+                <td style={{ ...tdNum, height: '26px' }} />
               </tr>
             </tbody>
           </table>
@@ -285,7 +293,9 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
       </div>
 
       {/* ── Result + grading key ─────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '10px' }}>
+      {/* marginTop: auto pins this to the bottom of the fixed-height page
+       *  instead of floating directly under a short marks table. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: '10px' }}>
         <p style={{ fontSize: '10px', fontWeight: 700 }}>
           {PROMOTION_LABEL[reportCard.summary.promotionStatus]}
           {reportCard.summary.promotionStatus === 'promoted' && <span style={{ display: 'inline-block', minWidth: '70px', borderBottom: RULE, marginLeft: '4px' }}>&nbsp;</span>}
