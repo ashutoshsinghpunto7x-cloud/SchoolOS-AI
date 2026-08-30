@@ -24,7 +24,7 @@ function authorizeStudentCreate(req: Request, _res: Response, next: NextFunction
 
 // ── Student CRUD ──────────────────────────────────────────────────────────────
 router.post('/', authorizeStudentCreate, studentController.create);
-router.post('/quick-import', quickImportUpload, studentQuickImportController.run);
+router.post('/quick-import', authorizeStudentCreate, quickImportUpload, studentQuickImportController.run);
 router.get('/', studentController.list);
 router.get('/search', studentController.search);         // lightweight autocomplete
 router.get('/:id', studentController.getById);
