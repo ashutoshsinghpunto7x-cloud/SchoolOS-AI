@@ -34,12 +34,19 @@ export const worksheetRepository = {
     return Worksheet.create(data);
   },
 
-  async findAll(schoolId: string, teacherId: string, opts: WorksheetListOptions = {}): Promise<PaginatedWorksheets> {
+  /**
+   * Scoped to schoolId + class/subject (when given), NOT teacherId — a worksheet belongs to the
+   * class/subject it was made for, so a teacher reassigned onto that class/subject still sees
+   * everything a prior teacher generated for it. Pass `teacherId` only to further narrow to "my
+   * own worksheets" (e.g. a flat "my worksheets" view with no class/subject picked yet).
+   */
+  async findAll(schoolId: string, teacherId: string | undefined, opts: WorksheetListOptions = {}): Promise<PaginatedWorksheets> {
     const page = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 20));
     const skip = (page - 1) * limit;
 
-    const query: Record<string, unknown> = { schoolId, teacherId, isDeleted: false };
+    const query: Record<string, unknown> = { schoolId, isDeleted: false };
+    if (teacherId) query.teacherId = teacherId;
     if (opts.class) query.class = opts.class;
     if (opts.subject) query.subject = opts.subject;
     if (opts.chapterId) query.chapterIds = opts.chapterId;

@@ -241,4 +241,26 @@ export const questionBankApi = {
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
+
+  /** Lists previously generated papers for a class/subject (any teacher's), for the browse/list screen. */
+  listPapers: async (opts: { class?: string; subject?: string; limit?: number } = {}): Promise<{ data: PaperSummary[]; total: number }> => {
+    try {
+      const res = await apiClient.get<{ data: { data: PaperSummary[]; total: number } }>(`${BASE}/papers`, { params: opts });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  deletePaper: async (id: string): Promise<void> => {
+    try {
+      await apiClient.delete(`${BASE}/papers/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
 };
+
+export interface PaperSummary {
+  _id: string;
+  config: PaperGenerationConfig;
+  totalMarksAssembled: number;
+  createdBy: string;
+  createdAt: string;
+}

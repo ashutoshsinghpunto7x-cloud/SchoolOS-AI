@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Sparkles, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, CheckCircle2, Trash2, ListChecks } from 'lucide-react';
 import { useChapters } from '@/features/question-bank/hooks/useQuestionBank';
 import { useGenerateWorksheet, useSaveWorksheet } from '../hooks/useWorksheetGenerator';
 import { CroppedFigureImage } from '@/features/question-bank/components/CroppedFigureImage';
@@ -114,7 +114,13 @@ export function WorksheetGeneratePage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white">Class {cls} · {subject}</h1>
+        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Class {cls} · {subject}</h1>
+        <button
+          type="button" onClick={() => navigate(`/teacher/worksheet-generator/${cls}/${encodeURIComponent(subject)}/list`)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-white/50 shrink-0"
+        >
+          <ListChecks className="w-3.5 h-3.5" /> Past worksheets
+        </button>
       </div>
 
       <div className="max-w-2xl mx-auto px-5 py-6 space-y-5">

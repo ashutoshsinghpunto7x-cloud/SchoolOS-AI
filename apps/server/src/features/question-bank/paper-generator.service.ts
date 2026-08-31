@@ -378,6 +378,66 @@ async function fillDifficultyGapsWithAi(
   return created;
 }
 
+function groupByMarks(questions: IQuestion[]): GeneratedPaperSection[] {
+  const byMarks = new Map<number, IQuestion[]>();
+  for (const q of questions) {
+    const bucket = byMarks.get(q.marks) ?? [];
+    bucket.push(q);
+    byMarks.set(q.marks, bucket);
+  }
+  return [...byMarks.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([marks, qs]) => ({ marks, questions: qs.map(toDto) }));
+}
+
+/**
+ * Assembles a paper section-by-section instead of one flat marksBreakdown pass — each section is
+ * its own self-contained selectQuestions + gap-fill run (constrained to that section's type(s)/
+ * difficulty/count/marks), drawing from a shared pool that shrinks as earlier sections claim
+ * questions so nothing is double-counted across sections.
+ */
+async function generateBySections(
+  pool: IQuestion[],
+  chapters: ISyllabusChapter[],
+  config: PaperGenerationConfig,
+  ctx: AuthContext,
+): Promise<{ selected: IQuestion[]; sections: GeneratedPaperSection[]; sectionSizes: number[] }> {
+  const usedIds = new Set<string>();
+  const workingPool = [...pool];
+  const allSelected: IQuestion[] = [];
+  const sections: GeneratedPaperSection[] = [];
+  const sectionSizes: number[] = [];
+
+  for (const sec of config.sections!) {
+    const subConfig: PaperGenerationConfig = {
+      ...config,
+      marksBreakdown: [{ marks: sec.marksEach, count: sec.count }],
+      difficultyMix: sec.difficulty
+        ? { easy: 0, medium: 0, hard: 0, [sec.difficulty]: sec.count }
+        : { easy: 0, medium: 0, hard: 0 },
+      questionTypes: sec.questionTypes.length > 0 ? sec.questionTypes : config.questionTypes,
+    };
+
+    const availablePool = workingPool.filter((q) => !usedIds.has(String(q._id)));
+    const secSelected = selectQuestions(availablePool, subConfig);
+    await fillMarksGapsWithAi(availablePool, secSelected, chapters, subConfig, ctx);
+    if (sec.difficulty) await fillDifficultyGapsWithAi(availablePool, secSelected, chapters, subConfig, ctx);
+
+    for (const q of secSelected) usedIds.add(String(q._id));
+    // Newly AI-authored questions (pushed onto availablePool by the fill passes above) need to
+    // join the shared pool too, so a later section can't accidentally re-select the same one.
+    for (const q of availablePool) {
+      if (!workingPool.some((w) => String(w._id) === String(q._id))) workingPool.push(q);
+    }
+
+    allSelected.push(...secSelected);
+    sections.push({ marks: sec.marksEach, name: sec.name, questions: secSelected.map(toDto) });
+    sectionSizes.push(secSelected.length);
+  }
+
+  return { selected: allSelected, sections, sectionSizes };
+}
+
 export const paperGeneratorService = {
   async generate(config: PaperGenerationConfig, ctx: AuthContext): Promise<GeneratedPaper> {
     const chapters = await chapterRepository.findByIds(ctx.schoolId, config.chapterIds);
@@ -385,25 +445,40 @@ export const paperGeneratorService = {
 
     const pool = await questionRepository.findEligible(ctx.schoolId, config.class, config.subject, config.chapterIds);
 
-    const selected = selectQuestions(pool, config);
-    await fillMarksGapsWithAi(pool, selected, chapters, config, ctx);
-    await fillDifficultyGapsWithAi(pool, selected, chapters, config, ctx);
+    const usingSections = Boolean(config.sections && config.sections.length > 0);
+    let selected: IQuestion[];
+    let sections: GeneratedPaperSection[];
+    let sectionSizes: number[] | undefined;
+    // Only used to feed paper-validation.service's coverage/warnings checks, which read
+    // marksBreakdown/difficultyMix — sections-based papers synthesize an equivalent aggregate so
+    // that validation still works without duplicating its logic for a second config shape.
+    let validationConfig = config;
+
+    if (usingSections) {
+      const result = await generateBySections(pool, chapters, config, ctx);
+      selected = result.selected;
+      sections = result.sections;
+      sectionSizes = result.sectionSizes;
+      validationConfig = {
+        ...config,
+        marksBreakdown: config.sections!.map((s) => ({ marks: s.marksEach, count: s.count })),
+        difficultyMix: config.sections!.reduce(
+          (acc, s) => { if (s.difficulty) acc[s.difficulty] += s.count; return acc; },
+          { easy: 0, medium: 0, hard: 0 },
+        ),
+      };
+    } else {
+      selected = selectQuestions(pool, config);
+      await fillMarksGapsWithAi(pool, selected, chapters, config, ctx);
+      await fillDifficultyGapsWithAi(pool, selected, chapters, config, ctx);
+      sections = groupByMarks(selected);
+    }
 
     if (selected.length === 0) {
       throw new ValidationError('No questions in the bank for the selected class/subject/chapters yet, and AI question generation is not configured on this server — upload sources first.');
     }
 
-    const validation = paperValidationService.validate(config, chapters, selected);
-
-    const sectionsByMarks = new Map<number, IQuestion[]>();
-    for (const q of selected) {
-      const bucket = sectionsByMarks.get(q.marks) ?? [];
-      bucket.push(q);
-      sectionsByMarks.set(q.marks, bucket);
-    }
-    const sections: GeneratedPaperSection[] = [...sectionsByMarks.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([marks, questions]) => ({ marks, questions: questions.map(toDto) }));
+    const validation = paperValidationService.validate(validationConfig, chapters, selected);
 
     const totalMarksAssembled = selected.reduce((sum, q) => sum + q.marks, 0);
 
@@ -411,6 +486,7 @@ export const paperGeneratorService = {
       schoolId: ctx.schoolId,
       config,
       questionIds: selected.map((q) => String(q._id)),
+      sectionSizes,
       totalMarksAssembled,
       validation,
       createdBy: ctx.userId,
@@ -443,15 +519,22 @@ export const paperGeneratorService = {
     const byId = new Map(questions.map((q) => [String(q._id), q]));
     const ordered = record.questionIds.map((qid) => byId.get(qid)).filter((q): q is IQuestion => !!q);
 
-    const sectionsByMarks = new Map<number, IQuestion[]>();
-    for (const q of ordered) {
-      const bucket = sectionsByMarks.get(q.marks) ?? [];
-      bucket.push(q);
-      sectionsByMarks.set(q.marks, bucket);
+    let sections: GeneratedPaperSection[];
+    if (record.config.sections?.length && record.sectionSizes?.length === record.config.sections.length) {
+      // questionIds was stored in section-emission order — re-slice it back using each section's
+      // *actual* assembled size (sectionSizes), not its requested `count`, since a section can
+      // fall short of what was asked.
+      sections = [];
+      let offset = 0;
+      for (let i = 0; i < record.config.sections.length; i++) {
+        const sec = record.config.sections[i];
+        const size = record.sectionSizes[i];
+        sections.push({ marks: sec.marksEach, name: sec.name, questions: ordered.slice(offset, offset + size).map(toDto) });
+        offset += size;
+      }
+    } else {
+      sections = groupByMarks(ordered);
     }
-    const sections: GeneratedPaperSection[] = [...sectionsByMarks.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([marks, qs]) => ({ marks, questions: qs.map(toDto) }));
 
     const resolvedImages = await resolveQuestionImages(ordered, ctx.schoolId);
 
@@ -467,5 +550,29 @@ export const paperGeneratorService = {
       createdBy: record.createdBy,
       resolvedImages,
     };
+  },
+
+  /** Lists papers for a class/subject — a lightweight summary (no re-hydrated questions), used by the browse/list screen. */
+  async list(opts: { class?: string; subject?: string; page?: number; limit?: number }, ctx: AuthContext) {
+    const { papers, total, page, limit } = await paperRepository.findAll(ctx.schoolId, opts);
+    return {
+      data: papers.map((p) => ({
+        _id: String(p._id),
+        config: p.config,
+        totalMarksAssembled: p.totalMarksAssembled,
+        createdBy: p.createdBy,
+        createdAt: p.createdAt.toISOString(),
+      })),
+      total,
+      page,
+      limit,
+    };
+  },
+
+  async delete(id: string, ctx: AuthContext): Promise<void> {
+    const existing = await paperRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Generated paper');
+    const deleted = await paperRepository.softDelete(id, ctx.schoolId);
+    if (!deleted) throw new NotFoundError('Generated paper');
   },
 };

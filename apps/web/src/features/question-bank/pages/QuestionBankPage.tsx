@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks } from 'lucide-react';
+import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks, Files } from 'lucide-react';
 import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups } from '../hooks/useQuestionBank';
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
@@ -145,6 +145,12 @@ export function QuestionBankPage() {
             {selectMode ? 'Cancel' : 'Select'}
           </button>
         )}
+        <button
+          type="button" onClick={() => navigate('/teacher/question-bank/papers')}
+          className="h-9 px-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5"
+        >
+          <Files className="w-3.5 h-3.5" /> Papers
+        </button>
         <button
           type="button" onClick={() => navigate('/teacher/question-bank/generate')}
           className="h-9 px-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5"

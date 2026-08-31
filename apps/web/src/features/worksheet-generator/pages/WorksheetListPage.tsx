@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, FileEdit, ChevronRight, Clock } from 'lucide-react';
 import { useWorksheets } from '../hooks/useWorksheetGenerator';
 
@@ -6,9 +6,14 @@ function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Reused two ways: `/worksheet-generator/my` (this teacher's own, no class/subject) and
+ * `/worksheet-generator/:cls/:subject/list` (everything saved for that class/subject, regardless
+ * of who created it — so a newly-assigned teacher can still find a predecessor's worksheets). */
 export function WorksheetListPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useWorksheets({ limit: 50 });
+  const { cls, subject } = useParams<{ cls?: string; subject?: string }>();
+  const scoped = Boolean(cls && subject);
+  const { data, isLoading } = useWorksheets(scoped ? { class: cls, subject, limit: 50 } : { limit: 50 });
 
   return (
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
@@ -16,7 +21,9 @@ export function WorksheetListPage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">My Worksheets</h1>
+        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">
+          {scoped ? `Worksheets — Class ${cls} · ${subject}` : 'My Worksheets'}
+        </h1>
       </div>
 
       <div className="max-w-2xl mx-auto px-5 py-6 space-y-3">

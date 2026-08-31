@@ -4216,14 +4216,29 @@ export interface PaperDifficultyMix {
   hard: number;
 }
 
+/** A named section (Section A/B/C…) — replaces the flat difficultyMix/marksBreakdown pair when
+ * present: each section is its own self-contained ask (how many questions, of what type(s)/
+ * difficulty, worth how many marks each), assembled and printed in the order given here. */
+export interface PaperSectionConfig {
+  name: string;
+  questionTypes: QuestionType[];
+  difficulty?: QuestionDifficulty;
+  count: number;
+  marksEach: number;
+}
+
 export interface PaperGenerationConfig {
   class: string;
   subject: string;
   examType: string;
   chapterIds: string[];
   totalMarks: number;
+  /** @deprecated superseded by `sections` — kept only so already-generated papers still render/validate. New papers should set `sections` instead. */
   difficultyMix: PaperDifficultyMix;
+  /** @deprecated superseded by `sections` — kept only so already-generated papers still render/validate. New papers should set `sections` instead. */
   marksBreakdown: PaperMarksBreakdownEntry[];
+  /** Named sections (Section A/B/C…), each with its own type/difficulty/count/marks. When present, this drives assembly instead of `difficultyMix`/`marksBreakdown`. */
+  sections?: PaperSectionConfig[];
   questionTypes: QuestionType[];
   durationMinutes?: number;
   /** Overrides the class-inferred wording level for questions synthesized to fill this paper ('auto' = infer from class). */
@@ -4245,6 +4260,8 @@ export interface PaperValidationResult {
 
 export interface GeneratedPaperSection {
   marks: number;
+  /** Section name (e.g. "Section A") when the paper was built from `PaperGenerationConfig.sections` — absent for older marks-value-grouped papers. */
+  name?: string;
   questions: Question[];
 }
 

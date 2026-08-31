@@ -27,7 +27,9 @@ router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 router.get('/chapters', questionBankController.listChapters);
 
 router.post('/papers/generate', questionBankController.generatePaper);
+router.get('/papers', questionBankController.listPapers);
 router.get('/papers/:id', questionBankController.getPaper);
+router.delete('/papers/:id', questionBankController.deletePaper);
 
 router.get('/questions', questionBankController.listQuestions);
 router.post('/questions', questionBankController.createQuestion);

@@ -108,7 +108,18 @@ export const worksheetService = {
     });
   },
 
+  /**
+   * When `class`+`subject` are given, this lists everything saved for that class/subject
+   * (not just this teacher's own) — gated by the same live "do you currently teach this" check
+   * used everywhere else in this file, so a reassigned teacher can still find a predecessor's
+   * worksheets. With no class/subject, falls back to "my worksheets" (teacher-scoped) since
+   * there's nothing else to scope by.
+   */
   async list(query: WorksheetListOptions, ctx: AuthContext) {
+    if (query.class && query.subject) {
+      await assertTeacherCanManageWorksheets(ctx, query.class, query.subject);
+      return worksheetRepository.findAll(ctx.schoolId, undefined, query);
+    }
     return worksheetRepository.findAll(ctx.schoolId, ctx.userId, query);
   },
 

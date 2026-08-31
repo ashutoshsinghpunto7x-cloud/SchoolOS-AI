@@ -246,4 +246,31 @@ export const questionBankController = {
       sendSuccess(res, paper);
     } catch (err) { next(err); }
   },
+
+  /** GET /question-bank/papers — browse previously generated papers for a class/subject. */
+  async listPapers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const { class: cls, subject, page, limit } = req.query;
+      const result = await paperGeneratorService.list(
+        {
+          class: typeof cls === 'string' ? cls : undefined,
+          subject: typeof subject === 'string' ? subject : undefined,
+          page: page ? Number(page) : undefined,
+          limit: limit ? Number(limit) : undefined,
+        },
+        ctx,
+      );
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+
+  /** DELETE /question-bank/papers/:id */
+  async deletePaper(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await paperGeneratorService.delete(req.params.id, ctx);
+      sendSuccess(res, null, 'Paper deleted');
+    } catch (err) { next(err); }
+  },
 };
