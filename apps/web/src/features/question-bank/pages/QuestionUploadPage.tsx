@@ -12,6 +12,7 @@ export function QuestionUploadPage() {
 
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
+  const [includeImages, setIncludeImages] = useState(false);
 
   // Picked from the teacher's own timetable, not typed — see the same note
   // in ChapterCapturePage.tsx / useTeacherSubjectOptions.
@@ -37,7 +38,7 @@ export function QuestionUploadPage() {
   async function handleImageFile(file: File) {
     if (!targetReady) { toast.error('Enter class and subject first'); return; }
     try {
-      const result = await extractImage.mutateAsync({ target, file });
+      const result = await extractImage.mutateAsync({ target, file, detectImages: includeImages });
       if (!result.extractedText.trim()) toast.error('No readable text was found on that page');
       else toast.success('Text extracted and saved — open it below to generate questions');
     } catch (err) {
@@ -109,6 +110,12 @@ export function QuestionUploadPage() {
           </div>
           <ChevronRight className="w-4 h-4 ml-auto shrink-0" />
         </button>
+
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer -mt-1">
+          <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300" />
+          Include images <span className="text-xs text-gray-400 dark:text-white/30">(photo upload only — detects pictures for picture-based questions)</span>
+        </label>
 
         <div className="grid grid-cols-2 gap-3">
           <button

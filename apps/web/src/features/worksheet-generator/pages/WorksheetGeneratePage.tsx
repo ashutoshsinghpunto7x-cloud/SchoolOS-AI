@@ -4,7 +4,15 @@ import { toast } from 'sonner';
 import { ArrowLeft, Sparkles, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { useChapters } from '@/features/question-bank/hooks/useQuestionBank';
 import { useGenerateWorksheet, useSaveWorksheet } from '../hooks/useWorksheetGenerator';
-import type { WorksheetQuestion, WorksheetType } from '@schoolos/types';
+import { CroppedFigureImage } from '@/features/question-bank/components/CroppedFigureImage';
+import type { LanguageComplexity, ResolvedQuestionImage, WorksheetQuestion, WorksheetType } from '@schoolos/types';
+
+const LANGUAGE_COMPLEXITY_OPTIONS: { value: LanguageComplexity; label: string }[] = [
+  { value: 'auto', label: 'Auto (match class)' },
+  { value: 'simple', label: 'Simple' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'advanced', label: 'Advanced / HOTS' },
+];
 
 const WORKSHEET_TYPES: { value: WorksheetType; label: string; description: string }[] = [
   { value: 'practice', label: 'Practice Worksheet', description: 'Balanced mix of difficulty levels' },
@@ -29,7 +37,10 @@ export function WorksheetGeneratePage() {
   const [questionCount, setQuestionCount] = useState(10);
   const [title, setTitle] = useState('');
   const [addNewToBank, setAddNewToBank] = useState(true);
+  const [languageComplexity, setLanguageComplexity] = useState<LanguageComplexity>('auto');
+  const [includeImages, setIncludeImages] = useState(false);
   const [questions, setQuestions] = useState<WorksheetQuestion[] | null>(null);
+  const [resolvedImages, setResolvedImages] = useState<Record<string, ResolvedQuestionImage>>({});
 
   const generate = useGenerateWorksheet();
   const save = useSaveWorksheet();
@@ -46,9 +57,10 @@ export function WorksheetGeneratePage() {
     if (selectedChapterIds.size === 0) { toast.error('Select at least one chapter'); return; }
     try {
       const draft = await generate.mutateAsync({
-        class: cls, subject, chapterIds: [...selectedChapterIds], worksheetType, questionCount,
+        class: cls, subject, chapterIds: [...selectedChapterIds], worksheetType, questionCount, languageComplexity, includeImages,
       });
       setQuestions(draft.questions);
+      setResolvedImages(draft.resolvedImages ?? {});
       if (!title) {
         const typeLabel = WORKSHEET_TYPES.find((t) => t.value === worksheetType)?.label ?? '';
         setTitle(`${typeLabel} — Class ${cls} ${subject}`);
@@ -130,6 +142,20 @@ export function WorksheetGeneratePage() {
             className="h-9 w-20 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
         </div>
 
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex items-center gap-3">
+          <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Question Wording</label>
+          <select value={languageComplexity} onChange={(e) => setLanguageComplexity(e.target.value as LanguageComplexity)}
+            className="h-9 flex-1 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm">
+            {LANGUAGE_COMPLEXITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+
+        <label className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex items-center gap-2.5 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+          <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300" />
+          Include images <span className="text-xs text-gray-400 dark:text-white/30">(allow picture-based questions where a chapter has detected figures)</span>
+        </label>
+
         <button
           type="button" onClick={handleGenerate} disabled={generate.isPending}
           className="w-full h-11 rounded-xl bg-[#1C2B4A] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
@@ -145,21 +171,32 @@ export function WorksheetGeneratePage() {
               className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm font-semibold"
             />
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{questions.length} question(s)</p>
-            {questions.map((q, i) => (
-              <div key={i} className="bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-white/80">{q.questionText}</p>
-                  <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                    {q.isNew && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">New</span>}
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{q.difficulty}</span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{labelize(q.questionType)}</span>
+            {questions.map((q, i) => {
+              const resolved = q.imageRef && resolvedImages[`${q.imageRef.sourceId}:${q.imageRef.figureId}`];
+              return (
+                <div key={i} className="bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 dark:text-white/80">{q.questionText}</p>
+                    {resolved && (
+                      <div className="mt-2" style={{ maxWidth: '160px' }}>
+                        <CroppedFigureImage dataUri={resolved.pageImageDataUri} boundingBox={resolved.boundingBox} style={{ borderRadius: 6 }} />
+                      </div>
+                    )}
+                    {!resolved && q.imageRequirement && (
+                      <p className="mt-1.5 text-[11px] italic text-gray-400">Image needed: {q.imageRequirement.imagePrompt || 'a suitable picture for this question'}</p>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      {q.isNew && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">New</span>}
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{q.difficulty}</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-white/60">{labelize(q.questionType)}</span>
+                    </div>
                   </div>
+                  <button type="button" onClick={() => removeQuestion(i)} className="text-gray-300 hover:text-red-500 shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
-                <button type="button" onClick={() => removeQuestion(i)} className="text-gray-300 hover:text-red-500 shrink-0">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+              );
+            })}
 
             {hasNewQuestions && (
               <label className="flex items-center gap-2.5 bg-emerald-50 rounded-xl p-3 text-xs font-semibold text-emerald-800">

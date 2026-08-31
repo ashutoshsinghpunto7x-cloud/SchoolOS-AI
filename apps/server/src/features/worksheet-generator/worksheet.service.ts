@@ -9,6 +9,8 @@ import { worksheetRepository, WorksheetListOptions } from './worksheet.repositor
 import { IWorksheet } from './worksheet.model';
 import { worksheetGeneratorService, GenerateWorksheetInput } from './worksheet-generator.service';
 import { SaveWorksheetInput } from './worksheet.validation';
+import { resolveQuestionImages } from '../question-bank/image-resolution';
+import type { ResolvedQuestionImage } from '@schoolos/types';
 
 // Same shape/precedent as teacher-planner's guard — Teacher.subjects/
 // assignedClasses are only kept up to date by the Teachers workspace UI, so
@@ -74,6 +76,8 @@ export const worksheetService = {
           bloomsLevel: 'understand',
           keywords: q.keywords,
           createdBy: ctx.userId,
+          imageRef: q.imageRef,
+          imageRequirement: q.imageRequirement,
         })),
       );
       savedNewIds = created.map((c) => String(c._id));
@@ -108,11 +112,18 @@ export const worksheetService = {
     return worksheetRepository.findAll(ctx.schoolId, ctx.userId, query);
   },
 
-  async getById(id: string, ctx: AuthContext): Promise<IWorksheet> {
+  async getById(id: string, ctx: AuthContext): Promise<IWorksheet & { resolvedImages: Record<string, ResolvedQuestionImage> }> {
     const worksheet = await worksheetRepository.findById(id, ctx.schoolId);
     if (!worksheet) throw new NotFoundError('Worksheet');
     await assertTeacherCanManageWorksheets(ctx, worksheet.class, worksheet.subject);
-    return worksheet;
+    // Recomputed from GridFS on every read rather than stored on the worksheet doc itself — see
+    // image-resolution.ts's rationale (avoids reintroducing the 16MB-per-document risk GridFS was
+    // adopted to avoid).
+    const resolvedImages = await resolveQuestionImages(worksheet.questions, ctx.schoolId);
+    // `worksheet` is already a plain lean object at runtime (see worksheetRepository.findById) —
+    // the IWorksheet-extends-Document type is just the lean-query annotation convention used
+    // throughout this codebase, so this cast reflects the actual shape, not a real Document.
+    return { ...worksheet, resolvedImages } as IWorksheet & { resolvedImages: Record<string, ResolvedQuestionImage> };
   },
 
   async delete(id: string, ctx: AuthContext): Promise<void> {

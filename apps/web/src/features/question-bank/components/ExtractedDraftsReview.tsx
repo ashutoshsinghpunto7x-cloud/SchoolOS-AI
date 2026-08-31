@@ -48,6 +48,14 @@ export function ExtractedDraftsReview({ drafts, warnings, onUpdateDraft, onRemov
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+
+              {d.imageRef && (
+                <p className="text-[11px] font-medium text-indigo-600">📷 Picture-based — uses a detected figure from this upload (shown once saved and used in a paper/worksheet)</p>
+              )}
+              {!d.imageRef && d.imageRequirement && (
+                <p className="text-[11px] italic text-gray-400">Image needed: {d.imageRequirement.imagePrompt || 'a suitable picture for this question'} (no image available yet)</p>
+              )}
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <select value={d.questionType} onChange={(e) => onUpdateDraft(i, { questionType: e.target.value as QuestionType })}
                   className="h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs">

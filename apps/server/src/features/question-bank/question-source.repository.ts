@@ -1,5 +1,6 @@
 import { QuestionSource, IQuestionSource, QuestionSourceKind } from './question-source.model';
-import type { ChapterPage } from '@schoolos/types';
+import type { ChapterPage, PageFigure } from '@schoolos/types';
+import { deleteImage } from '../../lib/image-store';
 
 export const questionSourceRepository = {
   async create(data: {
@@ -15,6 +16,8 @@ export const questionSourceRepository = {
     language?: string;
     pages?: ChapterPage[];
     reviewStatus?: 'ready_for_review' | 'saved';
+    pageImageFileId?: string;
+    figures?: PageFigure[];
   }): Promise<IQuestionSource> {
     return QuestionSource.create(data);
   },
@@ -50,6 +53,17 @@ export const questionSourceRepository = {
    * copy of the data (sourceRef just loses its target) — see question-bank.service.deleteSource.
    */
   async delete(id: string, schoolId: string): Promise<boolean> {
+    // Clean up any GridFS-stored page images before the source row itself goes — they're not
+    // referenced anywhere else once this source is gone, so leaving them behind would just leak
+    // storage silently (readImage's schoolId check means an orphaned file could never even be
+    // served again, so there's no reason to keep it).
+    const source = await QuestionSource.findOne({ _id: id, schoolId }).lean<IQuestionSource>();
+    const fileIds = [
+      source?.pageImageFileId,
+      ...(source?.pages ?? []).map((p) => p.pageImageFileId),
+    ].filter((v): v is string => !!v);
+    await Promise.all(fileIds.map((fileId) => deleteImage(fileId)));
+
     const res = await QuestionSource.deleteOne({ _id: id, schoolId });
     return res.deletedCount > 0;
   },

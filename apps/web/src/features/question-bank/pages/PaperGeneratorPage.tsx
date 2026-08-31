@@ -3,9 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Plus, Trash2, Sparkles } from 'lucide-react';
 import { useChapters, useGeneratePaper, useQuestionSources } from '../hooks/useQuestionBank';
-import type { PaperMarksBreakdownEntry, QuestionType } from '@schoolos/types';
+import type { LanguageComplexity, PaperMarksBreakdownEntry, QuestionType } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
+const LANGUAGE_COMPLEXITY_OPTIONS: { value: LanguageComplexity; label: string }[] = [
+  { value: 'auto', label: 'Auto (match class)' },
+  { value: 'simple', label: 'Simple' },
+  { value: 'standard', label: 'Standard' },
+  { value: 'advanced', label: 'Advanced / HOTS' },
+];
 
 function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -21,6 +27,10 @@ export function PaperGeneratorPage() {
   const [difficultyMix, setDifficultyMix] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 0, medium: 0, hard: 0 });
   const [marksBreakdown, setMarksBreakdown] = useState<{ marks: number | ''; count: number | '' }[]>([{ marks: 1, count: 10 }]);
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set());
+  const [languageComplexity, setLanguageComplexity] = useState<LanguageComplexity>('auto');
+  const [includeAnswerKey, setIncludeAnswerKey] = useState(false);
+  const [includeImages, setIncludeImages] = useState(false);
+  const [blackAndWhite, setBlackAndWhite] = useState(false);
 
   const { data: chapters } = useChapters(cls.trim(), subject.trim());
   // Uploads can have a chapter name assigned before any question from them has actually
@@ -78,6 +88,10 @@ export function PaperGeneratorPage() {
         })),
         questionTypes: [...questionTypes],
         durationMinutes: durationMinutes === '' ? undefined : durationMinutes,
+        languageComplexity,
+        includeAnswerKey,
+        includeImages,
+        blackAndWhite,
       });
       navigate(`/teacher/question-bank/papers/${paper._id}`);
     } catch (err) {
@@ -211,6 +225,34 @@ export function PaperGeneratorPage() {
                 {labelize(t)}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Language & Answer Key</p>
+          <div className="grid grid-cols-2 gap-3 items-end">
+            <div>
+              <label className="text-xs text-gray-500 dark:text-white/40">Question wording</label>
+              <select value={languageComplexity} onChange={(e) => setLanguageComplexity(e.target.value as LanguageComplexity)}
+                className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm">
+                {LANGUAGE_COMPLEXITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <label className="h-9 flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+              <input type="checkbox" checked={includeAnswerKey} onChange={(e) => setIncludeAnswerKey(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300" />
+              Include answer key
+            </label>
+            <label className="h-9 flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+              <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300" />
+              Include images
+            </label>
+            <label className="h-9 flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+              <input type="checkbox" checked={blackAndWhite} onChange={(e) => setBlackAndWhite(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300" />
+              Black &amp; white printing
+            </label>
           </div>
         </div>
 

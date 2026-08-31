@@ -26,6 +26,17 @@ export interface IQuestionSourceRef {
   blockIndex?: number;
 }
 
+export interface IQuestionImageRef {
+  sourceId: string;
+  figureId: string;
+}
+
+export interface IQuestionImageRequirement {
+  imageRequired: true;
+  imageSource: 'generated' | 'teacher_upload';
+  imagePrompt?: string;
+}
+
 export interface IQuestion extends Document {
   schoolId: string;
   class: string;
@@ -49,6 +60,8 @@ export interface IQuestion extends Document {
   deletedAt?: Date;
   /** Traceability back to the structured chapter capture this question was drafted from, if any — powers "Show source". */
   sourceRef?: IQuestionSourceRef;
+  imageRef?: IQuestionImageRef;
+  imageRequirement?: IQuestionImageRequirement;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +79,20 @@ const usageEntrySchema = new Schema<IQuestionUsageEntry>(
 
 const sourceRefSchema = new Schema<IQuestionSourceRef>(
   { sourceId: { type: String, required: true }, pageNumber: { type: Number }, blockIndex: { type: Number } },
+  { _id: false },
+);
+
+export const imageRefSchema = new Schema<IQuestionImageRef>(
+  { sourceId: { type: String, required: true }, figureId: { type: String, required: true } },
+  { _id: false },
+);
+
+export const imageRequirementSchema = new Schema<IQuestionImageRequirement>(
+  {
+    imageRequired: { type: Boolean, required: true },
+    imageSource:   { type: String, enum: ['generated', 'teacher_upload'], required: true },
+    imagePrompt:   { type: String },
+  },
   { _id: false },
 );
 
@@ -92,6 +119,8 @@ const questionSchema = new Schema<IQuestion>(
     isDeleted:            { type: Boolean, default: false },
     deletedAt:            { type: Date },
     sourceRef:            { type: sourceRefSchema },
+    imageRef:             { type: imageRefSchema },
+    imageRequirement:     { type: imageRequirementSchema },
   },
   { timestamps: true, versionKey: false },
 );

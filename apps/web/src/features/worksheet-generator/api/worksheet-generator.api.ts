@@ -13,8 +13,8 @@ const BASE = '/worksheet-generator';
 export const worksheetGeneratorApi = {
   generate: async (payload: GenerateWorksheetPayload): Promise<WorksheetDraft> => {
     try {
-      const res = await apiClient.post<{ data: { chapterNames: string[]; questions: WorksheetDraft['questions'] } }>(`${BASE}/generate`, payload);
-      return { config: payload, questions: res.data.data.questions };
+      const res = await apiClient.post<{ data: { chapterNames: string[]; questions: WorksheetDraft['questions']; resolvedImages?: WorksheetDraft['resolvedImages'] } }>(`${BASE}/generate`, payload);
+      return { config: payload, questions: res.data.data.questions, resolvedImages: res.data.data.resolvedImages };
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

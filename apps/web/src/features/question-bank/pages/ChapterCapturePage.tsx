@@ -19,6 +19,7 @@ export function ChapterCapturePage() {
   const [chapterName, setChapterName] = useState('');
   const [pages, setPages] = useState<CapturedPage[]>([]);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [includeImages, setIncludeImages] = useState(false);
   const extractChapter = useExtractChapter();
 
   // Class/subject are picked from the teacher's own timetable, not typed —
@@ -65,7 +66,7 @@ export function ChapterCapturePage() {
   async function handleProcess() {
     if (pages.length === 0) { toast.error('Capture or choose at least one page first'); return; }
     try {
-      const { jobId } = await extractChapter.mutateAsync(pages.map((p) => p.file));
+      const { jobId } = await extractChapter.mutateAsync({ images: pages.map((p) => p.file), detectImages: includeImages });
       setChapterCaptureSession({ class: cls.trim(), subject: subject.trim(), chapterName: chapterName.trim(), pages });
       navigate(`/teacher/question-bank/capture/${jobId}/review`);
     } catch (err) {
@@ -118,6 +119,12 @@ export function ChapterCapturePage() {
         <p className="text-xs text-gray-400 dark:text-white/30 -mt-2">
           Photograph or select every page of the chapter/section — page order matters, so capture them in reading order (you can reorder below too).
         </p>
+
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+          <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300" />
+          Include images <span className="text-xs text-gray-400 dark:text-white/30">(detects pictures for picture-based questions)</span>
+        </label>
 
         <div className="grid grid-cols-2 gap-3">
           <button

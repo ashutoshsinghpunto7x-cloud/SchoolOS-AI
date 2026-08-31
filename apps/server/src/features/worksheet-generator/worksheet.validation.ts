@@ -12,6 +12,15 @@ export const generateWorksheetSchema = z.object({
   chapterIds: z.array(z.string()).min(1, 'Select at least one chapter'),
   worksheetType: z.enum(WORKSHEET_TYPES),
   questionCount: z.number().int().min(1).max(50),
+  languageComplexity: z.enum(['auto', 'simple', 'standard', 'advanced']).default('auto'),
+  includeImages: z.boolean().default(false),
+});
+
+const imageRefSchema = z.object({ sourceId: z.string(), figureId: z.string() });
+const imageRequirementSchema = z.object({
+  imageRequired: z.literal(true),
+  imageSource: z.enum(['generated', 'teacher_upload']),
+  imagePrompt: z.string().optional(),
 });
 
 const worksheetQuestionSchema = z.object({
@@ -23,6 +32,8 @@ const worksheetQuestionSchema = z.object({
   estimatedTimeMinutes: z.number().min(0),
   keywords: z.array(z.string()).default([]),
   isNew: z.boolean().optional(),
+  imageRef: imageRefSchema.optional(),
+  imageRequirement: imageRequirementSchema.optional(),
 });
 
 export const saveWorksheetSchema = z.object({
