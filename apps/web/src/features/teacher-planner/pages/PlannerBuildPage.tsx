@@ -21,7 +21,7 @@ export function PlannerBuildPage() {
   const generate = useGeneratePlanner();
   const confirm = useConfirmPlanner();
 
-  const [durations, setDurations] = useState<Record<string, number>>({});
+  const [durations, setDurations] = useState<Record<string, number | ''>>({});
   const [warnings, setWarnings] = useState<string[]>([]);
   const [weeks, setWeeks] = useState<PlannerDraftWeek[] | null>(null);
   const [seeded, setSeeded] = useState(false);
@@ -44,7 +44,7 @@ export function PlannerBuildPage() {
 
   const usedWeeks = weeks?.length ?? 0;
   const totalTeachingWeeks = teachingWeeks?.totalTeachingWeeks ?? 0;
-  const selectedTotal = useMemo(() => Object.values(durations).reduce((a, b) => a + b, 0), [durations]);
+  const selectedTotal = useMemo(() => Object.values(durations).reduce<number>((a, b) => a + (b === '' ? 0 : b), 0), [durations]);
   const remaining = totalTeachingWeeks - usedWeeks - selectedTotal;
 
   function toggleChapter(chapterId: string, checked: boolean) {
@@ -56,12 +56,12 @@ export function PlannerBuildPage() {
     });
   }
 
-  function setDuration(chapterId: string, value: number) {
-    setDurations((prev) => ({ ...prev, [chapterId]: Math.max(1, value) }));
+  function setDuration(chapterId: string, value: number | '') {
+    setDurations((prev) => ({ ...prev, [chapterId]: value === '' ? '' : Math.max(1, value) }));
   }
 
   async function handleGenerate() {
-    const chapterPlans = Object.entries(durations).map(([chapterId, weeksCount]) => ({ chapterId, weeks: weeksCount }));
+    const chapterPlans = Object.entries(durations).map(([chapterId, weeksCount]) => ({ chapterId, weeks: weeksCount === '' ? 1 : weeksCount }));
     if (chapterPlans.length === 0) return;
     try {
       const result = await generate.mutateAsync({ class: cls, subject, chapterPlans, startFromWeek: usedWeeks });
@@ -174,7 +174,14 @@ export function PlannerBuildPage() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <input
                           type="number" min={1} value={durations[c._id]}
-                          onChange={(e) => setDuration(c._id, Number(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') { setDuration(c._id, ''); return; }
+                            const n = Number(raw);
+                            if (Number.isNaN(n)) return;
+                            setDuration(c._id, n);
+                          }}
+                          onBlur={() => setDuration(c._id, durations[c._id] === '' ? 1 : durations[c._id])}
                           className="w-14 h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs text-center"
                         />
                         <span className="text-[11px] text-gray-400">week(s)</span>

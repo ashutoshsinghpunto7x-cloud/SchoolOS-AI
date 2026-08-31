@@ -855,7 +855,7 @@ export const questionExtractionService = {
       ...(source.pages ?? []).flatMap((p) => p.figures ?? []),
     ];
     const { extracted, warnings } = await questionExtractionService.structureFromText(
-      source.class, source.subject, sourceText, options, ctx, figures,
+      source.class, source.subject, sourceText, options, ctx, figures, source.chapterName,
     );
     // A teacher-assigned chapter on the source overrides the AI's per-question guess —
     // it's a more reliable signal than inferring the chapter from page content alone.
@@ -886,9 +886,15 @@ export const questionExtractionService = {
    *      a small, safely-budgeted number of questions.
    *   3. Chunks run with bounded concurrency; each batch call is retry-safe (see
    *      completeQuestionsWithRetry) so a truncated response never loses the whole request.
+   *   4. If the source genuinely doesn't contain `count` extractable questions, the shortfall is
+   *      topped up with freshly-authored questions (via synthesizeQuestions, same "must hit the
+   *      count" path the paper generator uses to fill gaps) so the teacher gets exactly what they
+   *      asked for instead of a passive "found 8 of 10" — the warning below only fires if that
+   *      top-up itself can't fully close the gap (AI unavailable/call failed).
    */
   async structureFromText(
     cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext, figures: PageFigure[] = [],
+    chapterName?: string,
   ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
     const chunks = chunkText(text);
     if (chunks.length === 0) return { extracted: [], warnings: [] };
@@ -921,7 +927,31 @@ export const questionExtractionService = {
 
     const merged = dedupeQuestions(perTaskResults.flatMap((r) => r.extracted));
     const warnings = perTaskResults.flatMap((r) => r.warnings);
-    const final = merged.length > options.count ? merged.slice(0, options.count) : merged;
+    let final = merged.length > options.count ? merged.slice(0, options.count) : merged;
+
+    if (final.length < options.count && openaiProvider.isAvailable()) {
+      const shortfall = options.count - final.length;
+      try {
+        const synthesized = await questionExtractionService.synthesizeQuestions(
+          {
+            class: cls,
+            subject,
+            chapterName: chapterName?.trim() || subject,
+            marks: 1,
+            count: shortfall,
+            difficulty: options.difficulty === 'mixed' ? undefined : options.difficulty,
+            contextText: text,
+            languageComplexity: options.languageComplexity,
+            includeImages: options.includeImages,
+          },
+          ctx,
+        );
+        final = dedupeQuestions([...final, ...synthesized]).slice(0, options.count);
+      } catch (err) {
+        logger.error('[QuestionExtraction] Top-up synthesis failed', { err });
+      }
+    }
+
     if (final.length < options.count) {
       warnings.push(`Found ${final.length} of the ${options.count} requested question(s) in the uploaded content.`);
     }

@@ -194,7 +194,7 @@ export function ChapterReviewPage() {
           </div>
 
           {editedPages.length > 1 && current && (
-            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-3 flex items-center gap-3">
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-3 flex flex-col sm:flex-row sm:items-center gap-2">
               <label className="text-xs font-semibold text-gray-500 dark:text-white/40 shrink-0">
                 Chapter for page {current.pageNumber}
               </label>
@@ -202,9 +202,9 @@ export function ChapterReviewPage() {
                 value={pageChapterNames[current.pageNumber] ?? ''}
                 onChange={(e) => setPageChapterNames((prev) => ({ ...prev, [current.pageNumber]: e.target.value }))}
                 placeholder={chapterName.trim() || 'Same as document chapter'}
-                className="flex-1 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                className="w-full sm:flex-1 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs min-w-0"
               />
-              <span className="text-[11px] text-gray-400 shrink-0">
+              <span className="text-[11px] text-gray-400 sm:max-w-[45%]">
                 Only set this where the chapter actually changes — pages are saved as one entry per chapter.
               </span>
             </div>
