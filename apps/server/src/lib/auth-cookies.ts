@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { Response, Request } from 'express';
 import { env } from '../config/env';
 
@@ -48,6 +49,40 @@ function cookieName(sessionId: string): string {
  */
 export function setAuthCookies(res: Response, refreshToken: string, sessionId: string): void {
   res.cookie(cookieName(sessionId), refreshToken, cookieOptions);
+}
+
+// Every login/refresh mints a differently-named cookie (see cookieName above),
+// and nothing ever expired the old ones short of an explicit logout — a
+// browser that's logged in repeatedly over days/weeks (any dev/test browser,
+// or just someone who never hits "logout") piles up one refreshToken_* cookie
+// per past session, all still within their 7-day maxAge. Once the resulting
+// Cookie header outgrows the server's header-size limit, EVERY request to
+// /api/v1/auth/* — including login itself — gets hard-rejected with 431
+// before it's even routed, which surfaces to the browser as a bare CORS/
+// network error with no way to log in or clear the cookies from the app.
+//
+// Self-heal on every login/refresh: keep only the KEEP most recently-issued
+// refresh cookies (by JWT `iat`, decoded without verifying — this must also
+// prune garbage/forged cookie values, so we can't require a valid signature)
+// and clear the rest. Bounds the header size regardless of how long the
+// browser has been reused, without touching other tabs' live sessions.
+const KEEP_MOST_RECENT_SESSIONS = 5;
+
+export function pruneStaleRefreshCookies(req: Request, res: Response): void {
+  const cookies = req.cookies as Record<string, string> | undefined;
+  if (!cookies) return;
+
+  const entries = Object.keys(cookies)
+    .filter((name) => name.startsWith(`${REFRESH_COOKIE_PREFIX}_`))
+    .map((name) => {
+      const decoded = jwt.decode(cookies[name]) as { iat?: number } | null;
+      return { name, iat: decoded?.iat ?? 0 };
+    })
+    .sort((a, b) => b.iat - a.iat);
+
+  entries.slice(KEEP_MOST_RECENT_SESSIONS).forEach(({ name }) => {
+    res.clearCookie(name, { path: cookieOptions.path });
+  });
 }
 
 export function clearAuthCookies(res: Response, sessionId: string): void {
