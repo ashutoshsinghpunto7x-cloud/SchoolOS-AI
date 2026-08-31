@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { worksheetService } from './worksheet.service';
-import { generateWorksheetSchema, saveWorksheetSchema, listWorksheetsSchema } from './worksheet.validation';
+import { generateWorksheetSchema, saveWorksheetSchema, listWorksheetsSchema, updateWorksheetSchema } from './worksheet.validation';
 
 export const worksheetController = {
   /** POST /worksheet-generator/generate — pulls from the bank + AI-fills any shortfall, never saved */
@@ -41,6 +41,16 @@ export const worksheetController = {
       const ctx = buildAuthContext(req.user!);
       const worksheet = await worksheetService.getById(req.params.id, ctx);
       sendSuccess(res, worksheet);
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /worksheet-generator/:id */
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = updateWorksheetSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const worksheet = await worksheetService.update(req.params.id, data, ctx);
+      sendSuccess(res, worksheet, 'Worksheet updated');
     } catch (err) { next(err); }
   },
 

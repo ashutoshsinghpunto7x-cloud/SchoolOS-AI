@@ -8,7 +8,7 @@ import { timetableRepository } from '../timetable/timetable.repository';
 import { worksheetRepository, WorksheetListOptions } from './worksheet.repository';
 import { IWorksheet } from './worksheet.model';
 import { worksheetGeneratorService, GenerateWorksheetInput } from './worksheet-generator.service';
-import { SaveWorksheetInput } from './worksheet.validation';
+import { SaveWorksheetInput, UpdateWorksheetInput } from './worksheet.validation';
 import { resolveQuestionImages } from '../question-bank/image-resolution';
 import type { ResolvedQuestionImage } from '@schoolos/types';
 
@@ -135,6 +135,33 @@ export const worksheetService = {
     // the IWorksheet-extends-Document type is just the lean-query annotation convention used
     // throughout this codebase, so this cast reflects the actual shape, not a real Document.
     return { ...worksheet, resolvedImages } as IWorksheet & { resolvedImages: Record<string, ResolvedQuestionImage> };
+  },
+
+  /** Post-save editing — title and/or per-question text/difficulty/time, matched to the existing
+   * question array by index (a structural change like adding/removing/reordering questions isn't
+   * supported here; use Regenerate for that). */
+  async update(id: string, data: UpdateWorksheetInput, ctx: AuthContext): Promise<IWorksheet> {
+    const existing = await worksheetRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Worksheet');
+    await assertTeacherCanManageWorksheets(ctx, existing.class, existing.subject);
+
+    const patch: { title?: string; questions?: IWorksheet['questions'] } = {};
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.questions) {
+      if (data.questions.length !== existing.questions.length) {
+        throw new ValidationError('Question count changed — regenerate the worksheet instead of editing it directly');
+      }
+      patch.questions = existing.questions.map((q, i) => ({
+        ...q,
+        questionText: data.questions![i].questionText,
+        difficulty: data.questions![i].difficulty,
+        estimatedTimeMinutes: data.questions![i].estimatedTimeMinutes,
+      }));
+    }
+
+    const updated = await worksheetRepository.update(id, ctx.schoolId, patch);
+    if (!updated) throw new NotFoundError('Worksheet');
+    return updated;
   },
 
   async delete(id: string, ctx: AuthContext): Promise<void> {

@@ -68,4 +68,12 @@ export const worksheetRepository = {
     const res = await Worksheet.updateOne({ _id: id, schoolId, isDeleted: false }, { $set: { isDeleted: true, deletedAt: new Date() } });
     return res.modifiedCount > 0;
   },
+
+  async update(id: string, schoolId: string, patch: { title?: string; questions?: IWorksheetQuestion[] }): Promise<IWorksheet | null> {
+    return Worksheet.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: patch },
+      { new: true },
+    ).lean<IWorksheet>();
+  },
 };

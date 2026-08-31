@@ -44,4 +44,11 @@ export const worksheetGeneratorApi = {
       await apiClient.delete(`${BASE}/${id}`);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
+
+  update: async (id: string, patch: { title?: string; questions?: { questionText: string; difficulty: string; estimatedTimeMinutes: number }[] }): Promise<Worksheet> => {
+    try {
+      const res = await apiClient.patch<{ data: Worksheet }>(`${BASE}/${id}`, patch);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
 };

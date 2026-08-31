@@ -12,6 +12,7 @@ router.post('/generate', worksheetController.generate);
 router.post('/', worksheetController.save);
 router.get('/', worksheetController.list);
 router.get('/:id', worksheetController.getById);
+router.patch('/:id', worksheetController.update);
 router.delete('/:id', worksheetController.delete);
 
 export default router;

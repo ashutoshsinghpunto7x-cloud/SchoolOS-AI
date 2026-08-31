@@ -36,3 +36,6 @@ function useInvalidatingMutation<TPayload, TResult>(fn: (payload: TPayload) => P
 
 export const useSaveWorksheet = () => useInvalidatingMutation((payload: SaveWorksheetPayload) => worksheetGeneratorApi.save(payload));
 export const useDeleteWorksheet = () => useInvalidatingMutation((id: string) => worksheetGeneratorApi.delete(id));
+export const useUpdateWorksheet = (id: string) =>
+  useInvalidatingMutation((patch: { title?: string; questions?: { questionText: string; difficulty: string; estimatedTimeMinutes: number }[] }) =>
+    worksheetGeneratorApi.update(id, patch));
