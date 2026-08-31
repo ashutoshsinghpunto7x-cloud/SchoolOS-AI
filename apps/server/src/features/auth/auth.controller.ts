@@ -3,7 +3,12 @@ import { authService } from './auth.service';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { env } from '../../config/env';
 import { ValidationError, UnauthorizedError } from '../../middlewares/errorHandler';
-import { setAuthCookies, clearAuthCookies, getRefreshTokenFromRequest } from '../../lib/auth-cookies';
+import {
+  setAuthCookies,
+  clearAuthCookies,
+  getRefreshTokenFromRequest,
+  pruneStaleRefreshCookies,
+} from '../../lib/auth-cookies';
 
 export const authController = {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -11,6 +16,7 @@ export const authController = {
       const ip = req.ip ?? req.socket.remoteAddress;
       const { refreshToken, ...result } = await authService.login(req.body, ip);
       setAuthCookies(res, refreshToken, result.sessionId);
+      pruneStaleRefreshCookies(req, res);
       // Web relies solely on the httpOnly cookie above — the browser sends it
       // automatically, and keeping it out of the JSON body means it's never
       // reachable from page JS. React Native has no equivalent cookie jar
@@ -41,6 +47,7 @@ export const authController = {
       }
       const tokens = await authService.refresh(refreshToken, sessionId);
       setAuthCookies(res, tokens.refreshToken, sessionId);
+      pruneStaleRefreshCookies(req, res);
       const isMobileClient = req.header('x-client-platform') === 'mobile';
       sendSuccess(
         res,
