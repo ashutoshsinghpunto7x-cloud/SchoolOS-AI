@@ -216,6 +216,13 @@ export const questionBankApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
+  /** Deletes every question in one or more whole chapters at once — backs both the per-row delete and the collective/bulk delete on the Question Bank landing view. */
+  deleteQuestionGroups: async (groups: { class: string; subject: string; chapterId: string }[]): Promise<void> => {
+    try {
+      await apiClient.delete(`${BASE}/questions/groups`, { data: { groups } });
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
   generatePaper: async (config: PaperGenerationConfig): Promise<GeneratedPaper> => {
     try {
       // Same reasoning as UPLOAD_TIMEOUT_MS above: when the question bank can't fully

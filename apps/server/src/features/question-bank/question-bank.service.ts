@@ -216,6 +216,11 @@ export const questionBankService = {
     if (!deleted) throw new ValidationError('Could not delete this question');
   },
 
+  /** DELETE /questions/groups — removes every question in one or more chapter groups (the landing view's per-row delete and the collective/bulk delete both go through this). */
+  async deleteQuestionGroups(groups: { class: string; subject: string; chapterId: string }[], ctx: AuthContext): Promise<number> {
+    return questionRepository.softDeleteByChapterGroups(ctx.schoolId, groups);
+  },
+
   /**
    * DELETE /sources/:id — permanently removes an upload's converted text (and, for chapter
    * captures, its page/block content). This is a hard delete, not a soft one: unlike a question,

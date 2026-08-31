@@ -60,6 +60,8 @@ function useInvalidatingMutation<TPayload, TResult>(fn: (payload: TPayload) => P
 export const useCreateQuestion = () => useInvalidatingMutation((payload: CreateQuestionPayload) => questionBankApi.createQuestion(payload));
 export const useUpdateQuestion = (id: string) => useInvalidatingMutation((payload: UpdateQuestionPayload) => questionBankApi.updateQuestion(id, payload));
 export const useDeleteQuestion = () => useInvalidatingMutation((id: string) => questionBankApi.deleteQuestion(id));
+/** Deletes one or more whole chapters at once (single-row delete passes a 1-element array). */
+export const useDeleteQuestionGroups = () => useInvalidatingMutation((groups: { class: string; subject: string; chapterId: string }[]) => questionBankApi.deleteQuestionGroups(groups));
 export const useConfirmExtractedQuestions = () => useInvalidatingMutation((payload: ConfirmExtractedQuestionsPayload) => questionBankApi.confirmExtracted(payload));
 
 // Extraction never saves questions to the bank, but it does save the upload's converted text as a source — invalidate that list.

@@ -137,6 +137,16 @@ export const questionRepository = {
     return res.modifiedCount > 0;
   },
 
+  /** Soft-deletes every question in one or more chapter groups at once — backs both the single "delete chapter" row action and the collective/bulk delete on the Question Bank landing view. */
+  async softDeleteByChapterGroups(schoolId: string, groups: { class: string; subject: string; chapterId: string }[]): Promise<number> {
+    if (groups.length === 0) return 0;
+    const res = await Question.updateMany(
+      { schoolId, isDeleted: false, $or: groups.map((g) => ({ class: g.class, subject: g.subject, chapterId: g.chapterId })) },
+      { $set: { isDeleted: true, deletedAt: new Date() } },
+    );
+    return res.modifiedCount;
+  },
+
   async recordUsage(ids: string[], examId: string | undefined, usedAt: Date): Promise<void> {
     if (ids.length === 0) return;
     await Question.updateMany({ _id: { $in: ids } }, { $push: { usageHistory: { examId, usedAt } } });

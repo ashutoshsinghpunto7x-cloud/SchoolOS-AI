@@ -13,6 +13,7 @@ import {
   updateQuestionSchema,
   listQuestionsSchema,
   listQuestionGroupsSchema,
+  deleteQuestionGroupsSchema,
   listChaptersSchema,
   listSourcesSchema,
   updateSourceSchema,
@@ -175,6 +176,16 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const groups = await questionBankService.listQuestionGroups(query, ctx);
       sendSuccess(res, groups);
+    } catch (err) { next(err); }
+  },
+
+  /** DELETE /question-bank/questions/groups — deletes every question in one or more whole chapters at once (single-row delete and collective/bulk delete both call this with a 1+ element array) */
+  async deleteQuestionGroups(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = deleteQuestionGroupsSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const count = await questionBankService.deleteQuestionGroups(data.groups, ctx);
+      sendSuccess(res, null, `${count} question(s) deleted`);
     } catch (err) { next(err); }
   },
 

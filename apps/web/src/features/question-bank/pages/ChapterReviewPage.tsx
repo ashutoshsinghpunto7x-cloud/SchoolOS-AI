@@ -22,6 +22,11 @@ export function ChapterReviewPage() {
   const [chapterName, setChapterName] = useState(session?.chapterName ?? '');
   const [activePage, setActivePage] = useState(0);
   const [initialized, setInitialized] = useState(false);
+  // Per-page chapter override, keyed by pageNumber — lets one capture batch that actually spans
+  // more than one chapter (e.g. photographed in one sitting) be split into separate saved sources
+  // on Save, one per chapter, instead of forcing everything under a single chapterName. Pages left
+  // untouched fall back to the document-level `chapterName` field above.
+  const [pageChapterNames, setPageChapterNames] = useState<Record<number, string>>({});
 
   // Seed local editable state once, when the job first completes — subsequent
   // polls (if any) shouldn't clobber teacher edits made in the review UI.
@@ -82,19 +87,46 @@ export function ChapterReviewPage() {
     setActivePage(0);
   }
 
+  /** Effective chapter for a page: its own override if set, else the document-level field. */
+  function chapterForPage(pageNumber: number): string {
+    return (pageChapterNames[pageNumber] ?? '').trim() || chapterName.trim();
+  }
+
+  /** Splits pages into runs of consecutive pages sharing the same effective chapter name — each run becomes its own saved source. */
+  function groupPagesByChapter(pages: ChapterPage[]): { chapterName: string; pages: ChapterPage[] }[] {
+    const groups: { chapterName: string; pages: ChapterPage[] }[] = [];
+    for (const p of pages) {
+      const name = chapterForPage(p.pageNumber);
+      const last = groups[groups.length - 1];
+      if (last && last.chapterName === name) last.pages.push(p);
+      else groups.push({ chapterName: name, pages: [p] });
+    }
+    return groups;
+  }
+
   async function handleSave() {
     if (!editedPages || editedPages.length === 0) { toast.error('No pages to save'); return; }
+    const groups = groupPagesByChapter(editedPages);
     try {
-      const source = await saveChapter.mutateAsync({
-        class: session!.class,
-        subject: session!.subject,
-        documentTitle: documentTitle.trim() || undefined,
-        chapterName: chapterName.trim() || undefined,
-        pages: editedPages,
-      });
+      const savedSources = [];
+      for (const group of groups) {
+        const source = await saveChapter.mutateAsync({
+          class: session!.class,
+          subject: session!.subject,
+          documentTitle: documentTitle.trim() || undefined,
+          chapterName: group.chapterName || undefined,
+          pages: group.pages,
+        });
+        savedSources.push(source);
+      }
       clearChapterCaptureSession();
-      toast.success('Chapter saved');
-      navigate(`/teacher/question-bank/sources/${source._id}`);
+      if (savedSources.length > 1) {
+        toast.success(`${savedSources.length} chapters saved`);
+        navigate('/teacher/question-bank');
+      } else {
+        toast.success('Chapter saved');
+        navigate(`/teacher/question-bank/sources/${savedSources[0]._id}`);
+      }
     } catch (err) {
       toast.error('Could not save chapter', { description: err instanceof Error ? err.message : undefined });
     }
@@ -160,6 +192,23 @@ export function ChapterReviewPage() {
               </button>
             ))}
           </div>
+
+          {editedPages.length > 1 && current && (
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-3 flex items-center gap-3">
+              <label className="text-xs font-semibold text-gray-500 dark:text-white/40 shrink-0">
+                Chapter for page {current.pageNumber}
+              </label>
+              <input
+                value={pageChapterNames[current.pageNumber] ?? ''}
+                onChange={(e) => setPageChapterNames((prev) => ({ ...prev, [current.pageNumber]: e.target.value }))}
+                placeholder={chapterName.trim() || 'Same as document chapter'}
+                className="flex-1 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+              />
+              <span className="text-[11px] text-gray-400 shrink-0">
+                Only set this where the chapter actually changes — pages are saved as one entry per chapter.
+              </span>
+            </div>
+          )}
 
           {current && (
             <div className="grid lg:grid-cols-2 gap-4">

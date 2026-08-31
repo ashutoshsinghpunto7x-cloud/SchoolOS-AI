@@ -99,6 +99,15 @@ export const listQuestionGroupsSchema = z.object({
   search: z.string().optional(),
 });
 
+// Bulk/"collective" delete from the chapter-grouped landing view — one or more whole chapters at once.
+export const deleteQuestionGroupsSchema = z.object({
+  groups: z.array(z.object({
+    class: z.string({ required_error: 'class is required' }).min(1).trim(),
+    subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+    chapterId: z.string({ required_error: 'chapterId is required' }).min(1).trim(),
+  })).min(1, 'Select at least one chapter'),
+});
+
 export const listChaptersSchema = z.object({
   class: z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
@@ -214,6 +223,7 @@ export type CreateQuestionInput = z.infer<typeof createQuestionSchema>;
 export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>;
 export type ListQuestionsInput = z.infer<typeof listQuestionsSchema>;
 export type ListQuestionGroupsInput = z.infer<typeof listQuestionGroupsSchema>;
+export type DeleteQuestionGroupsInput = z.infer<typeof deleteQuestionGroupsSchema>;
 export type ListChaptersInput = z.infer<typeof listChaptersSchema>;
 export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
 export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;

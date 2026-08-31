@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2 } from 'lucide-react';
-import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource } from '../hooks/useQuestionBank';
+import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks } from 'lucide-react';
+import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups } from '../hooks/useQuestionBank';
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
   const navigate = useNavigate();
@@ -82,19 +82,69 @@ export function QuestionBankPage() {
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
   const [search, setSearch] = useState('');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data: groups, isLoading } = useQuestionGroups({ class: cls || undefined, subject: subject || undefined, search: search || undefined });
   const { data: sources } = useAllQuestionSources();
+  const deleteGroups = useDeleteQuestionGroups();
 
   function openChapter(g: NonNullable<typeof groups>[number]) {
     const params = new URLSearchParams({ class: g.class, subject: g.subject, chapterName: g.chapterName });
     navigate(`/teacher/question-bank/chapters/${g.chapterId}?${params.toString()}`);
   }
 
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  }
+
+  function toggleSelected(chapterId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) next.delete(chapterId); else next.add(chapterId);
+      return next;
+    });
+  }
+
+  async function handleDeleteOne(g: NonNullable<typeof groups>[number]) {
+    if (!window.confirm(`Delete "${g.chapterName}"? All ${g.count} question(s) in it will be gone for good.`)) return;
+    try {
+      await deleteGroups.mutateAsync([{ class: g.class, subject: g.subject, chapterId: g.chapterId }]);
+      toast.success('Chapter deleted');
+    } catch (err) {
+      toast.error('Could not delete chapter', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
+  async function handleDeleteSelected() {
+    if (!groups || selected.size === 0) return;
+    const toDelete = groups.filter((g) => selected.has(g.chapterId));
+    const totalQuestions = toDelete.reduce((sum, g) => sum + g.count, 0);
+    if (!window.confirm(`Delete ${toDelete.length} chapter(s)? All ${totalQuestions} question(s) in them will be gone for good.`)) return;
+    try {
+      await deleteGroups.mutateAsync(toDelete.map((g) => ({ class: g.class, subject: g.subject, chapterId: g.chapterId })));
+      toast.success(`${toDelete.length} chapter(s) deleted`);
+      setSelected(new Set());
+      setSelectMode(false);
+    } catch (err) {
+      toast.error('Could not delete chapters', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Question Bank</h1>
+        {groups && groups.length > 0 && (
+          <button
+            type="button" onClick={toggleSelectMode}
+            className={`h-9 px-3 rounded-lg border text-xs font-semibold flex items-center gap-1.5 ${selectMode ? 'bg-gray-100 dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-700 dark:text-white' : 'bg-white dark:bg-white/10 border-gray-200 dark:border-white/10 text-gray-700 dark:text-white'}`}
+          >
+            {selectMode ? <X className="w-3.5 h-3.5" /> : <ListChecks className="w-3.5 h-3.5" />}
+            {selectMode ? 'Cancel' : 'Select'}
+          </button>
+        )}
         <button
           type="button" onClick={() => navigate('/teacher/question-bank/generate')}
           className="h-9 px-3 rounded-lg bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-white flex items-center gap-1.5"
@@ -108,6 +158,18 @@ export function QuestionBankPage() {
           <Upload className="w-3.5 h-3.5" /> Upload
         </button>
       </div>
+
+      {selectMode && (
+        <div className="sticky top-[57px] z-10 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-100 dark:border-amber-500/20 px-5 py-2.5 flex items-center gap-3">
+          <p className="flex-1 text-xs font-medium text-amber-800 dark:text-amber-300">{selected.size} chapter(s) selected</p>
+          <button
+            type="button" onClick={handleDeleteSelected} disabled={selected.size === 0 || deleteGroups.isPending}
+            className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete selected
+          </button>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-5 py-5 space-y-4">
         <div className="flex gap-2 flex-wrap">
@@ -144,21 +206,39 @@ export function QuestionBankPage() {
 
         <div className="space-y-2">
           {groups?.map((g) => (
-            <button
+            <div
               key={`${g.class}-${g.subject}-${g.chapterId}`}
-              type="button"
-              onClick={() => openChapter(g)}
-              className="w-full flex items-center gap-3 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 text-left hover:border-gray-200 dark:hover:border-white/20 transition-colors"
+              className="w-full flex items-center gap-3 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 p-3.5 hover:border-gray-200 dark:hover:border-white/20 transition-colors"
             >
-              <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-white/10 flex items-center justify-center shrink-0">
-                <BookOpen className="w-4 h-4 text-indigo-500 dark:text-white/70" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{g.chapterName}</p>
-                <p className="text-[11px] text-gray-400">Class {g.class} · {g.subject} · {g.count} question{g.count === 1 ? '' : 's'}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-            </button>
+              {selectMode && (
+                <input
+                  type="checkbox" checked={selected.has(g.chapterId)} onChange={() => toggleSelected(g.chapterId)}
+                  className="w-4 h-4 rounded border-gray-300 shrink-0 accent-[#1C2B4A]"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => (selectMode ? toggleSelected(g.chapterId) : openChapter(g))}
+                className="flex-1 flex items-center gap-3 min-w-0 text-left"
+              >
+                <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-white/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-indigo-500 dark:text-white/70" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{g.chapterName}</p>
+                  <p className="text-[11px] text-gray-400">Class {g.class} · {g.subject} · {g.count} question{g.count === 1 ? '' : 's'}</p>
+                </div>
+              </button>
+              {!selectMode && (
+                <button
+                  type="button" onClick={() => handleDeleteOne(g)} disabled={deleteGroups.isPending}
+                  title="Delete chapter" className="text-gray-300 hover:text-red-500 shrink-0 disabled:opacity-50 p-1"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {!selectMode && <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />}
+            </div>
           ))}
         </div>
       </div>

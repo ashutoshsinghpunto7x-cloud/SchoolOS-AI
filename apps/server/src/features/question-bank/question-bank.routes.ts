@@ -32,6 +32,7 @@ router.get('/papers/:id', questionBankController.getPaper);
 router.get('/questions', questionBankController.listQuestions);
 router.post('/questions', questionBankController.createQuestion);
 router.get('/questions/groups', questionBankController.listQuestionGroups);
+router.delete('/questions/groups', questionBankController.deleteQuestionGroups);
 router.get('/questions/:id', questionBankController.getQuestion);
 router.patch('/questions/:id', questionBankController.updateQuestion);
 router.delete('/questions/:id', questionBankController.deleteQuestion);
