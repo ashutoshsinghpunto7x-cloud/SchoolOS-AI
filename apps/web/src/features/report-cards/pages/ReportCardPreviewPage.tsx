@@ -25,6 +25,7 @@ export function ReportCardPreviewPage() {
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [editingMarks, setEditingMarks] = useState(false);
+  const [warningsOpen, setWarningsOpen] = useState(false);
   const printAreaId = `report-card-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: student, isLoading: studentLoading } = useStudent(studentId);
@@ -136,17 +137,26 @@ export function ReportCardPreviewPage() {
         )}
       </div>
 
-      {/* Warnings — screen only */}
+      {/* Warnings — screen only, collapsed behind a toggle so a long list doesn't dominate the page */}
       {resolvedCard.warnings.length > 0 && (
         <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
-          <div className="rounded-xl p-3.5 bg-amber-50 border border-amber-200 flex items-start gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-semibold text-amber-800">Review before publishing</p>
-              <ul className="text-xs text-amber-700 mt-1 list-disc pl-4">
+          <div className="rounded-xl bg-amber-50 border border-amber-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setWarningsOpen((v) => !v)}
+              className="w-full flex items-center gap-2.5 p-3.5 text-left"
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <p className="text-xs font-semibold text-amber-800 flex-1">
+                Review before publishing ({resolvedCard.warnings.length})
+              </p>
+              <span className="text-xs font-semibold text-amber-700">{warningsOpen ? 'Hide' : 'Show'}</span>
+            </button>
+            {warningsOpen && (
+              <ul className="text-xs text-amber-700 pb-3.5 px-3.5 pl-9 list-disc">
                 {resolvedCard.warnings.map((w) => <li key={w}>{w}</li>)}
               </ul>
-            </div>
+            )}
           </div>
         </div>
       )}

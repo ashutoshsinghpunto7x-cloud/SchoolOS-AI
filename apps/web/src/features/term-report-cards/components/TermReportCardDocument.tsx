@@ -292,7 +292,7 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
         </div>
       </div>
 
-      {/* ── Result + grading key ─────────────────────────────────────── */}
+      {/* ── Result ────────────────────────────────────────────────────── */}
       {/* marginTop: auto pins this to the bottom of the fixed-height page
        *  instead of floating directly under a short marks table. */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: '10px' }}>
@@ -300,14 +300,6 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
           {PROMOTION_LABEL[reportCard.summary.promotionStatus]}
           {reportCard.summary.promotionStatus === 'promoted' && <span style={{ display: 'inline-block', minWidth: '70px', borderBottom: RULE, marginLeft: '4px' }}>&nbsp;</span>}
         </p>
-        {template.gradingKey.length > 0 && (
-          <div style={{ fontSize: '8px', textAlign: 'right' }}>
-            <p style={{ fontWeight: 700, margin: 0 }}>Key</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', columnGap: '14px', rowGap: '1px', justifyContent: 'end' }}>
-              {template.gradingKey.map((g) => <span key={g.label}>{g.label}-{g.description}</span>)}
-            </div>
-          </div>
-        )}
       </div>
 
       {!hideWarnings && reportCard.warnings.length > 0 && (
