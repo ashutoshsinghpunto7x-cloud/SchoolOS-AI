@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { TrendingUp, TrendingDown, CheckCircle2, Circle, ChevronDown, ChevronUp, Lightbulb } from 'lucide-react';
-import type { TeacherPlanner, PlannerProgress, PacePosition } from '@schoolos/types';
+import type { TeacherPlanner, PlannerProgress, PacePosition, PlannerWeek } from '@schoolos/types';
+import { formatWeekRange, formatDayShort, monthKey, monthLabel } from '../lib/dates';
 
 function ProgressBar({ label, percent }: { label: string; percent: number }) {
   return (
@@ -34,8 +35,20 @@ interface PlannerViewProps {
  *  both always show identical numbers. */
 export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }: PlannerViewProps) {
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
+  const [view, setView] = useState<'week' | 'month'>('week');
   const behind = pace.teachingDaysBehind > 0;
   const ahead = pace.teachingDaysBehind < 0;
+
+  const monthGroups = useMemo(() => {
+    const groups = new Map<string, PlannerWeek[]>();
+    for (const w of planner.weeks) {
+      const key = monthKey(w.startDate);
+      const list = groups.get(key) ?? [];
+      list.push(w);
+      groups.set(key, list);
+    }
+    return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [planner.weeks]);
 
   function handleToggle(taskId: string, current: 'pending' | 'completed') {
     if (readOnly) return;
@@ -97,48 +110,86 @@ export function PlannerView({ planner, progress, pace, readOnly, onToggleTask }:
       )}
 
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 px-1">Weeks</p>
-        {planner.weeks.map((w) => {
-          const expanded = expandedWeek === w.weekNumber;
-          const completedCount = w.tasks.filter((t) => t.status === 'completed').length;
-          return (
-            <div key={w.weekNumber} className="bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Weeks</p>
+          <div className="flex rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+            {(['week', 'month'] as const).map((v) => (
               <button
-                type="button" onClick={() => setExpandedWeek(expanded ? null : w.weekNumber)}
-                className="w-full flex items-center gap-3 px-3.5 py-3 text-left"
+                key={v} type="button" onClick={() => setView(v)}
+                className={`px-2.5 py-1 text-[11px] font-semibold capitalize ${view === v ? 'bg-[#1C2B4A] text-white' : 'bg-white dark:bg-transparent text-gray-500 dark:text-white/50'}`}
               >
-                <span className="text-xs font-bold text-gray-400 w-14 shrink-0">Week {w.weekNumber}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{w.chapterName}</p>
-                  <p className="text-[11px] text-gray-400">{completedCount}/{w.tasks.length} tasks done</p>
-                </div>
-                {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                {v}
               </button>
-              {expanded && (
-                <div className="px-3.5 pb-3 space-y-1.5">
-                  {w.tasks.map((task) => (
-                    <button
-                      key={task.taskId} type="button" disabled={readOnly}
-                      onClick={() => handleToggle(task.taskId, task.status)}
-                      className="w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:hover:bg-transparent disabled:cursor-default"
-                    >
-                      {task.status === 'completed'
-                        ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
-                      <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700 dark:text-white/70'}`}>
-                        {task.title}
-                      </span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/50">
-                        {labelize(task.type)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+            ))}
+          </div>
+        </div>
+
+        {view === 'week' ? (
+          planner.weeks.map((w) => (
+            <WeekCard key={w.weekNumber} week={w} expanded={expandedWeek === w.weekNumber}
+              onToggleExpand={() => setExpandedWeek(expandedWeek === w.weekNumber ? null : w.weekNumber)}
+              readOnly={readOnly} onToggleTask={handleToggle} />
+          ))
+        ) : (
+          monthGroups.map(([key, weeks]) => (
+            <div key={key} className="space-y-2">
+              <p className="text-[11px] font-bold text-gray-500 dark:text-white/50 px-1 pt-2">{monthLabel(key)}</p>
+              {weeks.map((w) => (
+                <WeekCard key={w.weekNumber} week={w} expanded={expandedWeek === w.weekNumber}
+                  onToggleExpand={() => setExpandedWeek(expandedWeek === w.weekNumber ? null : w.weekNumber)}
+                  readOnly={readOnly} onToggleTask={handleToggle} />
+              ))}
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
+    </div>
+  );
+}
+
+function WeekCard({ week: w, expanded, onToggleExpand, readOnly, onToggleTask }: {
+  week: PlannerWeek;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  readOnly?: boolean;
+  onToggleTask: (taskId: string, current: 'pending' | 'completed') => void;
+}) {
+  const completedCount = w.tasks.filter((t) => t.status === 'completed').length;
+  return (
+    <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden">
+      <button type="button" onClick={onToggleExpand} className="w-full flex items-center gap-3 px-3.5 py-3 text-left">
+        <div className="w-24 shrink-0">
+          <span className="text-xs font-bold text-gray-400 block">Week {w.weekNumber}</span>
+          <span className="text-[10px] text-gray-400">{formatWeekRange(w.startDate, w.endDate)}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">{w.chapterName}</p>
+          <p className="text-[11px] text-gray-400">{completedCount}/{w.tasks.length} tasks done</p>
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+      </button>
+      {expanded && (
+        <div className="px-3.5 pb-3 space-y-1.5">
+          {w.tasks.map((task) => (
+            <button
+              key={task.taskId} type="button" disabled={readOnly}
+              onClick={() => onToggleTask(task.taskId, task.status)}
+              className="w-full flex items-center gap-2.5 text-left px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 disabled:hover:bg-transparent disabled:cursor-default"
+            >
+              {task.status === 'completed'
+                ? <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
+              <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700 dark:text-white/70'}`}>
+                {task.title}
+              </span>
+              <span className="text-[10px] text-gray-400 shrink-0">{formatDayShort(task.dueDate)}</span>
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-white/50 shrink-0">
+                {labelize(task.type)}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

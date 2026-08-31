@@ -4379,10 +4379,20 @@ export interface SavedChapterOption {
   topics: string[];
 }
 
+export interface TeachingWeekInfo {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+}
+
 export interface TeachingWeeksInfo {
   totalTeachingWeeks: number;
   academicYearStart: string;
   academicYearEnd: string;
+  /** Every teaching week's real date range, holiday-aware — lets the Build/Review screen show
+   * calendar dates before the planner is even saved (a saved planner already carries these on
+   * each week; this is the same computation exposed for the pre-save draft). */
+  weeks: TeachingWeekInfo[];
 }
 
 export interface ChapterPlanInput {

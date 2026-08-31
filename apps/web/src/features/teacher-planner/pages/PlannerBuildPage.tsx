@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Trash2, CheckCircle2, AlertTriangle, Plus, BookOpen } from 'lucide-react';
 import { useSavedChapters, useTeachingWeeksInfo, useMyPlanner, useGeneratePlanner, useConfirmPlanner } from '../hooks/useTeacherPlanner';
+import { formatWeekRange } from '../lib/dates';
 import type { PlannerDraftWeek, PlannerTaskType } from '@schoolos/types';
 
 const TASK_TYPES: PlannerTaskType[] = ['explain', 'activity', 'worksheet', 'homework', 'doubt_session', 'revision', 'unit_test', 'other'];
@@ -218,10 +219,15 @@ export function PlannerBuildPage() {
                 <Plus className="w-3.5 h-3.5" /> Add chapter block
               </button>
             </div>
-            {weeks.map((w, wi) => (
+            {weeks.map((w, wi) => {
+              const dateInfo = teachingWeeks?.weeks.find((tw) => tw.weekNumber === w.weekNumber);
+              return (
               <div key={`${w.weekNumber}-${wi}`} className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-gray-400">Week {w.weekNumber}</span>
+                  <div>
+                    <span className="text-xs font-bold text-gray-400">Week {w.weekNumber}</span>
+                    {dateInfo && <span className="text-[11px] text-gray-400 ml-2">{formatWeekRange(dateInfo.startDate, dateInfo.endDate)}</span>}
+                  </div>
                   <button type="button" onClick={() => removeWeek(wi)} className="text-gray-300 hover:text-red-500">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -251,7 +257,8 @@ export function PlannerBuildPage() {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             <button
               type="button" onClick={handleSave} disabled={confirm.isPending}

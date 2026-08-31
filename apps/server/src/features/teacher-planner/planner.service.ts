@@ -154,6 +154,11 @@ export const plannerService = {
       totalTeachingWeeks: teachingWeeks.length,
       academicYearStart: start.toISOString(),
       academicYearEnd: end.toISOString(),
+      weeks: teachingWeeks.map((w) => ({
+        weekNumber: w.weekNumber,
+        startDate: w.startDate.toISOString(),
+        endDate: w.endDate.toISOString(),
+      })),
     };
   },
 
