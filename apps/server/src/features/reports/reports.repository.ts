@@ -375,12 +375,11 @@ export async function getCalendarAnalytics(
   _filters: ReportFilters,
 ): Promise<CalendarAnalytics> {
   const now = new Date();
-  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastOfMonth  = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const todayStr     = now.toISOString().split('T')[0];
-  const futureStr    = (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })();
-  const firstStr     = firstOfMonth.toISOString().split('T')[0];
-  const lastStr      = lastOfMonth.toISOString().split('T')[0];
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const lastOfMonth  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const in30Days      = new Date(startOfToday);
+  in30Days.setDate(in30Days.getDate() + 30);
 
   const [typeAgg, thisMonthCount, upcomingEvents, publishedCount] = await Promise.all([
     SchoolEvent.aggregate<{ _id: string; count: number }>([
@@ -390,12 +389,15 @@ export async function getCalendarAnalytics(
     ]),
     SchoolEvent.countDocuments({
       schoolId, isDeleted: false,
-      startDate: { $gte: firstStr, $lte: lastStr },
+      // startDate is a Mongoose Date field — must compare against Date
+      // instances, not strings, or MongoDB's cross-BSON-type ordering makes
+      // this range silently match nothing (Date always sorts after String).
+      startDate: { $gte: firstOfMonth, $lte: lastOfMonth },
     }),
     SchoolEvent.find({
       schoolId, isDeleted: false,
       status: { $in: ['published', 'scheduled'] },
-      startDate: { $gte: todayStr, $lte: futureStr },
+      startDate: { $gte: startOfToday, $lte: in30Days },
     })
       .sort({ startDate: 1 })
       .limit(10)

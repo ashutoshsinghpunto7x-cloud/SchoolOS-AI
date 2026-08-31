@@ -19,7 +19,13 @@ const MONTH_NAMES = [
 ];
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0];
+  // Build the date string from local y/m/d — toISOString() converts to UTC
+  // first, which shifts the date by a day in timezones ahead of UTC (e.g.
+  // IST) and makes an event drawn under day N actually be stored for N-1.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function getDaysInMonth(year: number, month: number): Date[] {

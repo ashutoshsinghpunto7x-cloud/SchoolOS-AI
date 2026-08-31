@@ -24,7 +24,16 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
   general:         'Notice',
 };
 
-const isToday = (dateStr: string) => new Date().toISOString().split('T')[0] === dateStr.split('T')[0];
+function localDateStr(d: Date): string {
+  // Local y/m/d, not toISOString() — that converts to UTC first and can
+  // land on the wrong calendar day in timezones ahead of UTC (e.g. IST).
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const isToday = (dateStr: string) => localDateStr(new Date()) === dateStr.split('T')[0];
 
 interface UpcomingEventsWidgetProps {
   /** Tailwind class for the section title + "View all" accent (defaults to purple). */

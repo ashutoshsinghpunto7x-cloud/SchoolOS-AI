@@ -13,7 +13,12 @@ interface WeekViewProps {
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0];
+  // Local y/m/d, not toISOString() — that converts to UTC first and shifts
+  // the date by a day in timezones ahead of UTC (e.g. IST).
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function getWeekDays(start: Date): Date[] {

@@ -105,12 +105,12 @@ export const principalRepository = {
   },
 
   async getUpcomingEvents(schoolId: string): Promise<PrincipalUpcomingEvent[]> {
-    // Whole current calendar month (1st through last day), not a rolling
-    // N-day window — a principal wants to see everything on this month's
-    // calendar, not just what's ahead of today.
+    // Rolling window from today forward (not "current calendar month") — a
+    // month-bounded query went silent for the rest of the month once fewer
+    // than 10 events remained between today and month-end, e.g. an event on
+    // the 11th of next month wouldn't show as "Next Event" on the 31st.
     const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
 
     const events = await SchoolEvent.find({
       schoolId,
@@ -119,7 +119,7 @@ export const principalRepository = {
       // startDate is a Mongoose Date field — must compare against Date
       // instances, not strings, or MongoDB's cross-BSON-type ordering makes
       // this range silently match nothing (Date always sorts after String).
-      startDate: { $gte: firstOfMonth, $lte: lastOfMonth },
+      startDate: { $gte: startOfToday },
     })
       .sort({ startDate: 1 })
       .limit(10)
