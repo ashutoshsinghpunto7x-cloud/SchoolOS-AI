@@ -1,4 +1,3 @@
-import { PDFParse } from 'pdf-parse';
 import { openaiProvider, estimateCost } from '../ai/providers/llm/openai.provider';
 import { aiUsageRepository } from '../ai/ai.repository';
 import { usageEventRepository } from '../../lib/usage-event.repository';
@@ -698,6 +697,12 @@ export const questionExtractionService = {
   async extractFromPdf(
     cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
   ): Promise<TextExtractionResult> {
+    // Loaded lazily (not as a top-level import) so a broken native dependency in pdf-parse's
+    // pdfjs-dist chain (e.g. @napi-rs/canvas failing to load its platform binary) only breaks
+    // this one PDF-upload path at request time — it can no longer crash the whole server at
+    // boot, which is what took production down for ~15h on 2026-08-31 (every deploy since
+    // d80173c failed to start because this was a static import evaluated during route setup).
+    const { PDFParse } = await import('pdf-parse');
     const parser = new PDFParse({ data: pdfBuffer });
     const { text } = await parser.getText();
     await parser.destroy();
