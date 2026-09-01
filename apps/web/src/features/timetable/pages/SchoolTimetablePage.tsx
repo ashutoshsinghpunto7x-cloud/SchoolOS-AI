@@ -22,6 +22,54 @@ function defaultAcademicYear(): string {
 /** Natural sort so "2, 3, 10, 11" doesn't come out as "10, 11, 2, 3". */
 const naturalCompare = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 
+// Pre-primary class names, in the order the school actually teaches them —
+// grade levels don't sort alphabetically or numerically, so they need an
+// explicit rank. Aliases (e.g. "Mont" vs "Montessori") share a rank so
+// whichever spelling is on record still lands in the right place.
+const PRE_PRIMARY_RANK: Record<string, number> = {
+  montessori: 0, mont: 0,
+  preparatory: 1, prep: 1,
+  nursery: 2, nur: 2,
+};
+
+/** "I".."XII" -> 1..12, or null if not a plain Roman numeral. Grade-level
+ *  class names use Roman numerals, which don't sort correctly as text
+ *  ("II" > "III" alphabetically) or as Intl numeric collation (which only
+ *  understands digit characters). */
+function romanToInt(raw: string): number | null {
+  const s = raw.trim().toUpperCase();
+  if (!s || !/^[IVX]+$/.test(s)) return null;
+  const VALUES: Record<string, number> = { I: 1, V: 5, X: 10 };
+  let total = 0;
+  for (let i = 0; i < s.length; i++) {
+    const cur = VALUES[s[i]];
+    const next = i + 1 < s.length ? VALUES[s[i + 1]] : 0;
+    total += cur < next ? -cur : cur;
+  }
+  return total > 0 && total <= 20 ? total : null;
+}
+
+/** [group, rank] — pre-primary classes first (in PRE_PRIMARY_RANK order),
+ *  then numbered grades (Roman numeral or plain digit) in ascending order,
+ *  then anything unrecognized, alphabetically, at the very end. */
+function classSortKey(name: string): [number, number] {
+  const key = name.trim().toLowerCase();
+  if (key in PRE_PRIMARY_RANK) return [0, PRE_PRIMARY_RANK[key]];
+  const roman = romanToInt(name);
+  if (roman !== null) return [1, roman];
+  const asNumber = Number(name.trim());
+  if (name.trim() !== '' && !Number.isNaN(asNumber)) return [1, asNumber];
+  return [2, 0];
+}
+
+function compareClassNames(a: string, b: string): number {
+  const [groupA, rankA] = classSortKey(a);
+  const [groupB, rankB] = classSortKey(b);
+  if (groupA !== groupB) return groupA - groupB;
+  if (rankA !== rankB) return rankA - rankB;
+  return naturalCompare(a, b);
+}
+
 /**
  * Whole-school master timetable — every class×section as a row, every
  * period as a column, one page, matching the paper master timetable schools
@@ -44,7 +92,7 @@ export const SchoolTimetablePage = () => {
 
   const periods = grid?.periods ?? [];
   const rows = useMemo(
-    () => [...(grid?.rows ?? [])].sort((a, b) => naturalCompare(a.class, b.class) || naturalCompare(a.section, b.section)),
+    () => [...(grid?.rows ?? [])].sort((a, b) => compareClassNames(a.class, b.class) || naturalCompare(a.section, b.section)),
     [grid],
   );
 
@@ -210,7 +258,7 @@ const ManageClassesDrawer = ({ onClose }: { onClose: () => void }) => {
   const [newClassName, setNewClassName] = useState('');
   const [sectionDrafts, setSectionDrafts] = useState<Record<string, string>>({});
 
-  const sorted = [...classes].sort((a, b) => naturalCompare(a.name, b.name));
+  const sorted = [...classes].sort((a, b) => compareClassNames(a.name, b.name));
 
   return (
     <div className="fixed inset-0 z-50 flex">
