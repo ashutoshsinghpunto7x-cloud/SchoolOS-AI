@@ -139,6 +139,24 @@ export const timetableController = {
     } catch (err) { next(err); }
   },
 
+  // ── Master (whole-school) Timetable Grid ───────────────────────────────────
+
+  async getMasterGrid(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx  = buildAuthContext(req.user!);
+      const grid = await timetableService.getMasterGrid(req.query, ctx);
+      sendSuccess(res, grid);
+    } catch (err) { next(err); }
+  },
+
+  async setMasterGridCell(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const tt  = await timetableService.setMasterGridCell(req.body, ctx);
+      sendSuccess(res, tt, 'Master grid cell updated');
+    } catch (err) { next(err); }
+  },
+
   // ── Substitutes ─────────────────────────────────────────────────────────────
 
   async createSubstitute(req: Request, res: Response, next: NextFunction): Promise<void> {

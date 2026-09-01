@@ -32,6 +32,7 @@ import {
   FileCheck2,
   CalendarClock,
   Bus,
+  Table2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -140,6 +141,7 @@ const NAV_SECTION_PRINCIPAL_STAFF = [
 ] as const;
 
 const NAV_SECTION_PRINCIPAL_OPERATIONS = [
+  { label: 'School Timetable',   icon: Table2,      path: '/timetable/school',             end: true  },
   { label: 'Class Timetable',    icon: LayoutGrid, path: '/timetable',                    end: true  },
   { label: 'Attendance Scanner', icon: ScanLine,    path: '/principal/attendance-scanner', end: false },
   { label: 'Transport',          icon: Bus,         path: '/principal/transport',          end: false },

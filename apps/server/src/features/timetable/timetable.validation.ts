@@ -83,6 +83,25 @@ export const updateSubstituteSchema = z.object({
   status:                z.enum(['active', 'cancelled']).optional(),
 });
 
+// ── Master (whole-school) Timetable Grid ─────────────────────────────────────
+
+export const masterGridQuerySchema = z.object({
+  academicYear: z.string().trim().min(1).max(20),
+  term:         z.string().trim().max(50).optional(),
+});
+
+export const masterGridCellSchema = z.object({
+  class:        z.string().trim().min(1).max(20),
+  section:      z.string().trim().min(1).max(10),
+  academicYear: z.string().trim().min(1).max(20),
+  term:         z.string().trim().max(50).optional(),
+  slotId:       z.string().min(1),
+  subjectName:  z.string().trim().max(100).optional(),
+  teacherId:    z.string().optional(),
+  teacherName:  z.string().trim().max(100).optional(),
+  roomNumber:   z.string().trim().max(50).optional(),
+});
+
 export const listSubstitutesSchema = z.object({
   page:        z.coerce.number().int().min(1).default(1),
   limit:       z.coerce.number().int().min(1).max(100).default(20),

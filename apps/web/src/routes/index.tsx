@@ -337,6 +337,10 @@ const TeacherTimetableBuilderPage = lazyPage(
   () => import('@/features/timetable/pages/TeacherTimetableBuilderPage'),
   'TeacherTimetableBuilderPage',
 );
+const SchoolTimetablePage = lazyPage(
+  () => import('@/features/timetable/pages/SchoolTimetablePage'),
+  'SchoolTimetablePage',
+);
 const EnquiryWorkspace = lazyPage(
   () => import('@/features/enquiries/pages/EnquiryWorkspace'),
   'EnquiryWorkspace',
@@ -1133,6 +1137,7 @@ export const router = createBrowserRouter([
               { path: 'fees/:id', element: <FeeRecordDetailPage /> },
 
               // Timetable (static routes before /:id)
+              { path: 'timetable/school',                element: <SchoolTimetablePage /> },
               { path: 'timetable',                       element: <TimetableWorkspace /> },
               { path: 'timetable/new',                   element: <NewTimetablePage /> },
               { path: 'timetable/periods',               element: <PeriodSetupPage /> },
