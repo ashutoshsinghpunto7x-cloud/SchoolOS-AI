@@ -40,7 +40,7 @@ router.post('/:id/photo', authorize('admin', 'reception', 'accountant', 'teacher
 router.delete('/:id/photo', authorize('admin', 'reception', 'accountant', 'teacher'), studentController.removePhoto);
 router.patch('/:id', authorize('admin', 'reception', 'accountant'), studentController.update);
 router.patch('/:id/status', studentController.changeStatus);
-router.delete('/:id', authorize('admin'), studentController.deleteStudent);
+router.delete('/:id', authorize('admin', 'accountant'), studentController.deleteStudent);
 
 // ── Student Notes ─────────────────────────────────────────────────────────────
 router.get('/:id/notes', studentController.listNotes);

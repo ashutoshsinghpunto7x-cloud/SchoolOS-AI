@@ -66,7 +66,7 @@ export const StudentProfilePage = () => {
   const { data: comms = [] } = useCommunicationList(activeTab === 'communications' ? id! : null);
   const { mutateAsync: deleteStudent, isPending: deleting } = useDeleteStudent();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const canDelete = user?.role === 'admin';
+  const canDelete = user?.role === 'admin' || user?.role === 'accountant';
 
   async function handleDelete() {
     if (!id) return;
@@ -278,7 +278,7 @@ export const StudentProfilePage = () => {
             items={[
               { label: "Father's Name", value: student.fatherName },
               { label: "Mother's Name", value: student.motherName },
-              { label: 'Primary Phone', value: student.parentPhone },
+              { label: "Father's Phone", value: student.parentPhone },
               { label: 'Alternate Phone', value: student.alternatePhone },
               { label: 'Email', value: student.email },
             ]}

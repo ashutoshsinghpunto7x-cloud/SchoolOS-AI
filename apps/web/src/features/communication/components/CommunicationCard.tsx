@@ -64,7 +64,7 @@ export const CommunicationCard = ({
         </div>
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-            Primary Phone
+            Father's Phone
           </p>
           <p className="text-base font-semibold text-gray-800">{student.parentPhone}</p>
         </div>

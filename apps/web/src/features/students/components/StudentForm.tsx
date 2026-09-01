@@ -357,7 +357,7 @@ export const StudentForm = ({
             />
           </Field>
 
-          <Field label="Primary Phone" required={requireAllFields} error={errors.parentPhone?.message}>
+          <Field label="Father's Phone" required={requireAllFields} error={errors.parentPhone?.message}>
             <input
               {...register('parentPhone')}
               type="tel"
