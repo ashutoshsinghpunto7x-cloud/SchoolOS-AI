@@ -51,6 +51,8 @@ import performanceTestRouter from '../features/performance-testing/performance-t
 import communicationEngineRouter from '../features/communication/communication-engine.routes';
 import questionBankRouter from '../features/question-bank/question-bank.routes';
 import teacherPlannerRouter from '../features/teacher-planner/planner.routes';
+import academicYearRouter from '../features/academic-year/academic-year.routes';
+import academicPlanRouter from '../features/academic-plan/academic-plan.routes';
 import worksheetGeneratorRouter from '../features/worksheet-generator/worksheet.routes';
 import syllabusTrackerRouter from '../features/syllabus-tracker/syllabus-tracker.routes';
 import featureFlagRouter from '../features/feature-flags/feature-flag.routes';
@@ -61,6 +63,12 @@ import moduleAccessRouter from '../features/module-access/module-restriction.rou
 import moduleAccessPublicRouter from '../features/module-access/module-restriction.public.routes';
 import mockTestRouter from '../features/mock-tests/mock-test.routes';
 import transportRouter from '../features/transport/transport.routes';
+import receptionTaskRouter from '../features/reception-tasks/reception-task.routes';
+import followUpRouter from '../features/follow-ups/follow-up.routes';
+import admissionFormRouter from '../features/admission-forms/admission-form.routes';
+import candidateRouter from '../features/candidates/candidate.routes';
+import interviewRouter from '../features/interviews/interview.routes';
+import frontOfficeReportsRouter from '../features/front-office-reports/front-office-reports.routes';
 
 const router = Router();
 
@@ -74,6 +82,12 @@ router.use('/fees', feeRouter);
 router.use('/events', eventRouter);
 router.use('/enquiries', enquiryRouter);
 router.use('/visitors', visitorRouter);
+router.use('/reception-tasks', receptionTaskRouter);
+router.use('/follow-ups', followUpRouter);
+router.use('/admission-forms', admissionFormRouter);
+router.use('/candidates', candidateRouter);
+router.use('/interviews', interviewRouter);
+router.use('/reports/front-office', frontOfficeReportsRouter);
 router.use('/timetable', timetableRouter);
 router.use('/teacher-timetable', teacherTimetableRouter);
 router.use('/principal', principalRouter);
@@ -116,6 +130,8 @@ router.use('/performance-tests', performanceTestRouter);
 router.use('/communication', communicationEngineRouter);
 router.use('/question-bank', questionBankRouter);
 router.use('/teacher-planner', teacherPlannerRouter);
+router.use('/academic-year', academicYearRouter);
+router.use('/academic-plan', academicPlanRouter);
 router.use('/worksheet-generator', worksheetGeneratorRouter);
 router.use('/syllabus-tracker', syllabusTrackerRouter);
 router.use('/ops/feature-flags', featureFlagRouter);

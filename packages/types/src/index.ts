@@ -94,6 +94,11 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  // Owns syllabus/calendar/exam setup for the Academic Planning Engine —
+  // distinct from principal (oversight-only) since its write scope over
+  // syllabus/calendar data is materially different. See "The Planning
+  // Engine" design doc §4/§9.
+  | 'academic_coordinator'
   | 'parent'
   | 'driver'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
@@ -1671,7 +1676,7 @@ export interface SendReceiptEmailPayload {
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution' | 'planner_reminder' | 'maintenance_scheduled' | 'maintenance_toggled';
+export type NotificationType = 'defaulters_list' | 'message' | 'change_request' | 'leave_request' | 'substitution' | 'planner_reminder' | 'plan_alert' | 'maintenance_scheduled' | 'maintenance_toggled';
 export type NotificationPriority = 'normal' | 'high';
 
 export interface AppNotification {
@@ -1924,6 +1929,7 @@ export interface Enquiry extends BaseEntity {
   assignedCounsellor?: string;
   followUpDate?: string;
   lastContactedAt?: string;
+  admissionFormId?: string;
   stageHistory: StageHistoryEntry[];
   conversionData?: EnquiryConversionData;
   tags: string[];
@@ -2032,14 +2038,42 @@ export type VisitorPurpose =
   | 'interview'
   | 'other';
 
+export type VisitorIdProofType =
+  | 'aadhaar'
+  | 'driving_license'
+  | 'voter_id'
+  | 'passport'
+  | 'other';
+
+// Reception Management Module SRD (docs/reception-management-module-srd.md),
+// Module 1: Waiting → Approved → In Meeting → Completed, or Cancelled out of
+// Waiting/Approved.
+export type VisitorStatus =
+  | 'waiting'
+  | 'approved'
+  | 'in_meeting'
+  | 'completed'
+  | 'cancelled';
+
 export interface Visitor extends BaseEntity {
   name: string;
   contactNumber: string;
+  photoUrl?: string;
+  idProofType?: VisitorIdProofType;
+  idProofUrl?: string;
   purpose: VisitorPurpose;
   purposeNote?: string;
   personToVisit: string;
+  personToVisitId?: string;
+  status: VisitorStatus;
+  passNumber?: string;
+  passIssuedAt?: string;
+  passValidUntil?: string;
+  appointmentId?: string;
   checkInTime: string;
   checkOutTime?: string;
+  cancelledAt?: string;
+  cancelReason?: string;
   recordedById: string;
   recordedByName: string;
   isDeleted: boolean;
@@ -2053,7 +2087,14 @@ export interface CreateVisitorPayload {
   purpose: VisitorPurpose;
   purposeNote?: string;
   personToVisit: string;
+  personToVisitId?: string;
+  appointmentId?: string;
   checkInTime?: string;
+}
+
+export interface UpdateVisitorStatusPayload {
+  status: VisitorStatus;
+  cancelReason?: string;
 }
 
 export interface CheckOutVisitorPayload {
@@ -2065,10 +2106,421 @@ export interface VisitorListOptions {
   limit?: number;
   search?: string;
   purpose?: VisitorPurpose;
+  status?: VisitorStatus;
   onlyOnSite?: boolean;
   date?: string;
   dateFrom?: string;
   dateTo?: string;
+}
+
+// ── Front Desk / Visitor Appointments ────────────────────────────────────────
+
+export type VisitorAppointmentStatus = 'scheduled' | 'arrived' | 'no_show' | 'cancelled';
+
+export interface VisitorAppointment extends BaseEntity {
+  visitorName: string;
+  visitorPhone: string;
+  purpose: VisitorPurpose;
+  purposeNote?: string;
+  scheduledFor: string;
+  personToVisit: string;
+  personToVisitId?: string;
+  bookedById: string;
+  bookedByName: string;
+  status: VisitorAppointmentStatus;
+  linkedVisitorId?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface CreateVisitorAppointmentPayload {
+  visitorName: string;
+  visitorPhone: string;
+  purpose: VisitorPurpose;
+  purposeNote?: string;
+  scheduledFor: string;
+  personToVisit: string;
+  personToVisitId?: string;
+}
+
+export interface VisitorAppointmentListOptions {
+  page?: number;
+  limit?: number;
+  status?: VisitorAppointmentStatus;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// Reception's staff-picker lookup (Visitor Management "person to visit"
+// search) — deliberately minimal, never salary/personal fields.
+export interface EmployeeDirectoryEntry {
+  _id: string;
+  fullName: string;
+  designation: string;
+  department?: string;
+}
+
+// ── Reception Tasks ───────────────────────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 8.
+
+export type ReceptionTaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type ReceptionTaskStatus = 'open' | 'in_progress' | 'completed' | 'snoozed' | 'cancelled';
+export type ReceptionTaskLinkedEntityType = 'enquiry' | 'admission_form' | 'candidate' | 'visitor' | 'none';
+export type ReceptionTaskSource =
+  | 'manual'
+  | 'auto_form_overdue'
+  | 'auto_followup_overdue'
+  | 'auto_onboarding'
+  | 'auto_visitor_wait';
+
+export interface ReceptionTask extends BaseEntity {
+  title: string;
+  description?: string;
+  priority: ReceptionTaskPriority;
+  dueDate: string;
+  assignedToId: string;
+  assignedById: string;
+  status: ReceptionTaskStatus;
+  completedAt?: string;
+  completionNotes?: string;
+  linkedEntityType: ReceptionTaskLinkedEntityType;
+  linkedEntityId?: string;
+  source: ReceptionTaskSource;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface CreateReceptionTaskPayload {
+  title: string;
+  description?: string;
+  priority?: ReceptionTaskPriority;
+  dueDate: string;
+  assignedToId: string;
+}
+
+export interface UpdateReceptionTaskPayload {
+  title?: string;
+  description?: string;
+  priority?: ReceptionTaskPriority;
+  dueDate?: string;
+  assignedToId?: string;
+}
+
+export interface ReceptionTaskListOptions {
+  page?: number;
+  limit?: number;
+  status?: ReceptionTaskStatus;
+  priority?: ReceptionTaskPriority;
+  assignedToId?: string;
+  mine?: boolean;
+}
+
+// ── Follow-Up Management ─────────────────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 4.
+
+export type FollowUpChannel = 'call' | 'whatsapp' | 'email' | 'in_person';
+export type FollowUpStatus = 'pending' | 'completed' | 'missed' | 'rescheduled';
+
+export interface FollowUp extends BaseEntity {
+  enquiryId: string;
+  dueDate: string;
+  assignedToId: string;
+  channel: FollowUpChannel;
+  status: FollowUpStatus;
+  outcome?: string;
+  completedAt?: string;
+  nextFollowUpDate?: string;
+  escalatedAt?: string;
+  createdBy: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+  /** Present on list responses (see follow-up.repository.ts attachEnquirySummaries)
+   *  so a "Due Today"/"Overdue" dashboard doesn't need a second lookup per row. */
+  enquirySummary?: { studentName: string; parentName: string; parentPhone: string } | null;
+}
+
+export interface CreateFollowUpPayload {
+  enquiryId: string;
+  dueDate: string;
+  channel: FollowUpChannel;
+  assignedToId?: string;
+}
+
+export interface CompleteFollowUpPayload {
+  outcome?: string;
+  nextFollowUpDate?: string;
+}
+
+export interface RescheduleFollowUpPayload {
+  nextFollowUpDate: string;
+  outcome?: string;
+}
+
+export interface FollowUpListOptions {
+  page?: number;
+  limit?: number;
+  enquiryId?: string;
+  status?: FollowUpStatus;
+  assignedToId?: string;
+  dueBy?: string;
+  mine?: boolean;
+}
+
+// ── Admission Form Tracking ──────────────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 3.
+
+export type AdmissionFormPaymentStatus = 'pending' | 'paid' | 'waived';
+export type AdmissionFormVerificationStatus = 'not_submitted' | 'pending_verification' | 'verified' | 'rejected';
+
+export interface DocumentChecklistItem {
+  _id: string;
+  documentType: string;
+  received: boolean;
+  fileUrl?: string;
+  verifiedAt?: string;
+}
+
+export interface AdmissionForm extends BaseEntity {
+  enquiryId: string;
+  formNumber: string;
+  dateIssued: string;
+  issuedById: string;
+  issuedByName: string;
+  formFee: number;
+  paymentStatus: AdmissionFormPaymentStatus;
+  paymentTxnId?: string;
+  submissionDate?: string;
+  verificationStatus: AdmissionFormVerificationStatus;
+  verifiedById?: string;
+  verifiedByName?: string;
+  verifiedAt?: string;
+  documentChecklist: DocumentChecklistItem[];
+  rejectionReason?: string;
+  createdBy: string;
+  updatedBy?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface IssueAdmissionFormPayload {
+  enquiryId: string;
+  formFee: number;
+}
+
+export interface UpdateAdmissionFormPaymentPayload {
+  paymentStatus: AdmissionFormPaymentStatus;
+  paymentTxnId?: string;
+}
+
+export interface VerifyAdmissionFormPayload {
+  approve: boolean;
+  rejectionReason?: string;
+}
+
+export interface AddChecklistItemPayload {
+  documentType: string;
+}
+
+export interface UpdateChecklistItemPayload {
+  received?: boolean;
+}
+
+export interface AdmissionFormListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  paymentStatus?: AdmissionFormPaymentStatus;
+  verificationStatus?: AdmissionFormVerificationStatus;
+}
+
+// ── CV / Resume Collection ───────────────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 5.
+
+export type CandidateSource = 'walk_in' | 'email' | 'referral' | 'job_portal' | 'other';
+export type CandidateStatus =
+  | 'new'
+  | 'forwarded_to_hr'
+  | 'forwarded_to_principal'
+  | 'under_review'
+  | 'interview_scheduled'
+  | 'interview_completed'
+  | 'selected'
+  | 'hold'
+  | 'rejected';
+
+export interface Candidate extends BaseEntity {
+  name: string;
+  mobile: string;
+  email?: string;
+  positionApplied: string;
+  department?: string;
+  qualification?: string;
+  experienceYears?: number;
+  resumeUrl: string;
+  source: CandidateSource;
+  dateReceived: string;
+  receivedById: string;
+  receivedByName: string;
+  status: CandidateStatus;
+  rejectionReason?: string;
+  forwardedTo?: string;
+  forwardedToName?: string;
+  forwardedAt?: string;
+  // Module 6 — Principal/HR-only fields
+  salaryDiscussionNotes?: string;
+  offeredSalary?: number;
+  joiningDate?: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface ForwardCandidatePayload {
+  to: 'hr' | 'principal';
+}
+
+export interface RejectCandidatePayload {
+  rejectionReason: string;
+}
+
+export interface SetCandidateFinalDecisionPayload {
+  decision: 'selected' | 'hold' | 'rejected';
+  salaryDiscussionNotes?: string;
+  offeredSalary?: number;
+  joiningDate?: string;
+  rejectionReason?: string;
+}
+
+export interface CandidateListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: CandidateStatus;
+  positionApplied?: string;
+  department?: string;
+}
+
+// ── Recruitment & Interview Tracking ─────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 6.
+
+export type InterviewMode = 'in_person' | 'phone' | 'video';
+export type InterviewStatus = 'scheduled' | 'completed' | 'no_show' | 'cancelled' | 'rescheduled';
+export type InterviewRecommendation = 'strong_yes' | 'yes' | 'hold' | 'no';
+
+export interface InterviewFeedback {
+  _id: string;
+  interviewerId: string;
+  interviewerName: string;
+  score: number;
+  criteriaScores?: Record<string, number>;
+  comments?: string;
+  recommendation: InterviewRecommendation;
+  submittedAt: string;
+}
+
+export interface Interview extends BaseEntity {
+  candidateId: string;
+  round: number;
+  scheduledAt: string;
+  mode: InterviewMode;
+  interviewerIds: string[];
+  interviewerNames: string[];
+  status: InterviewStatus;
+  feedback: InterviewFeedback[];
+  createdBy: string;
+  isDeleted: boolean;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface ScheduleInterviewPayload {
+  candidateId: string;
+  scheduledAt: string;
+  mode: InterviewMode;
+  interviewerIds: string[];
+}
+
+export interface RescheduleInterviewPayload {
+  scheduledAt: string;
+}
+
+export interface SetInterviewStatusPayload {
+  status: InterviewStatus;
+}
+
+export interface SubmitInterviewFeedbackPayload {
+  score: number;
+  criteriaScores?: Record<string, number>;
+  comments?: string;
+  recommendation: InterviewRecommendation;
+}
+
+export interface InterviewListOptions {
+  page?: number;
+  limit?: number;
+  candidateId?: string;
+  status?: InterviewStatus;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// ── Principal Recruitment Dashboard ──────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 7.
+
+export interface PrincipalRecruitmentScheduleItem {
+  type: 'interview' | 'visitor_appointment';
+  time: string;
+  label: string;
+  id: string;
+}
+
+export interface PrincipalRecruitmentDashboard {
+  counts: {
+    newInquiriesToday: number;
+    formsPendingVerification: number;
+    cvsAwaitingReview: number;
+    interviewsToday: number;
+  };
+  todaysSchedule: PrincipalRecruitmentScheduleItem[];
+  needsAttention: string[];
+}
+
+// ── Front Office Reports & Analytics ─────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 9.
+
+export interface FrontOfficeReportDateRange {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdmissionsReport {
+  totalInquiries: number;
+  conversionRate: number;
+  admissionTrend: Array<{ date: string; count: number }>;
+  counselorPerformance: Array<{ counsellor: string; leadsAssigned: number; converted: number; conversionRate: number }>;
+  sourceEffectiveness: Array<{ source: string; total: number; converted: number; conversionRate: number }>;
+  formFunnel: { issued: number; paid: number; submitted: number; verified: number };
+}
+
+export interface RecruitmentReport {
+  cvsReceived: number;
+  cvsByPosition: Array<{ position: string; count: number }>;
+  interviewsConducted: number;
+  hiringRate: number;
+  avgTimeToHireDays: number | null;
+  interviewerConsistency: Array<{ interviewer: string; avgScore: number; scoreVariance: number; feedbackCount: number }>;
+}
+
+export interface VisitorReport {
+  dailyVisitors: Array<{ date: string; count: number }>;
+  mostVisitedStaff: Array<{ staff: string; count: number }>;
+  peakVisitingHours: Array<{ hour: number; count: number }>;
+  avgVisitDurationMinutes: number | null;
+  purposeBreakdown: Array<{ purpose: string; count: number }>;
 }
 
 // ── Timetable & Academic Scheduling ──────────────────────────────────────────
@@ -3357,6 +3809,21 @@ export interface Exam extends BaseEntity {
   passPercent: number;
   subjectWiseMinPercent?: number;
   status: ExamStatus;
+  /** Scheduled window for the exam itself — used by the Academic Planning
+   *  Engine to reserve revision blocks and reflow teaching load. Optional so
+   *  existing exams (created before this field existed) don't break; the
+   *  planning engine simply skips exam-aware scheduling for an undated exam. */
+  startDate?: string;
+  endDate?: string;
+  /** Ref to AcademicYear.terms[].termId — distinct from the free-text
+   *  termLabel above, which stays for display/backwards-compat. */
+  termId?: string;
+  /** How many teaching days before startDate the engine should reserve as a
+   *  revision block for every class/subject this exam applies to. */
+  revisionLeadDays?: number;
+  questionPaperDueDate?: string;
+  answerSheetDueDate?: string;
+  resultDate?: string;
   createdBy?: string;
   updatedBy?: string;
 }
@@ -3372,6 +3839,13 @@ export interface CreateExamPayload {
   gradingBands?: GradeBand[];
   passPercent?: number;
   subjectWiseMinPercent?: number;
+  startDate?: string;
+  endDate?: string;
+  termId?: string;
+  revisionLeadDays?: number;
+  questionPaperDueDate?: string;
+  answerSheetDueDate?: string;
+  resultDate?: string;
 }
 
 export type UpdateExamPayload = Partial<CreateExamPayload>;
@@ -3894,12 +4368,25 @@ export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
 
 export type BloomsLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate' | 'create';
 
+export type ChapterDifficulty = 'easy' | 'moderate' | 'hard';
+export type ChapterPriority = 'core' | 'important' | 'supplementary';
+
 export interface SyllabusChapter extends BaseEntity {
   class: string;
   subject: string;
   chapterName: string;
   topics: string[];
   order?: number;
+  /** Periods (not weeks) the chapter is expected to take — sizes the
+   *  Academic Planning Engine's day-by-day distribution. Optional/undefined
+   *  for chapters created before this field existed or never estimated;
+   *  the engine falls back to a flat per-chapter share of the term. */
+  estimatedPeriods?: number;
+  difficulty?: ChapterDifficulty;
+  priority?: ChapterPriority;
+  /** 1 (light) – 5 (heavy) — biases how much of a revision block gets spent
+   *  on this chapter relative to others sharing the same exam window. */
+  revisionWeight?: number;
 }
 
 export interface QuestionUsageEntry {
@@ -4363,6 +4850,152 @@ export interface AddPlannerTaskPayload {
   title: string;
   type: PlannerTaskType;
   dueDate: string;
+}
+
+// ── Academic Planning Engine (v3 — supersedes Teacher Planner above) ──────────
+// See "The Planning Engine" design doc. AcademicYear/AcademicPlan are additive:
+// TeacherPlanner keeps working during the Phase 1→5 migration (dual-write).
+
+export interface AcademicTerm {
+  termId: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+}
+
+export type SpecialDayType =
+  | 'sports_day' | 'annual_day' | 'trip' | 'ptm' | 'activity' | 'function' | 'other';
+
+export interface AcademicSpecialDay {
+  date: string;
+  label: string;
+  type: SpecialDayType;
+  teachingImpact: 'full_day_off' | 'half_day' | 'none';
+}
+
+export type AcademicYearStatus = 'draft' | 'active' | 'closed';
+
+export interface AcademicYear extends BaseEntity {
+  label: string;
+  startDate: string;
+  endDate: string;
+  /** 0 = Sunday .. 6 = Saturday — school-configurable, not hardcoded Sat/Sun. */
+  weeklyOffDays: number[];
+  terms: AcademicTerm[];
+  specialDays: AcademicSpecialDay[];
+  status: AcademicYearStatus;
+}
+
+export interface UpsertAcademicYearPayload {
+  label: string;
+  startDate: string;
+  endDate: string;
+  weeklyOffDays: number[];
+  terms: AcademicTerm[];
+}
+
+export type AcademicPlanBlockType = 'teach' | 'revision' | 'assessment' | 'buffer';
+export type AcademicPlanDayStatus =
+  | 'pending' | 'completed' | 'partial' | 'carried_forward' | 'needs_extra_class';
+
+export interface AcademicPlanDay {
+  date: string;
+  periodSlotId?: string;
+  blockType: AcademicPlanBlockType;
+  chapterId?: string;
+  chapterName?: string;
+  topicTitle?: string;
+  examId?: string;
+  examName?: string;
+  status: AcademicPlanDayStatus;
+  carriedFromDate?: string;
+  note?: string;
+}
+
+export interface AcademicPlanHistoryEntry {
+  version: number;
+  changedBy: string;
+  changedAt: string;
+  reason: string;
+}
+
+export interface AcademicPlan extends BaseEntity {
+  academicYearId: string;
+  teacherId: string;
+  class: string;
+  section?: string;
+  subject: string;
+  version: number;
+  generatedFrom: 'engine' | 'manual_override';
+  days: AcademicPlanDay[];
+  history: AcademicPlanHistoryEntry[];
+}
+
+export interface GenerateAcademicPlanPayload {
+  class: string;
+  section?: string;
+  subject: string;
+  /** If omitted, the engine uses every non-deleted chapter for this
+   *  class+subject in stored order. */
+  chapterIds?: string[];
+}
+
+export interface AcademicPlanWarning {
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface AcademicPlanGenerationResult {
+  plan: AcademicPlan;
+  warnings: AcademicPlanWarning[];
+}
+
+export interface AcademicPlanTodayEntry {
+  class: string;
+  section?: string;
+  subject: string;
+  planId: string;
+  day: AcademicPlanDay;
+}
+
+export interface SetPlanDayStatusPayload {
+  date: string;
+  status: AcademicPlanDayStatus;
+  note?: string;
+}
+
+// ── Principal Academic Plan (read-only) ────────────────────────────────────────
+
+export interface AcademicPlanPrincipalOverviewEntry {
+  teacherId: string;
+  teacherName: string;
+  class: string;
+  section?: string;
+  subject: string;
+  planId: string | null;
+  hasPlan: boolean;
+  completedDays: number;
+  totalDays: number;
+}
+
+// ── Plan Alerts (automation — nightly risk detection) ──────────────────────────
+
+export type PlanAlertType = 'behind_schedule' | 'revision_at_risk' | 'no_plan';
+export type PlanAlertSeverity = 'info' | 'warning' | 'critical';
+
+export interface PlanAlert extends BaseEntity {
+  planId?: string;
+  teacherId: string;
+  teacherName: string;
+  class?: string;
+  section?: string;
+  subject?: string;
+  type: PlanAlertType;
+  severity: PlanAlertSeverity;
+  message: string;
+  daysBehind?: number;
+  detectedAt: string;
+  resolvedAt?: string;
 }
 
 // ── Worksheet Generator ────────────────────────────────────────────────────────

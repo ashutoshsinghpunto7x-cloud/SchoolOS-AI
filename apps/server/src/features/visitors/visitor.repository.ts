@@ -1,4 +1,4 @@
-import { Visitor, IVisitor, VisitorPurpose } from './visitor.model';
+import { Visitor, IVisitor, VisitorPurpose, VisitorStatus, VisitorIdProofType } from './visitor.model';
 
 export interface CreateVisitorData {
   schoolId: string;
@@ -7,6 +7,8 @@ export interface CreateVisitorData {
   purpose: VisitorPurpose;
   purposeNote?: string;
   personToVisit: string;
+  personToVisitId?: string;
+  appointmentId?: string;
   checkInTime: Date;
   recordedById: string;
   recordedByName: string;
@@ -17,6 +19,7 @@ export interface FindVisitorsOptions {
   limit?: number;
   search?: string;
   purpose?: VisitorPurpose;
+  status?: VisitorStatus;
   onlyOnSite?: boolean;
   date?: string;
   dateFrom?: string;
@@ -42,7 +45,7 @@ const dayBounds = (dateStr: string): { start: Date; end: Date } => {
 
 export const visitorRepository = {
   async create(data: CreateVisitorData): Promise<IVisitor> {
-    const visitor = new Visitor(data);
+    const visitor = new Visitor({ ...data, status: 'waiting' });
     return visitor.save();
   },
 
@@ -67,6 +70,7 @@ export const visitorRepository = {
       ];
     }
     if (opts.purpose) query.purpose = opts.purpose;
+    if (opts.status)  query.status = opts.status;
     if (opts.onlyOnSite) query.checkOutTime = { $exists: false };
 
     if (opts.date) {
@@ -87,12 +91,56 @@ export const visitorRepository = {
     return { visitors, total, page, limit };
   },
 
+  async updateStatus(
+    id: string,
+    schoolId: string,
+    update: {
+      status: VisitorStatus;
+      passNumber?: string;
+      passIssuedAt?: Date;
+      passValidUntil?: Date;
+      cancelReason?: string;
+      cancelledAt?: Date;
+    },
+  ): Promise<IVisitor | null> {
+    return Visitor.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: update },
+      { new: true },
+    );
+  },
+
+  async setPhoto(id: string, schoolId: string, photoUrl: string, photoKey: string): Promise<IVisitor | null> {
+    return Visitor.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: { photoUrl, photoKey } },
+      { new: true },
+    );
+  },
+
+  async setIdProof(
+    id: string, schoolId: string, idProofType: VisitorIdProofType, idProofUrl: string, idProofKey: string,
+  ): Promise<IVisitor | null> {
+    return Visitor.findOneAndUpdate(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: { idProofType, idProofUrl, idProofKey } },
+      { new: true },
+    );
+  },
+
   async checkOut(id: string, schoolId: string, checkOutTime: Date): Promise<IVisitor | null> {
     return Visitor.findOneAndUpdate(
       { _id: id, schoolId, isDeleted: false },
-      { $set: { checkOutTime } },
+      { $set: { checkOutTime, status: 'completed' } },
       { new: true },
     ).lean<IVisitor>();
+  },
+
+  /** Visit history for a phone number — repeat vendors/parents, most recent first. */
+  async findHistoryByPhone(schoolId: string, contactNumber: string, excludeId?: string): Promise<IVisitor[]> {
+    const query: Record<string, unknown> = { schoolId, contactNumber, isDeleted: false };
+    if (excludeId) query._id = { $ne: excludeId };
+    return Visitor.find(query).sort({ checkInTime: -1 }).limit(20).lean<IVisitor[]>();
   },
 
   async softDelete(id: string, schoolId: string, deletedBy: string): Promise<boolean> {

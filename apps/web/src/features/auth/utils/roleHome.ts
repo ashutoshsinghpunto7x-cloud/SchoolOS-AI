@@ -5,6 +5,7 @@ import { OPS_ROLES } from '@schoolos/types';
 export const getHomePathForRole = (role: UserRole): string => {
   if (role === 'teacher') return '/teacher';
   if (role === 'accountant') return '/accountant';
+  if (role === 'academic_coordinator') return '/coordinator';
   if (role === 'principal' || role === 'incharge') return '/principal';
   if (role === 'parent') return '/parent';
   if (role === 'driver') return '/driver';

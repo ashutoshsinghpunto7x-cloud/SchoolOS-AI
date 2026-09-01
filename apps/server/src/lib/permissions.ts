@@ -49,6 +49,10 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   ],
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
   accountant: ['students.view', 'payroll.view'],
+  // Owns the Academic Planning Engine's syllabus/calendar/exam setup — not a
+  // general admin permission set, scoped entirely to Academic Plan / Academic
+  // Year / exam-configuration endpoints via authorize() there, same as parent/driver below.
+  academic_coordinator: ['exams.view', 'exams.configure'],
   // Parent portal — scoped entirely to their own linked children via
   // Parent Workspace endpoints, not the general admin-facing permission set.
   parent: [],
@@ -72,6 +76,7 @@ export const ROLE_META: Record<UserRole, { label: string; description: string }>
   reception: { label: 'Receptionist', description: 'Student admissions and communication' },
   teacher: { label: 'Teacher', description: 'View students and communications' },
   accountant: { label: 'Accountant', description: 'Fee collection, salary, and expense management' },
+  academic_coordinator: { label: 'Academic Coordinator', description: 'Academic calendar, syllabus, and exam setup for the Academic Planning Engine' },
   parent: { label: 'Parent', description: 'View their own children\'s attendance, academics, and fees' },
   driver: { label: 'Driver', description: 'Start/end their assigned route and share live GPS location' },
   owner: { label: 'Owner', description: 'SchoolOS platform owner — Ops Center access' },

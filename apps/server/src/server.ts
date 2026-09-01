@@ -4,12 +4,18 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './lib/logger';
 import { startPlannerScheduler } from './features/teacher-planner/planner-notifications.job';
 import { startMockTestScheduler } from './features/mock-tests/mock-test-scheduler.job';
+import { startReceptionTaskAutoScheduler } from './features/reception-tasks/reception-task-auto.job';
+import { startFollowUpAutoScheduler } from './features/follow-ups/follow-up-auto.job';
+import { startPlanAlertScheduler } from './features/academic-plan/plan-alert.job';
 import { resumeStuckBulkJobs } from './features/communication/queue/bulk-processor';
 
 const start = async (): Promise<void> => {
   await connectDatabase();
   startPlannerScheduler();
   startMockTestScheduler();
+  startReceptionTaskAutoScheduler();
+  startFollowUpAutoScheduler();
+  startPlanAlertScheduler();
   // Picks back up any bulk send left mid-run by a crash/restart on this or
   // another instance — see bulk-processor.ts#resumeStuckBulkJobs.
   resumeStuckBulkJobs().catch((err) => logger.error('[BulkProcessor] Startup resume scan failed', { err }));

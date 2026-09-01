@@ -12,6 +12,12 @@ router.use(authenticate);
 router.get('/me',    employeeController.getMe);
 router.get('/me/qr', employeeController.getMyQr);
 
+// Reception's "person to visit" staff picker (Visitor Management) — must
+// precede /:id and stays open to reception, unlike the full directory below,
+// since it returns only name/designation/department (see employee.repository
+// findDirectory), never salary or personal fields.
+router.get('/directory', authorize('admin', 'principal', 'accountant', 'reception'), employeeController.directory);
+
 // ── Employee CRUD ─────────────────────────────────────────────────────────────
 router.post('/',   authorize('admin'), employeeController.create);
 router.get('/',    authorize('admin', 'principal', 'accountant'), employeeController.list);

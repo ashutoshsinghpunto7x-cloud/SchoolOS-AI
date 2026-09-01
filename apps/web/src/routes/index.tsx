@@ -93,6 +93,26 @@ const ReceptionAttendancePage = lazyPage(
   () => import('@/features/reception/pages/ReceptionAttendancePage'),
   'ReceptionAttendancePage',
 );
+const ReceptionTasksPage = lazyPage(
+  () => import('@/features/reception/pages/ReceptionTasksPage'),
+  'ReceptionTasksPage',
+);
+const FollowUpDashboardPage = lazyPage(
+  () => import('@/features/reception/pages/FollowUpDashboardPage'),
+  'FollowUpDashboardPage',
+);
+const CandidatesPage = lazyPage(
+  () => import('@/features/reception/pages/CandidatesPage'),
+  'CandidatesPage',
+);
+const CandidateDetailPage = lazyPage(
+  () => import('@/features/reception/pages/CandidateDetailPage'),
+  'CandidateDetailPage',
+);
+const FrontOfficeReportsPage = lazyPage(
+  () => import('@/features/reception/pages/FrontOfficeReportsPage'),
+  'FrontOfficeReportsPage',
+);
 const StudentListPage = lazyPage(
   () => import('@/features/students/pages/StudentListPage'),
   'StudentListPage',
@@ -385,6 +405,10 @@ const LeaveApprovalsPage = lazyPage(
   () => import('@/features/principal/pages/LeaveApprovalsPage'),
   'LeaveApprovalsPage',
 );
+const RecruitmentDashboardPage = lazyPage(
+  () => import('@/features/principal/pages/RecruitmentDashboardPage'),
+  'RecruitmentDashboardPage',
+);
 const PrincipalInsightsPage = lazyPage(
   () => import('@/features/principal/pages/PrincipalInsightsPage'),
   'PrincipalInsightsPage',
@@ -640,6 +664,38 @@ const PlannerBuildPage = lazyPage(
 const PlannerDashboardPage = lazyPage(
   () => import('@/features/teacher-planner/pages/PlannerDashboardPage'),
   'PlannerDashboardPage',
+);
+const AcademicPlanHubPage = lazyPage(
+  () => import('@/features/academic-plan/pages/AcademicPlanHubPage'),
+  'AcademicPlanHubPage',
+);
+const AcademicPlanDashboardPage = lazyPage(
+  () => import('@/features/academic-plan/pages/AcademicPlanDashboardPage'),
+  'AcademicPlanDashboardPage',
+);
+const PrincipalAcademicPlanPage = lazyPage(
+  () => import('@/features/academic-plan/pages/PrincipalAcademicPlanPage'),
+  'PrincipalAcademicPlanPage',
+);
+const PrincipalAcademicPlanTeacherPage = lazyPage(
+  () => import('@/features/academic-plan/pages/PrincipalAcademicPlanTeacherPage'),
+  'PrincipalAcademicPlanTeacherPage',
+);
+const PrincipalAcademicPlanDetailPage = lazyPage(
+  () => import('@/features/academic-plan/pages/PrincipalAcademicPlanDetailPage'),
+  'PrincipalAcademicPlanDetailPage',
+);
+const CoordinatorDashboardPage = lazyPage(
+  () => import('@/features/academic-year/pages/CoordinatorDashboardPage'),
+  'CoordinatorDashboardPage',
+);
+const CoordinatorCalendarPage = lazyPage(
+  () => import('@/features/academic-year/pages/CoordinatorCalendarPage'),
+  'CoordinatorCalendarPage',
+);
+const CoordinatorSyllabusPage = lazyPage(
+  () => import('@/features/academic-year/pages/CoordinatorSyllabusPage'),
+  'CoordinatorSyllabusPage',
 );
 const PrincipalPlannerPage = lazyPage(
   () => import('@/features/principal/pages/PrincipalPlannerPage'),
@@ -994,6 +1050,8 @@ export const router = createBrowserRouter([
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
                       { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
                       { path: 'teacher/planner/:cls/:subject/build',                  element: <PlannerBuildPage /> },
+                      { path: 'teacher/academic-plan',                                element: <AcademicPlanHubPage /> },
+                      { path: 'teacher/academic-plan/:cls/:section/:subject',         element: <AcademicPlanDashboardPage /> },
                       { path: 'teacher/syllabus-tracker',                             element: <SyllabusTrackerPage /> },
                       { path: 'teacher/worksheet-generator',                          element: <WorksheetHubPage /> },
                       { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },
@@ -1053,6 +1111,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/insights', element: <PrincipalInsightsPage /> },
                   { path: 'principal/approvals', element: <PendingApprovalsPage /> },
                   { path: 'principal/leave-approvals', element: <LeaveApprovalsPage /> },
+                  { path: 'principal/recruitment', element: <RecruitmentDashboardPage /> },
                   { path: 'principal/discount-approvals', element: <DiscountApprovalsPage /> },
                   { path: 'principal/test-approvals', element: <TestApprovalsPage /> },
                   { path: 'principal/class-teachers', element: <ClassTeachersPage backTo="/principal" backLabel="Principal Dashboard" /> },
@@ -1062,6 +1121,9 @@ export const router = createBrowserRouter([
                   { path: 'principal/planner', element: <PrincipalPlannerPage /> },
                   { path: 'principal/planner/teacher/:teacherId', element: <PrincipalPlannerTeacherPage /> },
                   { path: 'principal/planner/:teacherId/:cls/:subject', element: <PrincipalPlannerDetailPage /> },
+                  { path: 'principal/academic-plan', element: <PrincipalAcademicPlanPage /> },
+                  { path: 'principal/academic-plan/teacher/:teacherId', element: <PrincipalAcademicPlanTeacherPage /> },
+                  { path: 'principal/academic-plan/:teacherId/:cls/:section/:subject', element: <PrincipalAcademicPlanDetailPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },
@@ -1117,6 +1179,11 @@ export const router = createBrowserRouter([
               { path: 'reception', element: <ReceptionWorkspace /> },
               { path: 'reception/visitors', element: <VisitorLogPage /> },
               { path: 'reception/attendance', element: <ReceptionAttendancePage /> },
+              { path: 'reception/tasks', element: <ReceptionTasksPage /> },
+              { path: 'reception/follow-ups', element: <FollowUpDashboardPage /> },
+              { path: 'reception/candidates', element: <CandidatesPage /> },
+              { path: 'reception/candidates/:id', element: <CandidateDetailPage /> },
+              { path: 'reception/reports', element: <FrontOfficeReportsPage /> },
 
               // Students
               { path: 'students', element: <StudentListPage /> },
@@ -1194,14 +1261,30 @@ export const router = createBrowserRouter([
                 ],
               },
 
-              // Exam Configuration — admin/principal only, matching the server-side
-              // route restriction on exam mutations (static /new before /:id).
+              // Exam Configuration — admin/principal/academic_coordinator, matching
+              // the server-side route restriction on exam mutations (static /new
+              // before /:id).
               {
-                element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
+                element: <ProtectedRoute allowedRoles={['admin', 'principal', 'academic_coordinator']} />,
                 children: [
                   { path: 'exams', element: <ExamListPage /> },
                   { path: 'exams/new', element: <NewExamPage /> },
                   { path: 'exams/:id/edit', element: <EditExamPage /> },
+                ],
+              },
+
+              // Academic Coordinator Workspace — its own role, reuses the
+              // Principal's read-only Academic Plan drill-down screens via
+              // basePath (same convention as EmployeesPage's readOnly/basePath).
+              {
+                element: <ProtectedRoute allowedRoles={['academic_coordinator']} />,
+                children: [
+                  { path: 'coordinator', element: <CoordinatorDashboardPage /> },
+                  { path: 'coordinator/calendar', element: <CoordinatorCalendarPage /> },
+                  { path: 'coordinator/syllabus', element: <CoordinatorSyllabusPage /> },
+                  { path: 'coordinator/academic-plan', element: <PrincipalAcademicPlanPage basePath="/coordinator/academic-plan" homePath="/coordinator" /> },
+                  { path: 'coordinator/academic-plan/teacher/:teacherId', element: <PrincipalAcademicPlanTeacherPage basePath="/coordinator/academic-plan" /> },
+                  { path: 'coordinator/academic-plan/:teacherId/:cls/:section/:subject', element: <PrincipalAcademicPlanDetailPage /> },
                 ],
               },
 

@@ -55,6 +55,10 @@ export interface IEnquiry extends Document {
   followUpDate?: Date;
   lastContactedAt?: Date;
   stageHistory: IStageHistoryEntry[];
+  // Admission Form Tracking (Module 3) — set once a form is issued against
+  // this lead; AdmissionForm.enquiryId is still the source of truth, this is
+  // just a denormalized pointer for a quick profile-page lookup.
+  admissionFormId?: string;
   // Conversion
   conversionData?: IConversionData;
   // Meta
@@ -123,6 +127,7 @@ const enquirySchema = new Schema<IEnquiry>(
     assignedCounsellor:  { type: String, trim: true, maxlength: 100 },
     followUpDate:        { type: Date },
     lastContactedAt:     { type: Date },
+    admissionFormId:     { type: String },
     stageHistory:        { type: [stageHistorySchema], default: [] },
     conversionData:      { type: conversionDataSchema },
     tags:                { type: [String], default: [] },

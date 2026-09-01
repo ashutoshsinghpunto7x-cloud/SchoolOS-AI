@@ -3,11 +3,12 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, IndianRupee, ClipboardList, Wallet, Receipt, FileBarChart,
   Store, FileBarChart2, GraduationCap, Users, Upload, Settings2, Mail,
-  ChevronDown, Menu, X, Settings, LogOut,
+  ChevronDown, Menu, X, Settings, LogOut, Headphones,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 // Single combined header for the whole accountant workspace: nav (Dashboard/
 // Fees/Expenses/Other/Vendors/Reports, each its own bordered box) on the
@@ -128,10 +129,11 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
 // ── Profile dropdown — avatar opens Settings / Log Out, replacing the two
 //    standalone buttons that used to sit at the end of the nav row ──────────
 
-function ProfileMenu({ displayName, onClose, onNavigateSettings, onLogout }: {
+function ProfileMenu({ displayName, onClose, onNavigateSettings, onContactSupport, onLogout }: {
   displayName: string;
   onClose: () => void;
   onNavigateSettings: () => void;
+  onContactSupport: () => void;
   onLogout: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -167,6 +169,15 @@ function ProfileMenu({ displayName, onClose, onNavigateSettings, onLogout }: {
       >
         <Settings className="w-4 h-4 text-gray-400" />
         Settings
+      </button>
+      <button
+        type="button"
+        onClick={onContactSupport}
+        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+      >
+        <Headphones className="w-4 h-4 text-gray-400" />
+        <span className="flex-1">Contact Support</span>
+        <span className="text-xs text-gray-400">{SUPPORT_PHONE}</span>
       </button>
       <div className="border-t border-gray-50 mt-1 pt-1">
         <button
@@ -254,6 +265,7 @@ export function AccountantTopNav() {
                 displayName={displayName}
                 onClose={() => setProfileOpen(false)}
                 onNavigateSettings={() => { setProfileOpen(false); navigate('/settings'); }}
+                onContactSupport={() => { setProfileOpen(false); window.location.href = `tel:${SUPPORT_PHONE}`; }}
                 onLogout={() => { setProfileOpen(false); void logout(); }}
               />
             )}
@@ -291,6 +303,9 @@ export function AccountantTopNav() {
             </NavLink>
             <button type="button" onClick={() => navigate('/settings')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 text-left">
               <Settings className="w-4 h-4 text-gray-400" /> Settings
+            </button>
+            <button type="button" onClick={() => { window.location.href = `tel:${SUPPORT_PHONE}`; }} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 text-left">
+              <Headphones className="w-4 h-4 text-gray-400" /> Contact Support
             </button>
             <button type="button" onClick={() => void logout()} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-red-600 text-left">
               <LogOut className="w-4 h-4" /> Log Out

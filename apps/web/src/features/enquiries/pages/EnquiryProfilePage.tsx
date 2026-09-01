@@ -10,6 +10,8 @@ import { useEnquiry, useUpdateEnquiryStage, useDeleteEnquiry } from '../hooks/us
 import { StageBadge, STAGE_LABEL, STAGE_ORDER } from '../components/StageBadge';
 import { SourceBadge } from '../components/SourceBadge';
 import { EnquiryNotesPanel } from '../components/EnquiryNotesPanel';
+import { FollowUpPanel } from '../components/FollowUpPanel';
+import { AdmissionFormPanel } from '../components/AdmissionFormPanel';
 import { ConvertToStudentModal } from '../components/ConvertToStudentModal';
 import type { EnquiryStage } from '@schoolos/types';
 
@@ -278,9 +280,17 @@ export const EnquiryProfilePage = () => {
           </div>
         </div>
 
-        {/* Right column — notes */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 h-fit">
-          <EnquiryNotesPanel enquiryId={id!} />
+        {/* Right column — admission form + follow-ups + notes */}
+        <div className="flex flex-col gap-5 h-fit">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <AdmissionFormPanel enquiryId={id!} />
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <FollowUpPanel enquiryId={id!} />
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <EnquiryNotesPanel enquiryId={id!} />
+          </div>
         </div>
       </div>
 

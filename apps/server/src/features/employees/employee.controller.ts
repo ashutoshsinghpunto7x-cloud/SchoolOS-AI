@@ -14,6 +14,16 @@ export const employeeController = {
     } catch (err) { next(err); }
   },
 
+  /** Minimal staff-picker lookup for Reception's "person to visit" search —
+   *  returns name/designation/department only, never salary/personal fields. */
+  async directory(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const results = await employeeService.searchDirectory(req.query, ctx);
+      sendSuccess(res, results);
+    } catch (err) { next(err); }
+  },
+
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx    = buildAuthContext(req.user!);

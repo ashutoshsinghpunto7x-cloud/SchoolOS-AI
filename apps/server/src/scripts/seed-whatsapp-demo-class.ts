@@ -48,9 +48,11 @@ const DEMO_TEACHER = {
 // bare Indian numbers, matching the Student model's parentPhone format
 // (toMetaPhoneFormat() in whatsapp-cloud.provider.ts prefixes '91' at send time).
 const DUMMY_STUDENTS = [
-  { fullName: 'Asmit Patel', parentPhone: '9044011717' },
   { fullName: 'Ashutosh Singh', parentPhone: '9219583594' },
-  { fullName: 'Ekansh Saxena', parentPhone: '6386639197' },
+  { fullName: 'Ekansh', parentPhone: '6386639197' },
+  { fullName: 'Mradul', parentPhone: '9696758321' },
+  { fullName: 'Mohit', parentPhone: '7292942981' },
+  { fullName: 'Aman', parentPhone: '6306375483' },
 ];
 
 async function main() {

@@ -8,11 +8,21 @@ import type {
   EmployeeListOptions,
   CreateEmployeeLoginPayload,
   EmployeeQrImage,
+  EmployeeDirectoryEntry,
 } from '@schoolos/types';
 
 const BASE = '/employees';
 
 export const employeeApi = {
+  /** Minimal name/designation/department staff lookup — open to Reception for
+   *  the Visitor Management "person to visit" picker (see visitor.api.ts). */
+  async directory(search?: string): Promise<EmployeeDirectoryEntry[]> {
+    try {
+      const res = await apiClient.get<ApiResponse<EmployeeDirectoryEntry[]>>(`${BASE}/directory`, { params: { search } });
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
   async create(payload: CreateEmployeePayload): Promise<Employee> {
     try {
       const res = await apiClient.post<ApiResponse<Employee>>(BASE, payload);

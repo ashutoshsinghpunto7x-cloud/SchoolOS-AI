@@ -1,9 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { Suspense, useState, useEffect } from 'react';
-import { Loader2, Menu } from 'lucide-react';
+import { Loader2, Menu, Headphones } from 'lucide-react';
 import { OpsSidebar } from '../components/OpsSidebar';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 export function OpsLayout() {
   const { user, logout } = useAuth();
@@ -46,6 +47,14 @@ export function OpsLayout() {
                 </span>
               </span>
             )}
+            <button
+              onClick={() => { window.location.href = `tel:${SUPPORT_PHONE}`; }}
+              title={`Contact Support: ${SUPPORT_PHONE}`}
+              className="flex items-center gap-1.5 rounded-md border border-[#232D38] px-2 py-1.5 text-xs text-[#98A2B3] transition-colors hover:text-[#F4F6F8] sm:px-3"
+            >
+              <Headphones className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Contact Support</span>
+            </button>
             <button
               onClick={() => setShowChangePassword(true)}
               className="rounded-md border border-[#232D38] px-2 py-1.5 text-xs text-[#98A2B3] transition-colors hover:text-[#F4F6F8] sm:px-3"

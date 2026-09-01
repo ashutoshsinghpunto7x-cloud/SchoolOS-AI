@@ -9,6 +9,7 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "seed:teachers": "tsx src/scripts/seed-teachers.ts",
+    "migrate:teacher-planner-v3": "tsx src/scripts/migrate-teacher-planner-to-academic-plan.ts",
     "seed:ops-user": "tsx src/scripts/seed-ops-user.ts",
     "seed:reset-students": "tsx src/scripts/reset-and-seed-students.ts",
     "seed:replace-class-3a": "tsx src/scripts/replace-class-3a-roster.ts",
@@ -30,6 +31,7 @@
     "cleanup:stuck-perf-tests": "tsx src/scripts/cleanup-stuck-perf-tests.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1123.0",
     "@schoolos/types": "*",
     "@schoolos/utils": "*",
     "@simplewebauthn/server": "^13.3.2",

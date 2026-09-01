@@ -26,8 +26,7 @@ import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useTeacherTheme } from '../context/TeacherThemeContext';
 import { ThemeTogglePill } from '../components/ThemeTogglePill';
-
-const SUPPORT_PHONE = '9936860026';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 const STATUS_LABEL: Record<string, string> = {
   active:      'Active',

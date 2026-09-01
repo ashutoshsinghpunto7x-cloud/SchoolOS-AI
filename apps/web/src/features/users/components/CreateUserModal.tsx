@@ -13,6 +13,7 @@ const ROLES: { value: UserRole; label: string }[] = [
   { value: 'reception', label: 'Receptionist' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'accountant', label: 'Accountant' },
+  { value: 'academic_coordinator', label: 'Academic Coordinator' },
 ];
 
 export const CreateUserModal = ({ onClose }: CreateUserModalProps) => {

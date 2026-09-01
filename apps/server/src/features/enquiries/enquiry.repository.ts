@@ -145,6 +145,22 @@ export const enquiryRepository = {
     ).lean<IEnquiry>();
   },
 
+  /** Keeps `Enquiry.followUpDate` (the denormalized "next follow-up" shown
+   *  in the pipeline view) in sync with the Follow-Up Management module's
+   *  own `FollowUp` records (see follow-up.service.ts) — set on
+   *  create/reschedule, cleared (via $unset, not just left stale) when a
+   *  follow-up is completed with no next one scheduled. */
+  async setFollowUpDate(id: string, schoolId: string, followUpDate: Date | null): Promise<void> {
+    await Enquiry.updateOne(
+      { _id: id, schoolId, isDeleted: false },
+      followUpDate ? { $set: { followUpDate } } : { $unset: { followUpDate: '' } },
+    );
+  },
+
+  async setLastContactedAt(id: string, schoolId: string, lastContactedAt: Date): Promise<void> {
+    await Enquiry.updateOne({ _id: id, schoolId, isDeleted: false }, { $set: { lastContactedAt } });
+  },
+
   async updateStage(
     id: string,
     schoolId: string,

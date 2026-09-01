@@ -5,21 +5,39 @@ const PURPOSES = [
   'delivery', 'vendor', 'interview', 'other',
 ] as const;
 
+const ID_PROOF_TYPES = ['aadhaar', 'driving_license', 'voter_id', 'passport', 'other'] as const;
+
+const STATUSES = ['waiting', 'approved', 'in_meeting', 'completed', 'cancelled'] as const;
+
 const phoneSchema = z
   .string()
   .regex(/^[6-9]\d{9}$/, 'Must be a valid 10-digit Indian mobile number');
 
 export const createVisitorSchema = z.object({
-  name:           z.string().trim().min(2, 'Visitor name is required').max(100),
-  contactNumber:  phoneSchema,
-  purpose:        z.enum(PURPOSES),
-  purposeNote:    z.string().trim().max(500).optional(),
-  personToVisit:  z.string().trim().min(1, 'Please specify whom the visitor is here to see').max(100),
-  checkInTime:    z.string().optional(), // defaults to now if omitted
+  name:             z.string().trim().min(2, 'Visitor name is required').max(100),
+  contactNumber:    phoneSchema,
+  purpose:          z.enum(PURPOSES),
+  purposeNote:      z.string().trim().max(500).optional(),
+  personToVisit:    z.string().trim().min(1, 'Please specify whom the visitor is here to see').max(100),
+  personToVisitId:  z.string().trim().optional(),
+  appointmentId:    z.string().trim().optional(),
+  checkInTime:      z.string().optional(), // defaults to now if omitted
 });
 
 export const checkOutVisitorSchema = z.object({
   checkOutTime: z.string().optional(), // defaults to now if omitted
+});
+
+// Status transitions are validated against the current status in the
+// service layer (see visitor.service.ts STATUS_TRANSITIONS) — this schema
+// only checks the target status is a real one.
+export const updateVisitorStatusSchema = z.object({
+  status:       z.enum(STATUSES),
+  cancelReason: z.string().trim().max(500).optional(),
+});
+
+export const setIdProofSchema = z.object({
+  idProofType: z.enum(ID_PROOF_TYPES),
 });
 
 export const listVisitorsSchema = z.object({
@@ -27,8 +45,33 @@ export const listVisitorsSchema = z.object({
   limit:       z.coerce.number().int().min(1).max(200).default(50),
   search:      z.string().trim().optional(),
   purpose:     z.enum(PURPOSES).optional(),
+  status:      z.enum(STATUSES).optional(),
   onlyOnSite:  z.coerce.boolean().optional(), // checked in, not yet checked out
   date:        z.string().optional(),          // YYYY-MM-DD, defaults to today's log
   dateFrom:    z.string().optional(),
   dateTo:      z.string().optional(),
+});
+
+// ── Appointments ──────────────────────────────────────────────────────────────
+
+export const createAppointmentSchema = z.object({
+  visitorName:     z.string().trim().min(2, 'Visitor name is required').max(100),
+  visitorPhone:    phoneSchema,
+  purpose:         z.enum(PURPOSES),
+  purposeNote:     z.string().trim().max(500).optional(),
+  scheduledFor:    z.string().min(1, 'Scheduled date/time is required'),
+  personToVisit:   z.string().trim().min(1).max(100),
+  personToVisitId: z.string().trim().optional(),
+});
+
+export const listAppointmentsSchema = z.object({
+  page:     z.coerce.number().int().min(1).default(1),
+  limit:    z.coerce.number().int().min(1).max(200).default(50),
+  status:   z.enum(['scheduled', 'arrived', 'no_show', 'cancelled']).optional(),
+  dateFrom: z.string().optional(),
+  dateTo:   z.string().optional(),
+});
+
+export const cancelAppointmentSchema = z.object({
+  reason: z.string().trim().max(500).optional(),
 });

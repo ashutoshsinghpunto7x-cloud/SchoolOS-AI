@@ -58,6 +58,17 @@ export interface IExam extends Document {
   passPercent: number;             // overall min percent to pass
   subjectWiseMinPercent?: number;  // if set, each subject must individually clear this to pass overall
   status: ExamStatus;
+  // ── Scheduling (Academic Planning Engine) ──────────────────────────────────
+  // Optional — an exam created before these existed, or one a school never
+  // dates, simply gets skipped by the engine's exam-aware scheduling rather
+  // than blocking anything else about the exam (marks entry, report cards).
+  startDate?: Date;
+  endDate?: Date;
+  termId?: string;                 // ref AcademicYear.terms[].termId
+  revisionLeadDays?: number;       // teaching days to reserve before startDate
+  questionPaperDueDate?: Date;
+  answerSheetDueDate?: Date;
+  resultDate?: Date;
   // Audit
   createdBy?: string;
   updatedBy?: string;
@@ -118,6 +129,13 @@ const examSchema = new Schema<IExam>(
     passPercent:           { type: Number, required: true, min: 0, max: 100, default: 33 },
     subjectWiseMinPercent: { type: Number, min: 0, max: 100 },
     status:                { type: String, enum: EXAM_STATUSES, default: 'draft' },
+    startDate:             { type: Date },
+    endDate:               { type: Date },
+    termId:                { type: String },
+    revisionLeadDays:      { type: Number, min: 0 },
+    questionPaperDueDate:  { type: Date },
+    answerSheetDueDate:    { type: Date },
+    resultDate:            { type: Date },
     createdBy:             { type: String },
     updatedBy:             { type: String },
     isDeleted:             { type: Boolean, default: false },
@@ -133,5 +151,6 @@ examSchema.index({ schoolId: 1, isDeleted: 1, createdAt: -1 });
 examSchema.index({ schoolId: 1, isDeleted: 1, status: 1 });
 examSchema.index({ schoolId: 1, isDeleted: 1, classesApplicable: 1 });
 examSchema.index({ schoolId: 1, isDeleted: 1, examType: 1 });
+examSchema.index({ schoolId: 1, isDeleted: 1, startDate: 1 });
 
 export const Exam = mongoose.model<IExam>('Exam', examSchema);

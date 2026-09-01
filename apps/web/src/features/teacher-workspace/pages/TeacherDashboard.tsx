@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,CalendarClock,FileEdit,BarChart3,} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,CalendarClock,FileEdit,BarChart3,Sparkles,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useTeacherTheme } from '../context/TeacherThemeContext';
@@ -646,6 +646,22 @@ export function TeacherDashboard() {
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
         </button>
 
+        {/* ── Academic Plan (auto-generated) ────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() => navigate('/teacher/academic-plan')}
+          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
+        >
+          <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Academic Plan</p>
+            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Your day-by-day teaching plan, generated automatically</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+        </button>
+
         {SHOW_WIP_TEACHER_TOOLS && (
           <>
             {/* ── Teacher Planner ──────────────────────────────────────────── */}
@@ -658,8 +674,11 @@ export function TeacherDashboard() {
                 <CalendarClock className="w-5 h-5 text-[#059669] dark:text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Weekly schedule, progress, and pace tracking</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
+                  <span className="inline-flex items-center h-4 px-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 text-[9px] font-bold tracking-wide">LEGACY</span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Superseded by Academic Plan above — kept read/write for existing weekly plans</p>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
             </button>
