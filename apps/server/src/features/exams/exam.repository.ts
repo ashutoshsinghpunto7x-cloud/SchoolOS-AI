@@ -14,6 +14,13 @@ export interface CreateExamData {
   gradingBands: IGradeBand[];
   passPercent: number;
   subjectWiseMinPercent?: number;
+  startDate?: Date;
+  endDate?: Date;
+  termId?: string;
+  revisionLeadDays?: number;
+  questionPaperDueDate?: Date;
+  answerSheetDueDate?: Date;
+  resultDate?: Date;
   createdBy?: string;
 }
 
@@ -97,6 +104,17 @@ export const examRepository = {
   async findForClass(schoolId: string, cls: string): Promise<IExam[]> {
     return Exam.find({ schoolId, classesApplicable: cls, isDeleted: false, status: { $ne: 'draft' } })
       .sort({ createdAt: -1 })
+      .lean<IExam[]>();
+  },
+
+  /** Every dated exam for the school — feeds the Academic Planning Engine's
+   *  revision-block reservation (academic-plan.util.ts reserveExamBlocks),
+   *  which does its own class/subject match via examAppliesTo() rather than
+   *  a DB-level filter, since classesApplicable isn't guaranteed to agree on
+   *  digit-vs-Roman class naming with the caller's `class`. */
+  async findAllScheduled(schoolId: string): Promise<IExam[]> {
+    return Exam.find({ schoolId, isDeleted: false, startDate: { $exists: true } })
+      .sort({ startDate: 1 })
       .lean<IExam[]>();
   },
 };

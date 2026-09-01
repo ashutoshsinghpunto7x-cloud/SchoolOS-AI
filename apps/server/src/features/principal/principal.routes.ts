@@ -9,6 +9,7 @@ router.use(authenticate);
 router.use(authorize('admin', 'principal'));
 
 router.get('/dashboard', principalController.getDashboard);
+router.get('/recruitment-dashboard', principalController.getRecruitmentDashboard);
 router.get('/teachers-summary', principalController.getTeachersSummary);
 router.post('/briefing-summary', principalController.getBriefingSummary);
 

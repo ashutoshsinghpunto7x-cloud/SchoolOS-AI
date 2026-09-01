@@ -5,6 +5,9 @@ import mongoose, { Document, Schema } from 'mongoose';
 // rows for that class+subject (fuzzy name match, see question-extraction.service.ts),
 // or a new one created on the fly. Teachers can rename/merge afterward.
 
+export type ChapterDifficulty = 'easy' | 'moderate' | 'hard';
+export type ChapterPriority = 'core' | 'important' | 'supplementary';
+
 export interface ISyllabusChapter extends Document {
   schoolId: string;
   class: string;
@@ -12,9 +15,20 @@ export interface ISyllabusChapter extends Document {
   chapterName: string;
   topics: string[];
   order?: number;
+  // ── Sizing for the Academic Planning Engine ──────────────────────────────
+  // All optional — a chapter tagged before these existed (or never sized by
+  // a coordinator) just falls back to an even split of the term, same as
+  // Teacher Planner v2's manual "N weeks" input did.
+  estimatedPeriods?: number;
+  difficulty?: ChapterDifficulty;
+  priority?: ChapterPriority;
+  revisionWeight?: number; // 1 (light) – 5 (heavy)
   createdAt: Date;
   updatedAt: Date;
 }
+
+const CHAPTER_DIFFICULTIES: ChapterDifficulty[] = ['easy', 'moderate', 'hard'];
+const CHAPTER_PRIORITIES: ChapterPriority[] = ['core', 'important', 'supplementary'];
 
 const syllabusChapterSchema = new Schema<ISyllabusChapter>(
   {
@@ -24,6 +38,10 @@ const syllabusChapterSchema = new Schema<ISyllabusChapter>(
     chapterName: { type: String, required: true, trim: true },
     topics:      { type: [String], default: [] },
     order:       { type: Number },
+    estimatedPeriods: { type: Number, min: 1 },
+    difficulty:       { type: String, enum: CHAPTER_DIFFICULTIES },
+    priority:         { type: String, enum: CHAPTER_PRIORITIES },
+    revisionWeight:   { type: Number, min: 1, max: 5 },
   },
   { timestamps: true, versionKey: false },
 );

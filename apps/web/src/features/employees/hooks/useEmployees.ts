@@ -8,12 +8,24 @@ import type {
 } from '@schoolos/types';
 
 export const employeeKeys = {
-  all:    ['employees'] as const,
-  lists:  () => [...employeeKeys.all, 'list'] as const,
-  list:   (o: EmployeeListOptions) => [...employeeKeys.lists(), o] as const,
-  detail: (id: string) => [...employeeKeys.all, 'detail', id] as const,
-  qr:     (id: string) => [...employeeKeys.all, 'qr', id] as const,
+  all:       ['employees'] as const,
+  lists:     () => [...employeeKeys.all, 'list'] as const,
+  list:      (o: EmployeeListOptions) => [...employeeKeys.lists(), o] as const,
+  detail:    (id: string) => [...employeeKeys.all, 'detail', id] as const,
+  qr:        (id: string) => [...employeeKeys.all, 'qr', id] as const,
+  directory: (search?: string) => [...employeeKeys.all, 'directory', search ?? ''] as const,
 };
+
+/** Reception's "person to visit" staff search (Visitor Management). Only
+ *  fires once 2+ characters are typed, and only searches minimal fields
+ *  (see employee.api.ts directory()) — never the full employee record. */
+export const useEmployeeDirectory = (search: string) =>
+  useQuery({
+    queryKey: employeeKeys.directory(search),
+    queryFn:  () => employeeApi.directory(search),
+    enabled:  search.trim().length >= 2,
+    placeholderData: keepPreviousData,
+  });
 
 export const useEmployeeList = (opts: EmployeeListOptions = {}) =>
   useQuery({

@@ -161,6 +161,27 @@ export const ReceptionWorkspace = () => {
               accent="amber"
               onClick={() => navigate('/reception/attendance')}
             />
+            <ReceptionActionCard
+              title="My Tasks"
+              description="Everything you need to follow up on today, including tasks raised automatically."
+              buttonLabel="Open Tasks"
+              accent="purple"
+              onClick={() => navigate('/reception/tasks')}
+            />
+            <ReceptionActionCard
+              title="Today's Follow-ups"
+              description="Every pending admission lead follow-up, overdue ones first."
+              buttonLabel="View Follow-ups"
+              accent="emerald"
+              onClick={() => navigate('/reception/follow-ups')}
+            />
+            <ReceptionActionCard
+              title="CVs / Resumes"
+              description="Log a candidate's resume and forward it to HR or the Principal."
+              buttonLabel="Open CV Inbox"
+              accent="purple"
+              onClick={() => navigate('/reception/candidates')}
+            />
           </div>
         </div>
       </PageContainer>

@@ -7,7 +7,7 @@ import { questionBankController } from './question-bank.controller';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('admin', 'principal', 'teacher'));
+router.use(authorize('admin', 'principal', 'teacher', 'academic_coordinator'));
 
 // Extraction — static routes before /:id-style routes
 router.post('/extract/image', aiImageUploadMiddleware, questionBankController.extractFromImage);

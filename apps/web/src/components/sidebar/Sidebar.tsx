@@ -116,7 +116,8 @@ const NAV_ITEMS_HR = [
 // Password" was dropped here — it's already reachable from the profile
 // dropdown in the topbar (see Topbar.tsx ProfileMenu), so it was a dupe.
 const NAV_SECTION_PRINCIPAL_OVERVIEW = [
-  { label: 'Dashboard',  icon: LayoutDashboard, path: '/principal',           end: true  },
+  { label: 'Dashboard',    icon: LayoutDashboard, path: '/principal',              end: true  },
+  { label: 'Recruitment',  icon: UserPlus,        path: '/principal/recruitment',  end: false },
 ] as const;
 
 // Everything a principal needs to sign off on — grouped together since it's
@@ -128,6 +129,7 @@ const NAV_SECTION_PRINCIPAL_APPROVALS = [
 
 const NAV_SECTION_PRINCIPAL_ACADEMICS = [
   { label: 'Planner',              icon: CalendarClock,  path: '/principal/planner',       end: false },
+  { label: 'Academic Plan',        icon: Sparkles,       path: '/principal/academic-plan', end: false },
   { label: 'Exams',                icon: ClipboardList,  path: '/exams',                    end: false },
   { label: 'Report Card Templates', icon: FileBarChart,  path: '/report-card-templates',   end: false },
   { label: 'Report Cards',         icon: ClipboardCheck, path: '/term-report-cards',        end: false },
@@ -156,6 +158,18 @@ const NAV_SECTIONS_PRINCIPAL = [
   { title: 'Operations', items: NAV_SECTION_PRINCIPAL_OPERATIONS },
 ] as const;
 
+// Academic Coordinator — a focused, four-item nav (calendar + syllabus setup,
+// exam configuration, and the same read-only Academic Plan oversight
+// Principal gets) rather than the full Principal nav, since a coordinator's
+// write scope is deliberately narrower. See "The Planning Engine" design doc.
+const NAV_ITEMS_COORDINATOR = [
+  { label: 'Dashboard',      icon: LayoutDashboard, path: '/coordinator',            end: true  },
+  { label: 'Academic Plan',  icon: Sparkles,         path: '/coordinator/academic-plan', end: false },
+  { label: 'Syllabus Setup', icon: BookOpen,         path: '/coordinator/syllabus',   end: false },
+  { label: 'Academic Calendar', icon: CalendarDays,  path: '/coordinator/calendar',   end: false },
+  { label: 'Exams',          icon: ClipboardList,     path: '/exams',                  end: false },
+] as const;
+
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
   principal: 'Principal',
@@ -163,6 +177,7 @@ const ROLE_LABEL: Record<string, string> = {
   reception: 'Receptionist',
   teacher: 'Teacher',
   accountant: 'Accountant',
+  academic_coordinator: 'Academic Coordinator',
 };
 
 // Isolated so its badge-count hooks only fire for principal/incharge sessions —
@@ -334,6 +349,21 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
               Reception Portal
             </p>
             {NAV_ITEMS_RECEPTION.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                to={item.path}
+                icon={item.icon}
+                label={item.label}
+                end={item.end}
+              />
+            ))}
+          </>
+        ) : user?.role === 'academic_coordinator' ? (
+          <>
+            <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Coordinator Portal
+            </p>
+            {NAV_ITEMS_COORDINATOR.map((item) => (
               <SidebarNavItem
                 key={item.path}
                 to={item.path}

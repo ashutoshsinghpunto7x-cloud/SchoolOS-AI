@@ -12,8 +12,7 @@ import {
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { ParentScreenHeader } from '../components/ParentScreenHeader';
-
-const SUPPORT_PHONE = '9936860026';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 8 },

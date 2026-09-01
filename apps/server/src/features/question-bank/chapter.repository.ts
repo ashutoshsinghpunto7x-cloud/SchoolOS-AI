@@ -70,4 +70,19 @@ export const chapterRepository = {
       topics: topic ? [topic] : [],
     });
   },
+
+  /** Sets the Academic Planning Engine's sizing fields on a chapter — kept as
+   *  a narrow, separate write (rather than folding into findOrCreate) since
+   *  it's coordinator-driven syllabus setup, not AI-extraction reconciliation. */
+  async updateSizing(
+    id: string,
+    schoolId: string,
+    data: { estimatedPeriods?: number; difficulty?: string; priority?: string; revisionWeight?: number },
+  ): Promise<ISyllabusChapter | null> {
+    return SyllabusChapter.findOneAndUpdate(
+      { _id: id, schoolId },
+      { $set: data },
+      { new: true },
+    ).lean<ISyllabusChapter>();
+  },
 };

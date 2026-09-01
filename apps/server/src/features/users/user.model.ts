@@ -9,6 +9,9 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  // Owns syllabus/calendar/exam setup for the Academic Planning Engine — see
+  // packages/types UserRole for the full rationale.
+  | 'academic_coordinator'
   | 'parent'
   | 'driver'
   // Internal SchoolOS staff roles — Ops Center access only, not tied to a real school tenant.
@@ -73,7 +76,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'principal', 'incharge', 'reception', 'teacher', 'accountant', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      enum: ['admin', 'principal', 'incharge', 'reception', 'teacher', 'accountant', 'academic_coordinator', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
       required: true,
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, ArrowLeft, ChevronRight, ChevronDown, Clock, Settings, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, ArrowLeft, ChevronRight, ChevronDown, Clock, Settings, ShieldCheck, LogOut, Headphones } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -8,6 +8,7 @@ import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
 import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSearchBar';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/gradient';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -188,7 +189,7 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
 // ── Profile dropdown (principal) ───────────────────────────────────────────────
 // Principal's Settings link lives here instead of the sidebar — see Sidebar.tsx.
 
-function ProfileMenu({ displayName, roleLabel, onClose }: { displayName: string; roleLabel: string; onClose: () => void }) {
+function ProfileMenu({ displayName, roleLabel, showSettings, onClose }: { displayName: string; roleLabel: string; showSettings: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
@@ -217,21 +218,34 @@ function ProfileMenu({ displayName, roleLabel, onClose }: { displayName: string;
         <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
         <p className="text-xs text-gray-400">{roleLabel}</p>
       </div>
+      {showSettings && (
+        <>
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/settings'); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+          >
+            <Settings className="w-4 h-4 text-gray-400" />
+            Settings
+          </button>
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/principal/change-password'); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
+          >
+            <ShieldCheck className="w-4 h-4 text-gray-400" />
+            Change Password
+          </button>
+        </>
+      )}
       <button
         type="button"
-        onClick={() => { onClose(); navigate('/settings'); }}
+        onClick={() => { onClose(); window.location.href = `tel:${SUPPORT_PHONE}`; }}
         className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
       >
-        <Settings className="w-4 h-4 text-gray-400" />
-        Settings
-      </button>
-      <button
-        type="button"
-        onClick={() => { onClose(); navigate('/principal/change-password'); }}
-        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors text-left"
-      >
-        <ShieldCheck className="w-4 h-4 text-gray-400" />
-        Change Password
+        <Headphones className="w-4 h-4 text-gray-400" />
+        <span className="flex-1">Contact Support</span>
+        <span className="text-xs text-gray-400">{SUPPORT_PHONE}</span>
       </button>
       <div className="border-t border-gray-50 mt-1 pt-1">
         <button
@@ -261,6 +275,18 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const isTeacher = user?.role === 'teacher';
   // 'incharge' mirrors 'principal' 1:1 today — same topbar behavior.
   const isPrincipal = user?.role === 'principal' || user?.role === 'incharge';
+  // Reception, Administration, and any other role landing on this generic
+  // Topbar (i.e. not teacher/parent/accountant/driver, each of which has its
+  // own chrome) still needs a way to reach Contact Support + Log Out, so the
+  // avatar opens the same dropdown as the principal's, minus the
+  // principal-only Settings/Change Password links.
+  const hasProfileMenu = isPrincipal || (!isTeacher && !isAccountant && !!user);
+  const ROLE_LABELS: Record<string, string> = {
+    incharge: 'Incharge',
+    principal: 'Principal',
+    reception: 'Reception',
+    admin: 'Administrator',
+  };
   // Accountant, Teacher, and Principal all share the same pill/chip topbar
   // treatment, rendered in the same purple accent.
   const usePillTopbar = isAccountant || isTeacher || isPrincipal;
@@ -491,7 +517,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               onClick={
                 isTeacher
                   ? () => navigate('/teacher/profile')
-                  : isPrincipal
+                  : hasProfileMenu
                   ? () => setProfileMenuOpen((v) => !v)
                   : undefined
               }
@@ -514,8 +540,13 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               )}
               {!isTeacher && <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block mr-1" />}
             </button>
-            {isPrincipal && profileMenuOpen && (
-              <ProfileMenu displayName={displayName} roleLabel={user?.role === 'incharge' ? 'Incharge' : 'Principal'} onClose={() => setProfileMenuOpen(false)} />
+            {hasProfileMenu && profileMenuOpen && (
+              <ProfileMenu
+                displayName={displayName}
+                roleLabel={(user?.role && ROLE_LABELS[user.role]) || 'Staff'}
+                showSettings={isPrincipal}
+                onClose={() => setProfileMenuOpen(false)}
+              />
             )}
           </div>
         </div>

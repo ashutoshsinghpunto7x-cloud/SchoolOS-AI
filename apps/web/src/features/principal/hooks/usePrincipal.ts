@@ -1,11 +1,12 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { principalApi } from '../api/principal.api';
-import type { PrincipalDashboardData, TeachersSummaryData, PrincipalBriefingSummary } from '@schoolos/types';
+import type { PrincipalDashboardData, TeachersSummaryData, PrincipalBriefingSummary, PrincipalRecruitmentDashboard } from '@schoolos/types';
 
 export const principalKeys = {
   all: ['principal'] as const,
   dashboard: () => [...principalKeys.all, 'dashboard'] as const,
   teachersSummary: (date?: string) => [...principalKeys.all, 'teachers-summary', date ?? ''] as const,
+  recruitmentDashboard: () => [...principalKeys.all, 'recruitment-dashboard'] as const,
 };
 
 // `enabled` defaults to true (principal's own dashboard always wants this).
@@ -31,6 +32,13 @@ export const useTeachersSummary = (date?: string) =>
   useQuery<TeachersSummaryData, Error>({
     queryKey: principalKeys.teachersSummary(date),
     queryFn: () => principalApi.getTeachersSummary(date),
+  });
+
+export const useRecruitmentDashboard = () =>
+  useQuery<PrincipalRecruitmentDashboard, Error>({
+    queryKey: principalKeys.recruitmentDashboard(),
+    queryFn: principalApi.getRecruitmentDashboard,
+    refetchInterval: 60 * 1000,
   });
 
 // On-demand action (not a query) — the Daily Briefing card's "Summarize with

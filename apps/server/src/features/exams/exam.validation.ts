@@ -30,7 +30,7 @@ const subjectConfigSchema = z.object({
 
 // ── Create / Update ───────────────────────────────────────────────────────────
 
-export const createExamSchema = z.object({
+const baseExamSchema = z.object({
   name:                  z.string({ required_error: 'name is required' }).min(1).trim(),
   examType:              z.enum(EXAM_TYPES, { required_error: 'examType is required' }),
   termLabel:             z.string().trim().optional(),
@@ -41,9 +41,27 @@ export const createExamSchema = z.object({
   gradingBands:          z.array(gradeBandSchema).default([]),
   passPercent:           z.number().min(0).max(100).default(33),
   subjectWiseMinPercent: z.number().min(0).max(100).optional(),
+  startDate:             z.coerce.date().optional(),
+  endDate:               z.coerce.date().optional(),
+  termId:                z.string().trim().optional(),
+  revisionLeadDays:      z.number().min(0).optional(),
+  questionPaperDueDate:  z.coerce.date().optional(),
+  answerSheetDueDate:    z.coerce.date().optional(),
+  resultDate:            z.coerce.date().optional(),
 });
 
-export const updateExamSchema = createExamSchema.partial();
+const dateRangeRefinement = (data: { startDate?: Date; endDate?: Date }) =>
+  !data.startDate || !data.endDate || data.endDate >= data.startDate;
+
+export const createExamSchema = baseExamSchema.refine(
+  dateRangeRefinement,
+  { message: 'endDate cannot be before startDate', path: ['endDate'] },
+);
+
+export const updateExamSchema = baseExamSchema.partial().refine(
+  dateRangeRefinement,
+  { message: 'endDate cannot be before startDate', path: ['endDate'] },
+);
 
 export const updateExamStatusSchema = z.object({
   status: z.enum(EXAM_STATUSES, { required_error: 'status is required' }),

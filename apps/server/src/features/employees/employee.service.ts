@@ -216,6 +216,13 @@ export const employeeService = {
     return withQr;
   },
 
+  async searchDirectory(rawQuery: unknown, ctx: AuthContext) {
+    const search = typeof (rawQuery as Record<string, unknown>)?.search === 'string'
+      ? (rawQuery as Record<string, string>).search
+      : undefined;
+    return employeeRepository.findDirectory(ctx.schoolId, search);
+  },
+
   async listEmployees(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedEmployees> {
     const opts = listEmployeesSchema.parse(rawQuery);
     const options: FindEmployeesOptions = {

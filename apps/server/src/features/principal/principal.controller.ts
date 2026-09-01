@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { principalService } from './principal.service';
+import { getRecruitmentDashboard } from './principal-recruitment.service';
 import { auditService } from '../audit/audit.service';
 import { sendSuccess } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
@@ -53,6 +54,19 @@ export const principalController = {
       });
 
       sendSuccess(res, data, 'Briefing summary generated');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /** Reception Management Module SRD, Module 7 — the Principal's combined
+   *  recruitment + admissions overview (CVs awaiting review, forms pending
+   *  verification, today's interviews/visitor appointments merged). */
+  async getRecruitmentDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const data = await getRecruitmentDashboard(ctx.schoolId);
+      sendSuccess(res, data, 'Recruitment dashboard loaded');
     } catch (err) {
       next(err);
     }

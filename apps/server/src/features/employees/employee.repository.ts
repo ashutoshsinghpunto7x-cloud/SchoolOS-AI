@@ -91,6 +91,23 @@ export const employeeRepository = {
     return Employee.findOne({ _id: id, schoolId, isDeleted: false }).lean<IEmployee>();
   },
 
+  /** Minimal staff-picker lookup (name/designation/department only) — used by
+   *  Reception's "person to visit" search (Visitor Management), which needs
+   *  to find a staff member by name without exposing salary/personal fields
+   *  the full employee record carries. */
+  async findDirectory(schoolId: string, search?: string): Promise<Pick<IEmployee, '_id' | 'fullName' | 'designation' | 'department'>[]> {
+    const query: Record<string, unknown> = { schoolId, isDeleted: false, status: 'active' };
+    if (search?.trim()) {
+      const regex = new RegExp(search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      query.fullName = regex;
+    }
+    return Employee.find(query)
+      .select('fullName designation department')
+      .sort({ fullName: 1 })
+      .limit(20)
+      .lean();
+  },
+
   async findByEmployeeId(employeeId: string, schoolId: string): Promise<IEmployee | null> {
     return Employee.findOne({ employeeId, schoolId, isDeleted: false }).lean<IEmployee>();
   },
