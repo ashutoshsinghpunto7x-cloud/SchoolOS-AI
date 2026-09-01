@@ -12,6 +12,8 @@ import type {
   UpdateTimetableStatusPayload,
   CreateSubstitutePayload,
   UpdateSubstitutePayload,
+  MasterGridQuery,
+  SetMasterGridCellPayload,
 } from '@schoolos/types';
 
 export const timetableKeys = {
@@ -25,6 +27,7 @@ export const timetableKeys = {
   substitutes:  (opts: SubstituteListOptions) => [...timetableKeys.all, 'substitutes', opts] as const,
   needsSubstitute: (date: string) => [...timetableKeys.all, 'substitutes-needed', date] as const,
   suggestTeachers: (cls: string, section: string) => [...timetableKeys.all, 'suggest-teachers', cls, section] as const,
+  masterGrid: (query: MasterGridQuery) => [...timetableKeys.all, 'master-grid', query] as const,
 };
 
 // ── Period Slots ──────────────────────────────────────────────────────────────
@@ -203,6 +206,25 @@ export const useSuggestSubstituteTeachers = (cls: string, section: string, exclu
     queryFn:  () => timetableApi.suggestSubstituteTeachers(cls, section, excludeTeacherId, dayOfWeek),
     enabled:  enabled && !!cls && !!section,
   });
+
+// ── Master (whole-school) grid ─────────────────────────────────────────────
+
+export const useMasterGrid = (query: MasterGridQuery) =>
+  useQuery({
+    queryKey: timetableKeys.masterGrid(query),
+    queryFn:  () => timetableApi.getMasterGrid(query),
+    enabled:  !!query.academicYear,
+  });
+
+export const useSetMasterGridCell = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SetMasterGridCellPayload) => timetableApi.setMasterGridCell(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: timetableKeys.all });
+    },
+  });
+};
 
 export const useDeleteSubstitute = (id: string) => {
   const qc = useQueryClient();

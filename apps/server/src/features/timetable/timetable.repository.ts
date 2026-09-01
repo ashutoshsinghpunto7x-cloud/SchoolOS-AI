@@ -50,6 +50,15 @@ export const timetableRepository = {
     }).lean<ITimetable>();
   },
 
+  /** Every active timetable for a school/year(/term), uncapped — backs the
+   *  whole-school master grid, which needs every class×section at once rather
+   *  than a paginated page of them. */
+  async findAllActiveForYear(schoolId: string, academicYear: string, term?: string): Promise<ITimetable[]> {
+    const query: Record<string, unknown> = { schoolId, academicYear, isDeleted: false };
+    if (term) query.term = term;
+    return Timetable.find(query).lean<ITimetable[]>();
+  },
+
   async findAll(schoolId: string, opts: FindTimetablesOptions = {}) {
     const page  = Math.max(1, opts.page ?? 1);
     const limit = Math.min(100, Math.max(1, opts.limit ?? 20));
@@ -104,17 +113,20 @@ export const timetableRepository = {
     entry: ITimetableEntry & { updatedBy: string },
   ): Promise<ITimetable | null> {
     const { updatedBy, ...entryData } = entry;
+    // $elemMatch scopes both fields to the SAME array element — without it,
+    // Mongo's positional $ can resolve to the wrong entry whenever some other
+    // entry merely shares dayOfWeek and another merely shares slotId (true
+    // for virtually any full week of entries), silently overwriting the
+    // wrong day/slot instead of the one just edited.
+    const matchEntry = { dayOfWeek: entryData.dayOfWeek, slotId: entryData.slotId };
     const existing = await Timetable.findOne({
       _id: id, schoolId, isDeleted: false,
-      'entries.dayOfWeek': entryData.dayOfWeek,
-      'entries.slotId':    entryData.slotId,
+      entries: { $elemMatch: matchEntry },
     });
 
     if (existing) {
       return Timetable.findOneAndUpdate(
-        { _id: id, schoolId, isDeleted: false,
-          'entries.dayOfWeek': entryData.dayOfWeek,
-          'entries.slotId':    entryData.slotId },
+        { _id: id, schoolId, isDeleted: false, entries: { $elemMatch: matchEntry } },
         { $set: { 'entries.$': entryData, updatedBy } },
         { new: true },
       ).lean<ITimetable>();

@@ -18,6 +18,9 @@ import type {
   PaginatedResponse,
   NeedsSubstituteEntry,
   SubstituteSuggestion,
+  MasterGridResponse,
+  MasterGridQuery,
+  SetMasterGridCellPayload,
 } from '@schoolos/types';
 
 const BASE = '/timetable';
@@ -134,6 +137,22 @@ export const timetableApi = {
   detectConflicts: async (): Promise<ConflictInfo[]> => {
     try {
       const res = await apiClient.get<{ data: ConflictInfo[] }>(`${BASE}/conflicts`);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  // ── Master (whole-school) grid ───────────────────────────────────────────
+
+  getMasterGrid: async (query: MasterGridQuery): Promise<MasterGridResponse> => {
+    try {
+      const res = await apiClient.get<{ data: MasterGridResponse }>(`${BASE}/master-grid`, { params: query });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  setMasterGridCell: async (payload: SetMasterGridCellPayload): Promise<Timetable> => {
+    try {
+      const res = await apiClient.patch<{ data: Timetable }>(`${BASE}/master-grid/cell`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

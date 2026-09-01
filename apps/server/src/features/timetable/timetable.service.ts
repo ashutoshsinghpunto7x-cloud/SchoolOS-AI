@@ -11,6 +11,7 @@ import { userRepository } from '../users/user.repository';
 import { notificationRepository } from '../notifications/notification.repository';
 import { internalMessageRepository } from '../internal-messages/internal-message.repository';
 import { teacherTimetableRepository } from '../teacher-timetable/teacher-timetable.repository';
+import { schoolClassRepository } from '../school-classes/school-class.repository';
 import {
   createPeriodSlotSchema, updatePeriodSlotSchema,
   createTimetableSchema, updateTimetableSchema,
@@ -18,7 +19,9 @@ import {
   updateTimetableStatusSchema,
   createSubstituteSchema, updateSubstituteSchema,
   listTimetablesSchema, listSubstitutesSchema,
+  masterGridQuerySchema, masterGridCellSchema,
 } from './timetable.validation';
+import type { MasterGridResponse, MasterGridRow, MasterGridCell } from '@schoolos/types';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
@@ -283,6 +286,97 @@ export const timetableService = {
 
   async detectConflicts(ctx: AuthContext) {
     return timetableRepository.detectAllConflicts(ctx.schoolId);
+  },
+
+  // ── Master (whole-school) Timetable Grid ───────────────────────────────────
+  // One page, every class×section as a row, every period as a column — the
+  // digital equivalent of the paper master timetable on the staff room wall.
+  // Reads/writes the same Timetable documents the per-class grid uses, so
+  // there's no separate dataset to drift out of sync.
+
+  /**
+   * "Master" is day-agnostic: each cell shows one fixed weekly pattern rather
+   * than a per-day schedule. Since writes (see setMasterGridCell) always fan
+   * an entry out across every day a period applies to, all of a slot's day
+   * entries should already agree — picking the earliest weekday is just a
+   * defensive tie-break if they were ever edited out of band (e.g. directly
+   * through the per-class grid on only one day).
+   */
+  async getMasterGrid(rawQuery: unknown, ctx: AuthContext): Promise<MasterGridResponse> {
+    const { academicYear, term } = masterGridQuerySchema.parse(rawQuery);
+
+    const [periods, classes, timetables] = await Promise.all([
+      periodSlotRepository.findAll(ctx.schoolId),
+      schoolClassRepository.findAll(ctx.schoolId),
+      timetableRepository.findAllActiveForYear(ctx.schoolId, academicYear, term),
+    ]);
+
+    const orderedPeriods = [...periods].sort((a, b) => a.orderIndex - b.orderIndex);
+    const timetableByKey = new Map(timetables.map((tt) => [`${tt.class}||${tt.section}`, tt]));
+
+    const rows: MasterGridRow[] = [];
+    for (const cls of classes) {
+      for (const section of cls.sections) {
+        const tt = timetableByKey.get(`${cls.name}||${section}`);
+        const cells: Record<string, MasterGridCell | null> = {};
+
+        for (const slot of orderedPeriods) {
+          const slotId = String(slot._id);
+          if (slot.isBreak) { cells[slotId] = null; continue; }
+
+          const dayEntries = (tt?.entries ?? [])
+            .filter((e) => e.slotId === slotId)
+            .sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+          const chosen = dayEntries[0];
+          cells[slotId] = chosen
+            ? { subjectName: chosen.subjectName, teacherId: chosen.teacherId, teacherName: chosen.teacherName, roomNumber: chosen.roomNumber }
+            : null;
+        }
+
+        rows.push({ class: cls.name, section, timetableId: tt ? tt._id.toString() : undefined, cells });
+      }
+    }
+
+    // Mongoose's lean IPeriodSlot (ObjectId/Date fields) vs. the shared
+    // PeriodSlot type (string fields) only differ pre-serialization — the
+    // JSON response sendSuccess writes matches the shared type at runtime.
+    return { periods: orderedPeriods as unknown as MasterGridResponse['periods'], rows, academicYear, term };
+  },
+
+  /**
+   * Writes one master-grid cell through to the underlying per-class Timetable,
+   * fanning it out across every weekday the period slot applies to (so the
+   * grid stays a single fixed pattern, not six independent day schedules).
+   * Delegates each day's write to upsertEntry/removeEntry so conflict
+   * detection, audit logging, and the teacher-timetable sync all fire exactly
+   * as they would from the per-class grid.
+   */
+  async setMasterGridCell(rawInput: unknown, ctx: AuthContext): Promise<ITimetable> {
+    const data = masterGridCellSchema.parse(rawInput);
+
+    let tt = await timetableRepository.findByClassSection(ctx.schoolId, data.class, data.section, data.academicYear);
+    if (!tt) {
+      tt = await timetableRepository.create({
+        schoolId: ctx.schoolId, class: data.class, section: data.section,
+        academicYear: data.academicYear, term: data.term, createdBy: ctx.displayName,
+      });
+    }
+    const ttId = tt._id.toString();
+
+    const slot = await periodSlotRepository.findById(data.slotId, ctx.schoolId);
+    if (!slot) throw new NotFoundError('Period slot');
+
+    const subjectName = data.subjectName?.trim();
+    let result = tt;
+    for (const day of slot.daysApplicable) {
+      result = subjectName
+        ? await timetableService.upsertEntry(ttId, {
+            dayOfWeek: day, slotId: data.slotId, subjectName,
+            teacherId: data.teacherId, teacherName: data.teacherName, roomNumber: data.roomNumber,
+          }, ctx)
+        : await timetableService.removeEntry(ttId, day, data.slotId, ctx);
+    }
+    return result;
   },
 
   // ── Substitutes ─────────────────────────────────────────────────────────────

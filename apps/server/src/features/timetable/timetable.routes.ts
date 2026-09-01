@@ -19,6 +19,10 @@ router.delete('/periods/:slotId', authorize('admin', 'principal'), timetableCont
 // ── Conflict detection (static before /:id) ────────────────────────────────
 router.get('/conflicts', timetableController.detectConflicts);
 
+// ── Master (whole-school) grid (static before /:id) ────────────────────────
+router.get('/master-grid', timetableController.getMasterGrid);
+router.patch('/master-grid/cell', authorize('admin', 'principal'), timetableController.setMasterGridCell);
+
 // ── Teacher schedule (static before /:id) ─────────────────────────────────
 router.get('/teacher/:teacherId', timetableController.getTeacherSchedule);
 

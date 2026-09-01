@@ -2267,6 +2267,52 @@ export interface TimetableListOptions {
   status?: TimetableStatus;
 }
 
+// ── Master (whole-school) Timetable Grid ──────────────────────────────────────
+// A single-page view of every class×section against every period, matching the
+// paper master timetable schools keep on the staff room wall. Reads/writes the
+// SAME Timetable documents as the per-class grid — editing a cell here writes
+// straight through, so both views always agree. "Master" = day-agnostic: a cell
+// edit is applied to every applicable weekday for that period, so there's one
+// fixed weekly pattern rather than a per-day schedule.
+
+export interface MasterGridCell {
+  subjectName: string;
+  teacherId?: string;
+  teacherName?: string;
+  roomNumber?: string;
+}
+
+export interface MasterGridRow {
+  class: string;
+  section: string;
+  timetableId?: string;
+  cells: Record<string, MasterGridCell | null>;
+}
+
+export interface MasterGridResponse {
+  periods: PeriodSlot[];
+  rows: MasterGridRow[];
+  academicYear: string;
+  term?: string;
+}
+
+export interface MasterGridQuery {
+  academicYear: string;
+  term?: string;
+}
+
+export interface SetMasterGridCellPayload {
+  class: string;
+  section: string;
+  academicYear: string;
+  term?: string;
+  slotId: string;
+  subjectName?: string;
+  teacherId?: string;
+  teacherName?: string;
+  roomNumber?: string;
+}
+
 export interface SubstituteListOptions {
   page?: number;
   limit?: number;
