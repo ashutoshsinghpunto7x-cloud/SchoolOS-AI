@@ -2489,6 +2489,40 @@ export interface PrincipalRecruitmentDashboard {
   needsAttention: string[];
 }
 
+// ── Front Office Reports & Analytics ─────────────────────────────────────────
+// Reception Management Module SRD (docs/reception-management-module-srd.md), Module 9.
+
+export interface FrontOfficeReportDateRange {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface AdmissionsReport {
+  totalInquiries: number;
+  conversionRate: number;
+  admissionTrend: Array<{ date: string; count: number }>;
+  counselorPerformance: Array<{ counsellor: string; leadsAssigned: number; converted: number; conversionRate: number }>;
+  sourceEffectiveness: Array<{ source: string; total: number; converted: number; conversionRate: number }>;
+  formFunnel: { issued: number; paid: number; submitted: number; verified: number };
+}
+
+export interface RecruitmentReport {
+  cvsReceived: number;
+  cvsByPosition: Array<{ position: string; count: number }>;
+  interviewsConducted: number;
+  hiringRate: number;
+  avgTimeToHireDays: number | null;
+  interviewerConsistency: Array<{ interviewer: string; avgScore: number; scoreVariance: number; feedbackCount: number }>;
+}
+
+export interface VisitorReport {
+  dailyVisitors: Array<{ date: string; count: number }>;
+  mostVisitedStaff: Array<{ staff: string; count: number }>;
+  peakVisitingHours: Array<{ hour: number; count: number }>;
+  avgVisitDurationMinutes: number | null;
+  purposeBreakdown: Array<{ purpose: string; count: number }>;
+}
+
 // ── Timetable & Academic Scheduling ──────────────────────────────────────────
 
 export type TimetableStatus = 'draft' | 'published' | 'archived';

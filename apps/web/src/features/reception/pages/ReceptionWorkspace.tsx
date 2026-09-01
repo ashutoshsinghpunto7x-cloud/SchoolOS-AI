@@ -182,6 +182,13 @@ export const ReceptionWorkspace = () => {
               accent="purple"
               onClick={() => navigate('/reception/candidates')}
             />
+            <ReceptionActionCard
+              title="Reports & Analytics"
+              description="Admissions, recruitment, and visitor trends for the front office."
+              buttonLabel="View Reports"
+              accent="blue"
+              onClick={() => navigate('/reception/reports')}
+            />
           </div>
         </div>
       </PageContainer>

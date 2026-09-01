@@ -109,6 +109,10 @@ const CandidateDetailPage = lazyPage(
   () => import('@/features/reception/pages/CandidateDetailPage'),
   'CandidateDetailPage',
 );
+const FrontOfficeReportsPage = lazyPage(
+  () => import('@/features/reception/pages/FrontOfficeReportsPage'),
+  'FrontOfficeReportsPage',
+);
 const StudentListPage = lazyPage(
   () => import('@/features/students/pages/StudentListPage'),
   'StudentListPage',
@@ -1179,6 +1183,7 @@ export const router = createBrowserRouter([
               { path: 'reception/follow-ups', element: <FollowUpDashboardPage /> },
               { path: 'reception/candidates', element: <CandidatesPage /> },
               { path: 'reception/candidates/:id', element: <CandidateDetailPage /> },
+              { path: 'reception/reports', element: <FrontOfficeReportsPage /> },
 
               // Students
               { path: 'students', element: <StudentListPage /> },

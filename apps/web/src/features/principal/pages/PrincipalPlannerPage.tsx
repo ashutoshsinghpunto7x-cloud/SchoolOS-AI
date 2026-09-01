@@ -52,8 +52,13 @@ export function PrincipalPlannerPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <h1 className="text-[28px] sm:text-[36px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">Planner</h1>
-        <p className="text-base text-gray-500 dark:text-white/40 mt-2">Real-time teaching progress across every teacher, class, and subject.</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[28px] sm:text-[36px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">Planner</h1>
+          <span className="inline-flex items-center h-6 px-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 text-[11px] font-bold tracking-wide">LEGACY</span>
+        </div>
+        <p className="text-base text-gray-500 dark:text-white/40 mt-2">
+          Superseded by <button type="button" onClick={() => navigate('/principal/academic-plan')} className="text-[#6D4AFF] font-semibold hover:underline">Academic Plan</button> — kept for teachers still finishing out a plan built here.
+        </p>
 
         <div className="mt-5 relative">
           <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />

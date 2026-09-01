@@ -68,6 +68,7 @@ import followUpRouter from '../features/follow-ups/follow-up.routes';
 import admissionFormRouter from '../features/admission-forms/admission-form.routes';
 import candidateRouter from '../features/candidates/candidate.routes';
 import interviewRouter from '../features/interviews/interview.routes';
+import frontOfficeReportsRouter from '../features/front-office-reports/front-office-reports.routes';
 
 const router = Router();
 
@@ -86,6 +87,7 @@ router.use('/follow-ups', followUpRouter);
 router.use('/admission-forms', admissionFormRouter);
 router.use('/candidates', candidateRouter);
 router.use('/interviews', interviewRouter);
+router.use('/reports/front-office', frontOfficeReportsRouter);
 router.use('/timetable', timetableRouter);
 router.use('/teacher-timetable', teacherTimetableRouter);
 router.use('/principal', principalRouter);

@@ -116,8 +116,9 @@ const NAV_ITEMS_HR = [
 // Password" was dropped here — it's already reachable from the profile
 // dropdown in the topbar (see Topbar.tsx ProfileMenu), so it was a dupe.
 const NAV_SECTION_PRINCIPAL_OVERVIEW = [
-  { label: 'Dashboard',    icon: LayoutDashboard, path: '/principal',              end: true  },
-  { label: 'Recruitment',  icon: UserPlus,        path: '/principal/recruitment',  end: false },
+  { label: 'Dashboard',       icon: LayoutDashboard, path: '/principal',                 end: true  },
+  { label: 'Recruitment',     icon: UserPlus,        path: '/principal/recruitment',     end: false },
+  { label: 'Front Office Reports', icon: FileBarChart2, path: '/reception/reports',      end: false },
 ] as const;
 
 // Everything a principal needs to sign off on — grouped together since it's
@@ -128,7 +129,7 @@ const NAV_SECTION_PRINCIPAL_APPROVALS = [
 ] as const;
 
 const NAV_SECTION_PRINCIPAL_ACADEMICS = [
-  { label: 'Planner',              icon: CalendarClock,  path: '/principal/planner',       end: false },
+  { label: 'Planner (Legacy)',     icon: CalendarClock,  path: '/principal/planner',       end: false },
   { label: 'Academic Plan',        icon: Sparkles,       path: '/principal/academic-plan', end: false },
   { label: 'Exams',                icon: ClipboardList,  path: '/exams',                    end: false },
   { label: 'Report Card Templates', icon: FileBarChart,  path: '/report-card-templates',   end: false },

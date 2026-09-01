@@ -656,10 +656,7 @@ export function TeacherDashboard() {
             <Sparkles className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">Academic Plan</p>
-              <span className="inline-flex items-center h-4 px-1.5 rounded-full bg-[#F3EEFF] dark:bg-[#A855F7]/15 text-[#6D4AFF] dark:text-violet-300 text-[9px] font-bold tracking-wide">NEW</span>
-            </div>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">Academic Plan</p>
             <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Your day-by-day teaching plan, generated automatically</p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
@@ -677,8 +674,11 @@ export function TeacherDashboard() {
                 <CalendarClock className="w-5 h-5 text-[#059669] dark:text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Weekly schedule, progress, and pace tracking</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
+                  <span className="inline-flex items-center h-4 px-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 text-[9px] font-bold tracking-wide">LEGACY</span>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Superseded by Academic Plan above — kept read/write for existing weekly plans</p>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
             </button>

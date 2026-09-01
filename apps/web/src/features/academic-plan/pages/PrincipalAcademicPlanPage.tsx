@@ -63,10 +63,7 @@ export function PrincipalAcademicPlanPage({ basePath = '/principal/academic-plan
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <div className="flex items-center gap-2">
-          <h1 className="text-[28px] sm:text-[36px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">Academic Plan</h1>
-          <span className="inline-flex items-center h-6 px-2 rounded-full bg-[#F3EEFF] dark:bg-[#A855F7]/15 text-[#6D4AFF] dark:text-violet-300 text-[11px] font-bold tracking-wide">NEW</span>
-        </div>
+        <h1 className="text-[28px] sm:text-[36px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">Academic Plan</h1>
         <p className="text-base text-gray-500 dark:text-white/40 mt-2">Auto-generated teaching plans — real-time completion across every teacher, class, and subject.</p>
 
         {(alerts?.length ?? 0) > 0 && (

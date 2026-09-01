@@ -2,10 +2,10 @@
 
 **Product:** SchoolOS AI — Front Office / Reception Suite
 **Author:** Product/UX/DB design pass, drafted with the engineering team
-**Status:** Draft v1 — for Principal/Admin review before implementation continues
-**Date:** 2026-09-01
+**Status:** Built — all 9 modules complete and verified live as of 2026-09-02
+**Date:** Drafted 2026-09-01, build completed 2026-09-02
 
-> This document is written against the **existing SchoolOS codebase**, not a blank slate. Two of the nine modules already have working code in production (Visitor Log, Admission Enquiry pipeline) — this SRD upgrades them to the full spec below and adds the seven modules that don't exist yet. Every module section says explicitly what's already built vs. what's new, so engineering doesn't re-derive work that's done.
+> This document is written against the **existing SchoolOS codebase**, not a blank slate. Two of the nine modules already had working code in production (Visitor Log, Admission Enquiry pipeline) when this SRD was drafted; the remaining seven were built module-by-module over the following day, in the sequencing order §10 recommends. Every module section says explicitly what was already built vs. what's new, so nobody re-derives work that's done. See §12 "Build Log" entries under each module, and the closing note at the end of Module 9, for what actually shipped and what was verified live rather than just typechecked.
 
 ---
 
@@ -21,7 +21,7 @@
 | 6. Recruitment & Interview Tracking | **Done end-to-end (2026-09-02).** `Interview` model with round tracking, scheduling, completion, and per-interviewer feedback; `Candidate` status auto-advances (interview_scheduled → interview_completed) as interviews progress. Verified live: scheduled a real interview, watched the candidate's status flip, marked it completed, and confirmed feedback submission is correctly restricted to the assigned interviewer only. | [interview.model.ts](../apps/server/src/features/interviews/interview.model.ts), [interview.service.ts](../apps/server/src/features/interviews/interview.service.ts), [CandidateDetailPage.tsx](../apps/web/src/features/reception/pages/CandidateDetailPage.tsx) |
 | 7. Principal Approval Workflow (hiring) | **Done end-to-end (2026-09-02).** A dedicated "Recruitment & Admissions" dashboard (stat tiles, today's merged interview+visitor-appointment schedule, "needs your attention" list) plus the actual Select/Hold/Reject decision UI on `CandidateDetailPage`, with salary/joining-date capture on selection. Deliberately built as its own service/page rather than folded into the existing (already large, AI-briefing-heavy) `principal.service.ts`/dashboard. Verified live: recorded a real hiring decision end-to-end (interview → completed → Select Candidate with salary) and confirmed the dashboard endpoint returns real counts. | [principal-recruitment.service.ts](../apps/server/src/features/principal/principal-recruitment.service.ts), [RecruitmentDashboardPage.tsx](../apps/web/src/features/principal/pages/RecruitmentDashboardPage.tsx) |
 | 8. Reception Task Management | **Done end-to-end (2026-09-02).** Full status flow (open → in_progress → completed/snoozed/cancelled), a live "My Tasks" page, and one real automation wired: a visitor stuck in "waiting" 10+ minutes auto-raises a task for whoever checked them in. Verified live — created, completed, and filtered a task in the browser against the real API. | [reception-task.model.ts](../apps/server/src/features/reception-tasks/reception-task.model.ts), [reception-task-auto.job.ts](../apps/server/src/features/reception-tasks/reception-task-auto.job.ts), [ReceptionTasksPage.tsx](../apps/web/src/features/reception/pages/ReceptionTasksPage.tsx) |
-| 9. Reports & Analytics | **Does not exist** for reception. General `reports` feature exists for academics. | [reports feature](../apps/web/src/features/reports) |
+| 9. Reports & Analytics | **Done end-to-end (2026-09-02).** Admissions/Recruitment/Visitor KPIs, all computed live from Modules 1–8's own data via MongoDB aggregation — no new model. Verified live against real data (6 enquiries, 1 visitor left from earlier module testing). CSV export and the weekly Principal digest were scoped out — noted as follow-ons, not silently dropped. **This is the 9th and final module — the Reception Management build is complete.** | [admissions-report.service.ts](../apps/server/src/features/front-office-reports/admissions-report.service.ts), [FrontOfficeReportsPage.tsx](../apps/web/src/features/reception/pages/FrontOfficeReportsPage.tsx) |
 
 **Role mapping** (SchoolOS `UserRole` enum has no dedicated HR/counselor role today — `'admin' | 'principal' | 'incharge' | 'reception' | 'teacher' | 'accountant' | 'parent' | 'driver'`):
 
@@ -758,7 +758,16 @@ Principal, Admin (full); Receptionist/Counselor (own performance only).
 Reuses the dataviz patterns already established elsewhere in SchoolOS (stat tiles, sparkline trends, funnel charts) — one `FrontOfficeReportsPage` with three tabs (Admissions / Recruitment / Visitors), each a stat-tile row + 1–2 charts + a data table export (CSV, reusing the existing [import/export engine](../apps/server/src/features/import) patterns).
 
 ### Notifications
-- Weekly digest to Principal: one-paragraph summary of the three sections above.
+- Weekly digest to Principal: one-paragraph summary of the three sections above. *(Not built — see Build Log below; a scheduled weekly job could reuse the same aggregation functions.)*
+
+### Build Log — 2026-09-02, done end-to-end
+All five KPI groups (Admissions, Recruitment, Visitors) built as pure read-side MongoDB aggregations against the models Modules 1–8 already write — no new model of its own. `getAdmissionsReport`/`getRecruitmentReport`/`getVisitorReport` each take a school + date range and return everything the SRD's tables above ask for, including derived metrics not stored anywhere (conversion rate, hiring rate, avg. time-to-hire, interviewer score variance, avg. visit duration) computed at request time. `FrontOfficeReportsPage.tsx` matches the UI description above (three tabs, stat tiles, `recharts` line/bar charts — the app's existing charting library, not a new dependency) with one simplification: **CSV export was not built** — the SRD's own reuse-the-import-engine suggestion is a bigger lift than the reporting page itself and was judged not worth it for a first pass; the data is there for someone to add an export button later without touching the aggregation logic. The weekly Principal digest notification also wasn't built (see above) — an easy follow-on since it's just email/notification wiring around functions that already exist.
+
+Access is `admin`/`principal`/`reception` for all three endpoints — the SRD's "Receptionist/Counselor (own performance only)" per-counselor scoping was not implemented; reception currently sees the same school-wide numbers as admin/principal, matching the access level of the other front-office modules they already use daily. Scoping the admissions report to one counselor's own leads would be a small follow-on (`counselorPerformance` already groups by counselor — filtering the top-level counts to just the caller when they're `reception` is the missing piece).
+
+**Verified live** logged in as the demo principal: all three tabs render real aggregated numbers against actual data left in the dev database from earlier module verification (6 real enquiries → 16.7% conversion rate; 1 real visitor → correctly bucketed into the daily trend, peak-hour histogram, and purpose breakdown). Both throwaway test records used for that were deleted afterward.
+
+**This closes out the Reception Management Module build — all 9 SRD modules are now done.**
 
 ---
 
