@@ -69,9 +69,11 @@ export function PaperListPage() {
         ) : (
           <div className="space-y-3">
             {data.data.map((p) => (
-              <button
-                key={p._id} type="button" onClick={() => navigate(`/teacher/question-bank/papers/${p._id}`)}
-                className="w-full text-left flex items-center gap-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
+              <div
+                key={p._id} role="button" tabIndex={0}
+                onClick={() => navigate(`/teacher/question-bank/papers/${p._id}`)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate(`/teacher/question-bank/papers/${p._id}`); }}
+                className="w-full text-left flex items-center gap-4 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm px-4 py-4 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
@@ -88,7 +90,7 @@ export function PaperListPage() {
                   {deletePaper.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
                 <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-              </button>
+              </div>
             ))}
           </div>
         )}
