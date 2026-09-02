@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+import { createHash } from 'crypto';
 import { openaiProvider, estimateCost } from '../ai/providers/llm/openai.provider';
 import { aiUsageRepository } from '../ai/ai.repository';
 import { usageEventRepository } from '../../lib/usage-event.repository';
@@ -7,8 +9,10 @@ import { logger } from '../../lib/logger';
 import { extractionJobRepository } from './extraction-job.repository';
 import { questionSourceRepository } from './question-source.repository';
 import { chapterRepository } from './chapter.repository';
+import { questionRepository } from './question.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
+import type { ITopicNode } from './chapter.model';
 import { normalizeOptions } from './option-text';
 import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions, LanguageComplexity, PageFigure, QuestionImageRef, QuestionImageRequirement } from '@schoolos/types';
 import { languageStyleGuide, TEACHER_VOICE_RULES, SELF_CHECK_INSTRUCTION, imageAvailabilityInstruction } from './teacher-voice';
@@ -29,6 +33,10 @@ export interface ExtractedQuestionDraft {
   keywords: string[];
   chapterName: string;
   topic?: string;
+  // Best-effort match of `topic` against the chapter's derived topicTree — see
+  // matchTopicIds. Left unset (never guessed) when there's no exact match.
+  topicId?: string;
+  subtopicId?: string;
   source?: string;
   imageRef?: QuestionImageRef;
   imageRequirement?: QuestionImageRequirement;
@@ -74,6 +82,9 @@ interface RawExtractedQuestion {
 
 const QUESTION_TYPES: QuestionType[] = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ];
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
@@ -193,9 +204,50 @@ export function dedupeQuestions(list: ExtractedQuestionDraft[]): ExtractedQuesti
   return out;
 }
 
+/** Normalizes extracted source text for the process-once content hash (see extractFromSourceText) —
+ *  trim + collapse whitespace is stable/cheap and tolerant of harmless re-transcription noise
+ *  (extra blank lines, trailing spaces) that shouldn't itself count as "content changed". */
+export function computeContentHash(text: string): string {
+  const normalized = text.trim().replace(/\s+/g, ' ');
+  return createHash('sha256').update(normalized).digest('hex');
+}
+
+/** Turns the AI's raw `topics` response into a stable ITopicNode[] tree — ids are short random
+ *  tokens (not slugs, since two same-named topics/subtopics from noisy OCR text are otherwise
+ *  indistinguishable) generated once here and then reused for the life of the chapter. */
+export function buildTopicTree(raw: RawTopicNode[]): ITopicNode[] {
+  return raw
+    .map((t) => t.name?.trim())
+    .map((name, i) => {
+      const t = raw[i];
+      if (!name) return null;
+      const subtopics = (t.subtopics ?? [])
+        .map((s) => s?.trim())
+        .filter((s): s is string => Boolean(s))
+        .map((name, order) => ({ subtopicId: `st_${randomUUID().slice(0, 8)}`, name, order }));
+      return { topicId: `t_${randomUUID().slice(0, 8)}`, name, order: i, subtopics };
+    })
+    .filter((t): t is ITopicNode => t !== null);
+}
+
+/** Best-effort match of a draft's free-text `topic` against the chapter's derived topic tree —
+ *  exact (case/whitespace-insensitive) match only, checking subtopic names first (most specific)
+ *  then topic names; left unset rather than guessed wrong when nothing matches exactly. */
+export function matchTopicIds(topic: string | undefined, tree: ITopicNode[]): { topicId?: string; subtopicId?: string } {
+  if (!topic?.trim()) return {};
+  const key = topic.trim().toLowerCase();
+  for (const t of tree) {
+    const sub = t.subtopics.find((s) => s.name.trim().toLowerCase() === key);
+    if (sub) return { topicId: t.topicId, subtopicId: sub.subtopicId };
+  }
+  const t = tree.find((t) => t.name.trim().toLowerCase() === key);
+  if (t) return { topicId: t.topicId };
+  return {};
+}
+
 export function buildSystemPrompt(
   cls: string, subject: string,
-  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; includeImages?: boolean; figures?: PageFigure[] },
+  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; includeImages?: boolean; figures?: PageFigure[]; requestTopics?: boolean },
   excludeTexts: string[] = [],
 ): string {
   const difficultyInstruction = options.difficulty === 'mixed'
@@ -204,6 +256,12 @@ export function buildSystemPrompt(
 
   const excludeBlock = excludeTexts.length
     ? `\n\nThese questions were already extracted from this same document in an earlier pass — do NOT repeat them or near-duplicates of them:\n${excludeTexts.slice(0, 30).map((t) => `- ${t.slice(0, 150)}`).join('\n')}\n`
+    : '';
+
+  // Asked for on only one call per chapter-capture job (see structureFromText's `deriveTopics`) —
+  // never repeated per-chunk/page, so this never adds extra AI calls of its own.
+  const topicsInstruction = options.requestTopics
+    ? `\n\nAlso return "topics": an array describing this chapter's topic/subtopic hierarchy, based on everything covered by this text — each entry shaped { "name": "topic name", "subtopics": ["subtopic name", ...] }. Keep it concise (typically 2-6 topics); only include a subtopic where the text clearly supports it, otherwise leave "subtopics" empty. Never invent topics unrelated to this content.`
     : '';
 
   return `You are an experienced school teacher reading textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and picking out questions to reuse — not an AI summarizing a document.
@@ -232,10 +290,11 @@ For each question, return:
 - "imageFigureId" / "imageRequired" + "imagePrompt": only as described above — omit both for an ordinary text question
 
 Also return "pageText": the full raw text of everything readable on the page, transcribed verbatim, so it can be cached and re-used later.
+${topicsInstruction}
 
 ${SELF_CHECK_INSTRUCTION}
 
-Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
+Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]${options.requestTopics ? ', "topics": [...]' : ''}}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
 }
 
 /**
@@ -509,13 +568,20 @@ function textToParagraphBlocks(text: string): ContentBlock[] {
     .map((p) => ({ type: 'paragraph' as const, text: p }));
 }
 
+/** Raw shape of one entry in an AI response's optional `"topics"` array (see buildSystemPrompt's `requestTopics`). */
+export interface RawTopicNode {
+  name?: string | null;
+  subtopics?: (string | null)[] | null;
+}
+
 /** Parses the model's `{"questions": [...]}` response, non-throwing — returns null instead of raising, so callers (completeQuestionsWithRetry) can decide whether to retry rather than fail immediately. */
-function tryParseQuestions(raw: string): { questions: RawExtractedQuestion[] } | null {
+function tryParseQuestions(raw: string): { questions: RawExtractedQuestion[]; topics?: RawTopicNode[] } | null {
   try {
     const body = JSON.parse(raw);
     const questions = Array.isArray(body) ? body : body.questions;
     if (!Array.isArray(questions)) return null;
-    return { questions };
+    const topics = !Array.isArray(body) && Array.isArray(body.topics) ? (body.topics as RawTopicNode[]) : undefined;
+    return { questions, topics };
   } catch {
     return null;
   }
@@ -582,7 +648,7 @@ async function completeQuestionsWithRetry(
   buildPrompts: (count: number) => { systemPrompt: string; userPrompt: string },
   initialCount: number,
   ctx: AuthContext,
-): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
+): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[]; topics?: RawTopicNode[] }> {
   let attemptCount = initialCount;
   let headroom = 1;
 
@@ -607,7 +673,7 @@ async function completeQuestionsWithRetry(
     const parsed = tryParseQuestions(result.content);
     const isLastAttempt = attempt === MAX_RETRIES_ON_TRUNCATION;
 
-    if (parsed && !truncated) return clean(parsed.questions);
+    if (parsed && !truncated) return { ...clean(parsed.questions), topics: parsed.topics };
 
     if (parsed && truncated && !isLastAttempt) {
       // Parsed fine (model happened to close its brackets right at the limit) but flagged as
@@ -617,7 +683,7 @@ async function completeQuestionsWithRetry(
       headroom += 0.75;
       continue;
     }
-    if (parsed) return clean(parsed.questions);
+    if (parsed) return { ...clean(parsed.questions), topics: parsed.topics };
 
     if (isLastAttempt) {
       const salvaged = salvageTruncatedQuestions(result.content);
@@ -854,9 +920,64 @@ export const questionExtractionService = {
       ...(source.figures ?? []),
       ...(source.pages ?? []).flatMap((p) => p.figures ?? []),
     ];
-    const { extracted, warnings } = await questionExtractionService.structureFromText(
-      source.class, source.subject, sourceText, options, ctx, source.chapterName, figures,
+    const sourceId = String(source._id);
+
+    // ── Process-once guard + topic-tree derivation, chapter_capture sources only ────────────
+    // A source only ever gets a structured `pages` array via saveChapterSource (the "chapter
+    // capture" flow) — plain single-image/PDF uploads never have one, so this whole block is a
+    // no-op (isChapterCapture false) for those, matching every extraction/behaviour they had
+    // before this existed.
+    const isChapterCapture = Boolean(source.pages?.length) && Boolean(source.chapterName?.trim());
+    let chapter: Awaited<ReturnType<typeof chapterRepository.findOrCreate>> | undefined;
+    let contentHash: string | undefined;
+    if (isChapterCapture) {
+      contentHash = computeContentHash(sourceText);
+      chapter = await chapterRepository.findOrCreate(ctx.schoolId, source.class, source.subject, source.chapterName!.trim());
+      if (chapter.extractionStatus === 'processed' && chapter.sourceContentHash === contentHash) {
+        logger.info('[QuestionExtraction] Skipping duplicate chapter-capture extraction — sourceContentHash unchanged', {
+          chapterId: String(chapter._id), chapterName: chapter.chapterName, schoolId: ctx.schoolId,
+        });
+        const existing = await questionRepository.findAll(ctx.schoolId, { chapterId: String(chapter._id), limit: 200 });
+        return {
+          sourceType: source.kind,
+          sourceId,
+          warnings: ["This chapter's content hasn't changed since it was last processed — showing the previously generated questions instead of re-running AI extraction."],
+          extracted: existing.questions.map((q) => ({
+            questionText: q.questionText,
+            questionType: q.questionType,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            difficulty: q.difficulty,
+            marks: q.marks,
+            estimatedTimeMinutes: q.estimatedTimeMinutes,
+            bloomsLevel: q.bloomsLevel,
+            keywords: q.keywords,
+            chapterName: q.chapterName,
+            topic: q.topic,
+            topicId: q.topicId,
+            subtopicId: q.subtopicId,
+            source: q.source,
+            sourceRef: q.sourceRef,
+            imageRef: q.imageRef,
+            imageRequirement: q.imageRequirement,
+          })),
+        };
+      }
+      // Best-effort guard against two concurrent requests for the same chapter both firing the
+      // AI — not a real distributed lock, just narrows the window.
+      await chapterRepository.markExtractionStatus(String(chapter._id), ctx.schoolId, 'processing');
+    }
+
+    const { extracted, warnings, topics } = await questionExtractionService.structureFromText(
+      source.class, source.subject, sourceText, options, ctx, source.chapterName, figures, isChapterCapture,
     );
+
+    let topicTree: ITopicNode[] | undefined;
+    if (isChapterCapture && chapter) {
+      topicTree = topics?.length ? buildTopicTree(topics) : undefined;
+      await chapterRepository.markProcessed(String(chapter._id), ctx.schoolId, { sourceContentHash: contentHash!, topicTree });
+    }
+
     // A teacher-assigned chapter on the source overrides the AI's per-question guess —
     // it's a more reliable signal than inferring the chapter from page content alone.
     // Every draft is stamped with sourceRef so a saved question can trace back to the
@@ -865,12 +986,16 @@ export const questionExtractionService = {
     // imageRef, when the model picked one of this source's figures, gets the same sourceId
     // stamped on it (clean() only knows the bare figureId — this source is the only place it
     // could have come from, since `figures` above was built entirely from it).
-    const sourceId = String(source._id);
-    const withChapter = extracted.map((q) => ({
-      ...(source.chapterName ? { ...q, chapterName: source.chapterName } : q),
-      sourceRef: { sourceId },
-      imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
-    }));
+    const withChapter = extracted.map((q) => {
+      const { topicId, subtopicId } = topicTree ? matchTopicIds(q.topic, topicTree) : {};
+      return {
+        ...(source.chapterName ? { ...q, chapterName: source.chapterName } : q),
+        topicId,
+        subtopicId,
+        sourceRef: { sourceId },
+        imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
+      };
+    });
     return { sourceType: source.kind, extracted: withChapter, warnings, sourceId };
   },
 
@@ -894,16 +1019,20 @@ export const questionExtractionService = {
    */
   async structureFromText(
     cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext,
-    chapterName?: string, figures: PageFigure[] = [],
-  ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
+    chapterName?: string, figures: PageFigure[] = [], deriveTopics = false,
+  ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[]; topics?: RawTopicNode[] }> {
     const chunks = chunkText(text);
     if (chunks.length === 0) return { extracted: [], warnings: [] };
 
     const perChunkCounts = allocateByWeight(options.count, chunks.map((c) => c.length));
     const tasks = chunks
       .map((chunk, i) => ({ chunk, count: perChunkCounts[i] }))
-      .filter((t) => t.count > 0);
+      .filter((t) => t.count > 0)
+      // Only the first task requests the topic breakdown — one lightweight addition to one
+      // existing call rather than a whole extra AI round-trip per chunk/page.
+      .map((t, i) => ({ ...t, isTopicSource: deriveTopics && i === 0 }));
 
+    let derivedTopics: RawTopicNode[] | undefined;
     const perTaskResults = await runWithConcurrency(tasks, CHUNK_CONCURRENCY, async (task) => {
       const extracted: ExtractedQuestionDraft[] = [];
       const warnings: string[] = [];
@@ -911,9 +1040,12 @@ export const questionExtractionService = {
       // earlier batches over the same text already extracted, and avoid repeating them.
       for (const batchSize of splitIntoBatches(task.count)) {
         const excludeTexts = extracted.map((q) => q.questionText);
+        // Only asked on this task's very first batch call (excludeTexts empty) — a retry/top-up
+        // batch over the same chunk doesn't need to re-derive topics.
+        const requestTopics = task.isTopicSource && excludeTexts.length === 0;
         const result = await completeQuestionsWithRetry(
           (count) => ({
-            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty, languageComplexity: options.languageComplexity, includeImages: options.includeImages, figures }, excludeTexts),
+            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty, languageComplexity: options.languageComplexity, includeImages: options.includeImages, figures, requestTopics }, excludeTexts),
             userPrompt: `Extract up to ${count} question(s) from this document text:\n\n${task.chunk}`,
           }),
           batchSize,
@@ -921,6 +1053,7 @@ export const questionExtractionService = {
         );
         extracted.push(...result.extracted);
         warnings.push(...result.warnings);
+        if (requestTopics && result.topics) derivedTopics = result.topics;
       }
       return { extracted, warnings };
     });
@@ -953,7 +1086,7 @@ export const questionExtractionService = {
     if (final.length < options.count) {
       warnings.push(`Found ${final.length} of the ${options.count} requested question(s) in the uploaded content.`);
     }
-    return { extracted: final, warnings };
+    return { extracted: final, warnings, topics: derivedTopics };
   },
 
   /**

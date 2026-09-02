@@ -1,4 +1,4 @@
-import { SyllabusChapter, ISyllabusChapter } from './chapter.model';
+import { SyllabusChapter, ISyllabusChapter, ITopicNode, ChapterExtractionStatus } from './chapter.model';
 import { classNameKey } from '../../lib/class-name';
 
 function normalize(s: string): string {
@@ -84,5 +84,21 @@ export const chapterRepository = {
       { $set: data },
       { new: true },
     ).lean<ISyllabusChapter>();
+  },
+
+  /** Flags a chapter as mid-extraction — best-effort guard against two concurrent chapter-capture
+   *  requests for the same chapter both firing the AI (see question-extraction.service.ts). */
+  async markExtractionStatus(id: string, schoolId: string, status: ChapterExtractionStatus): Promise<void> {
+    await SyllabusChapter.updateOne({ _id: id, schoolId }, { $set: { extractionStatus: status } });
+  },
+
+  /** Records a completed chapter-capture extraction — the hash it ran against (for the process-once
+   *  guard) and, when derived, the topic/subtopic tree from that same job. */
+  async markProcessed(
+    id: string, schoolId: string, data: { sourceContentHash: string; topicTree?: ITopicNode[] },
+  ): Promise<void> {
+    const $set: Record<string, unknown> = { extractionStatus: 'processed', sourceContentHash: data.sourceContentHash };
+    if (data.topicTree) $set.topicTree = data.topicTree;
+    await SyllabusChapter.updateOne({ _id: id, schoolId }, { $set });
   },
 };

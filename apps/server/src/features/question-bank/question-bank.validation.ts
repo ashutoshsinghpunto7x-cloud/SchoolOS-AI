@@ -3,6 +3,9 @@ import type { ListBlockItem } from '@schoolos/types';
 
 export const QUESTION_TYPES = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ] as const;
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export const BLOOMS_LEVELS = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'] as const;
@@ -56,6 +59,8 @@ const extractedQuestionDraftSchema = requireMcqOptions(z.object({
   keywords: z.array(z.string()).default([]),
   chapterName: z.string().min(1),
   topic: z.string().nullish(),
+  topicId: z.string().nullish(),
+  subtopicId: z.string().nullish(),
   source: z.string().nullish(),
   sourceRef: sourceRefSchema.nullish(),
   imageRef: imageRefSchema.nullish(),

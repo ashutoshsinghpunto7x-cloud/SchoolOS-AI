@@ -24,6 +24,8 @@ function toDto(q: IQuestion): QuestionDto {
     chapterId: q.chapterId,
     chapterName: q.chapterName,
     topic: q.topic,
+    topicId: q.topicId,
+    subtopicId: q.subtopicId,
     questionText: q.questionText,
     questionType: q.questionType,
     options: q.options,
@@ -39,6 +41,7 @@ function toDto(q: IQuestion): QuestionDto {
     isDeleted: q.isDeleted,
     imageRef: q.imageRef,
     imageRequirement: q.imageRequirement,
+    visualBased: q.visualBased,
   };
 }
 

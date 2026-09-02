@@ -34,6 +34,8 @@ export interface CreateQuestionData {
   chapterId: string;
   chapterName: string;
   topic?: string;
+  topicId?: string;
+  subtopicId?: string;
   questionText: string;
   questionType: QuestionType;
   options?: string[];

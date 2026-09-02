@@ -4362,7 +4362,25 @@ export type QuestionType =
   | 'short'
   | 'long'
   | 'hots'
-  | 'case_study';
+  | 'case_study'
+  | 'multi_correct'
+  | 'match_following'
+  | 'one_word'
+  | 'competency_based'
+  | 'application_based'
+  | 'activity_based'
+  | 'observation_based'
+  | 'diagram_based'
+  | 'picture_based'
+  | 'label_diagram'
+  | 'complete_diagram'
+  | 'numerical'
+  | 'word_problem'
+  | 'oral'
+  | 'revision'
+  | 'sequence_arrangement'
+  | 'odd_one_out'
+  | 'passage_based';
 
 export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -4370,12 +4388,29 @@ export type BloomsLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'eva
 
 export type ChapterDifficulty = 'easy' | 'moderate' | 'hard';
 export type ChapterPriority = 'core' | 'important' | 'supplementary';
+export type ChapterExtractionStatus = 'unprocessed' | 'processing' | 'processed';
+
+export interface ChapterSubtopicNode {
+  subtopicId: string;
+  name: string;
+  order: number;
+}
+
+export interface ChapterTopicNode {
+  topicId: string;
+  name: string;
+  order: number;
+  subtopics: ChapterSubtopicNode[];
+}
 
 export interface SyllabusChapter extends BaseEntity {
   class: string;
   subject: string;
   chapterName: string;
   topics: string[];
+  /** Structured topic/subtopic hierarchy derived from AI chapter-capture. Optional — only
+   *  chapters captured after this was added carry one; legacy chapters keep using `topics`. */
+  topicTree?: ChapterTopicNode[];
   order?: number;
   /** Periods (not weeks) the chapter is expected to take — sizes the
    *  Academic Planning Engine's day-by-day distribution. Optional/undefined
@@ -4387,6 +4422,9 @@ export interface SyllabusChapter extends BaseEntity {
   /** 1 (light) – 5 (heavy) — biases how much of a revision block gets spent
    *  on this chapter relative to others sharing the same exam window. */
   revisionWeight?: number;
+  /** Process-once guard for chapter-capture re-extraction — see question-extraction.service.ts. */
+  extractionStatus: ChapterExtractionStatus;
+  sourceContentHash?: string;
 }
 
 export interface QuestionUsageEntry {
@@ -4400,6 +4438,10 @@ export interface Question extends BaseEntity {
   chapterId: string;
   chapterName: string; // denormalized for display without an extra lookup
   topic?: string;
+  /** Matched against the owning chapter's topicTree by name (best-effort — left
+   *  unset rather than guessed wrong when there's no exact match). */
+  topicId?: string;
+  subtopicId?: string;
   questionText: string;
   questionType: QuestionType;
   options?: string[];
@@ -4417,6 +4459,8 @@ export interface Question extends BaseEntity {
   sourceRef?: QuestionSourceRef;
   imageRef?: QuestionImageRef;
   imageRequirement?: QuestionImageRequirement;
+  /** True whenever imageRef or imageRequirement is set — lets UI/filters check one flat boolean instead of two optional fields. */
+  visualBased: boolean;
 }
 
 export interface QuestionSourceRef {
@@ -4506,6 +4550,8 @@ export interface ExtractedQuestionDraft {
   keywords: string[];
   chapterName: string;
   topic?: string;
+  topicId?: string;
+  subtopicId?: string;
   source?: string;
   sourceRef?: QuestionSourceRef;
   imageRef?: QuestionImageRef;

@@ -84,6 +84,8 @@ export const questionBankService = {
         chapterId: String(chapter._id),
         chapterName: chapter.chapterName,
         topic,
+        topicId: q.topicId ?? undefined,
+        subtopicId: q.subtopicId ?? undefined,
         questionText: q.questionText,
         questionType: q.questionType,
         options: normalizeOptions(q.options),
