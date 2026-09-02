@@ -24,14 +24,14 @@ import {
 } from './question-bank.validation';
 
 export const questionBankController = {
-  /** POST /question-bank/extract/image?class=8&subject=Science */
+  /** POST /question-bank/extract/image?class=8&subject=Science&detectImages=true */
   async extractFromImage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) throw new ValidationError('An image file is required');
       const target = extractionTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
       const job = await questionExtractionService.enqueueExtractFromImage(
-        target.class, target.subject, fileToDataUri(req.file), ctx, req.file.originalname,
+        target.class, target.subject, fileToDataUri(req.file), ctx, req.file.originalname, target.detectImages,
       );
       sendCreated(res, job, 'Reading the page…');
     } catch (err) { next(err); }
@@ -59,13 +59,14 @@ export const questionBankController = {
     } catch (err) { next(err); }
   },
 
-  /** POST /question-bank/extract/chapter — multi-page layout-aware capture, one image per captured page. */
+  /** POST /question-bank/extract/chapter — multi-page layout-aware capture, one image per captured page. `detectImages` (form field, "true"/"false") is the teacher's "Include images" toggle. */
   async extractChapter(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const files = (req.files as Express.Multer.File[] | undefined) ?? [];
       if (files.length === 0) throw new ValidationError('At least one page image is required');
       const images = files.map((f) => ({ dataUri: fileToDataUri(f), fileName: f.originalname }));
-      const job = await questionBankService.enqueueChapterCapture(images, buildAuthContext(req.user!));
+      const detectImages = req.body?.detectImages === 'true';
+      const job = await questionBankService.enqueueChapterCapture(images, buildAuthContext(req.user!), detectImages);
       sendCreated(res, job, `Reading ${files.length} page(s)…`);
     } catch (err) { next(err); }
   },

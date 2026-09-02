@@ -1,7 +1,8 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { Request, Response } from 'express';
 import { env } from '../config/env';
 import { recordSecurityEvent } from '../lib/security-events';
+import { tokenService } from '../features/auth/token.service';
 
 const rateLimitResponse = (message: string) => ({
   success: false,
@@ -39,6 +40,30 @@ const makeRateLimitHandler = (message: string, identifierFrom?: (req: Request) =
 
 const isDevelopment = process.env.NODE_ENV === "development";
 
+// apiLimiter runs ahead of the `authenticate` middleware (it's mounted on all of
+// `/api/` before the versioned router), so req.user isn't populated yet here.
+// Verify the access token directly to key on the actual signed-in user instead
+// of falling back to express-rate-limit's default IP-only key. Without this,
+// every teacher behind the same school Wi-Fi/NAT or mobile hotspot shares one
+// bucket — a handful of people polling notifications/feature-flags and saving
+// attendance concurrently was enough to trip "too many requests" for everyone
+// on that IP, including teachers who'd made almost no requests themselves.
+// A forged/expired token just falls back to IP-keying (same as before), so this
+// only ever narrows the bucket a request lands in — it can't be used to dodge
+// the limit in a way that hurts anyone else.
+const keyGenerator = (req: Request): string => {
+  const header = req.headers.authorization;
+  if (header?.startsWith('Bearer ')) {
+    try {
+      const payload = tokenService.verifyAccessToken(header.slice(7));
+      return `user:${payload.userId}`;
+    } catch {
+      // fall through to IP-keying below
+    }
+  }
+  return ipKeyGenerator(req.ip ?? '');
+};
+
 // Local-only headroom for load testing (e.g. Artillery). Production is completely
 // untouched — it still resolves to exactly `env.RATE_LIMIT_MAX` as before, since
 // isDevelopment is only true when NODE_ENV === 'development'.
@@ -47,6 +72,7 @@ export const apiLimiter = rateLimit({
   max: isDevelopment ? 100_000 : env.RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator,
   handler: makeRateLimitHandler('Too many requests. Please slow down.'),
 });
 

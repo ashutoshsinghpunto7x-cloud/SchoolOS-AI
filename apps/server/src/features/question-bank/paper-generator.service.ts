@@ -10,6 +10,8 @@ import { paperRepository } from './paper.repository';
 import { paperValidationService } from './paper-validation.service';
 import { IQuestion, QuestionDifficulty } from './question.model';
 import { ISyllabusChapter } from './chapter.model';
+import { collectChapterFigures } from './figure-lookup';
+import { resolveQuestionImages } from './image-resolution';
 
 function toDto(q: IQuestion): QuestionDto {
   return {
@@ -35,6 +37,8 @@ function toDto(q: IQuestion): QuestionDto {
     usageHistory: q.usageHistory.map((u) => ({ examId: u.examId, usedAt: u.usedAt.toISOString() })),
     createdBy: q.createdBy,
     isDeleted: q.isDeleted,
+    imageRef: q.imageRef,
+    imageRequirement: q.imageRequirement,
   };
 }
 
@@ -152,7 +156,11 @@ async function fillMarksGapsWithAi(
 
   const results = await Promise.allSettled(tasks.map((task) =>
     questionExtractionService.synthesizeQuestions(
-      { class: config.class, subject: config.subject, chapterName: task.chapter.chapterName, marks: task.marks, count: task.count, questionType: task.questionType, contextText: task.contextText },
+      {
+        class: config.class, subject: config.subject, chapterName: task.chapter.chapterName, marks: task.marks, count: task.count,
+        questionType: task.questionType, contextText: task.contextText, languageComplexity: config.languageComplexity,
+        includeImages: config.includeImages, figures: config.includeImages ? collectChapterFigures(sources, task.chapter.chapterName) : undefined,
+      },
       ctx,
     ),
   ));
@@ -193,6 +201,8 @@ async function fillMarksGapsWithAi(
       keywords: d.keywords,
       source: 'AI-generated to complete a paper request',
       createdBy: ctx.userId,
+      imageRef: d.imageRef,
+      imageRequirement: d.imageRequirement,
     })));
 
     created.push(...newQuestions);
@@ -290,6 +300,12 @@ async function fillDifficultyGapsWithAi(
 
   if (tasks.size === 0) return [];
 
+  // Only fetched when actually needed — this pass often has nothing to swap (requestedTotal === 0
+  // already short-circuited above), so this avoids an extra query on the common no-op path.
+  const sources = config.includeImages
+    ? await questionSourceRepository.findAll(ctx.schoolId, config.class, config.subject).catch(() => [])
+    : [];
+
   const taskList = [...tasks.values()];
   const results = await Promise.allSettled(taskList.map((task) =>
     questionExtractionService.synthesizeQuestions(
@@ -302,6 +318,8 @@ async function fillDifficultyGapsWithAi(
         difficulty: task.difficulty,
         questionType: task.questionType,
         contextText: pool.filter((q) => q.chapterId === String(task.chapter._id)).map((q) => q.questionText).slice(0, 10).join('\n\n'),
+        languageComplexity: config.languageComplexity,
+        includeImages: config.includeImages, figures: config.includeImages ? collectChapterFigures(sources, task.chapter.chapterName) : undefined,
       },
       ctx,
     ),
@@ -342,6 +360,8 @@ async function fillDifficultyGapsWithAi(
       keywords: d.keywords,
       source: 'AI-generated to complete a paper request',
       createdBy: ctx.userId,
+      imageRef: d.imageRef,
+      imageRequirement: d.imageRequirement,
     })));
 
     created.push(...newQuestions);
@@ -474,6 +494,8 @@ export const paperGeneratorService = {
 
     await questionRepository.recordUsage(selected.map((q) => String(q._id)), undefined, new Date());
 
+    const resolvedImages = await resolveQuestionImages(selected, ctx.schoolId);
+
     return {
       _id: String(record._id),
       schoolId: record.schoolId,
@@ -484,6 +506,7 @@ export const paperGeneratorService = {
       totalMarksAssembled,
       validation,
       createdBy: ctx.userId,
+      resolvedImages,
     };
   },
 
@@ -513,6 +536,8 @@ export const paperGeneratorService = {
       sections = groupByMarks(ordered);
     }
 
+    const resolvedImages = await resolveQuestionImages(ordered, ctx.schoolId);
+
     return {
       _id: String(record._id),
       schoolId: record.schoolId,
@@ -523,6 +548,7 @@ export const paperGeneratorService = {
       totalMarksAssembled: record.totalMarksAssembled,
       validation: record.validation,
       createdBy: record.createdBy,
+      resolvedImages,
     };
   },
 

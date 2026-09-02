@@ -96,6 +96,8 @@ export const questionBankService = {
         source: q.source ?? undefined,
         createdBy: ctx.userId,
         sourceRef: q.sourceRef ?? undefined,
+        imageRef: q.imageRef ?? undefined,
+        imageRequirement: q.imageRequirement ?? undefined,
       });
     }
 
@@ -193,9 +195,9 @@ export const questionBankService = {
   },
 
   /** POST /extract/chapter — starts a multi-page structured OCR batch job. */
-  async enqueueChapterCapture(images: { dataUri: string; fileName?: string }[], ctx: AuthContext): Promise<{ jobId: string }> {
+  async enqueueChapterCapture(images: { dataUri: string; fileName?: string }[], ctx: AuthContext, detectImages = false): Promise<{ jobId: string }> {
     if (images.length === 0) throw new ValidationError('At least one page image is required');
-    return questionExtractionService.enqueueChapterCapture(images, ctx);
+    return questionExtractionService.enqueueChapterCapture(images, ctx, detectImages);
   },
 
   /** POST /extract/jobs/:id/pages/:pageNumber/retry — reprocess a single page without redoing the whole batch. */

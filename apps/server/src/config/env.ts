@@ -30,8 +30,15 @@ const envSchema = z.object({
   // Required in production. Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   INTEGRATION_ENCRYPTION_KEY: z.string().optional(),
   // Rate limiting
+  // 200/15min was sized for IP-keyed limiting; now that apiLimiter keys on the
+  // signed-in user (see rateLimiter.ts), each bucket is per-teacher rather than
+  // per-shared-IP. It's still low headroom for one active tab, though: the
+  // notifications (30s), feature-flag (60s) and internal-message (45s) pollers
+  // alone add up to ~65 requests/15min in the background before any real usage.
+  // Raised to give room for normal multi-tab attendance/marks work without
+  // loosening the window (still resets every 15 min, still per-user).
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
-  RATE_LIMIT_MAX: z.coerce.number().default(200),
+  RATE_LIMIT_MAX: z.coerce.number().default(600),
   // AI — OpenAI
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),

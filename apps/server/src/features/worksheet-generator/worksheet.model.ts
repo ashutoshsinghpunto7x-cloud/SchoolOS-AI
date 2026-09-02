@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { QuestionType, QuestionDifficulty } from '../question-bank/question.model';
+import { QuestionType, QuestionDifficulty, IQuestionImageRef, IQuestionImageRequirement, imageRefSchema, imageRequirementSchema } from '../question-bank/question.model';
 
 export type WorksheetType = 'practice' | 'homework' | 'revision' | 'hots' | 'olympiad' | 'remedial';
 
@@ -11,6 +11,8 @@ export interface IWorksheetQuestion {
   difficulty: QuestionDifficulty;
   estimatedTimeMinutes: number;
   keywords: string[];
+  imageRef?: IQuestionImageRef;
+  imageRequirement?: IQuestionImageRequirement;
 }
 
 export interface IWorksheet extends Document {
@@ -45,6 +47,8 @@ const worksheetQuestionSchema = new Schema<IWorksheetQuestion>(
     difficulty:           { type: String, enum: DIFFICULTIES, required: true },
     estimatedTimeMinutes: { type: Number, required: true, min: 0 },
     keywords:             { type: [String], default: [] },
+    imageRef:             { type: imageRefSchema },
+    imageRequirement:     { type: imageRequirementSchema },
   },
   { _id: false },
 );

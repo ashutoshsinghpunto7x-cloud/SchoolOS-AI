@@ -10,7 +10,10 @@ import { chapterRepository } from './chapter.repository';
 import { IQuestionSource } from './question-source.model';
 import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model';
 import { normalizeOptions } from './option-text';
-import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions } from '@schoolos/types';
+import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions, LanguageComplexity, PageFigure, QuestionImageRef, QuestionImageRequirement } from '@schoolos/types';
+import { languageStyleGuide, TEACHER_VOICE_RULES, SELF_CHECK_INSTRUCTION, imageAvailabilityInstruction } from './teacher-voice';
+import { saveImage } from '../../lib/image-store';
+import type { ChapterFigure } from './figure-lookup';
 
 // ── Output shapes ──────────────────────────────────────────────────────────────
 
@@ -27,6 +30,8 @@ export interface ExtractedQuestionDraft {
   chapterName: string;
   topic?: string;
   source?: string;
+  imageRef?: QuestionImageRef;
+  imageRequirement?: QuestionImageRequirement;
 }
 
 export interface QuestionExtractionResult {
@@ -61,6 +66,10 @@ interface RawExtractedQuestion {
   chapterName?: string | null;
   topic?: string | null;
   source?: string | null;
+  /** Set by the model only when a figure list was offered in this call's prompt — the exact figureId it picked, never invented. */
+  imageFigureId?: string | null;
+  imageRequired?: boolean | null;
+  imagePrompt?: string | null;
 }
 
 const QUESTION_TYPES: QuestionType[] = [
@@ -184,7 +193,11 @@ export function dedupeQuestions(list: ExtractedQuestionDraft[]): ExtractedQuesti
   return out;
 }
 
-function buildSystemPrompt(cls: string, subject: string, options: { count: number; difficulty: QuestionDifficulty | 'mixed' }, excludeTexts: string[] = []): string {
+export function buildSystemPrompt(
+  cls: string, subject: string,
+  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; includeImages?: boolean; figures?: PageFigure[] },
+  excludeTexts: string[] = [],
+): string {
   const difficultyInstruction = options.difficulty === 'mixed'
     ? 'a mix of easy, medium, and hard difficulty'
     : `"${options.difficulty}" difficulty only`;
@@ -193,7 +206,13 @@ function buildSystemPrompt(cls: string, subject: string, options: { count: numbe
     ? `\n\nThese questions were already extracted from this same document in an earlier pass — do NOT repeat them or near-duplicates of them:\n${excludeTexts.slice(0, 30).map((t) => `- ${t.slice(0, 150)}`).join('\n')}\n`
     : '';
 
-  return `You read school textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and convert what you find into structured JSON.
+  return `You are an experienced school teacher reading textbook pages, worksheets, or previous exam papers for Class ${cls} ${subject} and picking out questions to reuse — not an AI summarizing a document.
+
+${languageStyleGuide(cls, options.languageComplexity)}
+
+${TEACHER_VOICE_RULES}
+
+${imageAvailabilityInstruction(options.figures ?? [], options.includeImages ?? false)}
 
 Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.
 ${excludeBlock}
@@ -201,7 +220,7 @@ For each question, return:
 - "questionText": the full question text
 - "questionType": one of ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}
 - "options": array of option strings, only if questionType is "mcq"
-- "correctAnswer": the correct answer/option if it is visible on the page, else omit
+- "correctAnswer": the correct answer. If it is visible on the page use that; otherwise write a short, correct answer yourself based only on this page's content (needed for the answer key) — never leave it blank unless the question type has no single answer (e.g. an open "write two sentences" question).
 - "difficulty": one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')} — estimate based on the question's complexity
 - "marks": the marks this question is worth (a number). If not stated, estimate a reasonable value based on question type and length
 - "estimatedTimeMinutes": estimated minutes a student would need
@@ -210,8 +229,11 @@ For each question, return:
 - "chapterName": the chapter this question belongs to, if visible/inferable from the page (e.g. a heading), else your best guess from the content
 - "topic": the specific topic within the chapter, if identifiable
 - "source": where this came from if visible (e.g. "NCERT Page 54", "2024 Half Yearly Paper"), else omit
+- "imageFigureId" / "imageRequired" + "imagePrompt": only as described above — omit both for an ordinary text question
 
 Also return "pageText": the full raw text of everything readable on the page, transcribed verbatim, so it can be cached and re-used later.
+
+${SELF_CHECK_INSTRUCTION}
 
 Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
 }
@@ -222,28 +244,64 @@ Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]}. No mar
  * value — the model must never refuse for "not enough content"; it should combine/extend the
  * chapter's concepts (multi-part, detailed-answer, etc.) to legitimately reach the requested marks.
  */
-function buildSynthesisPrompt(cls: string, subject: string, chapterName: string, marks: number, count: number, questionType?: QuestionType, difficulty?: QuestionDifficulty): string {
-  return `You are writing ${count} new, original exam question(s) for Class ${cls} ${subject}, chapter "${chapterName}", each worth exactly ${marks} mark(s)${questionType ? ` and of question type "${questionType}"` : ''}.
+export function buildSynthesisPrompt(
+  cls: string, subject: string, chapterName: string, marks: number, count: number,
+  questionType?: QuestionType, difficulty?: QuestionDifficulty, languageComplexity?: LanguageComplexity,
+  includeImages?: boolean, figures?: PageFigure[],
+): string {
+  return `You are an experienced school teacher writing ${count} new, original exam question(s) for Class ${cls} ${subject}, chapter "${chapterName}", each worth exactly ${marks} mark(s)${questionType ? ` and of question type "${questionType}"` : ''}.
+
+${languageStyleGuide(cls, languageComplexity)}
+
+${TEACHER_VOICE_RULES}
+
+${imageAvailabilityInstruction(figures ?? [], includeImages ?? false)}
 
 Use the reference material below (existing questions and/or textbook excerpts from this chapter) as your syllabus content — do not invent facts outside it. You must always produce exactly ${count} question(s) worth ${marks} marks each, no matter how little reference material is given. Never refuse or claim there isn't enough content for the requested mark value: if the chapter's material is thin for a high-mark question, write a multi-part or detailed-answer question (e.g. "Explain X. Give two examples. What is its significance?") that legitimately deserves ${marks} marks by combining and extending the chapter's concepts.
 ${difficulty ? `\nThe teacher specifically asked for "${difficulty}" difficulty here — every one of these ${count} question(s) MUST be "${difficulty}" difficulty, no exceptions. If this chapter's material looks too basic to naturally reach that difficulty, don't soften the difficulty or skip the question instead — stretch it there yourself (deeper application, a multi-step or multi-part twist, combining two ideas from the chapter, an unfamiliar scenario using the same concept) until it genuinely earns "${difficulty}". The teacher is counting on getting exactly ${count} "${difficulty}" question(s) back, not fewer and not a different difficulty.\n` : ''}
 For each question, return the same JSON shape used for extraction:
-- "questionText", "questionType", "options" (only for mcq), "correctAnswer" (if applicable)
+- "questionText"
+- "questionType": ${questionType ? `must be exactly "${questionType}"` : `one of ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}`}
+- "options": array of option strings, only if questionType is "mcq"
+- "correctAnswer": a short, correct model answer for this question, grounded only in the reference material — always include this (it powers the paper's answer key), even for short/long-answer question types
 - "difficulty": ${difficulty ? `must be exactly "${difficulty}"` : `one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}`}
 - "marks": must be exactly ${marks}
 - "estimatedTimeMinutes", "bloomsLevel": one of ${BLOOMS_LEVELS.map((b) => `"${b}"`).join(', ')}
 - "keywords": 2-5 key terms
 - "chapterName": "${chapterName}"
 - "topic": the specific topic within the chapter, if identifiable
+- "imageFigureId" / "imageRequired" + "imagePrompt": only as described above — omit both for an ordinary text question
+
+${SELF_CHECK_INSTRUCTION}
 
 Return ONLY a valid JSON object: {"questions": [...]}. No markdown, no explanation.`;
 }
 
-/** Transcription-only prompt used on upload — cheaper/faster than buildSystemPrompt since it skips question structuring entirely; that happens later, on demand, via structureFromText. */
-function buildTranscribePrompt(): string {
-  return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.
+/**
+ * Transcription-only prompt used on upload — cheaper/faster than buildSystemPrompt since it skips
+ * question structuring entirely; that happens later, on demand, via structureFromText.
+ *
+ * `detectImages` is opt-in (teacher-controlled "Include images" toggle) rather than always-on: a
+ * full block-classification OCR pass was tried before and reverted for being too slow/pricey per
+ * page (see the "Layout-aware chapter capture" comment below) — this stays a single call and only
+ * adds the extra `figures` field to the same request/response when a teacher actually wants
+ * picture-based questions, so the default upload path's cost/latency is completely unchanged.
+ */
+function buildTranscribePrompt(detectImages: boolean): string {
+  const figureInstructions = detectImages ? `
 
-Return ONLY a valid JSON object: {"pageText": "..."}. No markdown, no explanation, no commentary — just the transcribed text.`;
+Additionally, identify any meaningful illustrations, diagrams, charts, maps, or photos on the page — not small decorative icons/borders. For each one, return an object with:
+- "boundingBox": {"x", "y", "width", "height"} — the image's position as fractions (0.0-1.0) of the full page's width/height, measured from the top-left corner. Estimate carefully; do not guess wildly.
+- "figureType": one of "decorative", "content_supporting", "diagram", "chart_table", "map", "illustration"
+- "caption": the printed caption/label near the image, if any, else omit
+- "description": a short, factual description of what the image visually shows (e.g. "A horse pulling a wooden carriage with two children sitting inside") — this is the only record of the image's content a later step will have, so make it specific enough to write a question from
+- "usableForQuestion": true if the image is clear/substantial enough to build a question around, false for something too small, blurry, or purely decorative
+
+Return these under a "figures" array alongside pageText. If the page has no meaningful images, return an empty array — never invent a figure that isn't visibly present.` : '';
+
+  return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.${figureInstructions}
+
+Return ONLY a valid JSON object: {"pageText": "..."${detectImages ? ', "figures": [...]' : ''}}. No markdown, no explanation, no commentary — just the transcribed text${detectImages ? ' and any detected figures' : ''}.`;
 }
 
 // ── Structured chapter capture (layout-aware OCR) ──────────────────────────────
@@ -593,10 +651,50 @@ function toUserSafeErrorMessage(err: unknown): string {
   return "We couldn't process this page right now — please try again.";
 }
 
-function parseTranscription(raw: string): string {
+interface RawFigure {
+  boundingBox?: { x?: number; y?: number; width?: number; height?: number } | null;
+  figureType?: string | null;
+  caption?: string | null;
+  description?: string | null;
+  usableForQuestion?: boolean | null;
+}
+
+const FIGURE_TYPES = new Set(['decorative', 'content_supporting', 'diagram', 'chart_table', 'map', 'illustration']);
+
+function isFractional(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1;
+}
+
+/** Validates/coerces one raw figure from the transcription response — drops anything unusable
+ * (missing description, out-of-range bounding box) rather than guessing, same "skip, don't
+ * hallucinate" approach as normalizeBlock. `pageNumber`/`index` build the stable figureId a
+ * question's imageRef later points at. */
+function normalizeFigure(raw: RawFigure, pageNumber: number, index: number): PageFigure | null {
+  const bb = raw.boundingBox;
+  if (!bb || !isFractional(bb.x) || !isFractional(bb.y) || !isFractional(bb.width) || !isFractional(bb.height)) return null;
+  if (!raw.description?.trim()) return null;
+  const figureType = FIGURE_TYPES.has(raw.figureType as string) ? (raw.figureType as PageFigure['figureType']) : 'illustration';
+
+  return {
+    figureId: `p${pageNumber}_fig${index + 1}`,
+    pageNumber,
+    boundingBox: { x: bb.x, y: bb.y, width: bb.width, height: bb.height },
+    figureType,
+    caption: raw.caption?.trim() || undefined,
+    description: raw.description.trim(),
+    usableForQuestion: raw.usableForQuestion !== false,
+  };
+}
+
+function parseTranscription(raw: string, pageNumber = 1): { pageText: string; figures: PageFigure[] } {
   try {
     const body = JSON.parse(raw);
-    return typeof body?.pageText === 'string' ? body.pageText : '';
+    const pageText = typeof body?.pageText === 'string' ? body.pageText : '';
+    const rawFigures: RawFigure[] = Array.isArray(body?.figures) ? body.figures : [];
+    const figures = rawFigures
+      .map((f, i) => normalizeFigure(f, pageNumber, i))
+      .filter((f): f is PageFigure => f !== null && f.usableForQuestion);
+    return { pageText, figures };
   } catch (err) {
     logger.error('[QuestionExtraction] Failed to parse transcription response', { error: String(err), raw: raw.slice(0, 500) });
     throw new ValidationError('Could not read that photo — try a clearer picture.');
@@ -640,6 +738,12 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
       chapterName: entry.chapterName?.trim() || 'Unassigned',
       topic: entry.topic ?? undefined,
       source: entry.source ?? undefined,
+      // sourceId is filled in by the caller that actually knows it (extractFromSourceText) —
+      // clean() only sees the model's raw figureId, same layering as sourceRef below it.
+      imageRef: entry.imageFigureId?.trim() ? { sourceId: '', figureId: entry.imageFigureId.trim() } : undefined,
+      imageRequirement: !entry.imageFigureId?.trim() && entry.imageRequired
+        ? { imageRequired: true, imageSource: 'generated', imagePrompt: entry.imagePrompt?.trim() || undefined }
+        : undefined,
     });
   }
 
@@ -649,9 +753,9 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
 // ── Service ────────────────────────────────────────────────────────────────────
 
 export const questionExtractionService = {
-  /** Upload → transcribe + store text only. Question structuring is a separate, repeatable step — see structureFromText/enqueueReExtractFromSource. */
+  /** Upload → transcribe + store text only. Question structuring is a separate, repeatable step — see structureFromText/enqueueReExtractFromSource. `detectImages` is the teacher's "Include images" toggle — opt-in, so the default upload stays exactly as cheap/fast as before figure detection existed. */
   async extractFromImage(
-    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string,
+    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
   ): Promise<TextExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
@@ -659,11 +763,11 @@ export const questionExtractionService = {
 
     const start = Date.now();
     const result = await openaiProvider.complete({
-      systemPrompt: buildTranscribePrompt(),
+      systemPrompt: buildTranscribePrompt(detectImages),
       userPrompt: 'Transcribe everything readable on this page.',
       imageDataUri,
       temperature: 0.1,
-      maxTokens: 4000,
+      maxTokens: detectImages ? 5000 : 4000,
       jsonResponse: true,
     });
 
@@ -678,16 +782,30 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const pageText = parseTranscription(result.content);
+    const { pageText, figures } = parseTranscription(result.content);
     if (!pageText.trim()) {
       // QuestionSource.extractedText is a required field — an empty string still fails Mongoose's
       // required check, so this has to be rejected here rather than saved as a blank source.
       throw new ValidationError('No readable text was found on that page — try a clearer photo.');
     }
 
+    // Only persist the page image (GridFS — see lib/image-store.ts) when there's actually
+    // something on it worth referencing later; a detectImages run that found zero usable figures
+    // shouldn't store an image nothing will ever point at.
+    let pageImageFileId: string | undefined;
+    if (detectImages && figures.length > 0) {
+      const [, base64] = imageDataUri.split(',', 2);
+      const contentTypeMatch = /^data:([^;]+);/.exec(imageDataUri);
+      pageImageFileId = await saveImage(Buffer.from(base64 ?? '', 'base64'), {
+        schoolId: ctx.schoolId,
+        contentType: contentTypeMatch?.[1] ?? 'image/jpeg',
+      });
+    }
+
     const source = await questionSourceRepository.create({
       schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image', fileName,
       extractedText: pageText,
+      ...(pageImageFileId ? { pageImageFileId, figures } : {}),
     });
 
     return { sourceId: String(source._id), sourceType: 'image', fileName, extractedText: pageText, warnings: [] };
@@ -729,18 +847,29 @@ export const questionExtractionService = {
     const sourceText = source.pages?.length
       ? blocksToMarkdown(source.pages.flatMap((p) => p.blocks))
       : source.extractedText;
+    // Every figure this source has, regardless of whether it sits at the top level (single-image
+    // upload) or under a specific page (chapter capture) — offered as one flat list since
+    // structureFromText's prompt covers the whole source's text in one go, not page-by-page.
+    const figures: PageFigure[] = [
+      ...(source.figures ?? []),
+      ...(source.pages ?? []).flatMap((p) => p.figures ?? []),
+    ];
     const { extracted, warnings } = await questionExtractionService.structureFromText(
-      source.class, source.subject, sourceText, options, ctx, source.chapterName,
+      source.class, source.subject, sourceText, options, ctx, source.chapterName, figures,
     );
     // A teacher-assigned chapter on the source overrides the AI's per-question guess —
     // it's a more reliable signal than inferring the chapter from page content alone.
     // Every draft is stamped with sourceRef so a saved question can trace back to the
     // upload it came from ("Show source") — the structuring prompt doesn't track which
     // block a question came from, so this is source-level, not block-level, traceability.
+    // imageRef, when the model picked one of this source's figures, gets the same sourceId
+    // stamped on it (clean() only knows the bare figureId — this source is the only place it
+    // could have come from, since `figures` above was built entirely from it).
     const sourceId = String(source._id);
     const withChapter = extracted.map((q) => ({
       ...(source.chapterName ? { ...q, chapterName: source.chapterName } : q),
       sourceRef: { sourceId },
+      imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
     }));
     return { sourceType: source.kind, extracted: withChapter, warnings, sourceId };
   },
@@ -765,7 +894,7 @@ export const questionExtractionService = {
    */
   async structureFromText(
     cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext,
-    chapterName?: string,
+    chapterName?: string, figures: PageFigure[] = [],
   ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[] }> {
     const chunks = chunkText(text);
     if (chunks.length === 0) return { extracted: [], warnings: [] };
@@ -784,7 +913,7 @@ export const questionExtractionService = {
         const excludeTexts = extracted.map((q) => q.questionText);
         const result = await completeQuestionsWithRetry(
           (count) => ({
-            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty }, excludeTexts),
+            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty, languageComplexity: options.languageComplexity, includeImages: options.includeImages, figures }, excludeTexts),
             userPrompt: `Extract up to ${count} question(s) from this document text:\n\n${task.chunk}`,
           }),
           batchSize,
@@ -834,12 +963,20 @@ export const questionExtractionService = {
    * decide how to degrade further rather than hard-failing paper generation.
    */
   async synthesizeQuestions(
-    req: { class: string; subject: string; chapterName: string; marks: number; count: number; questionType?: QuestionType; difficulty?: QuestionDifficulty; contextText: string },
+    req: {
+      class: string; subject: string; chapterName: string; marks: number; count: number;
+      questionType?: QuestionType; difficulty?: QuestionDifficulty; contextText: string; languageComplexity?: LanguageComplexity;
+      /** Teacher's "Include images" toggle for this generation run — gates whether the prompt offers `figures` at all. */
+      includeImages?: boolean;
+      /** This chapter's available figures, each tagged with the upload it came from — see figure-lookup.ts. Only meaningful when includeImages is true. */
+      figures?: ChapterFigure[];
+    },
     ctx: AuthContext,
   ): Promise<ExtractedQuestionDraft[]> {
     if (!openaiProvider.isAvailable() || req.count <= 0) return [];
 
     const contextText = req.contextText.slice(0, 6000) || '(no prior questions or uploads yet for this chapter — use general syllabus knowledge for this class/subject/chapter)';
+    const figures = req.figures ?? [];
 
     // Same batching principle as structureFromText: a large marks-gap (e.g. filling out a full
     // yearly paper) is split into MAX_BATCH_COUNT-sized calls instead of one big ask that risks
@@ -847,7 +984,10 @@ export const questionExtractionService = {
     const batchResults = await runWithConcurrency(splitIntoBatches(req.count), CHUNK_CONCURRENCY, (batchSize) =>
       completeQuestionsWithRetry(
         (count) => ({
-          systemPrompt: buildSynthesisPrompt(req.class, req.subject, req.chapterName, req.marks, count, req.questionType, req.difficulty),
+          systemPrompt: buildSynthesisPrompt(
+            req.class, req.subject, req.chapterName, req.marks, count, req.questionType, req.difficulty, req.languageComplexity,
+            req.includeImages, figures.map((f) => f.figure),
+          ),
           userPrompt: `Reference material for this chapter:\n\n${contextText}`,
         }),
         batchSize,
@@ -856,6 +996,11 @@ export const questionExtractionService = {
     );
 
     const extracted = dedupeQuestions(batchResults.flatMap((r) => r.extracted)).slice(0, req.count);
+    // The model only ever returns a bare figureId (see imageAvailabilityInstruction) — resolve it
+    // back to the source it actually lives on here. A figureId the model didn't actually pick from
+    // the offered list (shouldn't happen, but defensive) is dropped rather than saved with a blank
+    // sourceId, which would otherwise silently corrupt the reference.
+    const figureSourceMap = new Map(figures.map((f) => [f.figure.figureId, f.sourceId]));
     // The model is asked for exact marks/chapter/type/difficulty, but normalize here too in case it drifts —
     // a requested difficulty is a hard constraint, not a suggestion the model can quietly downgrade.
     return extracted.map((q) => ({
@@ -864,16 +1009,19 @@ export const questionExtractionService = {
       chapterName: req.chapterName,
       questionType: req.questionType ?? q.questionType,
       difficulty: req.difficulty ?? q.difficulty,
+      imageRef: q.imageRef && figureSourceMap.has(q.imageRef.figureId)
+        ? { ...q.imageRef, sourceId: figureSourceMap.get(q.imageRef.figureId)! }
+        : undefined,
     }));
   },
 
   async enqueueExtractFromImage(
-    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string,
+    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
   ): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'image' });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromImage(cls, subject, imageDataUri, ctx, fileName)
+    questionExtractionService.extractFromImage(cls, subject, imageDataUri, ctx, fileName, detectImages)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background image extraction failed', { jobId, err });
@@ -933,20 +1081,20 @@ export const questionExtractionService = {
   // ChapterPage/ContentBlock storage shape unchanged (wrapping the text as paragraph blocks)
   // so the multi-page batching, retry-per-page, and review UI didn't need to change.
 
-  /** Single-page OCR call — the building block enqueueChapterCapture and retryPage both use. */
+  /** Single-page OCR call — the building block enqueueChapterCapture and retryPage both use. `detectImages`/`pageNumber` are only used to also detect figures on this page (teacher's "Include images" toggle) — omitted, behavior is identical to before figure detection existed. */
   async extractStructuredPage(
-    imageDataUri: string, ctx: AuthContext,
-  ): Promise<{ documentTitle?: string; language?: string; blocks: ContentBlock[] }> {
+    imageDataUri: string, ctx: AuthContext, detectImages = false, pageNumber = 1,
+  ): Promise<{ documentTitle?: string; language?: string; blocks: ContentBlock[]; figures: PageFigure[]; imageDataUri: string }> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
     const start = Date.now();
     const result = await openaiProvider.complete({
-      systemPrompt: buildTranscribePrompt(),
+      systemPrompt: buildTranscribePrompt(detectImages),
       userPrompt: 'Transcribe everything readable on this page.',
       imageDataUri,
       temperature: 0.1,
-      maxTokens: 2500,
+      maxTokens: detectImages ? 3200 : 2500,
       jsonResponse: true,
     });
 
@@ -961,8 +1109,8 @@ export const questionExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const pageText = parseTranscription(result.content);
-    return { blocks: textToParagraphBlocks(pageText) };
+    const { pageText, figures } = parseTranscription(result.content, pageNumber);
+    return { blocks: textToParagraphBlocks(pageText), figures, imageDataUri };
   },
 
   /**
@@ -974,7 +1122,7 @@ export const questionExtractionService = {
    * reviews this job's result and calls the save endpoint explicitly.
    */
   async enqueueChapterCapture(
-    images: { dataUri: string; fileName?: string }[], ctx: AuthContext,
+    images: { dataUri: string; fileName?: string }[], ctx: AuthContext, detectImages = false,
   ): Promise<{ jobId: string }> {
     const totalPages = images.length;
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'chapter_capture', totalPages });
@@ -997,14 +1145,28 @@ export const questionExtractionService = {
       const processOne = async (index: number) => {
         const pageNumber = index + 1;
         try {
-          const page = await questionExtractionService.extractStructuredPage(images[index].dataUri, ctx);
+          const page = await questionExtractionService.extractStructuredPage(images[index].dataUri, ctx, detectImages, pageNumber);
           if (!documentTitle && page.documentTitle) documentTitle = page.documentTitle;
           if (!language && page.language) language = page.language;
           const lowConfidenceBlocks = page.blocks.filter((b) => b.confidence === 'low').length;
+
+          // Same "only store what could actually be referenced" rule as the single-image path —
+          // a page with zero usable figures doesn't get its image persisted to GridFS.
+          let pageImageFileId: string | undefined;
+          if (detectImages && page.figures.length > 0) {
+            const [, base64] = page.imageDataUri.split(',', 2);
+            const contentTypeMatch = /^data:([^;]+);/.exec(page.imageDataUri);
+            pageImageFileId = await saveImage(Buffer.from(base64 ?? '', 'base64'), {
+              schoolId: ctx.schoolId,
+              contentType: contentTypeMatch?.[1] ?? 'image/jpeg',
+            });
+          }
+
           pages[index] = {
             pageNumber,
             blocks: page.blocks,
             confidence: page.blocks.length === 0 ? 'low' : lowConfidenceBlocks > page.blocks.length / 2 ? 'review' : undefined,
+            ...(pageImageFileId ? { pageImageFileId, figures: page.figures } : {}),
           };
           usageEventRepository.record({
             userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed',

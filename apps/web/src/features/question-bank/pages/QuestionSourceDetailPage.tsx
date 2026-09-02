@@ -29,6 +29,7 @@ export function QuestionSourceDetailPage() {
   const [chapterName, setChapterName] = useState('');
   const [count, setCount] = useState<number | ''>(5);
   const [difficulty, setDifficulty] = useState<QuestionDifficulty | 'mixed'>('mixed');
+  const [includeImages, setIncludeImages] = useState(false);
 
   useEffect(() => { setChapterName(source?.chapterName ?? ''); }, [source?.chapterName]);
 
@@ -46,7 +47,7 @@ export function QuestionSourceDetailPage() {
     if (!sourceId) return;
     try {
       const effectiveCount = count === '' ? 1 : count;
-      const result = await generate.mutateAsync({ id: sourceId, options: { count: effectiveCount, difficulty } });
+      const result = await generate.mutateAsync({ id: sourceId, options: { count: effectiveCount, difficulty, includeImages } });
       setDrafts(result.extracted);
       setWarnings(result.warnings);
       if (result.extracted.length === 0) toast.error('No questions found in that text');
@@ -220,6 +221,14 @@ export function QuestionSourceDetailPage() {
                   ))}
                 </div>
               </div>
+
+              {(source.figures?.length || source.pages?.some((p) => p.figures?.length)) ? (
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-white/70 cursor-pointer">
+                  <input type="checkbox" checked={includeImages} onChange={(e) => setIncludeImages(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300" />
+                  Include images (allow picture-based questions from this upload's detected figures)
+                </label>
+              ) : null}
 
               <button
                 type="button" onClick={handleGenerate} disabled={generate.isPending}
