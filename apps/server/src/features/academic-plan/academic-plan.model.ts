@@ -23,6 +23,9 @@ export interface IAcademicPlanDay {
   status: AcademicPlanDayStatus;
   carriedFromDate?: Date;
   note?: string;
+  /** True once a teacher has hand-edited or drag-swapped this day.
+   *  Regenerate preserves these days verbatim instead of recomputing them. */
+  manuallyEdited?: boolean;
 }
 
 export interface IAcademicPlanHistoryEntry {
@@ -62,6 +65,7 @@ const planDaySchema = new Schema<IAcademicPlanDay>(
     status:          { type: String, enum: DAY_STATUSES, default: 'pending' },
     carriedFromDate: { type: Date },
     note:            { type: String, trim: true },
+    manuallyEdited:  { type: Boolean, default: false },
   },
   { _id: false },
 );

@@ -14,7 +14,7 @@ import {
   buildEligibleDaysContext, listEligibleDays, nextEligibleDay, reserveExamBlocks,
   fillChaptersIntoDays, isoDate,
 } from './academic-plan.util';
-import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput } from './academic-plan.validation';
+import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput } from './academic-plan.validation';
 
 // ── Teacher scope guard — same shape/reasoning as Teacher Planner v2's
 // assertTeacherCanManagePlanner (Teacher and User link only by email; a
@@ -66,10 +66,19 @@ export const academicPlanService = {
       throw new ValidationError('No teaching days found in the academic year for this class/subject — check the calendar and timetable setup.');
     }
 
-    const exams = await examRepository.findAllScheduled(ctx.schoolId);
-    const { revisionDates, assessmentDates } = reserveExamBlocks(allEligibleDays, exams, input.class, input.subject);
+    // Regenerate must not touch any day the teacher has hand-edited or
+    // drag-swapped — pull the current plan (if any) and carve those dates
+    // out of the pool before the fill algorithm ever sees them, so it never
+    // double-books a locked day.
+    const existingPlan = await academicPlanRepository.findOne(ctx.schoolId, ctx.userId, input.class, input.section, input.subject);
+    const lockedDays = new Map((existingPlan?.days ?? []).filter((d) => d.manuallyEdited).map((d) => [isoDate(new Date(d.date)), d]));
 
-    const teachDays = allEligibleDays.filter((d) => {
+    const schedulableDays = allEligibleDays.filter((d) => !lockedDays.has(isoDate(d)));
+
+    const exams = await examRepository.findAllScheduled(ctx.schoolId);
+    const { revisionDates, assessmentDates } = reserveExamBlocks(schedulableDays, exams, input.class, input.subject);
+
+    const teachDays = schedulableDays.filter((d) => {
       const key = isoDate(d);
       return !revisionDates.has(key) && !assessmentDates.has(key);
     });
@@ -80,6 +89,9 @@ export const academicPlanService = {
     const filledByDate = new Map(filled.map((f) => [isoDate(f.date), f]));
     const days: IAcademicPlanDay[] = allEligibleDays.map((date) => {
       const key = isoDate(date);
+      const locked = lockedDays.get(key);
+      if (locked) return locked;
+
       const assessment = assessmentDates.get(key);
       if (assessment) {
         return { date, blockType: 'assessment', examId: assessment.examId, examName: assessment.examName, status: 'pending' };
@@ -159,6 +171,58 @@ export const academicPlanService = {
       carriedFromDate: data.date,
     });
     return carried ?? updated;
+  },
+
+  /** Teacher hand-edits a single day — fix a wrong auto-assignment, or fill
+   *  a buffer day with a chapter of their own choosing. Exam-owned
+   *  'assessment' blocks are off-limits here; those move only if the exam's
+   *  own dates change (Principal/Coordinator's Exam scheduling). */
+  async editDay(planId: string, data: EditDayInput, ctx: AuthContext): Promise<IAcademicPlan> {
+    const existing = await academicPlanRepository.findById(planId, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Plan');
+    await assertTeacherCanManagePlan(ctx, existing.class, existing.subject);
+
+    const dateKey = isoDate(data.date);
+    const day = existing.days.find((d) => isoDate(new Date(d.date)) === dateKey);
+    if (!day) throw new NotFoundError('Plan day');
+    if (day.blockType === 'assessment') throw new ForbiddenError('This day is set by an exam\'s own dates and cannot be hand-edited.');
+
+    const patch: Partial<IAcademicPlanDay> = {};
+    if (data.blockType !== undefined) patch.blockType = data.blockType;
+    if (data.chapterId !== undefined) patch.chapterId = data.chapterId;
+    if (data.chapterName !== undefined) patch.chapterName = data.chapterName;
+    if (data.topicTitle !== undefined) patch.topicTitle = data.topicTitle;
+
+    const updated = await academicPlanRepository.editDay(
+      planId, ctx.schoolId, dateKey, patch,
+      { version: 0, changedBy: ctx.displayName, changedAt: new Date(), reason: `Edited ${dateKey}` },
+    );
+    if (!updated) throw new NotFoundError('Plan');
+    return updated;
+  },
+
+  /** Drag-and-drop reorder — swaps two days' teaching content. Neither side
+   *  may be an exam-owned 'assessment' block. */
+  async moveDay(planId: string, data: MoveDayInput, ctx: AuthContext): Promise<IAcademicPlan> {
+    const existing = await academicPlanRepository.findById(planId, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Plan');
+    await assertTeacherCanManagePlan(ctx, existing.class, existing.subject);
+
+    const fromKey = isoDate(data.fromDate);
+    const toKey = isoDate(data.toDate);
+    const fromDay = existing.days.find((d) => isoDate(new Date(d.date)) === fromKey);
+    const toDay = existing.days.find((d) => isoDate(new Date(d.date)) === toKey);
+    if (!fromDay || !toDay) throw new NotFoundError('Plan day');
+    if (fromDay.blockType === 'assessment' || toDay.blockType === 'assessment') {
+      throw new ForbiddenError('An exam\'s own dates cannot be moved or swapped.');
+    }
+
+    const updated = await academicPlanRepository.swapDays(
+      planId, ctx.schoolId, fromKey, toKey,
+      { version: 0, changedBy: ctx.displayName, changedAt: new Date(), reason: `Swapped ${fromKey} and ${toKey}` },
+    );
+    if (!updated) throw new NotFoundError('Plan');
+    return updated;
   },
 
   // ── Principal (read-only, any teacher) — same shape as Teacher Planner v2's

@@ -47,7 +47,16 @@ const examFormSchema = z.object({
   gradingBands: z.array(gradeBandSchema),
   passPercent: z.coerce.number().min(0).max(100),
   subjectWiseMinPercent: z.coerce.number().min(0).max(100).optional(),
-});
+  // ── Scheduling (Academic Planning Engine) — optional; an undated exam
+  // simply gets skipped by the engine's exam-aware scheduling, everything
+  // else about the exam (marks entry, report cards) works either way.
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  revisionLeadDays: z.coerce.number().min(0).max(60).optional(),
+}).refine(
+  (d) => !d.startDate || !d.endDate || d.endDate >= d.startDate,
+  { message: 'End date cannot be before start date', path: ['endDate'] },
+);
 
 export type ExamFormValues = z.infer<typeof examFormSchema>;
 
@@ -73,6 +82,9 @@ const inputCls = (err?: boolean) =>
 
 const selectCls = (err?: boolean) => cn(inputCls(err), 'cursor-pointer');
 
+/** ISO timestamp → yyyy-mm-dd for a native date input's value. */
+const toDateInputValue = (iso?: string): string => (iso ? iso.slice(0, 10) : '');
+
 // ── ExamForm ──────────────────────────────────────────────────────────────────
 
 interface ExamFormProps {
@@ -87,7 +99,7 @@ interface ExamFormProps {
 export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel = 'Create Exam', disabled = false }: ExamFormProps) => {
   const { data: schoolClasses } = useSchoolClasses();
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<ExamFormValues>({
+  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<ExamFormValues>({
     resolver: zodResolver(examFormSchema),
     defaultValues: initialData
       ? {
@@ -100,6 +112,9 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
           gradingBands: initialData.gradingBands ?? [],
           passPercent: initialData.passPercent,
           subjectWiseMinPercent: initialData.subjectWiseMinPercent,
+          startDate: toDateInputValue(initialData.startDate),
+          endDate: toDateInputValue(initialData.endDate),
+          revisionLeadDays: initialData.revisionLeadDays,
         }
       : {
           examType: 'unit_test' as const,
@@ -110,6 +125,7 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
           passPercent: 33,
         },
   });
+  const watchedStartDate = watch('startDate');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
@@ -184,8 +200,34 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
         </div>
       </FormSection>
 
-      {/* ── 3: Assessment Components ────────────────────────────────────── */}
-      <FormSection number={3} title="Assessment Components" description="Theory, practical, oral, project — whatever this exam is scored on">
+      {/* ── 3: Scheduling ────────────────────────────────────────────────── */}
+      <FormSection
+        number={3}
+        title="Scheduling"
+        description="Drives the Academic Planning Engine — every teacher whose class/subject this exam applies to gets these dates factored into their auto-generated teaching plan"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <Field label="Exam Start Date" error={errors.startDate?.message} hint="Optional">
+            <input {...register('startDate')} type="date" className={inputCls(!!errors.startDate)} disabled={disabled} />
+          </Field>
+          <Field label="Exam End Date" error={errors.endDate?.message} hint="Optional — same as start for a single-day exam">
+            <input {...register('endDate')} type="date" className={inputCls(!!errors.endDate)} disabled={disabled} />
+          </Field>
+          <Field
+            label="Revision Days Before"
+            error={errors.revisionLeadDays?.message}
+            hint="Teaching days to auto-block as revision before Start Date"
+          >
+            <input {...register('revisionLeadDays')} type="number" min={0} max={60} step={1} placeholder="e.g. 3" className={cn(inputCls(!!errors.revisionLeadDays), 'tabular-nums')} disabled={disabled} />
+          </Field>
+        </div>
+        {!watchedStartDate && (
+          <p className="text-xs text-gray-400 mt-3">Leave dates empty to skip exam-aware scheduling for this exam — it still works for marks entry and report cards either way.</p>
+        )}
+      </FormSection>
+
+      {/* ── 4: Assessment Components ────────────────────────────────────── */}
+      <FormSection number={4} title="Assessment Components" description="Theory, practical, oral, project — whatever this exam is scored on">
         <Controller control={control} name="components" render={({ field }) => (
           <ExamComponentsEditor components={field.value} onChange={field.onChange} />
         )} />
@@ -195,8 +237,8 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
         )}
       </FormSection>
 
-      {/* ── 4: Grading & Pass Criteria ───────────────────────────────────── */}
-      <FormSection number={4} title="Grading & Pass Criteria" description="Overall pass percentage and letter-grade bands">
+      {/* ── 5: Grading & Pass Criteria ───────────────────────────────────── */}
+      <FormSection number={5} title="Grading & Pass Criteria" description="Overall pass percentage and letter-grade bands">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
           <Field label="Overall Pass %" required error={errors.passPercent?.message}>
             <input {...register('passPercent')} type="number" min={0} max={100} step={0.01} className={cn(inputCls(!!errors.passPercent), 'tabular-nums')} disabled={disabled} />

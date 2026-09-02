@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Plus, Trash2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { useChapters, useGeneratePaper, useQuestionSources } from '../hooks/useQuestionBank';
 import type { PaperMarksBreakdownEntry, QuestionType } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
+const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'] as const;
 
 function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -19,7 +20,10 @@ export function PaperGeneratorPage() {
   const [durationMinutes, setDurationMinutes] = useState<number | ''>('');
   const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
   const [difficultyMix, setDifficultyMix] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 0, medium: 0, hard: 0 });
-  const [marksBreakdown, setMarksBreakdown] = useState<{ marks: number | ''; count: number | '' }[]>([{ marks: 1, count: 10 }]);
+  // Marks are set once per difficulty level and applied to every question of that level —
+  // replaces the old manual "marks × count" row list, which made teachers hand-add a row
+  // per marks value instead of just saying "every easy question is worth 1 mark".
+  const [marksPerDifficulty, setMarksPerDifficulty] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 1, medium: 2, hard: 4 });
   const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set());
 
   const { data: chapters } = useChapters(cls.trim(), subject.trim());
@@ -36,7 +40,23 @@ export function PaperGeneratorPage() {
   )];
   const generate = useGeneratePaper();
 
-  const totalMarks = marksBreakdown.reduce((sum, e) => sum + Number(e.marks || 0) * Number(e.count || 0), 0);
+  const totalMarks = DIFFICULTY_LEVELS.reduce(
+    (sum, level) => sum + Number(difficultyMix[level] || 0) * Number(marksPerDifficulty[level] || 0),
+    0,
+  );
+  // The engine buckets by marks value, not by difficulty tag directly (it then prefers
+  // difficulty-matching candidates within a bucket) — so two levels sharing the same marks
+  // value collapse into one bucket with their counts combined.
+  function buildMarksBreakdown(): PaperMarksBreakdownEntry[] {
+    const byMarks = new Map<number, number>();
+    for (const level of DIFFICULTY_LEVELS) {
+      const count = Number(difficultyMix[level] || 0);
+      if (count <= 0) continue;
+      const marks = Number(marksPerDifficulty[level] || 0);
+      byMarks.set(marks, (byMarks.get(marks) ?? 0) + count);
+    }
+    return [...byMarks.entries()].map(([marks, count]) => ({ marks, count }));
+  }
 
   function toggleChapter(id: string) {
     setSelectedChapterIds((prev) => {
@@ -54,12 +74,14 @@ export function PaperGeneratorPage() {
     });
   }
 
-  function updateBreakdown(index: number, patch: Partial<{ marks: number | ''; count: number | '' }>) {
-    setMarksBreakdown((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
-  }
-
   async function handleGenerate() {
     if (selectedChapterIds.size === 0) { toast.error('Select at least one chapter'); return; }
+    const marksBreakdown = buildMarksBreakdown();
+    if (marksBreakdown.length === 0) { toast.error('Set the difficulty mix first — how many easy/medium/hard questions you want'); return; }
+    const missingMarks = DIFFICULTY_LEVELS.some(
+      (level) => Number(difficultyMix[level] || 0) > 0 && Number(marksPerDifficulty[level] || 0) <= 0,
+    );
+    if (missingMarks) { toast.error('Set marks per question for every difficulty level you’re using'); return; }
     try {
       const paper = await generate.mutateAsync({
         class: cls.trim(),
@@ -72,10 +94,7 @@ export function PaperGeneratorPage() {
           medium: difficultyMix.medium === '' ? 0 : difficultyMix.medium,
           hard: difficultyMix.hard === '' ? 0 : difficultyMix.hard,
         },
-        marksBreakdown: marksBreakdown.map((e): PaperMarksBreakdownEntry => ({
-          marks: e.marks === '' ? 0 : e.marks,
-          count: e.count === '' ? 0 : e.count,
-        })),
+        marksBreakdown,
         questionTypes: [...questionTypes],
         durationMinutes: durationMinutes === '' ? undefined : durationMinutes,
       });
@@ -173,28 +192,26 @@ export function PaperGeneratorPage() {
         </div>
 
         <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
-          <div className="flex items-center justify-between mb-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Marks Breakdown</p>
-            <button type="button" onClick={() => setMarksBreakdown((prev) => [...prev, { marks: 1, count: 1 }])}
-              className="text-xs font-semibold text-[#6D4AFF] flex items-center gap-1">
-              <Plus className="w-3.5 h-3.5" /> Add row
-            </button>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Marks per Question</p>
+          <p className="text-[11px] text-gray-400 mb-2.5">Set once per difficulty level — applies to every question at that level.</p>
+          <div className="grid grid-cols-3 gap-3">
+            {DIFFICULTY_LEVELS.map((level) => {
+              const count = Number(difficultyMix[level] || 0);
+              return (
+                <div key={level}>
+                  <label className="text-xs text-gray-500 dark:text-white/40 capitalize">
+                    {level}{count > 0 ? ` (${count}×)` : ''}
+                  </label>
+                  <input
+                    type="number" min={0} value={marksPerDifficulty[level]} disabled={count === 0}
+                    onChange={(e) => setMarksPerDifficulty((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                    className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-40"
+                  />
+                </div>
+              );
+            })}
           </div>
-          <div className="space-y-2">
-            {marksBreakdown.map((entry, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <input type="number" min={0} value={entry.marks} onChange={(e) => updateBreakdown(i, { marks: e.target.value === '' ? '' : Number(e.target.value) })}
-                  placeholder="Marks each" className="h-9 flex-1 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
-                <span className="text-xs text-gray-400">×</span>
-                <input type="number" min={0} value={entry.count} onChange={(e) => updateBreakdown(i, { count: e.target.value === '' ? '' : Number(e.target.value) })}
-                  placeholder="Count" className="h-9 flex-1 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
-                <button type="button" onClick={() => setMarksBreakdown((prev) => prev.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-2">Total marks: <span className="font-semibold text-gray-700 dark:text-white/70">{totalMarks}</span></p>
+          <p className="text-xs text-gray-400 mt-2.5">Total marks: <span className="font-semibold text-gray-700 dark:text-white/70">{totalMarks}</span></p>
         </div>
 
         <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">

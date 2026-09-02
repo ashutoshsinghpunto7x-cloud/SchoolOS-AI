@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicPlanApi, PlanTarget, ChapterSizingPayload } from '../api/academic-plan.api';
-import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload } from '@schoolos/types';
+import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload } from '@schoolos/types';
 
 function targetKey(t: PlanTarget) {
   return [t.class, t.section ?? '', t.subject] as const;
@@ -35,6 +35,23 @@ export const useSetPlanDayStatus = (planId: string) => {
     mutationFn: (payload: SetPlanDayStatusPayload) => academicPlanApi.setDayStatus(planId, payload),
     // Carry-forward can append a brand-new day to the plan, so re-fetch the
     // whole plan rather than patching one day in the cache locally.
+    onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+  });
+};
+
+export const useEditPlanDay = (planId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: EditPlanDayPayload) => academicPlanApi.editDay(planId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+  });
+};
+
+export const useMovePlanDay = (planId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    // Swaps two days at once — always re-fetch rather than patch the cache.
+    mutationFn: (payload: MovePlanDayPayload) => academicPlanApi.moveDay(planId, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
   });
 };

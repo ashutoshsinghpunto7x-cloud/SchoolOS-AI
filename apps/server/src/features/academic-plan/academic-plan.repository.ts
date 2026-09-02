@@ -103,4 +103,61 @@ export const academicPlanRepository = {
       { new: true },
     ).lean<IAcademicPlan>();
   },
+
+  /** Teacher hand-edits one day's content (chapter/topic/blockType). Marks
+   *  it manuallyEdited so a later Regenerate leaves it alone — same shape
+   *  as setDayStatus. */
+  async editDay(
+    id: string,
+    schoolId: string,
+    dateKey: string,
+    patch: Partial<IAcademicPlanDay>,
+    historyEntry: IAcademicPlanHistoryEntry,
+  ): Promise<IAcademicPlan | null> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return null;
+
+    const day = plan.days.find((d) => d.date.toISOString().slice(0, 10) === dateKey);
+    if (!day) return null;
+    Object.assign(day, patch, { manuallyEdited: true });
+
+    plan.version += 1;
+    plan.history.push({ ...historyEntry, version: plan.version });
+    await plan.save();
+    return plan.toObject();
+  },
+
+  /** Swaps the teaching content (not date/status) between two days — the
+   *  drag-and-drop reorder. Both ends are marked manuallyEdited so
+   *  Regenerate preserves them. */
+  async swapDays(
+    id: string,
+    schoolId: string,
+    dateAKey: string,
+    dateBKey: string,
+    historyEntry: IAcademicPlanHistoryEntry,
+  ): Promise<IAcademicPlan | null> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return null;
+
+    const dayA = plan.days.find((d) => d.date.toISOString().slice(0, 10) === dateAKey);
+    const dayB = plan.days.find((d) => d.date.toISOString().slice(0, 10) === dateBKey);
+    if (!dayA || !dayB) return null;
+
+    const snapshotA = {
+      blockType: dayA.blockType, chapterId: dayA.chapterId, chapterName: dayA.chapterName,
+      topicTitle: dayA.topicTitle, examId: dayA.examId, examName: dayA.examName,
+    };
+    const snapshotB = {
+      blockType: dayB.blockType, chapterId: dayB.chapterId, chapterName: dayB.chapterName,
+      topicTitle: dayB.topicTitle, examId: dayB.examId, examName: dayB.examName,
+    };
+    Object.assign(dayA, snapshotB, { manuallyEdited: true });
+    Object.assign(dayB, snapshotA, { manuallyEdited: true });
+
+    plan.version += 1;
+    plan.history.push({ ...historyEntry, version: plan.version });
+    await plan.save();
+    return plan.toObject();
+  },
 };

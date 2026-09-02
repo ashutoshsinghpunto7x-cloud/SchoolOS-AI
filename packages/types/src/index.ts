@@ -4910,6 +4910,9 @@ export interface AcademicPlanDay {
   status: AcademicPlanDayStatus;
   carriedFromDate?: string;
   note?: string;
+  /** True once a teacher has hand-edited or drag-swapped this day.
+   *  Regenerate preserves these days verbatim instead of recomputing them. */
+  manuallyEdited?: boolean;
 }
 
 export interface AcademicPlanHistoryEntry {
@@ -4962,6 +4965,19 @@ export interface SetPlanDayStatusPayload {
   date: string;
   status: AcademicPlanDayStatus;
   note?: string;
+}
+
+export interface EditPlanDayPayload {
+  date: string;
+  blockType?: AcademicPlanBlockType;
+  chapterId?: string;
+  chapterName?: string;
+  topicTitle?: string;
+}
+
+export interface MovePlanDayPayload {
+  fromDate: string;
+  toDate: string;
 }
 
 // ── Principal Academic Plan (read-only) ────────────────────────────────────────

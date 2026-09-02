@@ -4,6 +4,8 @@ import type {
   GenerateAcademicPlanPayload,
   AcademicPlanGenerationResult,
   SetPlanDayStatusPayload,
+  EditPlanDayPayload,
+  MovePlanDayPayload,
   AcademicPlanPrincipalOverviewEntry,
   SyllabusChapter,
   ChapterDifficulty,
@@ -46,6 +48,20 @@ export const academicPlanApi = {
   setDayStatus: async (planId: string, payload: SetPlanDayStatusPayload): Promise<AcademicPlan> => {
     try {
       const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  editDay: async (planId: string, payload: EditPlanDayPayload): Promise<AcademicPlan> => {
+    try {
+      const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days/edit`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  moveDay: async (planId: string, payload: MovePlanDayPayload): Promise<AcademicPlan> => {
+    try {
+      const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days/move`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

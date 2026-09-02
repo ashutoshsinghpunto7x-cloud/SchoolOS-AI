@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { academicPlanService } from './academic-plan.service';
-import { planTargetSchema, generatePlanSchema, setDayStatusSchema } from './academic-plan.validation';
+import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema } from './academic-plan.validation';
 import { z } from 'zod';
 
 const chapterSizingSchema = z.object({
@@ -40,6 +40,26 @@ export const academicPlanController = {
       const ctx = buildAuthContext(req.user!);
       const plan = await academicPlanService.setDayStatus(req.params.id, data, ctx);
       sendSuccess(res, plan, 'Day updated');
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /academic-plan/:id/days/edit */
+  async editDay(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = editDaySchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const plan = await academicPlanService.editDay(req.params.id, data, ctx);
+      sendSuccess(res, plan, 'Day edited');
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /academic-plan/:id/days/move */
+  async moveDay(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = moveDaySchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const plan = await academicPlanService.moveDay(req.params.id, data, ctx);
+      sendSuccess(res, plan, 'Days swapped');
     } catch (err) { next(err); }
   },
 
