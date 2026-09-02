@@ -198,6 +198,14 @@ export const saveChapterSourceSchema = z.object({
 
 // ── Paper generation ───────────────────────────────────────────────────────────
 
+const paperSectionConfigSchema = z.object({
+  name: z.string().min(1).trim(),
+  questionTypes: z.array(z.enum(QUESTION_TYPES)).default([]),
+  difficulty: z.enum(DIFFICULTIES).optional(),
+  count: z.number().min(1),
+  marksEach: z.number().min(0),
+});
+
 export const paperGenerationConfigSchema = z.object({
   class: z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
@@ -208,11 +216,15 @@ export const paperGenerationConfigSchema = z.object({
     easy: z.number().min(0).default(0),
     medium: z.number().min(0).default(0),
     hard: z.number().min(0).default(0),
-  }),
-  marksBreakdown: z.array(z.object({ marks: z.number().min(0), count: z.number().min(0) })).min(1),
+  }).default({ easy: 0, medium: 0, hard: 0 }),
+  marksBreakdown: z.array(z.object({ marks: z.number().min(0), count: z.number().min(0) })).default([]),
+  sections: z.array(paperSectionConfigSchema).optional(),
   questionTypes: z.array(z.enum(QUESTION_TYPES)).default([]),
   durationMinutes: z.number().min(1).optional(),
-});
+}).refine(
+  (v) => (v.sections && v.sections.length > 0) || v.marksBreakdown.length > 0,
+  { message: 'Add at least one section (or marks-breakdown row)', path: ['sections'] },
+);
 
 // ── Inferred types ────────────────────────────────────────────────────────────
 

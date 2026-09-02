@@ -189,3 +189,17 @@ export const useGeneratedPaper = (id: string) =>
     queryFn:  () => questionBankApi.getPaper(id),
     enabled:  !!id,
   });
+
+export const usePapers = (opts: { class?: string; subject?: string; limit?: number } = {}) =>
+  useQuery({
+    queryKey: [...questionBankKeys.all, 'papers', opts],
+    queryFn:  () => questionBankApi.listPapers(opts),
+  });
+
+export const useDeletePaper = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => questionBankApi.deletePaper(id),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: [...questionBankKeys.all, 'papers'] }); },
+  });
+};

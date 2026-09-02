@@ -8,7 +8,7 @@ import { timetableRepository } from '../timetable/timetable.repository';
 import { worksheetRepository, WorksheetListOptions } from './worksheet.repository';
 import { IWorksheet } from './worksheet.model';
 import { worksheetGeneratorService, GenerateWorksheetInput } from './worksheet-generator.service';
-import { SaveWorksheetInput } from './worksheet.validation';
+import { SaveWorksheetInput, UpdateWorksheetInput } from './worksheet.validation';
 
 // Same shape/precedent as teacher-planner's guard — Teacher.subjects/
 // assignedClasses are only kept up to date by the Teachers workspace UI, so
@@ -104,7 +104,18 @@ export const worksheetService = {
     });
   },
 
+  /**
+   * When `class`+`subject` are given, this lists everything saved for that class/subject
+   * (not just this teacher's own) — gated by the same live "do you currently teach this" check
+   * used everywhere else in this file, so a reassigned teacher can still find a predecessor's
+   * worksheets. With no class/subject, falls back to "my worksheets" (teacher-scoped) since
+   * there's nothing else to scope by.
+   */
   async list(query: WorksheetListOptions, ctx: AuthContext) {
+    if (query.class && query.subject) {
+      await assertTeacherCanManageWorksheets(ctx, query.class, query.subject);
+      return worksheetRepository.findAll(ctx.schoolId, undefined, query);
+    }
     return worksheetRepository.findAll(ctx.schoolId, ctx.userId, query);
   },
 
@@ -122,5 +133,32 @@ export const worksheetService = {
 
     const deleted = await worksheetRepository.softDelete(id, ctx.schoolId);
     if (!deleted) throw new ValidationError('Could not delete this worksheet');
+  },
+
+  /** Post-save editing — title and/or per-question text/difficulty/time, matched to the existing
+   * question array by index (a structural change like adding/removing/reordering questions isn't
+   * supported here; use Regenerate for that). */
+  async update(id: string, data: UpdateWorksheetInput, ctx: AuthContext): Promise<IWorksheet> {
+    const existing = await worksheetRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Worksheet');
+    await assertTeacherCanManageWorksheets(ctx, existing.class, existing.subject);
+
+    const patch: { title?: string; questions?: IWorksheet['questions'] } = {};
+    if (data.title !== undefined) patch.title = data.title;
+    if (data.questions) {
+      if (data.questions.length !== existing.questions.length) {
+        throw new ValidationError('Question count changed — regenerate the worksheet instead of editing it directly');
+      }
+      patch.questions = existing.questions.map((q, i) => ({
+        ...q,
+        questionText: data.questions![i].questionText,
+        difficulty: data.questions![i].difficulty,
+        estimatedTimeMinutes: data.questions![i].estimatedTimeMinutes,
+      }));
+    }
+
+    const updated = await worksheetRepository.update(id, ctx.schoolId, patch);
+    if (!updated) throw new NotFoundError('Worksheet');
+    return updated;
   },
 };

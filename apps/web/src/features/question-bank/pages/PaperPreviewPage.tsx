@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, AlertTriangle, Lightbulb } from 'lucide-react';
-import { useGeneratedPaper } from '../hooks/useQuestionBank';
+import { toast } from 'sonner';
+import { ArrowLeft, Printer, Loader2, AlertTriangle, Lightbulb, RotateCw, Trash2 } from 'lucide-react';
+import { useGeneratedPaper, useDeletePaper } from '../hooks/useQuestionBank';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { PaperDocument } from '../components/PaperDocument';
 
@@ -13,6 +14,18 @@ export function PaperPreviewPage() {
 
   const { data: paper, isLoading } = useGeneratedPaper(paperId);
   const { data: schoolSettings } = useSchoolSettings();
+  const deletePaper = useDeletePaper();
+
+  async function handleDelete() {
+    if (!window.confirm('Delete this question paper?')) return;
+    try {
+      await deletePaper.mutateAsync(paperId);
+      toast.success('Paper deleted');
+      navigate('/teacher/question-bank/papers');
+    } catch (err) {
+      toast.error('Could not delete', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
 
   useEffect(() => {
     if (!printing) return;
@@ -50,6 +63,18 @@ export function PaperPreviewPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         <p className="text-sm font-bold text-gray-900 flex-1 truncate">{paper.config.examType} — Class {paper.config.class} {paper.config.subject}</p>
+        <button
+          type="button" onClick={() => navigate('/teacher/question-bank/generate', { state: { prefillConfig: paper.config } })}
+          className="h-9 px-3 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-gray-700 flex items-center gap-1.5"
+        >
+          <RotateCw className="w-3.5 h-3.5" /> Regenerate
+        </button>
+        <button
+          type="button" onClick={handleDelete} disabled={deletePaper.isPending}
+          className="h-9 px-3 rounded-lg bg-white border border-gray-200 text-xs font-semibold text-red-600 flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {deletePaper.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Delete
+        </button>
         <button type="button" onClick={() => setPrinting(true)} className="h-9 px-3.5 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print / Save PDF
         </button>

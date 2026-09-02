@@ -1,30 +1,77 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useChapters, useGeneratePaper, useQuestionSources } from '../hooks/useQuestionBank';
-import type { PaperMarksBreakdownEntry, QuestionType } from '@schoolos/types';
+import type { PaperGenerationConfig, PaperMarksBreakdownEntry, PaperSectionConfig, QuestionDifficulty, QuestionType } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
 const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'] as const;
+const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
 function labelize(s: string): string {
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+interface SectionRow {
+  key: number;
+  name: string;
+  questionTypes: Set<QuestionType>;
+  difficulty: QuestionDifficulty | '';
+  count: number | '';
+  marksEach: number | '';
+}
+
+let sectionSeq = 0;
+function nextSectionName(existing: SectionRow[]): string {
+  const used = new Set(existing.map((s) => s.name));
+  for (let i = 0; i < 26; i++) {
+    const name = `Section ${String.fromCharCode(65 + i)}`;
+    if (!used.has(name)) return name;
+  }
+  return `Section ${existing.length + 1}`;
+}
+
+function defaultSection(existing: SectionRow[]): SectionRow {
+  sectionSeq += 1;
+  return { key: sectionSeq, name: nextSectionName(existing), questionTypes: new Set(), difficulty: '', count: 10, marksEach: 1 };
+}
+
 export function PaperGeneratorPage() {
   const navigate = useNavigate();
-  const [cls, setCls] = useState('');
-  const [subject, setSubject] = useState('');
-  const [examType, setExamType] = useState('Half Yearly');
-  const [durationMinutes, setDurationMinutes] = useState<number | ''>('');
-  const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
-  const [difficultyMix, setDifficultyMix] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 0, medium: 0, hard: 0 });
+  const location = useLocation();
+  const prefill = (location.state as { prefillConfig?: PaperGenerationConfig } | null)?.prefillConfig;
+
+  const [cls, setCls] = useState(prefill?.class ?? '');
+  const [subject, setSubject] = useState(prefill?.subject ?? '');
+  const [examType, setExamType] = useState(prefill?.examType ?? 'Half Yearly');
+  const [durationMinutes, setDurationMinutes] = useState<number | ''>(prefill?.durationMinutes ?? '');
+  const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set(prefill?.chapterIds ?? []));
+  const [difficultyMix, setDifficultyMix] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>(
+    prefill?.difficultyMix ?? { easy: 0, medium: 0, hard: 0 },
+  );
   // Marks are set once per difficulty level and applied to every question of that level —
   // replaces the old manual "marks × count" row list, which made teachers hand-add a row
   // per marks value instead of just saying "every easy question is worth 1 mark".
   const [marksPerDifficulty, setMarksPerDifficulty] = useState<{ easy: number | ''; medium: number | ''; hard: number | '' }>({ easy: 1, medium: 2, hard: 4 });
-  const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set());
+  const [questionTypes, setQuestionTypes] = useState<Set<QuestionType>>(new Set(prefill?.questionTypes ?? []));
+
+  // Sections (Section A/B/C…) are an alternative to the Difficulty Mix / Marks per Question
+  // blocks above — each section carries its own type(s)/difficulty/count/marks. Off by default
+  // (preserves the existing simple flow); once turned on, sections drive generation instead.
+  const [useSections, setUseSections] = useState(Boolean(prefill?.sections?.length));
+  const [sections, setSections] = useState<SectionRow[]>(() => {
+    if (prefill?.sections?.length) {
+      return prefill.sections.map((s) => {
+        sectionSeq += 1;
+        return {
+          key: sectionSeq, name: s.name, questionTypes: new Set(s.questionTypes),
+          difficulty: s.difficulty ?? '', count: s.count, marksEach: s.marksEach,
+        };
+      });
+    }
+    return [defaultSection([])];
+  });
 
   const { data: chapters } = useChapters(cls.trim(), subject.trim());
   // Uploads can have a chapter name assigned before any question from them has actually
@@ -40,10 +87,13 @@ export function PaperGeneratorPage() {
   )];
   const generate = useGeneratePaper();
 
-  const totalMarks = DIFFICULTY_LEVELS.reduce(
+  const simpleTotalMarks = DIFFICULTY_LEVELS.reduce(
     (sum, level) => sum + Number(difficultyMix[level] || 0) * Number(marksPerDifficulty[level] || 0),
     0,
   );
+  const sectionsTotalMarks = sections.reduce((sum, s) => sum + Number(s.marksEach || 0) * Number(s.count || 0), 0);
+  const totalMarks = useSections ? sectionsTotalMarks : simpleTotalMarks;
+
   // The engine buckets by marks value, not by difficulty tag directly (it then prefers
   // difficulty-matching candidates within a bucket) — so two levels sharing the same marks
   // value collapse into one bucket with their counts combined.
@@ -74,8 +124,72 @@ export function PaperGeneratorPage() {
     });
   }
 
+  function toggleSectionType(key: number, t: QuestionType) {
+    setSections((prev) => prev.map((s) => {
+      if (s.key !== key) return s;
+      const next = new Set(s.questionTypes);
+      if (next.has(t)) next.delete(t); else next.add(t);
+      return { ...s, questionTypes: next };
+    }));
+  }
+
+  function updateSection(key: number, patch: Partial<SectionRow>) {
+    setSections((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
+  }
+
+  function addSection() {
+    setSections((prev) => [...prev, defaultSection(prev)]);
+  }
+
+  function removeSection(key: number) {
+    setSections((prev) => prev.filter((s) => s.key !== key));
+  }
+
+  function moveSection(key: number, dir: -1 | 1) {
+    setSections((prev) => {
+      const idx = prev.findIndex((s) => s.key === key);
+      const swapWith = idx + dir;
+      if (idx === -1 || swapWith < 0 || swapWith >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+      return next;
+    });
+  }
+
   async function handleGenerate() {
     if (selectedChapterIds.size === 0) { toast.error('Select at least one chapter'); return; }
+
+    if (useSections) {
+      const validSections: PaperSectionConfig[] = sections
+        .filter((s) => s.name.trim() && s.count !== '' && s.count > 0)
+        .map((s) => ({
+          name: s.name.trim(),
+          questionTypes: [...s.questionTypes],
+          difficulty: s.difficulty || undefined,
+          count: s.count === '' ? 0 : s.count,
+          marksEach: s.marksEach === '' ? 1 : s.marksEach,
+        }));
+      if (validSections.length === 0) { toast.error('Add at least one section with a question count'); return; }
+      try {
+        const paper = await generate.mutateAsync({
+          class: cls.trim(),
+          subject: subject.trim(),
+          examType,
+          chapterIds: [...selectedChapterIds],
+          totalMarks,
+          difficultyMix: { easy: 0, medium: 0, hard: 0 },
+          marksBreakdown: [],
+          sections: validSections,
+          questionTypes: [],
+          durationMinutes: durationMinutes === '' ? undefined : durationMinutes,
+        });
+        navigate(`/teacher/question-bank/papers/${paper._id}`);
+      } catch (err) {
+        toast.error('Could not generate the paper', { description: err instanceof Error ? err.message : undefined });
+      }
+      return;
+    }
+
     const marksBreakdown = buildMarksBreakdown();
     if (marksBreakdown.length === 0) { toast.error('Set the difficulty mix first — how many easy/medium/hard questions you want'); return; }
     const missingMarks = DIFFICULTY_LEVELS.some(
@@ -110,7 +224,13 @@ export function PaperGeneratorPage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white">Generate Question Paper</h1>
+        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Generate Question Paper</h1>
+        <button
+          type="button" onClick={() => navigate('/teacher/question-bank/papers')}
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-white/50"
+        >
+          Past papers
+        </button>
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
@@ -177,59 +297,154 @@ export function PaperGeneratorPage() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Difficulty Mix (question counts)</p>
-          <div className="grid grid-cols-3 gap-3">
-            {(['easy', 'medium', 'hard'] as const).map((level) => (
-              <div key={level}>
-                <label className="text-xs text-gray-500 dark:text-white/40 capitalize">{level}</label>
-                <input type="number" min={0} value={difficultyMix[level]}
-                  onChange={(e) => setDifficultyMix((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                  className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
-              </div>
-            ))}
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-800 dark:text-white/80">Use named sections (Section A/B/C…)</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Each section picks its own question type(s), difficulty, count, and marks — instead of one difficulty mix for the whole paper.</p>
           </div>
+          <button
+            type="button" onClick={() => setUseSections((v) => !v)}
+            className={`shrink-0 h-6 w-11 rounded-full transition-colors relative ${useSections ? 'bg-[#1C2B4A]' : 'bg-gray-200 dark:bg-white/10'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${useSections ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          </button>
         </div>
 
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Marks per Question</p>
-          <p className="text-[11px] text-gray-400 mb-2.5">Set once per difficulty level — applies to every question at that level.</p>
-          <div className="grid grid-cols-3 gap-3">
-            {DIFFICULTY_LEVELS.map((level) => {
-              const count = Number(difficultyMix[level] || 0);
-              return (
-                <div key={level}>
-                  <label className="text-xs text-gray-500 dark:text-white/40 capitalize">
-                    {level}{count > 0 ? ` (${count}×)` : ''}
-                  </label>
-                  <input
-                    type="number" min={0} value={marksPerDifficulty[level]} disabled={count === 0}
-                    onChange={(e) => setMarksPerDifficulty((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
-                    className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-40"
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-gray-400 mt-2.5">Total marks: <span className="font-semibold text-gray-700 dark:text-white/70">{totalMarks}</span></p>
-        </div>
-
-        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Question Types (optional filter)</p>
-          <div className="flex flex-wrap gap-2">
-            {QUESTION_TYPES.map((t) => (
-              <button key={t} type="button" onClick={() => toggleType(t)}
-                className={`h-8 px-3 rounded-lg text-xs font-semibold border ${
-                  questionTypes.has(t)
-                    ? 'bg-[#1C2B4A] text-white border-[#1C2B4A]'
-                    : 'bg-white dark:bg-transparent text-gray-600 dark:text-white/60 border-gray-200 dark:border-white/10'
-                }`}
-              >
-                {labelize(t)}
+        {useSections ? (
+          <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Sections</p>
+              <button type="button" onClick={addSection} className="text-xs font-semibold text-[#6D4AFF] flex items-center gap-1">
+                <Plus className="w-3.5 h-3.5" /> Add section
               </button>
-            ))}
+            </div>
+
+            <div className="space-y-3 mt-2">
+              {sections.map((s, i) => (
+                <div key={s.key} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={s.name} onChange={(e) => updateSection(s.key, { name: e.target.value })}
+                      className="flex-1 h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs font-semibold"
+                    />
+                    <button type="button" onClick={() => moveSection(s.key, -1)} disabled={i === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-30">
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => moveSection(s.key, 1)} disabled={i === sections.length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-30">
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => removeSection(s.key)} disabled={sections.length === 1} className="text-gray-300 hover:text-red-500 disabled:opacity-30">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-400">Difficulty</label>
+                      <select
+                        value={s.difficulty} onChange={(e) => updateSection(s.key, { difficulty: e.target.value as QuestionDifficulty | '' })}
+                        className="mt-0.5 w-full h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                      >
+                        <option value="">Mixed</option>
+                        {DIFFICULTIES.map((d) => <option key={d} value={d}>{labelize(d)}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-400">Questions</label>
+                      <input
+                        type="number" min={1} value={s.count}
+                        onChange={(e) => updateSection(s.key, { count: e.target.value === '' ? '' : Math.max(1, Number(e.target.value)) })}
+                        className="mt-0.5 w-full h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-400">Marks each</label>
+                      <input
+                        type="number" min={0} value={s.marksEach}
+                        onChange={(e) => updateSection(s.key, { marksEach: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })}
+                        className="mt-0.5 w-full h-8 px-2 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-400">Question types (optional — leave blank for any)</label>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {QUESTION_TYPES.map((t) => (
+                        <button key={t} type="button" onClick={() => toggleSectionType(s.key, t)}
+                          className={`h-6 px-2 rounded-md text-[10px] font-semibold border ${
+                            s.questionTypes.has(t)
+                              ? 'bg-[#1C2B4A] text-white border-[#1C2B4A]'
+                              : 'bg-white dark:bg-transparent text-gray-600 dark:text-white/60 border-gray-200 dark:border-white/10'
+                          }`}
+                        >
+                          {labelize(t)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-3">Total marks: <span className="font-semibold text-gray-700 dark:text-white/70">{totalMarks}</span></p>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Difficulty Mix (question counts)</p>
+              <div className="grid grid-cols-3 gap-3">
+                {(['easy', 'medium', 'hard'] as const).map((level) => (
+                  <div key={level}>
+                    <label className="text-xs text-gray-500 dark:text-white/40 capitalize">{level}</label>
+                    <input type="number" min={0} value={difficultyMix[level]}
+                      onChange={(e) => setDifficultyMix((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                      className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Marks per Question</p>
+              <p className="text-[11px] text-gray-400 mb-2.5">Set once per difficulty level — applies to every question at that level.</p>
+              <div className="grid grid-cols-3 gap-3">
+                {DIFFICULTY_LEVELS.map((level) => {
+                  const count = Number(difficultyMix[level] || 0);
+                  return (
+                    <div key={level}>
+                      <label className="text-xs text-gray-500 dark:text-white/40 capitalize">
+                        {level}{count > 0 ? ` (${count}×)` : ''}
+                      </label>
+                      <input
+                        type="number" min={0} value={marksPerDifficulty[level]} disabled={count === 0}
+                        onChange={(e) => setMarksPerDifficulty((prev) => ({ ...prev, [level]: e.target.value === '' ? '' : Number(e.target.value) }))}
+                        className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm disabled:opacity-40"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-2.5">Total marks: <span className="font-semibold text-gray-700 dark:text-white/70">{totalMarks}</span></p>
+            </div>
+
+            <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5">Question Types (optional filter)</p>
+              <div className="flex flex-wrap gap-2">
+                {QUESTION_TYPES.map((t) => (
+                  <button key={t} type="button" onClick={() => toggleType(t)}
+                    className={`h-8 px-3 rounded-lg text-xs font-semibold border ${
+                      questionTypes.has(t)
+                        ? 'bg-[#1C2B4A] text-white border-[#1C2B4A]'
+                        : 'bg-white dark:bg-transparent text-gray-600 dark:text-white/60 border-gray-200 dark:border-white/10'
+                    }`}
+                  >
+                    {labelize(t)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <button
           type="button" onClick={handleGenerate} disabled={generate.isPending}

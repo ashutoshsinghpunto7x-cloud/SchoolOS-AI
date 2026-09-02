@@ -27,7 +27,7 @@ export function QuestionSourceDetailPage() {
   const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterName, setChapterName] = useState('');
-  const [count, setCount] = useState(5);
+  const [count, setCount] = useState<number | ''>(5);
   const [difficulty, setDifficulty] = useState<QuestionDifficulty | 'mixed'>('mixed');
 
   useEffect(() => { setChapterName(source?.chapterName ?? ''); }, [source?.chapterName]);
@@ -45,7 +45,8 @@ export function QuestionSourceDetailPage() {
   async function handleGenerate() {
     if (!sourceId) return;
     try {
-      const result = await generate.mutateAsync({ id: sourceId, options: { count, difficulty } });
+      const effectiveCount = count === '' ? 1 : count;
+      const result = await generate.mutateAsync({ id: sourceId, options: { count: effectiveCount, difficulty } });
       setDrafts(result.extracted);
       setWarnings(result.warnings);
       if (result.extracted.length === 0) toast.error('No questions found in that text');
@@ -123,6 +124,13 @@ export function QuestionSourceDetailPage() {
           </div>
         ) : (
           <>
+            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-2 flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                This upload is already saved — generating questions below is optional, any time.
+              </p>
+            </div>
+
             <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
               <div className="flex items-center gap-2 mb-3">
                 {source.kind === 'image' ? <ImageIcon className="w-4 h-4 text-gray-400" /> : <FileText className="w-4 h-4 text-gray-400" />}
@@ -183,7 +191,14 @@ export function QuestionSourceDetailPage() {
                 </label>
                 <input
                   id="question-count" type="number" min={1} max={100} value={count}
-                  onChange={(e) => setCount(Math.min(100, Math.max(1, Number(e.target.value) || 1)))}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') { setCount(''); return; }
+                    const n = Number(raw);
+                    if (Number.isNaN(n)) return;
+                    setCount(Math.min(100, Math.max(1, n)));
+                  }}
+                  onBlur={() => setCount((c) => (c === '' ? 1 : c))}
                   className="w-16 h-8 px-2 rounded-md border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm text-center"
                 />
               </div>

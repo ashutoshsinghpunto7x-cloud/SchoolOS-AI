@@ -53,7 +53,13 @@ export function QuestionChapterPage() {
   const subject = params.get('subject') ?? '';
   const chapterName = params.get('chapterName') ?? 'Chapter';
 
-  const { data, isLoading } = useQuestions({ chapterId, class: cls || undefined, subject: subject || undefined, limit: 200 });
+  const [filterDifficulty, setFilterDifficulty] = useState<QuestionDifficulty | ''>('');
+  const [filterType, setFilterType] = useState<QuestionType | ''>('');
+
+  const { data, isLoading } = useQuestions({
+    chapterId, class: cls || undefined, subject: subject || undefined, limit: 200,
+    difficulty: filterDifficulty || undefined, questionType: filterType || undefined,
+  });
   const deleteQuestion = useDeleteQuestion();
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -79,12 +85,39 @@ export function QuestionChapterPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-5 py-5 space-y-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={filterDifficulty} onChange={(e) => setFilterDifficulty(e.target.value as QuestionDifficulty | '')}
+            className="h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs bg-white"
+          >
+            <option value="">All difficulties</option>
+            {DIFFICULTIES.map((d) => <option key={d} value={d}>{labelize(d)}</option>)}
+          </select>
+          <select
+            value={filterType} onChange={(e) => setFilterType(e.target.value as QuestionType | '')}
+            className="h-8 px-2.5 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-xs bg-white"
+          >
+            <option value="">All types</option>
+            {QUESTION_TYPES.map((t) => <option key={t} value={t}>{labelize(t)}</option>)}
+          </select>
+          {(filterDifficulty || filterType) && (
+            <button
+              type="button" onClick={() => { setFilterDifficulty(''); setFilterType(''); }}
+              className="text-xs font-semibold text-gray-400 hover:text-gray-600"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
         {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
 
         {!isLoading && data && data.data.length === 0 && (
           <div className="text-center py-16">
             <Sparkles className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No questions found in this chapter.</p>
+            <p className="text-sm text-gray-500">
+              {filterDifficulty || filterType ? 'No questions match these filters.' : 'No questions found in this chapter.'}
+            </p>
           </div>
         )}
 

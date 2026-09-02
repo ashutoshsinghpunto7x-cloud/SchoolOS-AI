@@ -633,6 +633,10 @@ const PaperPreviewPage = lazyPage(
   () => import('@/features/question-bank/pages/PaperPreviewPage'),
   'PaperPreviewPage',
 );
+const PaperListPage = lazyPage(
+  () => import('@/features/question-bank/pages/PaperListPage'),
+  'PaperListPage',
+);
 const SyllabusTrackerPage = lazyPage(
   () => import('@/features/syllabus-tracker/pages/SyllabusTrackerPage'),
   'SyllabusTrackerPage',
@@ -1046,6 +1050,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/question-bank/capture/:jobId/review',           element: <ChapterReviewPage /> },
                       { path: 'teacher/question-bank/chapters/:chapterId',             element: <QuestionChapterPage /> },
                       { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
+                      { path: 'teacher/question-bank/papers',                         element: <PaperListPage /> },
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
                       { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
                       { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
@@ -1057,6 +1062,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },
                       { path: 'teacher/worksheet-generator/view/:id',                 element: <WorksheetViewPage /> },
                       { path: 'teacher/worksheet-generator/:cls/:subject',            element: <WorksheetGeneratePage /> },
+                      { path: 'teacher/worksheet-generator/:cls/:subject/list',       element: <WorksheetListPage /> },
                       { path: 'teacher/report-cards',                                 element: <ReportCardHubPage /> },
                       { path: 'teacher/report-cards/:examId/:cls/:section',           element: <ReportCardRosterPage /> },
                       { path: 'teacher/report-cards/:examId/student/:studentId',      element: <ReportCardPreviewPage /> },

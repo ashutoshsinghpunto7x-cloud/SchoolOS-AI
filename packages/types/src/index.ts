@@ -4680,6 +4680,18 @@ export interface PaperDifficultyMix {
   hard: number;
 }
 
+/** A named section (Section A/B/C…) — an alternative to the flat difficultyMix/marksBreakdown
+ * pair: each section is its own self-contained ask (how many questions, of what type(s)/
+ * difficulty, worth how many marks each), assembled and printed in the order given here. When
+ * `sections` is present on a config, it drives assembly instead of difficultyMix/marksBreakdown. */
+export interface PaperSectionConfig {
+  name: string;
+  questionTypes: QuestionType[];
+  difficulty?: QuestionDifficulty;
+  count: number;
+  marksEach: number;
+}
+
 export interface PaperGenerationConfig {
   class: string;
   subject: string;
@@ -4688,6 +4700,8 @@ export interface PaperGenerationConfig {
   totalMarks: number;
   difficultyMix: PaperDifficultyMix;
   marksBreakdown: PaperMarksBreakdownEntry[];
+  /** Named sections (Section A/B/C…), each with its own type/difficulty/count/marks. When present, this drives assembly instead of `difficultyMix`/`marksBreakdown`. */
+  sections?: PaperSectionConfig[];
   questionTypes: QuestionType[];
   durationMinutes?: number;
 }
@@ -4701,6 +4715,8 @@ export interface PaperValidationResult {
 
 export interface GeneratedPaperSection {
   marks: number;
+  /** Section name (e.g. "Section A") when the paper was built from `PaperGenerationConfig.sections` — absent for older marks-value-grouped papers. */
+  name?: string;
   questions: Question[];
 }
 

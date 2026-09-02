@@ -1,18 +1,36 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Sparkles, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, Loader2, CheckCircle2, Trash2, ListChecks } from 'lucide-react';
 import { useChapters } from '@/features/question-bank/hooks/useQuestionBank';
 import { useGenerateWorksheet, useSaveWorksheet } from '../hooks/useWorksheetGenerator';
 import type { WorksheetQuestion, WorksheetType } from '@schoolos/types';
 
-const WORKSHEET_TYPES: { value: WorksheetType; label: string; description: string }[] = [
-  { value: 'practice', label: 'Practice Worksheet', description: 'Balanced mix of difficulty levels' },
-  { value: 'homework', label: 'Homework', description: 'Short, quick-to-answer questions' },
-  { value: 'revision', label: 'Revision Sheet', description: 'Spread across selected chapters' },
-  { value: 'hots', label: 'HOTS Questions', description: 'Higher-order thinking' },
-  { value: 'olympiad', label: 'Olympiad Questions', description: 'Challenging enrichment questions' },
-  { value: 'remedial', label: 'Remedial Worksheet', description: 'Foundational reinforcement' },
+const WORKSHEET_TYPES: { value: WorksheetType; label: string; description: string; detail: string }[] = [
+  {
+    value: 'practice', label: 'Practice Worksheet', description: 'Balanced mix of difficulty levels',
+    detail: 'A general-purpose worksheet with an even easy/medium/hard spread across the chapters you pick — good for regular classwork.',
+  },
+  {
+    value: 'homework', label: 'Homework', description: 'Short, quick-to-answer questions',
+    detail: 'Skews toward short-answer and objective questions (MCQ, fill-in-the-blank, true/false) that a student can finish quickly at home.',
+  },
+  {
+    value: 'revision', label: 'Revision Sheet', description: 'Spread across selected chapters',
+    detail: 'Draws questions evenly across every chapter selected, so it covers the whole syllabus range rather than going deep on one chapter.',
+  },
+  {
+    value: 'hots', label: 'HOTS Questions', description: 'Higher-order thinking',
+    detail: 'Only higher-order-thinking questions — application, analysis, and reasoning — skipping straight recall/definition questions.',
+  },
+  {
+    value: 'olympiad', label: 'Olympiad Questions', description: 'Challenging enrichment questions',
+    detail: 'Harder, competition-style enrichment questions meant to stretch stronger students beyond the regular syllabus difficulty.',
+  },
+  {
+    value: 'remedial', label: 'Remedial Worksheet', description: 'Foundational reinforcement',
+    detail: 'Weighted toward easy, foundational questions for students who need extra reinforcement of the basics before moving on.',
+  },
 ];
 
 function labelize(s: string): string {
@@ -26,7 +44,7 @@ export function WorksheetGeneratePage() {
   const { data: chapters } = useChapters(cls, subject);
   const [selectedChapterIds, setSelectedChapterIds] = useState<Set<string>>(new Set());
   const [worksheetType, setWorksheetType] = useState<WorksheetType>('practice');
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState<number | ''>(10);
   const [title, setTitle] = useState('');
   const [addNewToBank, setAddNewToBank] = useState(true);
   const [questions, setQuestions] = useState<WorksheetQuestion[] | null>(null);
@@ -46,7 +64,8 @@ export function WorksheetGeneratePage() {
     if (selectedChapterIds.size === 0) { toast.error('Select at least one chapter'); return; }
     try {
       const draft = await generate.mutateAsync({
-        class: cls, subject, chapterIds: [...selectedChapterIds], worksheetType, questionCount,
+        class: cls, subject, chapterIds: [...selectedChapterIds], worksheetType,
+        questionCount: questionCount === '' ? 1 : questionCount,
       });
       setQuestions(draft.questions);
       if (!title) {
@@ -83,7 +102,13 @@ export function WorksheetGeneratePage() {
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
-        <h1 className="text-sm font-bold text-gray-900 dark:text-white">Class {cls} · {subject}</h1>
+        <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1">Class {cls} · {subject}</h1>
+        <button
+          type="button" onClick={() => navigate(`/teacher/worksheet-generator/${cls}/${encodeURIComponent(subject)}/list`)}
+          className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-white/50 shrink-0"
+        >
+          <ListChecks className="w-3.5 h-3.5" /> Past worksheets
+        </button>
       </div>
 
       <div className="max-w-2xl mx-auto px-5 py-6 space-y-5">
@@ -122,12 +147,25 @@ export function WorksheetGeneratePage() {
               </button>
             ))}
           </div>
+          <p className="text-xs text-gray-500 dark:text-white/40 mt-3 leading-relaxed">
+            {WORKSHEET_TYPES.find((t) => t.value === worksheetType)?.detail}
+          </p>
         </div>
 
         <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex items-center gap-3">
           <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Number of Questions</label>
-          <input type="number" min={1} max={50} value={questionCount} onChange={(e) => setQuestionCount(Number(e.target.value))}
-            className="h-9 w-20 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+          <input
+            type="number" min={1} max={50} value={questionCount}
+            onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === '') { setQuestionCount(''); return; }
+              const n = Number(raw);
+              if (Number.isNaN(n)) return;
+              setQuestionCount(Math.min(50, Math.max(1, n)));
+            }}
+            onBlur={() => setQuestionCount((c) => (c === '' ? 10 : c))}
+            className="h-9 w-20 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm"
+          />
         </div>
 
         <button

@@ -44,6 +44,17 @@ export const listWorksheetsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+/** PATCH /worksheet-generator/:id — post-save editing (title + per-question text/difficulty/time). Doesn't touch chapterIds/worksheetType/questions[].options — reuse Regenerate for a structural change. */
+export const updateWorksheetSchema = z.object({
+  title: z.string().min(1).trim().optional(),
+  questions: z.array(z.object({
+    questionText: z.string().min(1),
+    difficulty: z.enum(DIFFICULTIES),
+    estimatedTimeMinutes: z.number().min(0),
+  })).optional(),
+});
+
 export type GenerateWorksheetInput = z.infer<typeof generateWorksheetSchema>;
 export type SaveWorksheetInput = z.infer<typeof saveWorksheetSchema>;
 export type ListWorksheetsInput = z.infer<typeof listWorksheetsSchema>;
+export type UpdateWorksheetInput = z.infer<typeof updateWorksheetSchema>;

@@ -25,10 +25,11 @@ export function PaperDocument({ paper, schoolSettings }: { paper: GeneratedPaper
       </div>
 
       <div className="mt-6 space-y-6">
-        {paper.sections.map((section) => (
-          <div key={section.marks}>
+        {paper.sections.map((section, i) => (
+          <div key={`${section.name ?? section.marks}-${i}`}>
             <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: NAVY }}>
-              Section — {section.marks} Mark{section.marks !== 1 ? 's' : ''} Each
+              {section.name ? section.name : `Section — ${section.marks} Mark${section.marks !== 1 ? 's' : ''} Each`}
+              {section.name && <span className="normal-case font-normal ml-1.5" style={{ color: MUTED }}>({section.marks} mark{section.marks !== 1 ? 's' : ''} each)</span>}
             </p>
             <div className="space-y-3">
               {section.questions.map((q) => {
