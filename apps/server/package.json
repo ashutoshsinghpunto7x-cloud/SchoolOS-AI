@@ -16,6 +16,7 @@
     "seed:assign-class-3a-teacher": "tsx src/scripts/assign-class-3a-teacher.ts",
     "seed:replace-class-5a": "tsx src/scripts/replace-class-5a-roster.ts",
     "seed:replace-class-4b": "tsx src/scripts/replace-class-4b-roster.ts",
+    "seed:replace-class-4a": "tsx src/scripts/replace-class-4a-roster.ts",
     "seed:replace-class-2": "tsx src/scripts/replace-class-2-roster.ts",
     "seed:replace-class-va": "tsx src/scripts/replace-class-va-roster.ts",
     "seed:replace-class-vb": "tsx src/scripts/replace-class-vb-roster.ts",
