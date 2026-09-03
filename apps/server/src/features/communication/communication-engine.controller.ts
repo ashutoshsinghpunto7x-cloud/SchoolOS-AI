@@ -25,6 +25,14 @@ export const communicationEngineController = {
     } catch (err) { next(err); }
   },
 
+  async getAttendanceSendStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const result = await attendanceNotificationService.getSendStatus(req.query, ctx);
+      sendSuccess(res, result);
+    } catch (err) { next(err); }
+  },
+
   async sendFeeReminders(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

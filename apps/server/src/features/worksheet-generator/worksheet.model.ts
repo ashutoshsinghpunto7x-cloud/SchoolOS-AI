@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { QuestionType, QuestionDifficulty } from '../question-bank/question.model';
+import { QuestionType, QuestionDifficulty, IQuestionImageRef, IQuestionImageRequirement, imageRefSchema, imageRequirementSchema } from '../question-bank/question.model';
 
 export type WorksheetType = 'practice' | 'homework' | 'revision' | 'hots' | 'olympiad' | 'remedial';
 
@@ -11,6 +11,8 @@ export interface IWorksheetQuestion {
   difficulty: QuestionDifficulty;
   estimatedTimeMinutes: number;
   keywords: string[];
+  imageRef?: IQuestionImageRef;
+  imageRequirement?: IQuestionImageRequirement;
 }
 
 export interface IWorksheet extends Document {
@@ -33,6 +35,9 @@ export interface IWorksheet extends Document {
 const WORKSHEET_TYPES: WorksheetType[] = ['practice', 'homework', 'revision', 'hots', 'olympiad', 'remedial'];
 const QUESTION_TYPES: QuestionType[] = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ];
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
@@ -45,6 +50,8 @@ const worksheetQuestionSchema = new Schema<IWorksheetQuestion>(
     difficulty:           { type: String, enum: DIFFICULTIES, required: true },
     estimatedTimeMinutes: { type: Number, required: true, min: 0 },
     keywords:             { type: [String], default: [] },
+    imageRef:             { type: imageRefSchema },
+    imageRequirement:     { type: imageRequirementSchema },
   },
   { _id: false },
 );

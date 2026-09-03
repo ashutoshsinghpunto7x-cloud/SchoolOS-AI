@@ -68,7 +68,8 @@ export const useConfirmExtractedQuestions = () => useInvalidatingMutation((paylo
 export const useExtractQuestionsFromImage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromImage(target, file),
+    mutationFn: ({ target, file, detectImages }: { target: { class: string; subject: string }; file: File; detectImages?: boolean }) =>
+      questionBankApi.extractFromImage(target, file, detectImages),
     onSuccess:  (_result, { target }) => {
       qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) });
       qc.invalidateQueries({ queryKey: questionBankKeys.sources() });
@@ -90,7 +91,7 @@ export const useExtractQuestionsFromPdf = () => {
 // ── Layout-aware chapter capture (multi-page) ─────────────────────────────────
 
 export const useExtractChapter = () =>
-  useMutation({ mutationFn: (images: File[]) => questionBankApi.extractChapter(images) });
+  useMutation({ mutationFn: ({ images, detectImages }: { images: File[]; detectImages?: boolean }) => questionBankApi.extractChapter(images, detectImages) });
 
 /** Polls the chapter-capture job every 2s while processing, so the review screen can show per-page progress instead of a blocking spinner. */
 export const useChapterCaptureJob = (jobId: string | undefined) =>

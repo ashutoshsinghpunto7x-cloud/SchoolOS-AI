@@ -172,7 +172,11 @@ export const whatsAppCloudProvider: ICommunicationChannelProvider = {
     try {
       const form = new FormData();
       form.append('messaging_product', 'whatsapp');
-      form.append('file', new Blob([buffer], { type: mimeType }), filename);
+      // `Buffer`'s underlying ArrayBufferLike can be a SharedArrayBuffer per its TS type, which
+      // Blob's stricter ArrayBuffer-only overload rejects even though a real Buffer here is
+      // always backed by a plain ArrayBuffer — safe to assert past the mismatch.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      form.append('file', new Blob([buffer as any], { type: mimeType }), filename);
 
       const res = await fetch(mediaUrl(), {
         method: 'POST',

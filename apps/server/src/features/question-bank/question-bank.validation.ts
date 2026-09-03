@@ -3,6 +3,9 @@ import type { ListBlockItem } from '@schoolos/types';
 
 export const QUESTION_TYPES = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ] as const;
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export const BLOOMS_LEVELS = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'] as const;
@@ -12,12 +15,22 @@ export const BLOOMS_LEVELS = ['remember', 'understand', 'apply', 'analyze', 'eva
 export const extractionTargetSchema = z.object({
   class:   z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+  // Query-string boolean — arrives as the literal string "true"/"false" (or is absent), never a
+  // real boolean, since this is parsed from req.query.
+  detectImages: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
 });
 
 const sourceRefSchema = z.object({
   sourceId: z.string().min(1),
   pageNumber: z.number().int().min(1).optional(),
   blockIndex: z.number().int().min(0).optional(),
+});
+
+const imageRefSchema = z.object({ sourceId: z.string().min(1), figureId: z.string().min(1) });
+const imageRequirementSchema = z.object({
+  imageRequired: z.literal(true),
+  imageSource: z.enum(['generated', 'teacher_upload']),
+  imagePrompt: z.string().optional(),
 });
 
 // A saved "mcq" question with fewer than 2 options prints on the exam paper with no answer
@@ -46,8 +59,12 @@ const extractedQuestionDraftSchema = requireMcqOptions(z.object({
   keywords: z.array(z.string()).default([]),
   chapterName: z.string().min(1),
   topic: z.string().nullish(),
+  topicId: z.string().nullish(),
+  subtopicId: z.string().nullish(),
   source: z.string().nullish(),
   sourceRef: sourceRefSchema.nullish(),
+  imageRef: imageRefSchema.nullish(),
+  imageRequirement: imageRequirementSchema.nullish(),
 }));
 
 export const confirmExtractedQuestionsSchema = z.object({
@@ -179,6 +196,8 @@ export const updateSourceSchema = z.object({
 export const reExtractSourceSchema = z.object({
   count: z.number().int().min(1).max(100).default(5),
   difficulty: z.enum(['easy', 'medium', 'hard', 'mixed']).default('mixed'),
+  languageComplexity: z.enum(['auto', 'simple', 'standard', 'advanced']).default('auto'),
+  includeImages: z.boolean().default(false),
 });
 
 export const retryPageParamsSchema = z.object({
@@ -211,6 +230,8 @@ export const paperGenerationConfigSchema = z.object({
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
   examType: z.string({ required_error: 'examType is required' }).min(1).trim(),
   chapterIds: z.array(z.string()).min(1, 'Select at least one chapter'),
+  // Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible.
+  topicIds: z.array(z.string()).optional(),
   totalMarks: z.number().min(1),
   difficultyMix: z.object({
     easy: z.number().min(0).default(0),
@@ -221,6 +242,10 @@ export const paperGenerationConfigSchema = z.object({
   sections: z.array(paperSectionConfigSchema).optional(),
   questionTypes: z.array(z.enum(QUESTION_TYPES)).default([]),
   durationMinutes: z.number().min(1).optional(),
+  languageComplexity: z.enum(['auto', 'simple', 'standard', 'advanced']).default('auto'),
+  includeAnswerKey: z.boolean().default(false),
+  includeImages: z.boolean().default(false),
+  blackAndWhite: z.boolean().default(false),
 }).refine(
   (v) => (v.sections && v.sections.length > 0) || v.marksBreakdown.length > 0,
   { message: 'Add at least one section (or marks-breakdown row)', path: ['sections'] },

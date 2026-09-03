@@ -11,12 +11,38 @@ export const bulkSendJobRepository = {
     createdByUserId: string;
     overrideBody?: string;
     ip?: string;
+    contextDate?: string;
+    contextClass?: string;
+    contextSection?: string;
   }): Promise<IBulkSendJob> {
     return BulkSendJob.create({ ...data, status: 'PROCESSING', startedAt: new Date() });
   },
 
   async findById(id: string, schoolId: string): Promise<IBulkSendJob | null> {
     return BulkSendJob.findOne({ _id: id, schoolId });
+  },
+
+  /**
+   * Has a run already gone out (or is one in flight) for this exact
+   * day/class/section? Used to make "Send Absent Notifications" a one-shot
+   * per attendance day — see attendance-notification.service.ts. FAILED runs
+   * are excluded so a genuinely failed send can be retried the same day.
+   */
+  async findActiveForContext(
+    schoolId: string,
+    notificationType: NotificationType,
+    contextDate: string,
+    contextClass?: string,
+    contextSection?: string,
+  ): Promise<IBulkSendJob | null> {
+    return BulkSendJob.findOne({
+      schoolId,
+      notificationType,
+      contextDate,
+      contextClass: contextClass ?? { $exists: false },
+      contextSection: contextSection ?? { $exists: false },
+      status: { $in: ['PROCESSING', 'COMPLETED'] },
+    }).sort({ createdAt: -1 });
   },
 
   async incrementCounters(id: string, delta: { sent?: number; failed?: number; skipped?: number }): Promise<void> {

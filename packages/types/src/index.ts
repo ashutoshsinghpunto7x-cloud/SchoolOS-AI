@@ -4362,7 +4362,25 @@ export type QuestionType =
   | 'short'
   | 'long'
   | 'hots'
-  | 'case_study';
+  | 'case_study'
+  | 'multi_correct'
+  | 'match_following'
+  | 'one_word'
+  | 'competency_based'
+  | 'application_based'
+  | 'activity_based'
+  | 'observation_based'
+  | 'diagram_based'
+  | 'picture_based'
+  | 'label_diagram'
+  | 'complete_diagram'
+  | 'numerical'
+  | 'word_problem'
+  | 'oral'
+  | 'revision'
+  | 'sequence_arrangement'
+  | 'odd_one_out'
+  | 'passage_based';
 
 export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -4370,12 +4388,29 @@ export type BloomsLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'eva
 
 export type ChapterDifficulty = 'easy' | 'moderate' | 'hard';
 export type ChapterPriority = 'core' | 'important' | 'supplementary';
+export type ChapterExtractionStatus = 'unprocessed' | 'processing' | 'processed';
+
+export interface ChapterSubtopicNode {
+  subtopicId: string;
+  name: string;
+  order: number;
+}
+
+export interface ChapterTopicNode {
+  topicId: string;
+  name: string;
+  order: number;
+  subtopics: ChapterSubtopicNode[];
+}
 
 export interface SyllabusChapter extends BaseEntity {
   class: string;
   subject: string;
   chapterName: string;
   topics: string[];
+  /** Structured topic/subtopic hierarchy derived from AI chapter-capture. Optional — only
+   *  chapters captured after this was added carry one; legacy chapters keep using `topics`. */
+  topicTree?: ChapterTopicNode[];
   order?: number;
   /** Periods (not weeks) the chapter is expected to take — sizes the
    *  Academic Planning Engine's day-by-day distribution. Optional/undefined
@@ -4387,6 +4422,9 @@ export interface SyllabusChapter extends BaseEntity {
   /** 1 (light) – 5 (heavy) — biases how much of a revision block gets spent
    *  on this chapter relative to others sharing the same exam window. */
   revisionWeight?: number;
+  /** Process-once guard for chapter-capture re-extraction — see question-extraction.service.ts. */
+  extractionStatus: ChapterExtractionStatus;
+  sourceContentHash?: string;
 }
 
 export interface QuestionUsageEntry {
@@ -4400,6 +4438,10 @@ export interface Question extends BaseEntity {
   chapterId: string;
   chapterName: string; // denormalized for display without an extra lookup
   topic?: string;
+  /** Matched against the owning chapter's topicTree by name (best-effort — left
+   *  unset rather than guessed wrong when there's no exact match). */
+  topicId?: string;
+  subtopicId?: string;
   questionText: string;
   questionType: QuestionType;
   options?: string[];
@@ -4415,12 +4457,35 @@ export interface Question extends BaseEntity {
   isDeleted: boolean;
   /** Traceability back to the structured chapter capture this question was drafted from, if any — powers "Show source". */
   sourceRef?: QuestionSourceRef;
+  imageRef?: QuestionImageRef;
+  imageRequirement?: QuestionImageRequirement;
+  /** True whenever imageRef or imageRequirement is set — lets UI/filters check one flat boolean instead of two optional fields. */
+  visualBased: boolean;
 }
 
 export interface QuestionSourceRef {
   sourceId: string;
   pageNumber?: number;
   blockIndex?: number;
+}
+
+/** Points a picture-based question at an actual figure detected in an upload — never a
+ * standalone image, always traceable back to the source/page it came from (spec: "do not invent
+ * an image"). */
+export interface QuestionImageRef {
+  sourceId: string;
+  figureId: string;
+}
+
+/** Set instead of imageRef when a question genuinely calls for a picture but none of the
+ * uploaded content's detected figures fit — flags that a picture still needs to be supplied
+ * (teacher upload or a future AI-image-generation step) rather than silently generating a
+ * text-only question and calling it "picture-based". */
+export interface QuestionImageRequirement {
+  imageRequired: true;
+  imageSource: 'generated' | 'teacher_upload';
+  /** Only set when imageSource is 'generated' — a plain description of what the (not yet created) image should show. */
+  imagePrompt?: string;
 }
 
 export interface CreateQuestionPayload {
@@ -4438,6 +4503,8 @@ export interface CreateQuestionPayload {
   bloomsLevel: BloomsLevel;
   keywords?: string[];
   source?: string;
+  imageRef?: QuestionImageRef;
+  imageRequirement?: QuestionImageRequirement;
 }
 
 export type UpdateQuestionPayload = Partial<CreateQuestionPayload>;
@@ -4483,8 +4550,12 @@ export interface ExtractedQuestionDraft {
   keywords: string[];
   chapterName: string;
   topic?: string;
+  topicId?: string;
+  subtopicId?: string;
   source?: string;
   sourceRef?: QuestionSourceRef;
+  imageRef?: QuestionImageRef;
+  imageRequirement?: QuestionImageRequirement;
 }
 
 export interface QuestionExtractionResult {
@@ -4498,7 +4569,16 @@ export interface QuestionExtractionResult {
 export interface QuestionGenerationOptions {
   count: number;
   difficulty: QuestionDifficulty | 'mixed';
+  /** Overrides the class-inferred wording level for this run ('auto' = infer from class, the default). */
+  languageComplexity?: LanguageComplexity;
+  /** When true and the source has detected figures, generation may write picture-based questions referencing them. Ignored (no picture questions) when false/omitted, regardless of what figures exist. */
+  includeImages?: boolean;
 }
+
+/** How plain/advanced the generated question wording should be. 'auto' infers purely from the
+ * class (the default everywhere); the others let a teacher explicitly simplify or stretch wording
+ * for a particular batch/section without changing the class itself. */
+export type LanguageComplexity = 'auto' | 'simple' | 'standard' | 'advanced';
 
 /** Result of an upload that only transcribes/stores text — no question drafts yet. Generating drafts is a separate, repeatable step (see QuestionSource re-extract). */
 export interface TextExtractionResult {
@@ -4529,6 +4609,9 @@ export interface QuestionSource extends BaseEntity {
   language?: string;
   pages?: ChapterPage[];
   reviewStatus?: 'ready_for_review' | 'saved';
+  /** Set only for a single-image upload (kind: 'image') where the teacher opted into image detection — chapter-capture sources carry the equivalent per-page instead (see `pages[].pageImageFileId`/`figures`). */
+  pageImageFileId?: string;
+  figures?: PageFigure[];
 }
 
 export interface UpdateQuestionSourcePayload {
@@ -4603,12 +4686,44 @@ export interface NoteBlock {
 
 export type ContentBlock = HeadingBlock | ParagraphBlock | ListBlock | TableBlock | EquationBlock | FigureBlock | NoteBlock;
 
+// ── Picture-based questions (image-aware generation) ──────────────────────────
+// A page's figures/illustrations, detected only when a teacher opts in ("Include images") —
+// keeps the default upload flow exactly as cheap/fast as before this existed. See
+// question-extraction.service.ts's figure-detection prompt and lib/image-store.ts (GridFS).
+
+/** Fractional (0-1) crop region within the full page image — resolution-independent, so the
+ * frontend can crop via CSS at whatever size the page image was actually stored/rendered at. */
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export type FigureType = 'decorative' | 'content_supporting' | 'diagram' | 'chart_table' | 'map' | 'illustration';
+
+export interface PageFigure {
+  /** Stable id for this figure, unique within its owning source/page (e.g. "p2_fig1") — referenced by a question's imageRef so a generated question can point back to the exact textbook illustration it depends on. */
+  figureId: string;
+  pageNumber: number;
+  boundingBox: BoundingBox;
+  figureType: FigureType;
+  caption?: string;
+  /** Short factual description of what the image visually shows — how a picture-based question's answer gets grounded without re-looking at the image. */
+  description: string;
+  /** The model's own judgment of whether this figure is substantial/clear enough to build a question around (vs. a small decorative icon). */
+  usableForQuestion: boolean;
+}
+
 export interface ChapterPage {
   pageNumber: number;
   blocks: ContentBlock[];
   confidence?: BlockConfidence;
   /** Set when this page's OCR failed and was skipped rather than blocking the whole batch — see "Continue Without This Page". */
   pageError?: string;
+  /** GridFS file id for this page's full image — set only when the teacher opted into image detection for this capture. */
+  pageImageFileId?: string;
+  figures?: PageFigure[];
 }
 
 /** Async batch job covering every page of a chapter capture — see ExtractionJob on the server (kind: 'chapter_capture'). */
@@ -4697,6 +4812,10 @@ export interface PaperGenerationConfig {
   subject: string;
   examType: string;
   chapterIds: string[];
+  /** Optional topic/subtopic scoping within the selected chapters (see question.model.ts's
+   *  topicId/subtopicId). When present, narrows the eligible question pool before selection —
+   *  purely additive, omitting it reproduces today's chapter-only pool. */
+  topicIds?: string[];
   totalMarks: number;
   difficultyMix: PaperDifficultyMix;
   marksBreakdown: PaperMarksBreakdownEntry[];
@@ -4704,6 +4823,14 @@ export interface PaperGenerationConfig {
   sections?: PaperSectionConfig[];
   questionTypes: QuestionType[];
   durationMinutes?: number;
+  /** Overrides the class-inferred wording level for questions synthesized to fill this paper ('auto' = infer from class). */
+  languageComplexity?: LanguageComplexity;
+  /** When true, the rendered paper includes a separate answer-key section. */
+  includeAnswerKey?: boolean;
+  /** When true, newly-synthesized questions may be picture-based (referencing a detected textbook figure). Existing bank questions with an imageRef are still shown regardless — this only gates new picture-based questions written to fill a gap. */
+  includeImages?: boolean;
+  /** Renders images with a grayscale filter, for print-friendly black & white copies. */
+  blackAndWhite?: boolean;
 }
 
 export interface PaperValidationResult {
@@ -4720,12 +4847,23 @@ export interface GeneratedPaperSection {
   questions: Question[];
 }
 
+/** A question's image, resolved to an actual displayable payload at generation time — the full
+ * source page image plus the fractional crop for this specific figure. Embedded directly on the
+ * paper (keyed by `${sourceId}:${figureId}`) instead of fetched at print/PDF time, so
+ * window.print() never depends on a live authenticated image request. */
+export interface ResolvedQuestionImage {
+  /** Full page image as a data URI — the frontend crops to `boundingBox` via CSS rather than the server pre-cropping (no image-processing library involved, see lib/image-store.ts). */
+  pageImageDataUri: string;
+  boundingBox: BoundingBox;
+}
+
 export interface GeneratedPaper extends BaseEntity {
   config: PaperGenerationConfig;
   sections: GeneratedPaperSection[];
   totalMarksAssembled: number;
   validation: PaperValidationResult;
   createdBy: string;
+  resolvedImages?: Record<string, ResolvedQuestionImage>;
 }
 
 // ── Teacher Planner ─────────────────────────────────────────────────────────
@@ -4749,6 +4887,10 @@ export interface PlannerTask {
   dueDate: string;
   status: PlannerTaskStatus;
   completedAt?: string;
+  /** Topic(s)/subtopic(s) this task covers, when the chapter behind it has a topicTree — see
+   *  buildChapterDayPlan. Absent for legacy/manual tasks and chapters without a topicTree. */
+  topicIds?: string[];
+  subtopicIds?: string[];
 }
 
 export interface PlannerWeek {
@@ -4795,6 +4937,9 @@ export interface PacePosition {
 export interface PlannerDraftTask {
   title: string;
   type: PlannerTaskType;
+  /** See PlannerTask.topicIds/subtopicIds — carried from draft through to the saved planner task. */
+  topicIds?: string[];
+  subtopicIds?: string[];
 }
 
 export interface PlannerDraftWeek {
@@ -5045,6 +5190,8 @@ export interface WorksheetQuestion {
   /** Draft-only client flag — set when this item was AI-authored rather than
    *  pulled from the bank; stripped (or resolved into a real Question) on save. */
   isNew?: boolean;
+  imageRef?: QuestionImageRef;
+  imageRequirement?: QuestionImageRequirement;
 }
 
 export interface Worksheet extends BaseEntity {
@@ -5057,6 +5204,8 @@ export interface Worksheet extends BaseEntity {
   title: string;
   questions: WorksheetQuestion[];
   createdBy: string;
+  /** Resolved image payload for questions with an imageRef, keyed by `${sourceId}:${figureId}` — same embedding rationale as GeneratedPaper.resolvedImages. */
+  resolvedImages?: Record<string, ResolvedQuestionImage>;
 }
 
 export interface GenerateWorksheetPayload {
@@ -5065,11 +5214,16 @@ export interface GenerateWorksheetPayload {
   chapterIds: string[];
   worksheetType: WorksheetType;
   questionCount: number;
+  /** Overrides the class-inferred wording level for this worksheet ('auto' = infer from class). */
+  languageComplexity?: LanguageComplexity;
+  /** When true, newly-authored questions may be picture-based (referencing a detected textbook figure). */
+  includeImages?: boolean;
 }
 
 export interface WorksheetDraft {
   config: GenerateWorksheetPayload;
   questions: WorksheetQuestion[];
+  resolvedImages?: Record<string, ResolvedQuestionImage>;
 }
 
 export interface SaveWorksheetPayload {

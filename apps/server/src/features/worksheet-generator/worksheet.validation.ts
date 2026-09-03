@@ -3,6 +3,9 @@ import { z } from 'zod';
 export const WORKSHEET_TYPES = ['practice', 'homework', 'revision', 'hots', 'olympiad', 'remedial'] as const;
 export const QUESTION_TYPES = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ] as const;
 export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 
@@ -12,6 +15,17 @@ export const generateWorksheetSchema = z.object({
   chapterIds: z.array(z.string()).min(1, 'Select at least one chapter'),
   worksheetType: z.enum(WORKSHEET_TYPES),
   questionCount: z.number().int().min(1).max(50),
+  // Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible.
+  topicIds: z.array(z.string()).optional(),
+  languageComplexity: z.enum(['auto', 'simple', 'standard', 'advanced']).default('auto'),
+  includeImages: z.boolean().default(false),
+});
+
+const imageRefSchema = z.object({ sourceId: z.string(), figureId: z.string() });
+const imageRequirementSchema = z.object({
+  imageRequired: z.literal(true),
+  imageSource: z.enum(['generated', 'teacher_upload']),
+  imagePrompt: z.string().optional(),
 });
 
 const worksheetQuestionSchema = z.object({
@@ -23,6 +37,8 @@ const worksheetQuestionSchema = z.object({
   estimatedTimeMinutes: z.number().min(0),
   keywords: z.array(z.string()).default([]),
   isNew: z.boolean().optional(),
+  imageRef: imageRefSchema.optional(),
+  imageRequirement: imageRequirementSchema.optional(),
 });
 
 export const saveWorksheetSchema = z.object({

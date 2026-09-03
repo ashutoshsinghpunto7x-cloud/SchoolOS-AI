@@ -2,12 +2,17 @@ import { openaiProvider, estimateCost } from '../ai/providers/llm/openai.provide
 import { aiUsageRepository } from '../ai/ai.repository';
 import { chapterRepository } from '../question-bank/chapter.repository';
 import { questionRepository } from '../question-bank/question.repository';
-import { IQuestion, QuestionType, QuestionDifficulty, BloomsLevel } from '../question-bank/question.model';
+import { questionSourceRepository } from '../question-bank/question-source.repository';
+import { IQuestion, QuestionType, QuestionDifficulty, BloomsLevel, IQuestionImageRef, IQuestionImageRequirement } from '../question-bank/question.model';
 import { AuthContext } from '../../lib/auth-context';
 import { ValidationError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 import { WORKSHEET_PRESETS } from './worksheet-preset';
 import { WorksheetType, IWorksheetQuestion } from './worksheet.model';
+import { languageStyleGuide, TEACHER_VOICE_RULES, SELF_CHECK_INSTRUCTION, imageAvailabilityInstruction } from '../question-bank/teacher-voice';
+import { collectChapterFigures, ChapterFigure } from '../question-bank/figure-lookup';
+import { resolveQuestionImages } from '../question-bank/image-resolution';
+import type { LanguageComplexity, PageFigure, ResolvedQuestionImage } from '@schoolos/types';
 
 export interface GenerateWorksheetInput {
   class: string;
@@ -15,6 +20,12 @@ export interface GenerateWorksheetInput {
   chapterIds: string[];
   worksheetType: WorksheetType;
   questionCount: number;
+  /** Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible. */
+  topicIds?: string[];
+  /** Overrides the class-inferred wording level for this worksheet ('auto' = infer from class). */
+  languageComplexity?: LanguageComplexity;
+  /** Teacher's "Include images" toggle — when true, newly-authored questions may reference a detected textbook figure from the covered chapters. Existing bank questions with an imageRef are picked/shown regardless. */
+  includeImages?: boolean;
 }
 
 export interface WorksheetQuestionDraft extends IWorksheetQuestion {
@@ -28,10 +39,17 @@ interface RawAuthoredQuestion {
   difficulty?: string | null;
   estimatedTimeMinutes?: number | string | null;
   keywords?: string[] | null;
+  /** Set by the model only when a figure list was offered in this call's prompt — the exact figureId it picked, never invented. */
+  imageFigureId?: string | null;
+  imageRequired?: boolean | null;
+  imagePrompt?: string | null;
 }
 
 const QUESTION_TYPES: QuestionType[] = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ];
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 
@@ -51,10 +69,12 @@ function toWorksheetQuestion(q: IQuestion): IWorksheetQuestion {
     difficulty: q.difficulty,
     estimatedTimeMinutes: q.estimatedTimeMinutes,
     keywords: q.keywords,
+    imageRef: q.imageRef,
+    imageRequirement: q.imageRequirement,
   };
 }
 
-function buildAuthoringPrompt(input: GenerateWorksheetInput, chapterNames: string[], count: number): string {
+function buildAuthoringPrompt(input: GenerateWorksheetInput, chapterNames: string[], count: number, figures: PageFigure[]): string {
   const preset = WORKSHEET_PRESETS[input.worksheetType];
   // A preset with exactly one allowed difficulty (olympiad → hard, remedial → easy) is a hard
   // requirement, not a suggestion — without spelling that out the model tends to judge a chapter
@@ -65,6 +85,12 @@ function buildAuthoringPrompt(input: GenerateWorksheetInput, chapterNames: strin
 
   return `You are an experienced school teacher writing ${count} new questions for a ${preset.label} for Class ${input.class} ${input.subject}, covering: ${chapterNames.join(', ')}.
 
+${languageStyleGuide(input.class, input.languageComplexity)}
+
+${TEACHER_VOICE_RULES}
+
+${imageAvailabilityInstruction(figures, input.includeImages ?? false)}
+
 Write ${preset.authoringGuidance}.
 ${forcedDifficulty ? `\nEvery single question MUST be "${forcedDifficulty}" difficulty — that is what this worksheet type requires. If the chapter content looks too simple or too advanced to naturally reach "${forcedDifficulty}", stretch the question yourself (deeper application, multi-step reasoning, an unfamiliar angle on the same concept) rather than writing an easier/harder one or skipping it. Return all ${count} questions at "${forcedDifficulty}" difficulty — never fewer.\n` : ''}
 For each question, return:
@@ -74,6 +100,9 @@ For each question, return:
 - "difficulty": ${forcedDifficulty ? `must be exactly "${forcedDifficulty}"` : `one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')}`}
 - "estimatedTimeMinutes": estimated minutes a student would need
 - "keywords": 2-4 key terms from the question
+- "imageFigureId" / "imageRequired" + "imagePrompt": only as described above — omit both for an ordinary text question
+
+${SELF_CHECK_INSTRUCTION}
 
 Return ONLY a valid JSON object: {"questions": [...]}. No markdown, no explanation.`;
 }
@@ -93,11 +122,20 @@ function parseAuthored(raw: string): RawAuthoredQuestion[] {
 // remedial → easy) — the prompt already asks for it, but the model's self-reported "difficulty"
 // field is normalized here too, in case it drifts, so a requested difficulty is never silently
 // swapped for an easier/harder one.
-function cleanAuthored(raw: RawAuthoredQuestion[], forcedDifficulty?: QuestionDifficulty): WorksheetQuestionDraft[] {
+function cleanAuthored(raw: RawAuthoredQuestion[], forcedDifficulty: QuestionDifficulty | undefined, figureSourceMap: Map<string, string>): WorksheetQuestionDraft[] {
   return raw
     .filter((q) => q.questionText?.trim())
     .map((q) => {
       const timeNum = typeof q.estimatedTimeMinutes === 'string' ? Number(q.estimatedTimeMinutes) : q.estimatedTimeMinutes;
+      // The model only ever returns a bare figureId (see imageAvailabilityInstruction) — resolve
+      // it back to the source it actually lives on. A figureId that wasn't actually offered
+      // (shouldn't happen, but defensive) is dropped rather than saved with a blank sourceId.
+      const imageRef: IQuestionImageRef | undefined = q.imageFigureId?.trim() && figureSourceMap.has(q.imageFigureId.trim())
+        ? { sourceId: figureSourceMap.get(q.imageFigureId.trim())!, figureId: q.imageFigureId.trim() }
+        : undefined;
+      const imageRequirement: IQuestionImageRequirement | undefined = !imageRef && q.imageRequired
+        ? { imageRequired: true, imageSource: 'generated', imagePrompt: q.imagePrompt?.trim() || undefined }
+        : undefined;
       return {
         questionText: q.questionText!.trim(),
         questionType: QUESTION_TYPES.includes(q.questionType as QuestionType) ? (q.questionType as QuestionType) : 'short',
@@ -106,18 +144,22 @@ function cleanAuthored(raw: RawAuthoredQuestion[], forcedDifficulty?: QuestionDi
         estimatedTimeMinutes: typeof timeNum === 'number' && !Number.isNaN(timeNum) ? timeNum : 3,
         keywords: Array.isArray(q.keywords) ? q.keywords : [],
         isNew: true,
+        imageRef,
+        imageRequirement,
       };
     });
 }
 
 export const worksheetGeneratorService = {
-  async generate(input: GenerateWorksheetInput, ctx: AuthContext): Promise<{ chapterNames: string[]; questions: WorksheetQuestionDraft[] }> {
+  async generate(
+    input: GenerateWorksheetInput, ctx: AuthContext,
+  ): Promise<{ chapterNames: string[]; questions: WorksheetQuestionDraft[]; resolvedImages: Record<string, ResolvedQuestionImage> }> {
     const chapters = await chapterRepository.findByIds(ctx.schoolId, input.chapterIds);
     if (chapters.length === 0) throw new ValidationError('No matching chapters found for this class/subject');
     const chapterNames = chapters.map((c) => c.chapterName);
 
     const preset = WORKSHEET_PRESETS[input.worksheetType];
-    const pool = await questionRepository.findEligible(ctx.schoolId, input.class, input.subject, input.chapterIds);
+    const pool = await questionRepository.findEligible(ctx.schoolId, input.class, input.subject, input.chapterIds, input.topicIds);
     const eligible = pool.filter((q) => matchesPreset(q, preset));
 
     eligible.sort((a, b) => a.usageHistory.length - b.usageHistory.length);
@@ -127,6 +169,15 @@ export const worksheetGeneratorService = {
     let authored: WorksheetQuestionDraft[] = [];
 
     const forcedDifficulty = preset.difficulties.length === 1 ? preset.difficulties[0] : undefined;
+
+    // Every usable figure across all covered chapters — offered as one flat list since one
+    // authoring call spans every selected chapter at once (unlike the paper generator, which
+    // synthesizes per-chapter). Only fetched when the teacher actually opted in.
+    const chapterSources = input.includeImages
+      ? await questionSourceRepository.findAll(ctx.schoolId, input.class, input.subject).catch(() => [])
+      : [];
+    const chapterFigures: ChapterFigure[] = chapterNames.flatMap((name) => collectChapterFigures(chapterSources, name));
+    const figureSourceMap = new Map(chapterFigures.map((f) => [f.figure.figureId, f.sourceId]));
 
     if (shortfall > 0) {
       if (!openaiProvider.isAvailable()) {
@@ -141,7 +192,7 @@ export const worksheetGeneratorService = {
       for (let attempt = 0; attempt < 2 && stillNeeded > 0; attempt++) {
         const start = Date.now();
         const result = await openaiProvider.complete({
-          systemPrompt: buildAuthoringPrompt(input, chapterNames, stillNeeded),
+          systemPrompt: buildAuthoringPrompt(input, chapterNames, stillNeeded, chapterFigures.map((f) => f.figure)),
           userPrompt: attempt === 0 ? 'Write the questions.' : `You returned fewer than ${stillNeeded} last time — write exactly ${stillNeeded} now, no fewer.`,
           temperature: 0.6,
           maxTokens: 2500,
@@ -154,12 +205,14 @@ export const worksheetGeneratorService = {
           durationMs: Date.now() - start, schoolId: ctx.schoolId,
         });
 
-        const batch = cleanAuthored(parseAuthored(result.content), forcedDifficulty);
+        const batch = cleanAuthored(parseAuthored(result.content), forcedDifficulty, figureSourceMap);
         authored = [...authored, ...batch];
         stillNeeded = shortfall - authored.length;
       }
     }
 
-    return { chapterNames, questions: [...selected, ...authored] };
+    const questions = [...selected, ...authored];
+    const resolvedImages = await resolveQuestionImages(questions, ctx.schoolId);
+    return { chapterNames, questions, resolvedImages };
   },
 };

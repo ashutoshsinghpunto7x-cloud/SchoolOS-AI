@@ -1,6 +1,11 @@
 import { QuestionSource, IQuestionSource, QuestionSourceKind } from './question-source.model';
-import type { ChapterPage } from '@schoolos/types';
+import type { ChapterPage, PageFigure } from '@schoolos/types';
+import { deleteImage } from '../../lib/image-store';
+import { classNameKey } from '../../lib/class-name';
 
+// `class` is normalized to classNameKey the same way question.repository.ts and
+// chapter.repository.ts do — otherwise a source uploaded as class "II" and one uploaded as "2"
+// for the same grade split the "pending uploads" view in two instead of one list.
 export const questionSourceRepository = {
   async create(data: {
     schoolId: string;
@@ -15,14 +20,16 @@ export const questionSourceRepository = {
     language?: string;
     pages?: ChapterPage[];
     reviewStatus?: 'ready_for_review' | 'saved';
+    pageImageFileId?: string;
+    figures?: PageFigure[];
   }): Promise<IQuestionSource> {
-    return QuestionSource.create(data);
+    return QuestionSource.create({ ...data, class: classNameKey(data.class) });
   },
 
   /** cls/subject omitted → every stored upload for the school (used by the "pending uploads" view, which isn't scoped to one class/subject). */
   async findAll(schoolId: string, cls?: string, subject?: string): Promise<IQuestionSource[]> {
     const filter: Record<string, string> = { schoolId };
-    if (cls) filter.class = cls;
+    if (cls) filter.class = classNameKey(cls);
     if (subject) filter.subject = subject;
     return QuestionSource.find(filter).sort({ createdAt: -1 }).lean<IQuestionSource[]>();
   },
@@ -50,6 +57,17 @@ export const questionSourceRepository = {
    * copy of the data (sourceRef just loses its target) — see question-bank.service.deleteSource.
    */
   async delete(id: string, schoolId: string): Promise<boolean> {
+    // Clean up any GridFS-stored page images before the source row itself goes — they're not
+    // referenced anywhere else once this source is gone, so leaving them behind would just leak
+    // storage silently (readImage's schoolId check means an orphaned file could never even be
+    // served again, so there's no reason to keep it).
+    const source = await QuestionSource.findOne({ _id: id, schoolId }).lean<IQuestionSource>();
+    const fileIds = [
+      source?.pageImageFileId,
+      ...(source?.pages ?? []).map((p) => p.pageImageFileId),
+    ].filter((v): v is string => !!v);
+    await Promise.all(fileIds.map((fileId) => deleteImage(fileId)));
+
     const res = await QuestionSource.deleteOne({ _id: id, schoolId });
     return res.deletedCount > 0;
   },

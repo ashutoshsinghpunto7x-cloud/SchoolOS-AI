@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Printer, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { useWorksheet, useDeleteWorksheet, useUpdateWorksheet } from '../hooks/useWorksheetGenerator';
+import { CroppedFigureImage } from '@/features/question-bank/components/CroppedFigureImage';
 import type { QuestionDifficulty } from '@schoolos/types';
 
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
@@ -129,16 +130,30 @@ export function WorksheetViewPage() {
         <p className="text-xs text-gray-400 mt-1">Name: _______________________  Date: ____________</p>
       </div>
       <div className="space-y-4">
-        {worksheet.questions.map((q, i) => (
-          <div key={i} className="text-sm">
-            <p><strong>Q{i + 1}.</strong> {q.questionText}</p>
-            {q.questionType === 'mcq' && q.options && (
-              <div className="grid grid-cols-2 gap-x-4 mt-1 pl-5 text-xs text-gray-700">
-                {q.options.map((opt, oi) => <span key={oi}>({String.fromCharCode(97 + oi)}) {opt}</span>)}
-              </div>
-            )}
-          </div>
-        ))}
+        {worksheet.questions.map((q, i) => {
+          const resolved = q.imageRef && worksheet.resolvedImages?.[`${q.imageRef.sourceId}:${q.imageRef.figureId}`];
+          return (
+            <div key={i} className="text-sm">
+              <p><strong>Q{i + 1}.</strong> {q.questionText}</p>
+              {resolved && (
+                <div className="mt-2 pl-5" style={{ maxWidth: '90mm' }}>
+                  <CroppedFigureImage dataUri={resolved.pageImageDataUri} boundingBox={resolved.boundingBox}
+                    style={{ borderRadius: 4, border: '1px solid #E5E6EA' }} />
+                </div>
+              )}
+              {!resolved && q.imageRequirement && (
+                <p className="mt-1.5 pl-5 text-[10px] italic text-gray-400">
+                  [Image needed: {q.imageRequirement.imagePrompt || 'a suitable picture for this question'}]
+                </p>
+              )}
+              {q.questionType === 'mcq' && q.options && (
+                <div className="grid grid-cols-2 gap-x-4 mt-1 pl-5 text-xs text-gray-700">
+                  {q.options.map((opt, oi) => <span key={oi}>({String.fromCharCode(97 + oi)}) {opt}</span>)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

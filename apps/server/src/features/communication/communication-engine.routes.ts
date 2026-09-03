@@ -15,6 +15,7 @@ router.use(authenticate);
 // Attendance / Fees — teachers may trigger attendance notifications (they're the
 // ones marking attendance); fee reminders are an accountant/admin/principal action.
 router.post('/attendance/send', authorize('admin', 'principal', 'teacher'), communicationEngineController.sendAttendanceNotifications);
+router.get('/attendance/send-status', communicationEngineController.getAttendanceSendStatus);
 router.post('/fees/send', authorize('admin', 'principal', 'accountant'), communicationEngineController.sendFeeReminders);
 
 // Broadcast

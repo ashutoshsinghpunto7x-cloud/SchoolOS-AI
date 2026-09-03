@@ -5,6 +5,8 @@ import { sendAttendanceNotificationsSchema } from './communication-engine.valida
 import { SendRecipientInput } from './communication-core';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { bulkSendJobRepository } from './bulk-send-job.repository';
+import { ConflictError } from '../../middlewares/errorHandler';
 
 export interface BulkSendSummary {
   jobId: string | null;
@@ -14,6 +16,16 @@ export interface BulkSendSummary {
   skipped: number;
   /** PROCESSING means counts above are still filling in — poll GET /communication/jobs/:jobId. */
   status: 'PROCESSING' | 'COMPLETED';
+}
+
+export interface AttendanceSendStatus {
+  /** True once a run exists for this class/section/date — the "Send Reminder" button should stay disabled. */
+  alreadySent: boolean;
+  jobId: string | null;
+  status: 'PROCESSING' | 'COMPLETED' | null;
+  sent: number;
+  failed: number;
+  skipped: number;
 }
 
 async function buildAbsenteeRecipients(schoolId: string, date: string, cls?: string, section?: string): Promise<SendRecipientInput[]> {
@@ -60,6 +72,22 @@ export const attendanceNotificationService = {
     const input = sendAttendanceNotificationsSchema.parse(rawInput);
     const date = input.date ?? attendanceRepository.todayString();
 
+    // One-shot per attendance day: once a run has gone out (or is in flight)
+    // for this exact class/section/date, refuse a second one server-side —
+    // this is what actually stops a double-tap (or a stale client) from
+    // re-notifying parents, regardless of what the UI does. See
+    // bulkSendJobRepository.findActiveForContext.
+    const existing = await bulkSendJobRepository.findActiveForContext(
+      ctx.schoolId,
+      'ATTENDANCE_ABSENT',
+      date,
+      input.class,
+      input.section,
+    );
+    if (existing) {
+      throw new ConflictError('Absent notifications for this date have already been sent');
+    }
+
     const recipients = await buildAbsenteeRecipients(ctx.schoolId, date, input.class, input.section);
 
     if (recipients.length === 0) {
@@ -73,6 +101,9 @@ export const attendanceNotificationService = {
       createdBy: ctx.displayName,
       createdByUserId: ctx.userId,
       ip: ctx.ip,
+      contextDate: date,
+      contextClass: input.class,
+      contextSection: input.section,
     });
 
     auditService.log({
@@ -87,5 +118,36 @@ export const attendanceNotificationService = {
     });
 
     return { jobId, totalStudents: totalRecipients, sent: 0, failed: 0, skipped: 0, status: 'PROCESSING' };
+  },
+
+  /**
+   * Lets the teacher UI ask "has a reminder already gone out for this
+   * class/section/date?" up front — e.g. on page load / after a refresh —
+   * instead of finding out only when a send attempt gets rejected.
+   */
+  async getSendStatus(rawInput: unknown, ctx: AuthContext): Promise<AttendanceSendStatus> {
+    const input = sendAttendanceNotificationsSchema.parse(rawInput);
+    const date = input.date ?? attendanceRepository.todayString();
+
+    const existing = await bulkSendJobRepository.findActiveForContext(
+      ctx.schoolId,
+      'ATTENDANCE_ABSENT',
+      date,
+      input.class,
+      input.section,
+    );
+
+    if (!existing) {
+      return { alreadySent: false, jobId: null, status: null, sent: 0, failed: 0, skipped: 0 };
+    }
+
+    return {
+      alreadySent: true,
+      jobId: existing._id.toString(),
+      status: existing.status === 'COMPLETED' ? 'COMPLETED' : 'PROCESSING',
+      sent: existing.sent,
+      failed: existing.failed,
+      skipped: existing.skipped,
+    };
   },
 };

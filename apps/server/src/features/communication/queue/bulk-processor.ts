@@ -17,6 +17,10 @@ export interface EnqueueBulkSendInput {
   ip?: string;
   /** Same-message-for-everyone override (broadcasts) — see SendOneInput#overrideBody. */
   overrideBody?: string;
+  /** Day/class/section this run is scoped to — see BulkSendJob#contextDate and findActiveForContext. */
+  contextDate?: string;
+  contextClass?: string;
+  contextSection?: string;
 }
 
 export interface BulkSendHandle {
@@ -58,6 +62,9 @@ export async function enqueueBulkSend(input: EnqueueBulkSendInput): Promise<Bulk
     createdByUserId: input.createdByUserId,
     overrideBody: input.overrideBody,
     ip: input.ip,
+    contextDate: input.contextDate,
+    contextClass: input.contextClass,
+    contextSection: input.contextSection,
   });
 
   const jobId = job._id.toString();

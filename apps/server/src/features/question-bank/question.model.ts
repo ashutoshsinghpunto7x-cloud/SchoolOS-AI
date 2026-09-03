@@ -9,7 +9,25 @@ export type QuestionType =
   | 'short'
   | 'long'
   | 'hots'
-  | 'case_study';
+  | 'case_study'
+  | 'multi_correct'
+  | 'match_following'
+  | 'one_word'
+  | 'competency_based'
+  | 'application_based'
+  | 'activity_based'
+  | 'observation_based'
+  | 'diagram_based'
+  | 'picture_based'
+  | 'label_diagram'
+  | 'complete_diagram'
+  | 'numerical'
+  | 'word_problem'
+  | 'oral'
+  | 'revision'
+  | 'sequence_arrangement'
+  | 'odd_one_out'
+  | 'passage_based';
 
 export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -26,6 +44,17 @@ export interface IQuestionSourceRef {
   blockIndex?: number;
 }
 
+export interface IQuestionImageRef {
+  sourceId: string;
+  figureId: string;
+}
+
+export interface IQuestionImageRequirement {
+  imageRequired: true;
+  imageSource: 'generated' | 'teacher_upload';
+  imagePrompt?: string;
+}
+
 export interface IQuestion extends Document {
   schoolId: string;
   class: string;
@@ -33,6 +62,8 @@ export interface IQuestion extends Document {
   chapterId: string;
   chapterName: string;
   topic?: string;
+  topicId?: string;
+  subtopicId?: string;
   questionText: string;
   questionType: QuestionType;
   options?: string[];
@@ -49,12 +80,19 @@ export interface IQuestion extends Document {
   deletedAt?: Date;
   /** Traceability back to the structured chapter capture this question was drafted from, if any — powers "Show source". */
   sourceRef?: IQuestionSourceRef;
+  imageRef?: IQuestionImageRef;
+  imageRequirement?: IQuestionImageRequirement;
+  /** True whenever imageRef or imageRequirement is set on creation — see questionRepository.create/createMany. */
+  visualBased: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const QUESTION_TYPES: QuestionType[] = [
   'mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study',
+  'multi_correct', 'match_following', 'one_word', 'competency_based', 'application_based', 'activity_based',
+  'observation_based', 'diagram_based', 'picture_based', 'label_diagram', 'complete_diagram', 'numerical',
+  'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ];
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
 const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
@@ -69,6 +107,20 @@ const sourceRefSchema = new Schema<IQuestionSourceRef>(
   { _id: false },
 );
 
+export const imageRefSchema = new Schema<IQuestionImageRef>(
+  { sourceId: { type: String, required: true }, figureId: { type: String, required: true } },
+  { _id: false },
+);
+
+export const imageRequirementSchema = new Schema<IQuestionImageRequirement>(
+  {
+    imageRequired: { type: Boolean, required: true },
+    imageSource:   { type: String, enum: ['generated', 'teacher_upload'], required: true },
+    imagePrompt:   { type: String },
+  },
+  { _id: false },
+);
+
 const questionSchema = new Schema<IQuestion>(
   {
     schoolId:             { type: String, required: true, default: 'DEMO_SCHOOL' },
@@ -77,6 +129,8 @@ const questionSchema = new Schema<IQuestion>(
     chapterId:            { type: String, required: true },
     chapterName:          { type: String, required: true, trim: true },
     topic:                { type: String, trim: true },
+    topicId:              { type: String },
+    subtopicId:           { type: String },
     questionText:         { type: String, required: true, trim: true },
     questionType:         { type: String, enum: QUESTION_TYPES, required: true },
     options:              { type: [String] },
@@ -92,9 +146,19 @@ const questionSchema = new Schema<IQuestion>(
     isDeleted:            { type: Boolean, default: false },
     deletedAt:            { type: Date },
     sourceRef:            { type: sourceRefSchema },
+    imageRef:             { type: imageRefSchema },
+    imageRequirement:     { type: imageRequirementSchema },
+    visualBased:          { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );
+
+// Runs on both `save()` and `insertMany()` (which validates each document by default) — so every
+// creation path gets this stamped automatically without every call site having to remember to set it.
+questionSchema.pre('validate', function stampVisualBased(next) {
+  this.visualBased = Boolean(this.imageRef || this.imageRequirement);
+  next();
+});
 
 questionSchema.index({ schoolId: 1, isDeleted: 1, class: 1, subject: 1 });
 questionSchema.index({ schoolId: 1, isDeleted: 1, chapterId: 1 });
