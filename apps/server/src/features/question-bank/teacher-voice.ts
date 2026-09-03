@@ -82,6 +82,32 @@ If — and only if — one of these images genuinely suits a good picture-based 
 If a picture-based question would genuinely help but none of the listed images are a good fit for it, you may instead write the question with "imageRequired": true and an "imagePrompt" describing what a suitable image should show — but only do this occasionally, not for every question, and never set both "imageFigureId" and "imageRequired" on the same question.`;
 }
 
+/** Same contract as imageAvailabilityInstruction, but for the one-shot vision extraction path
+ * (buildDirectExtractionPrompt) where the figures aren't known ahead of time — this same call is
+ * what detects them. The model must find and describe its own figures (self-assigning a
+ * scratch-work id) and can only reference one of those it just listed, never invent one; the
+ * caller (parseDirectExtraction) remaps whatever id the model chose to a server-issued stable
+ * figureId before anything is persisted, so "never invent an image" still holds by construction. */
+export function imageAvailabilityInstructionSelfDetect(detectImages: boolean): string {
+  if (!detectImages) {
+    return 'This system cannot attach an image to a question right now, so never write a question that depends on looking at a picture/diagram/figure (e.g. "Look at the picture and...") — write only questions answerable from text alone. Do not return a "figures" field.';
+  }
+
+  return `As you read this page, also identify any meaningful illustrations, diagrams, charts, maps, or photos on it — not small decorative icons/borders. Return each one you find in a "figures" array, each object shaped:
+- "figureId": a short id you invent for this figure, unique within this response (e.g. "fig1", "fig2")
+- "boundingBox": {"x", "y", "width", "height"} — the image's position as fractions (0.0-1.0) of the full page's width/height, from the top-left corner. Estimate carefully, don't guess wildly.
+- "figureType": one of "decorative", "content_supporting", "diagram", "chart_table", "map", "illustration"
+- "caption": the printed caption/label near the image, if any, else omit
+- "description": a short, factual description of what the image visually shows — this is the only record of the image's content a later step will have, so be specific
+- "usableForQuestion": true if clear/substantial enough to build a question around, false for something too small, blurry, or purely decorative
+
+If the page has no meaningful images, return an empty "figures" array — never invent one that isn't visibly present.
+
+If — and only if — one of the figures you found genuinely suits a good picture-based question (e.g. "Look at the picture and...", "Name the animals in the picture"), write it as one of your questions and set "imageFigureId" to that figure's exact "figureId" you invented above (copy it exactly). Do not force a picture-based question if none of the images genuinely fit — most questions should still be plain text questions from the content. Never set "imageFigureId" to anything other than one of the exact ids you listed in "figures".
+
+If a picture-based question would genuinely help but none of the found images are a good fit, you may instead write the question with "imageRequired": true and an "imagePrompt" describing what a suitable image should show — but only occasionally, never both "imageFigureId" and "imageRequired" on the same question.`;
+}
+
 /** Appended once per prompt as a final self-check instruction (spec section 18) — asks the model
  * to silently re-check its own output rather than adding a separate verification pass/call. */
 export const SELF_CHECK_INSTRUCTION = `Before returning your answer, silently check every question against this checklist and rewrite anything that fails it:

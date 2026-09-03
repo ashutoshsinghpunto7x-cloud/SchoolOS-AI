@@ -4726,13 +4726,18 @@ export interface ChapterPage {
   figures?: PageFigure[];
 }
 
-/** Async batch job covering every page of a chapter capture — see ExtractionJob on the server (kind: 'chapter_capture'). */
+/** Async batch job covering every page of a chapter capture — see ExtractionJob on the server (kind: 'chapter_capture'). Each page is read directly into question drafts in one vision call (no separate OCR-text review step) — `questions`/`warnings` land once every page has finished and are absent while `pages` is still filling in mid-batch. */
 export interface ChapterCaptureJobResult {
   documentTitle?: string;
   language?: string;
   pages: ChapterPage[];
   totalPages: number;
   completedPages: number;
+  /** AI-drafted questions, merged/deduped across every page — ready for teacher review, same shape used by the single-image upload flow. */
+  questions?: ExtractedQuestionDraft[];
+  warnings?: string[];
+  /** The permanent QuestionSource this batch was auto-saved under once processing finished — stamped onto every draft's sourceRef too. */
+  sourceId?: string;
 }
 
 // ── Server-side usage accounting (never trusts client-reported counts) ───────

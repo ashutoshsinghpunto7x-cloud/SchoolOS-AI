@@ -39,8 +39,11 @@ export function QuestionUploadPage() {
     if (!targetReady) { toast.error('Enter class and subject first'); return; }
     try {
       const result = await extractImage.mutateAsync({ target, file, detectImages: includeImages });
-      if (!result.extractedText.trim()) toast.error('No readable text was found on that page');
-      else toast.success('Text extracted and saved — open it below to generate questions');
+      if (result.extracted.length === 0) { toast.error('No questions could be found on that page'); return; }
+      toast.success(`${result.extracted.length} question(s) generated — review before saving`);
+      // Land straight on the drafts review screen with the AI's output already in hand — no
+      // separate "open the upload, then click Generate Questions" step.
+      navigate(`/teacher/question-bank/sources/${result.sourceId}`, { state: { initialResult: result } });
     } catch (err) {
       toast.error('Could not read that photo', { description: err instanceof Error ? err.message : undefined });
     }
@@ -95,7 +98,7 @@ export function QuestionUploadPage() {
         )}
 
         <p className="text-xs text-gray-400 dark:text-white/30 -mt-2">
-          Uploading only reads and saves the text — you'll generate questions from it on the next screen, as many times as you like.
+          A photo goes straight from upload to a full set of question drafts on the next screen — review and save. A PDF's text is saved first; you generate questions from it on the next screen.
         </p>
 
         <button

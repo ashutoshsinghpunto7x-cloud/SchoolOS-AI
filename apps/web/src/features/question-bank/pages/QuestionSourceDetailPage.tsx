@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Sparkles, Image as ImageIcon, FileText, AlertTriangle, Pencil, Check, Trash2 } from 'lucide-react';
 import { useSource, useReExtractSource, useConfirmExtractedQuestions, useUpdateSourceChapter, useDeleteSource } from '../hooks/useQuestionBank';
 import { ExtractedDraftsReview, type DraftEdit } from '../components/ExtractedDraftsReview';
 import { BlockEditor } from '../components/ChapterCapture/BlockEditor';
-import type { ExtractedQuestionDraft, QuestionDifficulty } from '@schoolos/types';
+import type { ExtractedQuestionDraft, QuestionDifficulty, QuestionExtractionResult } from '@schoolos/types';
 
 const DIFFICULTY_OPTIONS: { value: QuestionDifficulty | 'mixed'; label: string }[] = [
   { value: 'mixed', label: 'Mixed' },
@@ -16,6 +16,7 @@ const DIFFICULTY_OPTIONS: { value: QuestionDifficulty | 'mixed'; label: string }
 
 export function QuestionSourceDetailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { sourceId } = useParams<{ sourceId: string }>();
   const { data: source, isLoading, isError, error } = useSource(sourceId ?? '');
   const generate = useReExtractSource();
@@ -23,8 +24,15 @@ export function QuestionSourceDetailPage() {
   const updateChapter = useUpdateSourceChapter();
   const deleteSource = useDeleteSource();
 
-  const [warnings, setWarnings] = useState<string[]>([]);
-  const [drafts, setDrafts] = useState<DraftEdit[] | null>(null);
+  // A photo upload now reads straight into question drafts (see QuestionUploadPage) — when we
+  // land here right after that, the AI's output is already in hand via router state, so this
+  // screen opens straight into "review before saving" instead of an extra "Generate Questions"
+  // click over the (no-longer-shown) transcribed text. Consumed once — a reload/revisit falls
+  // back to the ordinary "click Generate" flow below, same as any other stored upload.
+  const initialResult = useRef((location.state as { initialResult?: QuestionExtractionResult } | null)?.initialResult).current;
+
+  const [warnings, setWarnings] = useState<string[]>(initialResult?.warnings ?? []);
+  const [drafts, setDrafts] = useState<DraftEdit[] | null>(initialResult?.extracted.length ? initialResult.extracted : null);
   const [editingChapter, setEditingChapter] = useState(false);
   const [chapterName, setChapterName] = useState('');
   const [count, setCount] = useState<number | ''>(5);
@@ -128,7 +136,7 @@ export function QuestionSourceDetailPage() {
             <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 px-3 py-2 flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                This upload is already saved — generating questions below is optional, any time.
+                {drafts ? 'Questions below were generated straight from your photo — review, edit, then save.' : 'This upload is already saved — generating questions below is optional, any time.'}
               </p>
             </div>
 

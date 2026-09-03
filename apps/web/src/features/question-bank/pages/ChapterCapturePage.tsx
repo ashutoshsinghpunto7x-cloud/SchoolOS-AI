@@ -66,7 +66,12 @@ export function ChapterCapturePage() {
   async function handleProcess() {
     if (pages.length === 0) { toast.error('Capture or choose at least one page first'); return; }
     try {
-      const { jobId } = await extractChapter.mutateAsync({ images: pages.map((p) => p.file), detectImages: includeImages });
+      const { jobId } = await extractChapter.mutateAsync({
+        target: { class: cls.trim(), subject: subject.trim() },
+        chapterName: chapterName.trim() || undefined,
+        images: pages.map((p) => p.file),
+        detectImages: includeImages,
+      });
       setChapterCaptureSession({ class: cls.trim(), subject: subject.trim(), chapterName: chapterName.trim(), pages });
       navigate(`/teacher/question-bank/capture/${jobId}/review`);
     } catch (err) {

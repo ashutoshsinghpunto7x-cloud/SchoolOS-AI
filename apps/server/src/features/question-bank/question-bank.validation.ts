@@ -20,6 +20,15 @@ export const extractionTargetSchema = z.object({
   detectImages: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
 });
 
+// POST /extract/chapter is multipart (images + these as plain form fields alongside them), not a
+// query string — same "true"/"false" string coercion for detectImages either way.
+export const extractChapterTargetSchema = z.object({
+  class:   z.string({ required_error: 'class is required' }).min(1).trim(),
+  subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+  chapterName: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  detectImages: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
+});
+
 const sourceRefSchema = z.object({
   sourceId: z.string().min(1),
   pageNumber: z.number().int().min(1).optional(),

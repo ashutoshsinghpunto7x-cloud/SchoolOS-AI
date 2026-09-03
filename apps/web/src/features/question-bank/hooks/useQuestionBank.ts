@@ -91,7 +91,10 @@ export const useExtractQuestionsFromPdf = () => {
 // ── Layout-aware chapter capture (multi-page) ─────────────────────────────────
 
 export const useExtractChapter = () =>
-  useMutation({ mutationFn: ({ images, detectImages }: { images: File[]; detectImages?: boolean }) => questionBankApi.extractChapter(images, detectImages) });
+  useMutation({
+    mutationFn: ({ target, chapterName, images, detectImages }: { target: { class: string; subject: string }; chapterName?: string; images: File[]; detectImages?: boolean }) =>
+      questionBankApi.extractChapter(target, chapterName, images, detectImages),
+  });
 
 /** Polls the chapter-capture job every 2s while processing, so the review screen can show per-page progress instead of a blocking spinner. */
 export const useChapterCaptureJob = (jobId: string | undefined) =>

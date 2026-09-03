@@ -212,10 +212,13 @@ export const questionBankService = {
     return source;
   },
 
-  /** POST /extract/chapter — starts a multi-page structured OCR batch job. */
-  async enqueueChapterCapture(images: { dataUri: string; fileName?: string }[], ctx: AuthContext, detectImages = false): Promise<{ jobId: string }> {
+  /** POST /extract/chapter — starts a multi-page batch job that reads each page straight into question drafts. */
+  async enqueueChapterCapture(
+    cls: string, subject: string, chapterName: string | undefined,
+    images: { dataUri: string; fileName?: string }[], ctx: AuthContext, detectImages = false,
+  ): Promise<{ jobId: string }> {
     if (images.length === 0) throw new ValidationError('At least one page image is required');
-    return questionExtractionService.enqueueChapterCapture(images, ctx, detectImages);
+    return questionExtractionService.enqueueChapterCapture(cls, subject, chapterName, images, ctx, detectImages);
   },
 
   /** POST /extract/jobs/:id/pages/:pageNumber/retry — reprocess a single page without redoing the whole batch. */

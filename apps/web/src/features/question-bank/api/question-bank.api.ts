@@ -51,8 +51,8 @@ async function pollExtractionJob<T>(jobId: string): Promise<T> {
 }
 
 export const questionBankApi = {
-  /** Upload only transcribes + stores the page's text (no question drafts yet) — see reExtractSource to generate questions from it. `detectImages` is the teacher's "Include images" toggle — opt-in, so the default upload stays exactly as cheap/fast as before figure detection existed. */
-  extractFromImage: async (target: { class: string; subject: string }, file: File, detectImages = false): Promise<TextExtractionResult> => {
+  /** Upload reads the photo directly into question drafts in one AI call — no separate "extract text, then generate" step. `detectImages` is the teacher's "Include images" toggle — opt-in, so the default upload stays exactly as cheap/fast as before figure detection existed. */
+  extractFromImage: async (target: { class: string; subject: string }, file: File, detectImages = false): Promise<QuestionExtractionResult> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -61,7 +61,7 @@ export const questionBankApi = {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: UPLOAD_TIMEOUT_MS,
       });
-      return await pollExtractionJob<TextExtractionResult>(res.data.data.jobId);
+      return await pollExtractionJob<QuestionExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
@@ -80,11 +80,14 @@ export const questionBankApi = {
 
   // ── Layout-aware chapter capture (multi-page) ───────────────────────────────
 
-  /** Starts a multi-page structured OCR batch job — returns immediately with a jobId to poll (see useChapterCaptureJob), unlike the single-image flows above which poll to completion internally. This lets the review screen show per-page progress. `detectImages` is the teacher's "Include images" toggle, same as extractFromImage. */
-  extractChapter: async (images: File[], detectImages = false): Promise<{ jobId: string }> => {
+  /** Starts a multi-page batch job that reads each page straight into question drafts — returns immediately with a jobId to poll (see useChapterCaptureJob), unlike the single-image flow above which polls to completion internally. This lets the review screen show per-page progress. `detectImages` is the teacher's "Include images" toggle, same as extractFromImage. */
+  extractChapter: async (target: { class: string; subject: string }, chapterName: string | undefined, images: File[], detectImages = false): Promise<{ jobId: string }> => {
     try {
       const formData = new FormData();
       images.forEach((img) => formData.append('images', img));
+      formData.append('class', target.class);
+      formData.append('subject', target.subject);
+      if (chapterName) formData.append('chapterName', chapterName);
       formData.append('detectImages', String(detectImages));
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/chapter`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

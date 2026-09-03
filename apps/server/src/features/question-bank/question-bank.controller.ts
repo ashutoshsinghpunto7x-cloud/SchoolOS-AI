@@ -8,6 +8,7 @@ import { questionBankService } from './question-bank.service';
 import { paperGeneratorService } from './paper-generator.service';
 import {
   extractionTargetSchema,
+  extractChapterTargetSchema,
   confirmExtractedQuestionsSchema,
   createQuestionSchema,
   updateQuestionSchema,
@@ -59,14 +60,14 @@ export const questionBankController = {
     } catch (err) { next(err); }
   },
 
-  /** POST /question-bank/extract/chapter — multi-page layout-aware capture, one image per captured page. `detectImages` (form field, "true"/"false") is the teacher's "Include images" toggle. */
+  /** POST /question-bank/extract/chapter — one image per captured page, read straight into question drafts. `detectImages`/`class`/`subject`/`chapterName` are form fields (multipart, alongside the images). */
   async extractChapter(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const files = (req.files as Express.Multer.File[] | undefined) ?? [];
       if (files.length === 0) throw new ValidationError('At least one page image is required');
+      const target = extractChapterTargetSchema.parse(req.body ?? {});
       const images = files.map((f) => ({ dataUri: fileToDataUri(f), fileName: f.originalname }));
-      const detectImages = req.body?.detectImages === 'true';
-      const job = await questionBankService.enqueueChapterCapture(images, buildAuthContext(req.user!), detectImages);
+      const job = await questionBankService.enqueueChapterCapture(target.class, target.subject, target.chapterName, images, buildAuthContext(req.user!), target.detectImages);
       sendCreated(res, job, `Reading ${files.length} page(s)…`);
     } catch (err) { next(err); }
   },

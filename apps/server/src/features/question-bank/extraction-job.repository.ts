@@ -5,7 +5,7 @@ import type { ChapterCaptureJobResult } from '@schoolos/types';
 type JobResult = QuestionExtractionResult | TextExtractionResult | ChapterCaptureJobResult;
 
 export const extractionJobRepository = {
-  async create(data: { schoolId: string; userId: string; kind: ExtractionJobKind; totalPages?: number }): Promise<IExtractionJob> {
+  async create(data: { schoolId: string; userId: string; kind: ExtractionJobKind; totalPages?: number; class?: string; subject?: string; chapterName?: string }): Promise<IExtractionJob> {
     return ExtractionJob.create({ ...data, status: 'processing', completedPages: 0 });
   },
 

@@ -15,7 +15,7 @@ import { QuestionType, QuestionDifficulty, BloomsLevel } from './question.model'
 import type { ITopicNode } from './chapter.model';
 import { normalizeOptions } from './option-text';
 import type { ContentBlock, ChapterPage, ChapterCaptureJobResult, BlockConfidence, ListBlockItem, QuestionGenerationOptions, LanguageComplexity, PageFigure, QuestionImageRef, QuestionImageRequirement } from '@schoolos/types';
-import { languageStyleGuide, TEACHER_VOICE_RULES, SELF_CHECK_INSTRUCTION, imageAvailabilityInstruction } from './teacher-voice';
+import { languageStyleGuide, TEACHER_VOICE_RULES, SELF_CHECK_INSTRUCTION, imageAvailabilityInstruction, imageAvailabilityInstructionSelfDetect } from './teacher-voice';
 import { saveImage } from '../../lib/image-store';
 import type { ChapterFigure } from './figure-lookup';
 
@@ -132,6 +132,11 @@ const MAX_BATCH_COUNT = 8;
 const CHUNK_CHAR_LIMIT = 12_000;
 const CHUNK_CONCURRENCY = 3;
 const MAX_RETRIES_ON_TRUNCATION = 2;
+// Extra budget on top of structuringTokenBudget for the one-shot vision path (buildDirectExtractionPrompt),
+// whose response also carries the full verbatim page transcription ("pageText") alongside the questions —
+// completeQuestionsWithRetry's plain text-only calls never need this since the text is already on the
+// caller's side, not echoed back.
+const PAGE_TEXT_TOKEN_ALLOWANCE = 1800;
 
 function structuringTokenBudget(count: number, headroomMultiplier = 1): number {
   return Math.min(MAX_STRUCTURING_TOKENS, Math.round((count * TOKENS_PER_QUESTION + BASE_STRUCTURING_TOKENS) * headroomMultiplier));
@@ -321,6 +326,71 @@ Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]${options
 }
 
 /**
+ * One-shot vision equivalent of buildSystemPrompt: reads a photographed page directly and drafts
+ * questions from it in the same call, instead of a separate transcribe-then-structure pass (see
+ * buildTranscribePrompt above, and extractFromImage/extractStructuredPage's callers). Kept as its
+ * own function rather than a flag on buildSystemPrompt because the one thing that genuinely differs
+ * is figure handling: buildSystemPrompt is always handed an already-known `figures` list (detected
+ * in an earlier call), while here figure detection and question-drafting happen together — see
+ * imageAvailabilityInstructionSelfDetect. Every other instruction (teacher voice, language level,
+ * count/coverage framing, JSON field list, topics, self-check) is identical in spirit to
+ * buildSystemPrompt, just phrased for "read this photo" instead of "read this text".
+ */
+export function buildDirectExtractionPrompt(
+  cls: string, subject: string,
+  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; detectImages?: boolean; requestTopics?: boolean; comprehensiveTypeCoverage?: boolean },
+  excludeTexts: string[] = [],
+): string {
+  const difficultyInstruction = options.difficulty === 'mixed'
+    ? 'a mix of easy, medium, and hard difficulty'
+    : `"${options.difficulty}" difficulty only`;
+
+  const excludeBlock = excludeTexts.length
+    ? `\n\nThese questions were already extracted from this same upload in an earlier pass — do NOT repeat them or near-duplicates of them:\n${excludeTexts.slice(0, 30).map((t) => `- ${t.slice(0, 150)}`).join('\n')}\n`
+    : '';
+
+  const countInstruction = options.comprehensiveTypeCoverage
+    ? `This is this chapter's first-ever processing pass — the questions generated now are effectively permanent for this content (the system never re-runs extraction on unchanged content), so aim for genuine, comprehensive coverage rather than a small handful. Read the whole page and consider every one of these question types: ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}. For each type this specific page actually, honestly supports, write roughly 1-3 questions of that type, across ${difficultyInstruction}. Do NOT force a type the page can't support — e.g. no "diagram_based" / "picture_based" / "label_diagram" / "complete_diagram" / "observation_based" questions when there is no usable diagram or figure on the page${options.detectImages ? '' : ' (image-based questions are off for this run)'}; skip "numerical" / "word_problem" for content with no numbers or quantities to work with; skip "match_following" or "sequence_arrangement" when there's nothing sensible to pair or order; and so on for every type — the same "never invent" discipline as always, just applied per type instead of just per fact. Treat ${options.count} as a generous upper ceiling for this call, not a target to hit — if the page is thin, return fewer questions across fewer types rather than padding, forcing, or inventing content to fill it out.`
+    : `Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.`;
+
+  const topicsInstruction = options.requestTopics
+    ? `\n\nAlso return "topics": an array describing this chapter's topic/subtopic hierarchy, based on everything covered by this page, each entry shaped { "name": "topic name", "subtopics": ["subtopic name", ...] }. Keep it concise (typically 2-6 topics); only include a subtopic where the page clearly supports it, otherwise leave "subtopics" empty. Never invent topics unrelated to this content.`
+    : '';
+
+  return `You are an experienced school teacher reading a photographed textbook page, worksheet, or previous exam paper for Class ${cls} ${subject} and picking out questions to reuse — not an AI summarizing a document.
+
+${languageStyleGuide(cls, options.languageComplexity)}
+
+${TEACHER_VOICE_RULES}
+
+${imageAvailabilityInstructionSelfDetect(options.detectImages ?? false)}
+
+${countInstruction}
+${excludeBlock}
+For each question, return:
+- "questionText": the full question text
+- "questionType": one of ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}
+- "options": array of option strings, only if questionType is "mcq"
+- "correctAnswer": the correct answer. If it is visible on the page use that; otherwise write a short, correct answer yourself based only on this page's content (needed for the answer key) — never leave it blank unless the question type has no single answer (e.g. an open "write two sentences" question).
+- "difficulty": one of ${DIFFICULTIES.map((d) => `"${d}"`).join(', ')} — estimate based on the question's complexity
+- "marks": the marks this question is worth (a number). If not stated, estimate a reasonable value based on question type and length
+- "estimatedTimeMinutes": estimated minutes a student would need
+- "bloomsLevel": one of ${BLOOMS_LEVELS.map((b) => `"${b}"`).join(', ')} — Bloom's Taxonomy level
+- "keywords": 2-5 key terms from the question
+- "chapterName": the chapter this question belongs to, if visible/inferable from the page (e.g. a heading), else your best guess from the content
+- "topic": the specific topic within the chapter, if identifiable
+- "source": where this came from if visible (e.g. "NCERT Page 54", "2024 Half Yearly Paper"), else omit
+- "imageFigureId" / "imageRequired" + "imagePrompt": only as described above — omit both for an ordinary text question
+
+Also return "pageText": everything readable on the page, transcribed verbatim (preserve numbering/structure as line breaks) — used to detect if this same page is ever uploaded again, never shown to the teacher directly.
+${topicsInstruction}
+
+${SELF_CHECK_INSTRUCTION}
+
+Return ONLY a valid JSON object: {"pageText": "...", "questions": [...]${options.detectImages ? ', "figures": [...]' : ''}${options.requestTopics ? ', "topics": [...]' : ''}}. No markdown, no explanation. Skip anything that is not actually a question (headings, instructions, page numbers).`;
+}
+
+/**
  * Asks the model to write brand-new questions for a chapter, rather than extract them from a page.
  * Used by the paper generator when the bank doesn't have enough questions at a requested marks
  * value — the model must never refuse for "not enough content"; it should combine/extend the
@@ -357,33 +427,6 @@ For each question, return the same JSON shape used for extraction:
 ${SELF_CHECK_INSTRUCTION}
 
 Return ONLY a valid JSON object: {"questions": [...]}. No markdown, no explanation.`;
-}
-
-/**
- * Transcription-only prompt used on upload — cheaper/faster than buildSystemPrompt since it skips
- * question structuring entirely; that happens later, on demand, via structureFromText.
- *
- * `detectImages` is opt-in (teacher-controlled "Include images" toggle) rather than always-on: a
- * full block-classification OCR pass was tried before and reverted for being too slow/pricey per
- * page (see the "Layout-aware chapter capture" comment below) — this stays a single call and only
- * adds the extra `figures` field to the same request/response when a teacher actually wants
- * picture-based questions, so the default upload path's cost/latency is completely unchanged.
- */
-function buildTranscribePrompt(detectImages: boolean): string {
-  const figureInstructions = detectImages ? `
-
-Additionally, identify any meaningful illustrations, diagrams, charts, maps, or photos on the page — not small decorative icons/borders. For each one, return an object with:
-- "boundingBox": {"x", "y", "width", "height"} — the image's position as fractions (0.0-1.0) of the full page's width/height, measured from the top-left corner. Estimate carefully; do not guess wildly.
-- "figureType": one of "decorative", "content_supporting", "diagram", "chart_table", "map", "illustration"
-- "caption": the printed caption/label near the image, if any, else omit
-- "description": a short, factual description of what the image visually shows (e.g. "A horse pulling a wooden carriage with two children sitting inside") — this is the only record of the image's content a later step will have, so make it specific enough to write a question from
-- "usableForQuestion": true if the image is clear/substantial enough to build a question around, false for something too small, blurry, or purely decorative
-
-Return these under a "figures" array alongside pageText. If the page has no meaningful images, return an empty array — never invent a figure that isn't visibly present.` : '';
-
-  return `You transcribe everything readable on a school textbook page, worksheet, or exam paper photo into plain text, verbatim, preserving question numbering and structure as line breaks.${figureInstructions}
-
-Return ONLY a valid JSON object: {"pageText": "..."${detectImages ? ', "figures": [...]' : ''}}. No markdown, no explanation, no commentary — just the transcribed text${detectImages ? ' and any detected figures' : ''}.`;
 }
 
 // ── Structured chapter capture (layout-aware OCR) ──────────────────────────────
@@ -746,6 +789,10 @@ interface RawFigure {
   caption?: string | null;
   description?: string | null;
   usableForQuestion?: boolean | null;
+  /** Only present on the one-shot vision path (buildDirectExtractionPrompt) — the model's own
+   * scratch-work id for this figure, used to remap a question's imageFigureId to the stable
+   * server-issued figureId. Never persisted itself. */
+  figureId?: string | null;
 }
 
 const FIGURE_TYPES = new Set(['decorative', 'content_supporting', 'diagram', 'chart_table', 'map', 'illustration']);
@@ -775,19 +822,111 @@ function normalizeFigure(raw: RawFigure, pageNumber: number, index: number): Pag
   };
 }
 
-function parseTranscription(raw: string, pageNumber = 1): { pageText: string; figures: PageFigure[] } {
-  try {
-    const body = JSON.parse(raw);
-    const pageText = typeof body?.pageText === 'string' ? body.pageText : '';
-    const rawFigures: RawFigure[] = Array.isArray(body?.figures) ? body.figures : [];
-    const figures = rawFigures
-      .map((f, i) => normalizeFigure(f, pageNumber, i))
-      .filter((f): f is PageFigure => f !== null && f.usableForQuestion);
-    return { pageText, figures };
-  } catch (err) {
-    logger.error('[QuestionExtraction] Failed to parse transcription response', { error: String(err), raw: raw.slice(0, 500) });
-    throw new ValidationError('Could not read that photo — try a clearer picture.');
+/** Parsed shape of a buildDirectExtractionPrompt response — pageText/figures/questions/topics all
+ * from one AI call. Throws on malformed JSON (same contract as JSON.parse) so the retry wrapper
+ * below can tell a parse failure apart from a legitimately empty result. */
+function parseDirectExtraction(raw: string, pageNumber = 1): { pageText: string; figures: PageFigure[]; questions: RawExtractedQuestion[]; topics?: RawTopicNode[] } {
+  const body = JSON.parse(raw);
+  const pageText = typeof body?.pageText === 'string' ? body.pageText : '';
+  const questions: RawExtractedQuestion[] = Array.isArray(body?.questions) ? body.questions : [];
+  const rawFigures: RawFigure[] = Array.isArray(body?.figures) ? body.figures : [];
+
+  // The model invents its own scratch figureId per response (see imageAvailabilityInstructionSelfDetect)
+  // since figures aren't known ahead of a one-shot call — remap those to the stable, server-issued
+  // figureId (same p{page}_fig{n} shape parseTranscription uses) before anything is persisted, and drop
+  // any imageFigureId reference to a figure that got filtered out below (not usableForQuestion) or that
+  // the model never actually listed — never save a dangling reference.
+  const idMap = new Map<string, string>();
+  const figures: PageFigure[] = [];
+  rawFigures.forEach((f, i) => {
+    const normalized = normalizeFigure(f, pageNumber, i);
+    if (!normalized || !normalized.usableForQuestion) return;
+    if (f.figureId?.trim()) idMap.set(f.figureId.trim(), normalized.figureId);
+    figures.push(normalized);
+  });
+
+  const remappedQuestions = questions.map((q) => ({
+    ...q,
+    imageFigureId: q.imageFigureId && idMap.has(q.imageFigureId) ? idMap.get(q.imageFigureId) : undefined,
+  }));
+
+  return { pageText, figures, questions: remappedQuestions, topics: Array.isArray(body?.topics) ? (body.topics as RawTopicNode[]) : undefined };
+}
+
+function tryParseDirectExtraction(raw: string, pageNumber: number): ReturnType<typeof parseDirectExtraction> | null {
+  try { return parseDirectExtraction(raw, pageNumber); } catch { return null; }
+}
+
+/**
+ * Vision-call counterpart to completeQuestionsWithRetry: reads a photographed page directly into
+ * question drafts in one call (see buildDirectExtractionPrompt), with the same truncation-recovery
+ * contract (shrink the ask, add headroom, salvage on the last attempt) — except here a total parse
+ * failure is fatal (thrown), not swallowed, since callers need the transcribed pageText to even
+ * save a QuestionSource record; there is no sibling chunk/page to fall back on within this one call.
+ */
+async function completeDirectExtractionWithRetry(
+  buildPrompts: (count: number) => { systemPrompt: string; userPrompt: string },
+  initialCount: number, ctx: AuthContext, imageDataUri: string, pageNumber: number,
+): Promise<{ pageText: string; figures: PageFigure[]; extracted: ExtractedQuestionDraft[]; warnings: string[]; topics?: RawTopicNode[] }> {
+  let attemptCount = initialCount;
+  let headroom = 1;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES_ON_TRUNCATION; attempt++) {
+    const { systemPrompt, userPrompt } = buildPrompts(attemptCount);
+    const start = Date.now();
+    const maxTokens = structuringTokenBudget(attemptCount, headroom) + PAGE_TEXT_TOKEN_ALLOWANCE;
+    const result = await openaiProvider.complete({ systemPrompt, userPrompt, imageDataUri, temperature: 0.2, maxTokens, jsonResponse: true });
+
+    aiUsageRepository.record({
+      provider: 'openai',
+      aiModel: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+      durationMs: Date.now() - start,
+      schoolId: ctx.schoolId,
+    });
+
+    const truncated = result.finishReason === 'length';
+    const parsed = tryParseDirectExtraction(result.content, pageNumber);
+    const isLastAttempt = attempt === MAX_RETRIES_ON_TRUNCATION;
+
+    if (parsed && !truncated) {
+      const { extracted, warnings } = clean(parsed.questions);
+      return { pageText: parsed.pageText, figures: parsed.figures, extracted, warnings, topics: parsed.topics };
+    }
+    if (parsed && truncated && !isLastAttempt) {
+      attemptCount = Math.max(1, Math.ceil(attemptCount / 2));
+      headroom += 0.75;
+      continue;
+    }
+    if (parsed) {
+      const { extracted, warnings } = clean(parsed.questions);
+      return { pageText: parsed.pageText, figures: parsed.figures, extracted, warnings, topics: parsed.topics };
+    }
+
+    if (isLastAttempt) {
+      const salvagedQuestions = salvageTruncatedQuestions(result.content);
+      const pageTextMatch = /"pageText"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(result.content);
+      let salvagedPageText = '';
+      if (pageTextMatch) {
+        try { salvagedPageText = JSON.parse(`"${pageTextMatch[1]}"`); } catch { /* leave blank, handled below */ }
+      }
+      if (salvagedQuestions.length > 0 || salvagedPageText.trim()) {
+        const { extracted, warnings } = clean(salvagedQuestions);
+        if (salvagedQuestions.length > 0) warnings.push('The AI\'s response was cut off partway through this page — the rest were recovered from the partial reply.');
+        return { pageText: salvagedPageText, figures: [], extracted, warnings };
+      }
+      logger.error('[QuestionExtraction] Direct-extraction response unparseable after retries', { raw: result.content.slice(0, 500) });
+      throw new ValidationError('Could not read that photo — try again, or use a clearer picture.');
+    }
+
+    attemptCount = Math.max(1, Math.ceil(attemptCount / 2));
+    headroom += 0.75;
   }
+
+  throw new ValidationError('Could not read that photo — try again.');
 }
 
 function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionDraft[]; warnings: string[] } {
@@ -843,35 +982,28 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
 
 export const questionExtractionService = {
   /** Upload → transcribe + store text only. Question structuring is a separate, repeatable step — see structureFromText/enqueueReExtractFromSource. `detectImages` is the teacher's "Include images" toggle — opt-in, so the default upload stays exactly as cheap/fast as before figure detection existed. */
+  /**
+   * Upload → read the photo once and get straight to question drafts, no separate "transcribe
+   * now, structure later" step (see buildDirectExtractionPrompt). The page's transcribed text is
+   * still saved on the QuestionSource record (needed for re-extraction and search), but it's an
+   * internal artifact now — the teacher's very next screen is the question drafts themselves, not
+   * an editable OCR-text page. `detectImages` is the teacher's "Include images" toggle.
+   */
   async extractFromImage(
     cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
-  ): Promise<TextExtractionResult> {
+  ): Promise<QuestionExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
 
-    const start = Date.now();
-    const result = await openaiProvider.complete({
-      systemPrompt: buildTranscribePrompt(detectImages),
-      userPrompt: 'Transcribe everything readable on this page.',
-      imageDataUri,
-      temperature: 0.1,
-      maxTokens: detectImages ? 5000 : 4000,
-      jsonResponse: true,
-    });
+    const { pageText, figures, extracted, warnings } = await completeDirectExtractionWithRetry(
+      (count) => ({
+        systemPrompt: buildDirectExtractionPrompt(cls, subject, { count, difficulty: 'mixed', detectImages, requestTopics: false, comprehensiveTypeCoverage: true }),
+        userPrompt: 'Read this photographed page and extract questions from it.',
+      }),
+      COMPREHENSIVE_COVERAGE_TARGET, ctx, imageDataUri, 1,
+    );
 
-    aiUsageRepository.record({
-      provider: 'openai',
-      aiModel: result.model,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-      totalTokens: result.totalTokens,
-      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
-      durationMs: Date.now() - start,
-      schoolId: ctx.schoolId,
-    });
-
-    const { pageText, figures } = parseTranscription(result.content);
     if (!pageText.trim()) {
       // QuestionSource.extractedText is a required field — an empty string still fails Mongoose's
       // required check, so this has to be rejected here rather than saved as a blank source.
@@ -896,8 +1028,15 @@ export const questionExtractionService = {
       extractedText: pageText,
       ...(pageImageFileId ? { pageImageFileId, figures } : {}),
     });
+    const sourceId = String(source._id);
 
-    return { sourceId: String(source._id), sourceType: 'image', fileName, extractedText: pageText, warnings: [] };
+    const withSource = extracted.map((q) => ({
+      ...q,
+      sourceRef: { sourceId },
+      imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
+    }));
+
+    return { sourceType: 'image', extracted: withSource, warnings, sourceId };
   },
 
   /** Upload → extract + store text only (local PDF text layer, no AI call). Question structuring is a separate, repeatable step. */
@@ -1248,61 +1387,44 @@ export const questionExtractionService = {
     return { status: job.status, result: job.result, error: job.error, totalPages: job.totalPages, completedPages: job.completedPages };
   },
 
-  // ── Layout-aware chapter capture (multi-page) ─────────────────────────────────
-  // Reverted to plain transcription (see buildTranscribePrompt) instead of the structured
-  // block-classification prompt: asking the model to classify every line into
-  // heading/paragraph/list/table/equation/figure with confidence scores is a much bigger,
-  // slower, pricier task per page than "transcribe this verbatim". The tradeoff: tables,
-  // equations, and multi-column reading order are no longer reconstructed — every page comes
-  // back as plain paragraphs, same as the original single-page upload flow. Kept the
-  // ChapterPage/ContentBlock storage shape unchanged (wrapping the text as paragraph blocks)
-  // so the multi-page batching, retry-per-page, and review UI didn't need to change.
+  // ── Multi-page chapter capture ─────────────────────────────────────────────────
+  // Each page goes straight from photo to question drafts in one vision call (see
+  // buildDirectExtractionPrompt) — there is no separate "transcribe now, structure later" pass
+  // and no teacher-facing OCR-text review step anymore. `pages`/ContentBlock storage is kept only
+  // as an internal record (figure bounding boxes, re-processing hash, search) — see finalizeChapterCapture.
 
-  /** Single-page OCR call — the building block enqueueChapterCapture and retryPage both use. `detectImages`/`pageNumber` are only used to also detect figures on this page (teacher's "Include images" toggle) — omitted, behavior is identical to before figure detection existed. */
+  /** Single-page vision call — the building block enqueueChapterCapture and retryPage both use. `requestTopics` is only ever true for a capture's first page (see enqueueChapterCapture). */
   async extractStructuredPage(
-    imageDataUri: string, ctx: AuthContext, detectImages = false, pageNumber = 1,
-  ): Promise<{ documentTitle?: string; language?: string; blocks: ContentBlock[]; figures: PageFigure[]; imageDataUri: string }> {
+    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, detectImages = false, pageNumber = 1, requestTopics = false,
+  ): Promise<{ blocks: ContentBlock[]; figures: PageFigure[]; imageDataUri: string; questions: ExtractedQuestionDraft[]; warnings: string[]; topics?: RawTopicNode[] }> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
     }
-    const start = Date.now();
-    const result = await openaiProvider.complete({
-      systemPrompt: buildTranscribePrompt(detectImages),
-      userPrompt: 'Transcribe everything readable on this page.',
-      imageDataUri,
-      temperature: 0.1,
-      maxTokens: detectImages ? 3200 : 2500,
-      jsonResponse: true,
-    });
-
-    aiUsageRepository.record({
-      provider: 'openai',
-      aiModel: result.model,
-      promptTokens: result.promptTokens,
-      completionTokens: result.completionTokens,
-      totalTokens: result.totalTokens,
-      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
-      durationMs: Date.now() - start,
-      schoolId: ctx.schoolId,
-    });
-
-    const { pageText, figures } = parseTranscription(result.content, pageNumber);
-    return { blocks: textToParagraphBlocks(pageText), figures, imageDataUri };
+    const { pageText, figures, extracted, warnings, topics } = await completeDirectExtractionWithRetry(
+      (count) => ({
+        systemPrompt: buildDirectExtractionPrompt(cls, subject, { count, difficulty: 'mixed', detectImages, requestTopics, comprehensiveTypeCoverage: true }),
+        userPrompt: 'Read this photographed page and extract questions from it.',
+      }),
+      COMPREHENSIVE_COVERAGE_TARGET, ctx, imageDataUri, pageNumber,
+    );
+    return { blocks: textToParagraphBlocks(pageText), figures, imageDataUri, questions: extracted, warnings, topics };
   },
 
   /**
    * Enqueues a multi-page batch job (kind: 'chapter_capture'). Pages are processed with bounded
    * concurrency (3 at a time) so a 20-page chapter doesn't fire 20 simultaneous vision calls. One
-   * page's failure never fails the whole job — it's recorded as a pageError on that page's slot so
-   * the review screen can offer "Retry Page" / "Continue Without This Page" per Deliverable 22, and
-   * the rest of the batch keeps going. Nothing is persisted to QuestionSource here — the teacher
-   * reviews this job's result and calls the save endpoint explicitly.
+   * page's failure never fails the whole job — it's recorded as a pageError on that page's slot,
+   * and "Retry Page" can re-run just that one afterward. Once every page is done, the batch is
+   * auto-saved as a permanent QuestionSource and its merged question drafts land in the job result
+   * — the teacher's next screen is reviewing/editing those drafts (same UI the single-image upload
+   * uses), never a "Save Chapter" click over raw transcribed text.
    */
   async enqueueChapterCapture(
+    cls: string, subject: string, chapterName: string | undefined,
     images: { dataUri: string; fileName?: string }[], ctx: AuthContext, detectImages = false,
   ): Promise<{ jobId: string }> {
     const totalPages = images.length;
-    const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'chapter_capture', totalPages });
+    const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'chapter_capture', totalPages, class: cls, subject, chapterName });
     const jobId = job._id.toString();
     // Deliberately omits pagesProcessed here — this event only marks that a job started,
     // it hasn't processed any pages yet. Each page records its own pagesProcessed:1 below
@@ -1312,19 +1434,17 @@ export const questionExtractionService = {
 
     (async () => {
       const pages: ChapterPage[] = new Array(totalPages);
-      let documentTitle: string | undefined;
-      let language: string | undefined;
+      const pageQuestions: ExtractedQuestionDraft[][] = new Array(totalPages).fill([]);
       let completed = 0;
-      // Raised from 3 now that each page is a plain transcription call rather than structured
-      // block classification — lighter output per call means more can safely run at once.
-      const CONCURRENCY = 5;
+      let derivedTopics: RawTopicNode[] | undefined;
+      // Lowered from the old plain-transcription value (5) — each call now also drafts a
+      // comprehensive question batch, a heavier per-call ask than transcription alone was.
+      const CONCURRENCY = 3;
 
       const processOne = async (index: number) => {
         const pageNumber = index + 1;
         try {
-          const page = await questionExtractionService.extractStructuredPage(images[index].dataUri, ctx, detectImages, pageNumber);
-          if (!documentTitle && page.documentTitle) documentTitle = page.documentTitle;
-          if (!language && page.language) language = page.language;
+          const page = await questionExtractionService.extractStructuredPage(cls, subject, images[index].dataUri, ctx, detectImages, pageNumber, pageNumber === 1);
           const lowConfidenceBlocks = page.blocks.filter((b) => b.confidence === 'low').length;
 
           // Same "only store what could actually be referenced" rule as the single-image path —
@@ -1345,6 +1465,8 @@ export const questionExtractionService = {
             confidence: page.blocks.length === 0 ? 'low' : lowConfidenceBlocks > page.blocks.length / 2 ? 'review' : undefined,
             ...(pageImageFileId ? { pageImageFileId, figures: page.figures } : {}),
           };
+          pageQuestions[index] = page.questions;
+          if (pageNumber === 1 && page.topics) derivedTopics = page.topics;
           usageEventRepository.record({
             userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed',
             pagesProcessed: 1, wordsGenerated: pageWordCount(page.blocks), status: 'success',
@@ -1355,7 +1477,7 @@ export const questionExtractionService = {
           usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed', pagesProcessed: 1, status: 'failed' });
         } finally {
           completed += 1;
-          await extractionJobRepository.updateProgress(jobId, completed, { documentTitle, language, pages: pages.filter(Boolean), totalPages, completedPages: completed });
+          await extractionJobRepository.updateProgress(jobId, completed, { documentTitle: undefined, language: undefined, pages: pages.filter(Boolean), totalPages, completedPages: completed });
         }
       };
 
@@ -1364,7 +1486,8 @@ export const questionExtractionService = {
         await Promise.all(images.slice(i, i + CONCURRENCY).map((_, offset) => processOne(i + offset)));
       }
 
-      await extractionJobRepository.markCompleted(jobId, { documentTitle, language, pages, totalPages, completedPages: completed });
+      const { questions, warnings, sourceId } = await finalizeChapterCapture(cls, subject, chapterName, pages, pageQuestions.flat(), derivedTopics, ctx);
+      await extractionJobRepository.markCompleted(jobId, { pages, totalPages, completedPages: completed, questions, warnings, sourceId });
     })().catch((err) => {
       logger.error('[QuestionExtraction] Chapter capture batch failed', { jobId, err });
       extractionJobRepository.markFailed(jobId, toUserSafeErrorMessage(err)).catch(() => {});
@@ -1373,25 +1496,39 @@ export const questionExtractionService = {
     return { jobId };
   },
 
-  /** Reprocesses a single page in-place on an already-completed/partial chapter-capture job result. */
+  /**
+   * Reprocesses a single page in-place on an already-completed chapter-capture job (a real page
+   * failure — network/AI error — not a "the questions came out badly" case, which the review
+   * screen's normal edit/remove controls already cover). Re-runs that page's vision call and folds
+   * its freshly drafted questions into the job's merged list. Known limitation: since a question
+   * draft carries no page-level tag, a retry can't surgically remove that page's *previous*
+   * contribution — only relevant if the earlier attempt had partially succeeded (a genuine failure
+   * contributes zero questions, so the common case is clean); dedupeQuestions still catches
+   * exact-text repeats. If the batch was already auto-saved as a QuestionSource (see
+   * finalizeChapterCapture), that saved copy is not updated by a retry — a rare edge case, not
+   * worth re-running the hash-guard/topic-tree machinery for.
+   */
   async retryPage(jobId: string, pageNumber: number, imageDataUri: string, ctx: AuthContext): Promise<ChapterCaptureJobResult> {
     const job = await extractionJobRepository.findById(jobId, ctx.schoolId);
     if (!job || job.userId !== ctx.userId || job.kind !== 'chapter_capture') {
       throw new ValidationError('Chapter capture job not found or expired');
     }
     const current = (job.result as ChapterCaptureJobResult) ?? { pages: [], totalPages: job.totalPages ?? 0, completedPages: job.completedPages ?? 0 };
-    const page = await questionExtractionService.extractStructuredPage(imageDataUri, ctx);
+    const page = await questionExtractionService.extractStructuredPage(job.class ?? '', job.subject ?? '', imageDataUri, ctx, false, pageNumber);
     const updatedPages = current.pages.map((p) => (p.pageNumber === pageNumber ? { pageNumber, blocks: page.blocks } : p));
     if (!updatedPages.some((p) => p.pageNumber === pageNumber)) updatedPages.push({ pageNumber, blocks: page.blocks });
     updatedPages.sort((a, b) => a.pageNumber - b.pageNumber);
 
-    const updated: ChapterCaptureJobResult = { ...current, pages: updatedPages };
+    const questions = dedupeQuestions([...(current.questions ?? []), ...page.questions]);
+    const updated: ChapterCaptureJobResult = { ...current, pages: updatedPages, questions };
     await extractionJobRepository.markCompleted(jobId, updated);
     usageEventRepository.record({ userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'page_processed', pagesProcessed: 1, wordsGenerated: pageWordCount(page.blocks), status: 'success' });
     return updated;
   },
 
-  /** Finalizes a reviewed chapter-capture job (with the teacher's edits already applied to `pages`) into a permanent QuestionSource — the literal "Save Chapter" action. */
+  /** Legacy manual "Save Chapter" path — finalizeChapterCapture now does this automatically as
+   *  part of enqueueChapterCapture, but this stays available for any caller that still hands over
+   *  already-reviewed pages directly (e.g. a future bulk-import path). */
   async saveChapterSource(
     cls: string, subject: string, data: { documentTitle?: string; language?: string; pages: ChapterPage[]; fileName?: string; chapterName?: string }, ctx: AuthContext,
   ): Promise<IQuestionSource> {
@@ -1411,9 +1548,6 @@ export const questionExtractionService = {
       reviewStatus: 'saved',
     });
 
-    // Register in the syllabus chapter bank too — otherwise this chapter only shows up
-    // in Question Bank's upload list and never in Planner, which reads exclusively from
-    // SyllabusChapter (only previously populated by generating/confirming questions).
     if (data.chapterName?.trim()) {
       await chapterRepository.findOrCreate(ctx.schoolId, cls, subject, data.chapterName.trim());
     }
@@ -1426,3 +1560,72 @@ export const questionExtractionService = {
     return source;
   },
 };
+
+/**
+ * Finishes a chapter-capture batch once every page has been read: saves the permanent
+ * QuestionSource (what "Save Chapter" used to do on an explicit teacher click — now automatic,
+ * since there's no more text-review step to save from), and, when the teacher assigned a chapter
+ * name up front, applies the same process-once dedup + topic-tree derivation that a single-source
+ * re-extraction used to run after the fact (see the old extractFromSourceText). Kept as a plain
+ * function (not part of the exported service) since it's an internal step of enqueueChapterCapture,
+ * never called on its own.
+ */
+async function finalizeChapterCapture(
+  cls: string, subject: string, chapterName: string | undefined,
+  pages: ChapterPage[], allQuestions: ExtractedQuestionDraft[], derivedTopics: RawTopicNode[] | undefined, ctx: AuthContext,
+): Promise<{ questions: ExtractedQuestionDraft[]; warnings: string[]; sourceId?: string }> {
+  const validPages = pages.filter(Boolean);
+  const extractedText = flattenBlocksToText(validPages.flatMap((p) => p.blocks));
+  const merged = dedupeQuestions(allQuestions);
+
+  if (!extractedText.trim()) {
+    return { questions: merged, warnings: ['No readable content was found across the captured pages — check that at least one page processed successfully.'] };
+  }
+
+  const source = await questionSourceRepository.create({
+    schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image',
+    extractedText, pages: validPages, chapterName: chapterName?.trim() || undefined, reviewStatus: 'saved',
+  });
+  const sourceId = String(source._id);
+
+  let finalQuestions: ExtractedQuestionDraft[] = merged.map((q) => ({
+    ...q,
+    ...(chapterName?.trim() ? { chapterName: chapterName.trim() } : {}),
+    sourceRef: { sourceId },
+    imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
+  }));
+  let warnings: string[] = [];
+
+  if (chapterName?.trim()) {
+    const contentHash = computeContentHash(extractedText);
+    const chapter = await chapterRepository.findOrCreate(ctx.schoolId, cls, subject, chapterName.trim());
+
+    if (chapter.extractionStatus === 'processed' && chapter.sourceContentHash === contentHash) {
+      logger.info('[QuestionExtraction] Skipping duplicate chapter-capture save — sourceContentHash unchanged', {
+        chapterId: String(chapter._id), chapterName: chapter.chapterName, schoolId: ctx.schoolId,
+      });
+      const existing = await questionRepository.findAll(ctx.schoolId, { chapterId: String(chapter._id), limit: 200 });
+      finalQuestions = existing.questions.map((q) => ({
+        questionText: q.questionText, questionType: q.questionType, options: q.options, correctAnswer: q.correctAnswer,
+        difficulty: q.difficulty, marks: q.marks, estimatedTimeMinutes: q.estimatedTimeMinutes, bloomsLevel: q.bloomsLevel,
+        keywords: q.keywords, chapterName: q.chapterName, topic: q.topic, topicId: q.topicId, subtopicId: q.subtopicId,
+        source: q.source, sourceRef: q.sourceRef, imageRef: q.imageRef, imageRequirement: q.imageRequirement,
+      }));
+      warnings = ["This chapter's content hasn't changed since it was last processed — showing the previously generated questions instead of re-running AI extraction."];
+    } else {
+      const topicTree = derivedTopics?.length ? buildTopicTree(derivedTopics) : undefined;
+      await chapterRepository.markProcessed(String(chapter._id), ctx.schoolId, { sourceContentHash: contentHash, topicTree });
+      finalQuestions = finalQuestions.map((q) => {
+        const { topicId, subtopicId } = topicTree ? matchTopicIds(q.topic, topicTree) : {};
+        return { ...q, topicId, subtopicId };
+      });
+    }
+  }
+
+  usageEventRepository.record({
+    userId: ctx.userId, schoolId: ctx.schoolId, feature: 'chapter-capture', action: 'chapter_saved',
+    documentId: sourceId, pagesProcessed: validPages.length, wordsGenerated: extractedText.split(/\s+/).filter(Boolean).length, status: 'success',
+  });
+
+  return { questions: finalQuestions, warnings, sourceId };
+}

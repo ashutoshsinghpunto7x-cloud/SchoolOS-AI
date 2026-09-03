@@ -28,6 +28,12 @@ export interface IExtractionJob extends Document {
   completedPages?: number;
   result?: QuestionExtractionResult | TextExtractionResult | ChapterCaptureJobResult;
   error?: string;
+  // Only set for kind:'chapter_capture' — each page's vision call now needs the class/subject to
+  // draft grade-appropriate questions (not just transcribe), so retryPage needs them too without
+  // the client having to resend what it already sent once at /extract/chapter time.
+  class?: string;
+  subject?: string;
+  chapterName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +48,9 @@ const extractionJobSchema = new Schema<IExtractionJob>(
     completedPages: { type: Number, default: 0 },
     result:         { type: Schema.Types.Mixed },
     error:          { type: String },
+    class:          { type: String },
+    subject:        { type: String },
+    chapterName:    { type: String },
   },
   { timestamps: true, versionKey: false },
 );
