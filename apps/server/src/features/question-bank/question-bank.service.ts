@@ -72,16 +72,32 @@ export const questionBankService = {
     // findOrCreate calls each see the previous iteration's topic additions,
     // so multiple questions sharing a chapter (even under slightly different
     // spellings) all land on one chapter row with a complete topics list.
+    //
+    // Skipped-duplicate guard: the process-once extraction guard (question-extraction.service's
+    // "content hasn't changed" branch) hands back a chapter's already-saved questions as a
+    // re-editable draft batch rather than re-running AI — exactly the same shape a fresh
+    // extraction returns. Without a check here, every time a teacher reopens "Generate
+    // Questions" on an already-processed chapter and hits Save, the whole existing batch gets
+    // re-inserted as brand-new documents, silently doubling the bank on each click. Existing
+    // texts are looked up once per chapter (not per question) as each new chapterId is seen.
+    const existingTextsByChapter = new Map<string, Set<string>>();
     const toCreate = [];
     for (const q of data.questions) {
       const topic = q.topic ?? undefined;
       const chapter = await chapterRepository.findOrCreate(ctx.schoolId, data.class, data.subject, q.chapterName, topic);
+      const chapterId = String(chapter._id);
+
+      if (!existingTextsByChapter.has(chapterId)) {
+        const textsInThisBatch = data.questions.filter((dq) => dq.chapterName === q.chapterName).map((dq) => dq.questionText);
+        existingTextsByChapter.set(chapterId, await questionRepository.findExistingTexts(ctx.schoolId, chapterId, textsInThisBatch));
+      }
+      if (existingTextsByChapter.get(chapterId)!.has(q.questionText.trim().toLowerCase())) continue;
 
       toCreate.push({
         schoolId: ctx.schoolId,
         class: data.class,
         subject: data.subject,
-        chapterId: String(chapter._id),
+        chapterId,
         chapterName: chapter.chapterName,
         topic,
         topicId: q.topicId ?? undefined,

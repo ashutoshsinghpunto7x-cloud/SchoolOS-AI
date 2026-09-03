@@ -153,6 +153,21 @@ export const questionRepository = {
     return Question.find(baseQuery).lean<IQuestion[]>(); // legacy pool — never starve on a filter it can't satisfy
   },
 
+  /** Existing (non-deleted) question texts already saved for a chapter — used by confirmExtractedQuestions
+   *  to skip re-inserting duplicates when a teacher re-confirms a draft batch the process-once guard handed
+   *  back verbatim (e.g. re-opening "Generate Questions" on an already-processed chapter). Trimmed,
+   *  case-insensitive exact match — good enough to catch the "identical text confirmed twice" case this
+   *  guards against, without the false positives a fuzzy match would risk. */
+  async findExistingTexts(schoolId: string, chapterId: string, texts: string[]): Promise<Set<string>> {
+    if (texts.length === 0) return new Set();
+    const normalized = texts.map((t) => t.trim().toLowerCase());
+    const existing = await Question.find({
+      schoolId, chapterId, isDeleted: false,
+      questionText: { $in: normalized.map((t) => new RegExp(`^${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')) },
+    }).select('questionText').lean<{ questionText: string }[]>();
+    return new Set(existing.map((q) => q.questionText.trim().toLowerCase()));
+  },
+
   async update(id: string, schoolId: string, data: Partial<CreateQuestionData>): Promise<IQuestion | null> {
     return Question.findOneAndUpdate({ _id: id, schoolId, isDeleted: false }, { $set: data }, { new: true }).lean<IQuestion>();
   },
