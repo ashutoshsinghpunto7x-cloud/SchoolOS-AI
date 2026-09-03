@@ -46,6 +46,12 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message = 'Conflict') {
+    super(message, 409, 'CONFLICT');
+  }
+}
+
 export class MaintenanceModeError extends AppError {
   constructor(message = 'SchoolOS is undergoing scheduled maintenance. Please check back shortly.') {
     super(message, 503, 'MAINTENANCE_MODE');

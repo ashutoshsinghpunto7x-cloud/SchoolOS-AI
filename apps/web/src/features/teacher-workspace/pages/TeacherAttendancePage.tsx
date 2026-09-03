@@ -25,7 +25,7 @@ import { useStudentsPaginated } from '@/features/students/hooks/useStudents';
 import { useClassAttendance, useBulkMarkAttendance } from '@/features/attendance/hooks/useAttendance';
 import { useInvalidateTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
-import { useSendAttendanceNotifications, useBulkSendJob } from '@/features/communication/hooks/useCommunication';
+import { useSendAttendanceNotifications, useBulkSendJob, useAttendanceSendStatus } from '@/features/communication/hooks/useCommunication';
 import { useState, useEffect, useRef } from 'react';
 import type { AttendanceStatus, Student } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -499,6 +499,16 @@ const telHref = (phone?: string) => {
   return digits.length === 10 ? `tel:+91${digits}` : `tel:${digits}`;
 };
 
+// The reminder button is a one-shot per attendance day: once a send has gone
+// out for this class/section/date, it must stay disabled — across page
+// reloads, other devices/browsers, and even a send that was auto-fired by
+// the school's attendanceAutoNotify setting rather than clicked here — so an
+// absent-minded teacher can't double-tap it and re-notify parents. The lock
+// itself is enforced server-side (see attendance-notification.service.ts —
+// a second POST /communication/attendance/send for the same class/section/
+// date is rejected with 409); useAttendanceSendStatus below just reflects
+// that same truth into the UI up front, and unlocks on its own once the
+// attendance date moves to tomorrow.
 function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absentee[]; date: string; cls: string; section: string }) {
   const { user } = useAuth();
   const whatsAppAllowed = isWhatsAppSendAllowed(user?.schoolId);
@@ -506,16 +516,24 @@ function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absent
   const [jobId, setJobId] = useState<string | null>(null);
   const { data: job } = useBulkSendJob(jobId);
 
+  const { data: sendStatus, refetch: refetchSendStatus } = useAttendanceSendStatus({ date, class: cls, section });
+  const alreadySent = Boolean(sendStatus?.alreadySent);
+
   async function handleSend() {
+    if (alreadySent) return;
     setJobId(null);
     try {
       const summary = await sendNotifications({ date, class: cls, section });
       if (summary.jobId) {
         setJobId(summary.jobId);
+        refetchSendStatus();
       } else {
         toast.info('No absentees to notify');
       }
     } catch (err) {
+      // A 409 here means another tab/device (or attendanceAutoNotify) beat us
+      // to it between page load and this click — re-sync the lock either way.
+      refetchSendStatus();
       toast.error('Failed to send reminders', { description: err instanceof Error ? err.message : undefined });
     }
   }
@@ -566,16 +584,33 @@ function AbsenteeOutreach({ absentees, date, cls, section }: { absentees: Absent
             : `Failed to deliver to ${result.failed} parent${result.failed !== 1 ? 's' : ''}${result.sent ? `, ${result.sent} sent` : ''} — check WhatsApp setup`}
         </div>
       )}
+      {!result && alreadySent && (
+        <div className="text-xs font-medium mb-3 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700">
+          Reminder already sent for today
+        </div>
+      )}
 
       <button
         type="button"
         onClick={handleSend}
-        disabled={isSending || isPolling || !whatsAppAllowed}
-        title={whatsAppAllowed ? undefined : 'WhatsApp sending is in testing and only enabled on the demo workspace'}
+        disabled={isSending || isPolling || !whatsAppAllowed || alreadySent}
+        title={
+          alreadySent
+            ? 'Already sent for this attendance date — unlocks again once tomorrow\'s attendance is saved'
+            : whatsAppAllowed
+              ? undefined
+              : 'WhatsApp sending is in testing and only enabled on the demo workspace'
+        }
         className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
       >
         {isSending || isPolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-        {isSending ? 'Sending…' : isPolling ? 'Sending…' : `Send WhatsApp Reminder (${absentees.length})`}
+        {isSending
+          ? 'Sending…'
+          : isPolling
+            ? 'Sending…'
+            : alreadySent
+              ? 'Reminder Sent'
+              : `Send WhatsApp Reminder (${absentees.length})`}
       </button>
       {!whatsAppAllowed && (
         <p className="mt-2 text-xs text-center text-gray-400 dark:text-white/30">

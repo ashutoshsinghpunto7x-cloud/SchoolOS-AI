@@ -80,6 +80,19 @@ export const useBulkSendJob = (jobId: string | null) =>
     refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 1_500 : false),
   });
 
+/** Server-authoritative "has this class/section/date already been sent a
+ *  reminder?" check — source of truth for locking the Send button, so the
+ *  lock survives reloads, different devices/browsers, and even the teacher
+ *  never having clicked send on this device at all (e.g. auto-notify fired
+ *  it). See attendance-notification.service.ts#getSendStatus. */
+export const useAttendanceSendStatus = (params: { date?: string; class?: string; section?: string }) =>
+  useQuery({
+    queryKey: ['communication', 'attendanceSendStatus', params.date ?? '', params.class ?? '', params.section ?? ''],
+    queryFn: () => communicationEngineApi.getAttendanceSendStatus(params),
+    enabled: Boolean(params.date && params.class && params.section),
+    refetchInterval: (query) => (query.state.data?.status === 'PROCESSING' ? 1_500 : false),
+  });
+
 export const useUpdateCommunication = () => {
   const qc = useQueryClient();
   return useMutation({

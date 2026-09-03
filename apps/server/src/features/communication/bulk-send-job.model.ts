@@ -25,6 +25,16 @@ export interface IBulkSendJob extends Document {
   createdByUserId: string;
   overrideBody?: string;
   ip?: string;
+  /**
+   * Scoping key for runs tied to a specific day/class/section (currently just
+   * attendance reminders) — lets a caller ask "has this already gone out?"
+   * before enqueuing a duplicate. See bulkSendJobRepository.findActiveForContext
+   * and attendance-notification.service.ts's dedupe check. Unused (undefined)
+   * for notification types that aren't day-scoped, e.g. broadcasts.
+   */
+  contextDate?: string;
+  contextClass?: string;
+  contextSection?: string;
   startedAt: Date;
   completedAt?: Date;
   createdAt: Date;
@@ -45,6 +55,9 @@ const bulkSendJobSchema = new Schema<IBulkSendJob>(
     createdByUserId: { type: String, required: true },
     overrideBody: { type: String },
     ip: { type: String },
+    contextDate: { type: String },
+    contextClass: { type: String },
+    contextSection: { type: String },
     startedAt: { type: Date, required: true },
     completedAt: { type: Date },
   },
@@ -58,5 +71,8 @@ bulkSendJobSchema.index({ status: 1, updatedAt: 1 });
 
 bulkSendJobSchema.index({ schoolId: 1, createdAt: -1 });
 bulkSendJobSchema.index({ schoolId: 1, status: 1 });
+
+// Attendance-reminder dedupe lookup — see findActiveForContext.
+bulkSendJobSchema.index({ schoolId: 1, notificationType: 1, contextDate: 1, contextClass: 1, contextSection: 1 });
 
 export const BulkSendJob = mongoose.model<IBulkSendJob>('BulkSendJob', bulkSendJobSchema);
