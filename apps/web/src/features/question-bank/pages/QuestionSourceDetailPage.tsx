@@ -230,6 +230,12 @@ export function QuestionSourceDetailPage() {
                 </label>
               ) : null}
 
+              {!drafts && source.chapterName?.trim() && (
+                <p className="text-xs text-gray-500 dark:text-white/50">
+                  First-time processing generates a comprehensive set covering every question type this content supports (MCQ, fill-in-the-blank, short/long answer, HOTS, and more) — the count above only applies to later top-ups.
+                </p>
+              )}
+
               <button
                 type="button" onClick={handleGenerate} disabled={generate.isPending}
                 className="w-full h-11 rounded-xl bg-[#6D4AFF] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"

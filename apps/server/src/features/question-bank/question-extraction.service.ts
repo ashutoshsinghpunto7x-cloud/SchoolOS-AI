@@ -87,6 +87,19 @@ const QUESTION_TYPES: QuestionType[] = [
   'word_problem', 'oral', 'revision', 'sequence_arrangement', 'odd_one_out', 'passage_based',
 ];
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
+
+/**
+ * Target question count fed to structureFromText on a chapter-capture source's first-ever fresh
+ * processing pass (see extractFromSourceText's isChapterCapture branch) — overrides whatever the
+ * teacher typed into "How many questions?" for that one pass, since the process-once hash guard
+ * means this pass is effectively the bank's only shot at this content. Sized as ~2 questions for
+ * every type in QUESTION_TYPES (26 types → ~52): a generous ceiling, not a target the prompt is
+ * told to force — buildSystemPrompt's comprehensiveTypeCoverage framing explicitly tells the model
+ * to skip types the content can't honestly support, so the actual count returned is normally well
+ * under this. allocateByWeight/splitIntoBatches already spread a number this size safely across
+ * chunks/batches, so no other machinery needs to change to accommodate it.
+ */
+const COMPREHENSIVE_COVERAGE_TARGET = QUESTION_TYPES.length * 2;
 const BLOOMS_LEVELS: BloomsLevel[] = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
 
 /**
@@ -247,7 +260,7 @@ export function matchTopicIds(topic: string | undefined, tree: ITopicNode[]): { 
 
 export function buildSystemPrompt(
   cls: string, subject: string,
-  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; includeImages?: boolean; figures?: PageFigure[]; requestTopics?: boolean },
+  options: { count: number; difficulty: QuestionDifficulty | 'mixed'; languageComplexity?: LanguageComplexity; includeImages?: boolean; figures?: PageFigure[]; requestTopics?: boolean; comprehensiveTypeCoverage?: boolean },
   excludeTexts: string[] = [],
 ): string {
   const difficultyInstruction = options.difficulty === 'mixed'
@@ -257,6 +270,16 @@ export function buildSystemPrompt(
   const excludeBlock = excludeTexts.length
     ? `\n\nThese questions were already extracted from this same document in an earlier pass — do NOT repeat them or near-duplicates of them:\n${excludeTexts.slice(0, 30).map((t) => `- ${t.slice(0, 150)}`).join('\n')}\n`
     : '';
+
+  // Only true on a chapter-capture source's first-ever fresh processing pass (see
+  // extractFromSourceText) — the process-once hash guard means whatever this pass produces is,
+  // in practice, permanently all the bank will ever have for this chapter's raw content, so the
+  // usual "pick a small handful" framing is swapped for "cover the type taxonomy this content
+  // genuinely supports" instead of a flat count ceiling. Every other instruction below (teacher
+  // voice, language style, image availability, dedup-across-batches, JSON shape) is unchanged.
+  const countInstruction = options.comprehensiveTypeCoverage
+    ? `This is this chapter's first-ever processing pass — the questions generated now are effectively permanent for this content (the system never re-runs extraction on unchanged text), so aim for genuine, comprehensive coverage rather than a small handful. Read the whole page and consider every one of these question types: ${QUESTION_TYPES.map((t) => `"${t}"`).join(', ')}. For each type this specific content actually, honestly supports, write roughly 1-3 questions of that type, across ${difficultyInstruction}. Do NOT force a type the content can't support — e.g. no "diagram_based" / "picture_based" / "label_diagram" / "complete_diagram" / "observation_based" questions when there is no usable diagram or figure on the page${options.includeImages ? '' : ' (image-based questions are off for this run)'}; skip "numerical" / "word_problem" for content with no numbers or quantities to work with; skip "match_following" or "sequence_arrangement" when there's nothing sensible to pair or order; and so on for every type — the same "never invent" discipline as always, just applied per type instead of just per fact. Treat ${options.count} as a generous upper ceiling for this call, not a target to hit — if the content is thin, return fewer questions across fewer types rather than padding, forcing, or inventing content to fill it out.`
+    : `Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.`;
 
   // Asked for on only one call per chapter-capture job (see structureFromText's `deriveTopics`) —
   // never repeated per-chunk/page, so this never adds extra AI calls of its own.
@@ -272,7 +295,7 @@ ${TEACHER_VOICE_RULES}
 
 ${imageAvailabilityInstruction(options.figures ?? [], options.includeImages ?? false)}
 
-Pick out up to ${options.count} of the clearest, most answerable question(s) on the page, at ${difficultyInstruction}. If the page has fewer than ${options.count} actual questions, return only as many as genuinely exist — never invent extra ones or split one question into several to hit the count. Keep every field concise; do not pad or over-elaborate simple content (e.g. a short Class 1-2 story or worksheet) just to fill space.
+${countInstruction}
 ${excludeBlock}
 For each question, return:
 - "questionText": the full question text
@@ -968,8 +991,20 @@ export const questionExtractionService = {
       await chapterRepository.markExtractionStatus(String(chapter._id), ctx.schoolId, 'processing');
     }
 
+    // Reaching this point with isChapterCapture true means the cache-hit branch above did NOT
+    // return early — i.e. this chapter has never been processed, or its content changed since it
+    // last was. That makes this the one-and-only fresh pass this content will ever get (the hash
+    // guard blocks any future re-run), so it ignores the teacher's manually-entered count/difficulty
+    // picker and aims for comprehensive type coverage instead — see COMPREHENSIVE_COVERAGE_TARGET
+    // and buildSystemPrompt's comprehensiveTypeCoverage framing. A plain single-image/PDF upload
+    // (isChapterCapture false) and a manual top-up on an already-processed chapter both keep using
+    // options.count exactly as before.
+    const structuringOptions: QuestionGenerationOptions = isChapterCapture
+      ? { ...options, count: COMPREHENSIVE_COVERAGE_TARGET }
+      : options;
+
     const { extracted, warnings, topics } = await questionExtractionService.structureFromText(
-      source.class, source.subject, sourceText, options, ctx, source.chapterName, figures, isChapterCapture,
+      source.class, source.subject, sourceText, structuringOptions, ctx, source.chapterName, figures, isChapterCapture, isChapterCapture,
     );
 
     let topicTree: ITopicNode[] | undefined;
@@ -1020,6 +1055,10 @@ export const questionExtractionService = {
   async structureFromText(
     cls: string, subject: string, text: string, options: QuestionGenerationOptions, ctx: AuthContext,
     chapterName?: string, figures: PageFigure[] = [], deriveTopics = false,
+    // Internal-only decision the server makes for a chapter-capture source's first-ever fresh
+    // processing pass — never teacher-configured, so this is a plain positional parameter here
+    // rather than a field on the public-facing QuestionGenerationOptions type. See buildSystemPrompt.
+    comprehensiveTypeCoverage = false,
   ): Promise<{ extracted: ExtractedQuestionDraft[]; warnings: string[]; topics?: RawTopicNode[] }> {
     const chunks = chunkText(text);
     if (chunks.length === 0) return { extracted: [], warnings: [] };
@@ -1045,7 +1084,7 @@ export const questionExtractionService = {
         const requestTopics = task.isTopicSource && excludeTexts.length === 0;
         const result = await completeQuestionsWithRetry(
           (count) => ({
-            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty, languageComplexity: options.languageComplexity, includeImages: options.includeImages, figures, requestTopics }, excludeTexts),
+            systemPrompt: buildSystemPrompt(cls, subject, { count, difficulty: options.difficulty, languageComplexity: options.languageComplexity, includeImages: options.includeImages, figures, requestTopics, comprehensiveTypeCoverage }, excludeTexts),
             userPrompt: `Extract up to ${count} question(s) from this document text:\n\n${task.chunk}`,
           }),
           batchSize,
@@ -1062,7 +1101,12 @@ export const questionExtractionService = {
     const warnings = perTaskResults.flatMap((r) => r.warnings);
     let final = merged.length > options.count ? merged.slice(0, options.count) : merged;
 
-    if (final.length < options.count && openaiProvider.isAvailable()) {
+    // The comprehensive-coverage pass's `count` is a generous ceiling, not a target to hit (see
+    // COMPREHENSIVE_COVERAGE_TARGET/buildSystemPrompt) — topping up a shortfall with synthesized
+    // filler, or warning that the "requested" count wasn't met, would directly undermine the
+    // "never invent/never force a type" instruction that pass is built around. Both stay exactly
+    // as before for every other call (manual counts, single-image/PDF uploads, synthesis top-ups).
+    if (!comprehensiveTypeCoverage && final.length < options.count && openaiProvider.isAvailable()) {
       const shortfall = options.count - final.length;
       try {
         const synthesized = await questionExtractionService.synthesizeQuestions(
@@ -1083,7 +1127,7 @@ export const questionExtractionService = {
       }
     }
 
-    if (final.length < options.count) {
+    if (!comprehensiveTypeCoverage && final.length < options.count) {
       warnings.push(`Found ${final.length} of the ${options.count} requested question(s) in the uploaded content.`);
     }
     return { extracted: final, warnings, topics: derivedTopics };
