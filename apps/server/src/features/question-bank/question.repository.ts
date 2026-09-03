@@ -1,4 +1,5 @@
 import { Question, IQuestion, QuestionType, QuestionDifficulty, BloomsLevel, IQuestionSourceRef, IQuestionImageRef, IQuestionImageRequirement } from './question.model';
+import { classNameKey } from '../../lib/class-name';
 
 export interface QuestionListOptions {
   page?: number;
@@ -52,14 +53,21 @@ export interface CreateQuestionData {
   imageRequirement?: IQuestionImageRequirement;
 }
 
+// `class` is normalized to classNameKey (Roman numeral -> digit) on every write and read below —
+// the same tolerance chapter.repository.ts already applies to SyllabusChapter. Without it, a
+// question saved as class "II" and one saved as class "2" for the exact same chapter/grade are
+// invisible to each other: they group into two separate landing-page rows for one chapter, a
+// class-scoped paper/worksheet generation pool silently only sees half the bank, and
+// softDeleteByChapterGroups/deleteQuestionGroups only clears the half matching whichever raw
+// spelling the UI happened to pass. See the backfill script for reconciling pre-existing data.
 export const questionRepository = {
   async create(data: CreateQuestionData): Promise<IQuestion> {
-    return Question.create(data);
+    return Question.create({ ...data, class: classNameKey(data.class) });
   },
 
   async createMany(data: CreateQuestionData[]): Promise<IQuestion[]> {
     if (data.length === 0) return [];
-    return Question.insertMany(data);
+    return Question.insertMany(data.map((d) => ({ ...d, class: classNameKey(d.class) })));
   },
 
   async findAll(schoolId: string, opts: QuestionListOptions = {}): Promise<PaginatedQuestions> {
@@ -68,7 +76,7 @@ export const questionRepository = {
     const skip = (page - 1) * limit;
 
     const query: Record<string, unknown> = { schoolId, isDeleted: false };
-    if (opts.class) query.class = opts.class;
+    if (opts.class) query.class = classNameKey(opts.class);
     if (opts.subject) query.subject = opts.subject;
     if (opts.chapterId) query.chapterId = opts.chapterId;
     if (opts.topic) query.topic = opts.topic;
@@ -90,7 +98,7 @@ export const questionRepository = {
   /** Chapter-grouped counts for the Question Bank landing view, optionally narrowed by class/subject/search. */
   async findGroups(schoolId: string, opts: Pick<QuestionListOptions, 'class' | 'subject' | 'search'> = {}): Promise<QuestionGroup[]> {
     const match: Record<string, unknown> = { schoolId, isDeleted: false };
-    if (opts.class) match.class = opts.class;
+    if (opts.class) match.class = classNameKey(opts.class);
     if (opts.subject) match.subject = opts.subject;
     if (opts.search?.trim()) {
       const regex = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
@@ -136,7 +144,7 @@ export const questionRepository = {
    *  empty result, as expected. */
   async findEligible(schoolId: string, cls: string, subject: string, chapterIds: string[], topicIds?: string[]): Promise<IQuestion[]> {
     const baseQuery: Record<string, unknown> = {
-      schoolId, class: cls, subject, isDeleted: false,
+      schoolId, class: classNameKey(cls), subject, isDeleted: false,
       ...(chapterIds.length > 0 ? { chapterId: { $in: chapterIds } } : {}),
     };
 
@@ -169,7 +177,8 @@ export const questionRepository = {
   },
 
   async update(id: string, schoolId: string, data: Partial<CreateQuestionData>): Promise<IQuestion | null> {
-    return Question.findOneAndUpdate({ _id: id, schoolId, isDeleted: false }, { $set: data }, { new: true }).lean<IQuestion>();
+    const normalized = data.class !== undefined ? { ...data, class: classNameKey(data.class) } : data;
+    return Question.findOneAndUpdate({ _id: id, schoolId, isDeleted: false }, { $set: normalized }, { new: true }).lean<IQuestion>();
   },
 
   async softDelete(id: string, schoolId: string): Promise<boolean> {
@@ -181,7 +190,7 @@ export const questionRepository = {
   async softDeleteByChapterGroups(schoolId: string, groups: { class: string; subject: string; chapterId: string }[]): Promise<number> {
     if (groups.length === 0) return 0;
     const res = await Question.updateMany(
-      { schoolId, isDeleted: false, $or: groups.map((g) => ({ class: g.class, subject: g.subject, chapterId: g.chapterId })) },
+      { schoolId, isDeleted: false, $or: groups.map((g) => ({ class: classNameKey(g.class), subject: g.subject, chapterId: g.chapterId })) },
       { $set: { isDeleted: true, deletedAt: new Date() } },
     );
     return res.modifiedCount;
