@@ -11,6 +11,7 @@ import type {
   PrincipalPlannerOverviewEntry,
   PrincipalPlannerDetail,
   AddPlannerTaskPayload,
+  WorksheetDraft,
 } from '@schoolos/types';
 
 const BASE = '/teacher-planner';
@@ -54,6 +55,15 @@ export const teacherPlannerApi = {
   toggleTask: async (plannerId: string, taskId: string, status: 'pending' | 'completed'): Promise<TeacherPlanner> => {
     try {
       const res = await apiClient.patch<{ data: TeacherPlanner }>(`${BASE}/${plannerId}/tasks/${taskId}`, { status });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  // Not wired to any component yet — kept alongside the other planner endpoints for consistency.
+  // Drafts a worksheet scoped to one worksheet/revision task's chapter+topics; never persisted.
+  generateWorksheetForTask: async (plannerId: string, taskId: string): Promise<{ chapterNames: string[]; questions: WorksheetDraft['questions']; resolvedImages?: WorksheetDraft['resolvedImages'] }> => {
+    try {
+      const res = await apiClient.post<{ data: { chapterNames: string[]; questions: WorksheetDraft['questions']; resolvedImages?: WorksheetDraft['resolvedImages'] } }>(`${BASE}/${plannerId}/tasks/${taskId}/generate-worksheet`);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

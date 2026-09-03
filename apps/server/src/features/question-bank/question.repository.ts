@@ -124,12 +124,33 @@ export const questionRepository = {
     return Question.find({ _id: { $in: ids }, schoolId }).lean<IQuestion[]>();
   },
 
-  /** Eligible pool for the paper generator: not deleted, matching class/subject/chapters. */
-  async findEligible(schoolId: string, cls: string, subject: string, chapterIds: string[]): Promise<IQuestion[]> {
-    return Question.find({
+  /** Eligible pool for the paper/worksheet generators: not deleted, matching class/subject/chapters,
+   *  optionally narrowed further to specific topics/subtopics within those chapters.
+   *
+   *  The `topicIds` filter is a deliberate "never let a scoping filter starve a real request"
+   *  safeguard: it's applied first, but if that comes back empty AND the matched chapters' pool
+   *  has no `topicId`-tagged question at all (i.e. these are legacy/pre-topicTree chapters that
+   *  were never going to satisfy a topicId filter in the first place), this falls back to the
+   *  unfiltered chapter-level pool instead of returning nothing. A chapter that *does* have
+   *  topic-tagged questions but genuinely none matching the requested topicIds still gets an
+   *  empty result, as expected. */
+  async findEligible(schoolId: string, cls: string, subject: string, chapterIds: string[], topicIds?: string[]): Promise<IQuestion[]> {
+    const baseQuery: Record<string, unknown> = {
       schoolId, class: cls, subject, isDeleted: false,
       ...(chapterIds.length > 0 ? { chapterId: { $in: chapterIds } } : {}),
-    }).lean<IQuestion[]>();
+    };
+
+    if (!topicIds || topicIds.length === 0) {
+      return Question.find(baseQuery).lean<IQuestion[]>();
+    }
+
+    const scoped = await Question.find({ ...baseQuery, topicId: { $in: topicIds } }).lean<IQuestion[]>();
+    if (scoped.length > 0) return scoped;
+
+    const anyTopicTagged = await Question.exists({ ...baseQuery, topicId: { $exists: true, $ne: null } });
+    if (anyTopicTagged) return scoped; // real pool exists but genuinely doesn't match these topics
+
+    return Question.find(baseQuery).lean<IQuestion[]>(); // legacy pool — never starve on a filter it can't satisfy
   },
 
   async update(id: string, schoolId: string, data: Partial<CreateQuestionData>): Promise<IQuestion | null> {

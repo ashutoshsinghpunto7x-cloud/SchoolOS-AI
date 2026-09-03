@@ -5,6 +5,10 @@ export const TASK_TYPES = ['explain', 'activity', 'worksheet', 'homework', 'doub
 const draftTaskSchema = z.object({
   title: z.string().min(1),
   type: z.enum(TASK_TYPES),
+  // Carried straight through from generateDraft's response — see buildChapterDayPlan. Optional so
+  // a manually-edited/legacy draft (or a chapter with no topicTree) still validates fine.
+  topicIds: z.array(z.string()).optional(),
+  subtopicIds: z.array(z.string()).optional(),
 });
 
 const draftWeekSchema = z.object({

@@ -230,6 +230,8 @@ export const paperGenerationConfigSchema = z.object({
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
   examType: z.string({ required_error: 'examType is required' }).min(1).trim(),
   chapterIds: z.array(z.string()).min(1, 'Select at least one chapter'),
+  // Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible.
+  topicIds: z.array(z.string()).optional(),
   totalMarks: z.number().min(1),
   difficultyMix: z.object({
     easy: z.number().min(0).default(0),

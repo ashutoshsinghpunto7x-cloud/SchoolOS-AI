@@ -15,6 +15,8 @@ export const generateWorksheetSchema = z.object({
   chapterIds: z.array(z.string()).min(1, 'Select at least one chapter'),
   worksheetType: z.enum(WORKSHEET_TYPES),
   questionCount: z.number().int().min(1).max(50),
+  // Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible.
+  topicIds: z.array(z.string()).optional(),
   languageComplexity: z.enum(['auto', 'simple', 'standard', 'advanced']).default('auto'),
   includeImages: z.boolean().default(false),
 });

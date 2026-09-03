@@ -20,6 +20,8 @@ export interface GenerateWorksheetInput {
   chapterIds: string[];
   worksheetType: WorksheetType;
   questionCount: number;
+  /** Optional topic/subtopic scoping within the selected chapters — see questionRepository.findEligible. */
+  topicIds?: string[];
   /** Overrides the class-inferred wording level for this worksheet ('auto' = infer from class). */
   languageComplexity?: LanguageComplexity;
   /** Teacher's "Include images" toggle — when true, newly-authored questions may reference a detected textbook figure from the covered chapters. Existing bank questions with an imageRef are picked/shown regardless. */
@@ -157,7 +159,7 @@ export const worksheetGeneratorService = {
     const chapterNames = chapters.map((c) => c.chapterName);
 
     const preset = WORKSHEET_PRESETS[input.worksheetType];
-    const pool = await questionRepository.findEligible(ctx.schoolId, input.class, input.subject, input.chapterIds);
+    const pool = await questionRepository.findEligible(ctx.schoolId, input.class, input.subject, input.chapterIds, input.topicIds);
     const eligible = pool.filter((q) => matchesPreset(q, preset));
 
     eligible.sort((a, b) => a.usageHistory.length - b.usageHistory.length);

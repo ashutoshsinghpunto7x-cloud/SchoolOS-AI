@@ -22,6 +22,7 @@ router.post('/confirm',                      plannerController.confirmPlanner);
 router.get('/mine',                          plannerController.getMine);
 
 router.patch('/:id/tasks/:taskId',           plannerController.toggleTask);
+router.post('/:id/tasks/:taskId/generate-worksheet', plannerController.generateWorksheetForTask);
 router.get('/:id/progress',                  plannerController.getProgress);
 router.get('/:id/pace',                      plannerController.getPace);
 

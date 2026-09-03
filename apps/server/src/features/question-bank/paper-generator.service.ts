@@ -446,7 +446,7 @@ export const paperGeneratorService = {
     const chapters = await chapterRepository.findByIds(ctx.schoolId, config.chapterIds);
     if (chapters.length === 0) throw new ValidationError('No matching chapters found for this class/subject');
 
-    const pool = await questionRepository.findEligible(ctx.schoolId, config.class, config.subject, config.chapterIds);
+    const pool = await questionRepository.findEligible(ctx.schoolId, config.class, config.subject, config.chapterIds, config.topicIds);
 
     const usingSections = Boolean(config.sections && config.sections.length > 0);
     let selected: IQuestion[];

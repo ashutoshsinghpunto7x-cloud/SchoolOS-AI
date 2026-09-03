@@ -65,6 +65,15 @@ export const plannerController = {
     } catch (err) { next(err); }
   },
 
+  /** POST /teacher-planner/:id/tasks/:taskId/generate-worksheet */
+  async generateWorksheetForTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const result = await plannerService.generateWorksheetForTask(req.params.id, req.params.taskId, ctx);
+      sendSuccess(res, result, 'Worksheet drafted');
+    } catch (err) { next(err); }
+  },
+
   /** GET /teacher-planner/:id/progress */
   async getProgress(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

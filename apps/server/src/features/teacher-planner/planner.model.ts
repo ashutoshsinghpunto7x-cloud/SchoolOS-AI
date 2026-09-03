@@ -11,6 +11,11 @@ export interface IPlannerTask {
   dueDate: Date;
   status: PlannerTaskStatus;
   completedAt?: Date;
+  // Topic(s)/subtopic(s) this task covers — only set when the chapter behind it has a topicTree
+  // (see planner-week.util.ts's buildChapterDayPlan). Optional so manual/legacy planner weeks
+  // (and chapters with no topicTree) keep saving exactly as before.
+  topicIds?: string[];
+  subtopicIds?: string[];
 }
 
 export interface IPlannerWeek {
@@ -47,6 +52,8 @@ const plannerTaskSchema = new Schema<IPlannerTask>(
     dueDate:     { type: Date, required: true },
     status:      { type: String, enum: ['pending', 'completed'], default: 'pending' },
     completedAt: { type: Date },
+    topicIds:    { type: [String], default: undefined },
+    subtopicIds: { type: [String], default: undefined },
   },
   { _id: false },
 );

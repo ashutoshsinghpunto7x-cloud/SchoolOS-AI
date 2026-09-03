@@ -4812,6 +4812,10 @@ export interface PaperGenerationConfig {
   subject: string;
   examType: string;
   chapterIds: string[];
+  /** Optional topic/subtopic scoping within the selected chapters (see question.model.ts's
+   *  topicId/subtopicId). When present, narrows the eligible question pool before selection —
+   *  purely additive, omitting it reproduces today's chapter-only pool. */
+  topicIds?: string[];
   totalMarks: number;
   difficultyMix: PaperDifficultyMix;
   marksBreakdown: PaperMarksBreakdownEntry[];
@@ -4883,6 +4887,10 @@ export interface PlannerTask {
   dueDate: string;
   status: PlannerTaskStatus;
   completedAt?: string;
+  /** Topic(s)/subtopic(s) this task covers, when the chapter behind it has a topicTree — see
+   *  buildChapterDayPlan. Absent for legacy/manual tasks and chapters without a topicTree. */
+  topicIds?: string[];
+  subtopicIds?: string[];
 }
 
 export interface PlannerWeek {
@@ -4929,6 +4937,9 @@ export interface PacePosition {
 export interface PlannerDraftTask {
   title: string;
   type: PlannerTaskType;
+  /** See PlannerTask.topicIds/subtopicIds — carried from draft through to the saved planner task. */
+  topicIds?: string[];
+  subtopicIds?: string[];
 }
 
 export interface PlannerDraftWeek {

@@ -11,6 +11,8 @@ import { plannerRepository } from './planner.repository';
 import { computeTeachingWeeks, listWeekdays, distributeDueDates, buildChapterDayPlan } from './planner-week.util';
 import { ITeacherPlanner, IPlannerWeek, IPlannerTask } from './planner.model';
 import { ConfirmPlannerInput, GeneratePlannerInput, AddPrincipalTaskInput } from './planner.validation';
+import { worksheetGeneratorService } from '../worksheet-generator/worksheet-generator.service';
+import { WorksheetType } from '../worksheet-generator/worksheet.model';
 import type { PlannerDraftWeek, PlannerExtractionResult, SavedChapterOption, TeachingWeeksInfo } from '@schoolos/types';
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
@@ -198,7 +200,7 @@ export const plannerService = {
 
       const weekdayGroups = blockWeeks.map((tw) => listWeekdays(tw.startDate, tw.endDate));
       const totalDays = weekdayGroups.reduce((sum, days) => sum + days.length, 0);
-      const dayPlan = buildChapterDayPlan(chapter.chapterName, chapter.topics, totalDays);
+      const dayPlan = buildChapterDayPlan(chapter.chapterName, chapter.topics, totalDays, chapter.topicTree);
 
       let dayIdx = 0;
       for (let wi = 0; wi < blockWeeks.length; wi++) {
@@ -238,6 +240,8 @@ export const plannerService = {
         type: t.type,
         dueDate: dueDates[i],
         status: 'pending',
+        topicIds: t.topicIds,
+        subtopicIds: t.subtopicIds,
       }));
 
       weeks.push({
@@ -272,6 +276,40 @@ export const plannerService = {
     const updated = await plannerRepository.setTaskStatus(plannerId, ctx.schoolId, taskId, status);
     if (!updated) throw new NotFoundError('Task');
     return updated;
+  },
+
+  /** POST /teacher-planner/:id/tasks/:taskId/generate-worksheet — drafts a worksheet scoped to
+   *  one planner task's chapter (and topic(s), when the task carries topicIds/subtopicIds from a
+   *  topicTree-weighted day plan — see buildChapterDayPlan). Only worksheet/revision tasks make
+   *  sense here; other task types (explain, activity, unit_test, ...) 400. Never persisted — same
+   *  review/save flow as the worksheet generator's own draft endpoint. */
+  async generateWorksheetForTask(plannerId: string, taskId: string, ctx: AuthContext) {
+    const planner = await plannerRepository.findById(plannerId, ctx.schoolId);
+    if (!planner) throw new NotFoundError('Planner');
+    await assertTeacherCanManagePlanner(ctx, planner.class, planner.subject);
+
+    let task: IPlannerTask | undefined;
+    let week: IPlannerWeek | undefined;
+    for (const w of planner.weeks) {
+      const found = w.tasks.find((t) => t.taskId === taskId);
+      if (found) { task = found; week = w; break; }
+    }
+    if (!task || !week) throw new NotFoundError('Task');
+
+    if (task.type !== 'worksheet' && task.type !== 'revision') {
+      throw new ValidationError('Only worksheet or revision tasks can generate a worksheet');
+    }
+
+    const worksheetType: WorksheetType = task.type === 'worksheet' ? 'practice' : 'revision';
+
+    return worksheetGeneratorService.generate({
+      class: planner.class,
+      subject: planner.subject,
+      chapterIds: [week.chapterId],
+      worksheetType,
+      questionCount: 10,
+      topicIds: task.topicIds,
+    }, ctx);
   },
 
   async getProgress(plannerId: string, ctx: AuthContext) {
