@@ -23,7 +23,7 @@ export function AttendanceOverviewPage() {
         </div>
       </div>
 
-      <div className="px-4 py-4 max-w-3xl mx-auto">
+      <div className="px-3 sm:px-4 py-4 w-full max-w-[1600px] mx-auto">
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-14 bg-white rounded-2xl border border-gray-200 animate-pulse" />)}
@@ -34,7 +34,7 @@ export function AttendanceOverviewPage() {
             <p className="text-sm font-semibold text-gray-700">No check-ins yet today</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[11px] text-gray-400 uppercase tracking-wide bg-gray-50">

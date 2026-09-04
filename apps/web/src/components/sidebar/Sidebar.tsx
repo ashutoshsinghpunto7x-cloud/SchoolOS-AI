@@ -181,6 +181,7 @@ const NAV_ITEMS_COORDINATOR = [
 // vendor.routes.ts, which now also grants this role read access).
 const NAV_ITEMS_OPERATIONS = [
   { label: 'Dashboard',         icon: LayoutDashboard, path: '/operations',                    end: true  },
+  { label: 'Staff Attendance',  icon: ScanLine,         path: '/operations/attendance',        end: false },
   { label: 'Purchase Requests', icon: ClipboardList,   path: '/operations/purchase-requests',  end: false },
   { label: 'Purchase Orders',   icon: ShoppingCart,     path: '/operations/purchase-orders',    end: false },
   { label: 'Inventory',         icon: Boxes,            path: '/operations/inventory',          end: false },

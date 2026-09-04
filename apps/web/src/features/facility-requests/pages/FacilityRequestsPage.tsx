@@ -44,16 +44,16 @@ export function FacilityRequestsPage() {
   const requests = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="min-h-screen bg-[#F5F5F7] p-3 sm:p-6">
+      <div className="w-full max-w-[1600px] mx-auto space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Facility Requests</h1>
-            <p className="text-base text-gray-500 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Facility Requests</h1>
+            <p className="text-sm sm:text-base text-gray-500 mt-1">
               {isTriager ? 'All maintenance tickets — triage and resolve' : 'Your maintenance tickets'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             {isTriager && sla && (
               <div className="text-sm text-gray-500">
                 Avg. resolution: <span className="font-semibold text-gray-900">
@@ -65,7 +65,7 @@ export function FacilityRequestsPage() {
             )}
             <button
               onClick={() => setShowForm(true)}
-              className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center gap-2"
+              className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Raise Request
             </button>

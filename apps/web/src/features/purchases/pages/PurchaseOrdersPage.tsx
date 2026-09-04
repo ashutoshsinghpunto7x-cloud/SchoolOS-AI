@@ -30,16 +30,16 @@ export function PurchaseOrdersPage() {
   const orders = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#F5F5F7] p-3 sm:p-6">
+      <div className="w-full max-w-[1600px] mx-auto space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Purchase Orders</h1>
-            <p className="text-base text-gray-500 mt-1">Issued to vendors, awaiting or confirming delivery</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Purchase Orders</h1>
+            <p className="text-sm sm:text-base text-gray-500 mt-1">Issued to vendors, awaiting or confirming delivery</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center gap-2"
+            className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" /> Issue Order
           </button>
@@ -73,9 +73,9 @@ export function PurchaseOrdersPage() {
           <div className="space-y-3">
             {orders.map((o) => (
               <div key={o._id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-sm font-semibold text-gray-900">{o.poNumber}</span>
                       <span className={cn('inline-flex items-center rounded-full font-medium text-xs px-2.5 py-0.5', STATUS_BADGE[o.status])}>
                         {o.status.replace(/_/g, ' ')}

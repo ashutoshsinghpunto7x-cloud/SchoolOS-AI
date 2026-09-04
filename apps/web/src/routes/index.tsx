@@ -1335,6 +1335,10 @@ export const router = createBrowserRouter([
                   { path: 'operations/inventory', element: <InventoryPage /> },
                   { path: 'operations/assets', element: <AssetsPage /> },
                   { path: 'operations/facility-requests', element: <FacilityRequestsPage /> },
+                  // Staff attendance — reuses the same QR check-in/check-out
+                  // screen already built for admin (AttendanceOverviewPage)
+                  // instead of a bespoke Operations version.
+                  { path: 'operations/attendance', element: <AttendanceOverviewPage /> },
                 ],
               },
 
