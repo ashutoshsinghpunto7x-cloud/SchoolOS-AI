@@ -6,7 +6,7 @@ export const createUserSchema = z.object({
   email: z.string().email().toLowerCase(),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant', 'academic_coordinator', 'parent']),
+  role: z.enum(['admin', 'principal', 'reception', 'teacher', 'accountant', 'operations_manager', 'academic_coordinator', 'parent']),
   /** Parent role only — Student._id values this account may view. */
   linkedStudentIds: z.array(z.string()).optional(),
 });

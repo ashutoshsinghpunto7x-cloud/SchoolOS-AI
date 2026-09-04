@@ -785,6 +785,30 @@ const AccountantTeacherSearchPage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantTeacherSearchPage'),
   'AccountantTeacherSearchPage',
 );
+const OperationsDashboard = lazyPage(
+  () => import('@/features/operations/pages/OperationsDashboard'),
+  'OperationsDashboard',
+);
+const PurchaseRequestsPage = lazyPage(
+  () => import('@/features/purchases/pages/PurchaseRequestsPage'),
+  'PurchaseRequestsPage',
+);
+const PurchaseOrdersPage = lazyPage(
+  () => import('@/features/purchases/pages/PurchaseOrdersPage'),
+  'PurchaseOrdersPage',
+);
+const InventoryPage = lazyPage(
+  () => import('@/features/inventory/pages/InventoryPage'),
+  'InventoryPage',
+);
+const AssetsPage = lazyPage(
+  () => import('@/features/assets/pages/AssetsPage'),
+  'AssetsPage',
+);
+const FacilityRequestsPage = lazyPage(
+  () => import('@/features/facility-requests/pages/FacilityRequestsPage'),
+  'FacilityRequestsPage',
+);
 const AccountantTeacherProfilePage = lazyPage(
   () => import('@/features/accountant-workspace/pages/AccountantTeacherProfilePage'),
   'AccountantTeacherProfilePage',
@@ -1082,7 +1106,10 @@ export const router = createBrowserRouter([
 
               // Accountant Workspace (accountant-role only, mobile-first with bottom nav)
               {
-                element: <ProtectedRoute allowedRoles={['accountant']} />,
+                // 'operations_manager' also lands here for Vendors/Expenses —
+                // those stay owned by Accountant (see project scoping notes),
+                // Operations just gets a deep link into this workspace.
+                element: <ProtectedRoute allowedRoles={['accountant', 'operations_manager']} />,
                 children: [
                   {
                     element: <AccountantLayout />,
@@ -1102,6 +1129,7 @@ export const router = createBrowserRouter([
                       { path: 'accountant/expenses',      element: <ExpensesPage /> },
                       { path: 'accountant/vendors',       element: <VendorDirectoryPage /> },
                       { path: 'accountant/vendors/:vendorId', element: <VendorProfilePage /> },
+                      { path: 'accountant/facility-requests', element: <FacilityRequestsPage /> },
                       { path: 'accountant/reports',       element: <AccountantReportsPage /> },
                     ],
                   },
@@ -1291,6 +1319,22 @@ export const router = createBrowserRouter([
                   { path: 'coordinator/academic-plan', element: <PrincipalAcademicPlanPage basePath="/coordinator/academic-plan" homePath="/coordinator" /> },
                   { path: 'coordinator/academic-plan/teacher/:teacherId', element: <PrincipalAcademicPlanTeacherPage basePath="/coordinator/academic-plan" /> },
                   { path: 'coordinator/academic-plan/:teacherId/:cls/:section/:subject', element: <PrincipalAcademicPlanDetailPage /> },
+                ],
+              },
+
+              // Operations & Administration Dashboard — Phase 1 (Procurement
+              // core). Vendors stays a deep link into the Accountant workspace
+              // (see accountant/vendors below, whose ProtectedRoute now also
+              // admits this role) rather than a page of its own here.
+              {
+                element: <ProtectedRoute allowedRoles={['operations_manager', 'admin']} />,
+                children: [
+                  { path: 'operations', element: <OperationsDashboard /> },
+                  { path: 'operations/purchase-requests', element: <PurchaseRequestsPage /> },
+                  { path: 'operations/purchase-orders', element: <PurchaseOrdersPage /> },
+                  { path: 'operations/inventory', element: <InventoryPage /> },
+                  { path: 'operations/assets', element: <AssetsPage /> },
+                  { path: 'operations/facility-requests', element: <FacilityRequestsPage /> },
                 ],
               },
 

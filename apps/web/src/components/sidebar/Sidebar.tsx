@@ -33,6 +33,9 @@ import {
   CalendarClock,
   Bus,
   Table2,
+  ShoppingCart,
+  Boxes,
+  Wrench,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -171,6 +174,21 @@ const NAV_ITEMS_COORDINATOR = [
   { label: 'Exams',          icon: ClipboardList,     path: '/exams',                  end: false },
 ] as const;
 
+// Operations Manager (Admin Officer) — Phase 1 of the Operations &
+// Administration Dashboard: procurement + inventory. Vendors stays a deep
+// link into the Accountant workspace rather than a page of its own here —
+// vendor records/bills/payments are still owned by Accountant (see
+// vendor.routes.ts, which now also grants this role read access).
+const NAV_ITEMS_OPERATIONS = [
+  { label: 'Dashboard',         icon: LayoutDashboard, path: '/operations',                    end: true  },
+  { label: 'Purchase Requests', icon: ClipboardList,   path: '/operations/purchase-requests',  end: false },
+  { label: 'Purchase Orders',   icon: ShoppingCart,     path: '/operations/purchase-orders',    end: false },
+  { label: 'Inventory',         icon: Boxes,            path: '/operations/inventory',          end: false },
+  { label: 'Assets',            icon: Wrench,           path: '/operations/assets',             end: false },
+  { label: 'Facility Requests', icon: ClipboardCheck,   path: '/operations/facility-requests',  end: false },
+  { label: 'Vendors',           icon: Users,            path: '/accountant/vendors',            end: false },
+] as const;
+
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
   principal: 'Principal',
@@ -178,6 +196,7 @@ const ROLE_LABEL: Record<string, string> = {
   reception: 'Receptionist',
   teacher: 'Teacher',
   accountant: 'Accountant',
+  operations_manager: 'Operations Manager',
   academic_coordinator: 'Academic Coordinator',
 };
 
@@ -350,6 +369,21 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
               Reception Portal
             </p>
             {NAV_ITEMS_RECEPTION.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                to={item.path}
+                icon={item.icon}
+                label={item.label}
+                end={item.end}
+              />
+            ))}
+          </>
+        ) : user?.role === 'operations_manager' ? (
+          <>
+            <p className="px-3 pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              Operations Portal
+            </p>
+            {NAV_ITEMS_OPERATIONS.map((item) => (
               <SidebarNavItem
                 key={item.path}
                 to={item.path}
