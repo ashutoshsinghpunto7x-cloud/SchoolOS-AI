@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, IndianRupee, ClipboardList, Wallet, Receipt, FileBarChart,
   Store, FileBarChart2, GraduationCap, Users, Upload, Settings2, Mail,
-  ChevronDown, Menu, X, Settings, LogOut, Headphones,
+  ChevronDown, Menu, X, Settings, LogOut, Headphones, Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -46,6 +46,7 @@ const OTHER: NavGroup = {
     { label: 'Students',  path: '/accountant/student-directory', icon: GraduationCap },
     { label: 'Teachers',  path: '/accountant/teachers',          icon: Users },
     { label: 'Employees', path: '/accountant/employees',         icon: Users },
+    { label: 'Facility Requests', path: '/accountant/facility-requests', icon: Wrench },
     { label: 'Import',    path: '/import',                       icon: Upload },
     { label: 'Classes',   path: '/classes',                      icon: Settings2 },
     { label: 'Messages',  path: '/messages',                     icon: Mail },

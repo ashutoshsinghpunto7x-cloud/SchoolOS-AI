@@ -94,6 +94,11 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  // Admin Officer / Operations Manager — Purchase Requests/Orders, Inventory,
+  // and (Phase 2) Asset Tracking + Facility Maintenance. Named distinctly
+  // from OPS_ROLES/'ops-center' below, which is SchoolOS-internal staff, not
+  // a school-facing role — see Operations & Administration Dashboard spec.
+  | 'operations_manager'
   // Owns syllabus/calendar/exam setup for the Academic Planning Engine —
   // distinct from principal (oversight-only) since its write scope over
   // syllabus/calendar data is materially different. See "The Planning
@@ -1494,6 +1499,286 @@ export interface CashBankSplit {
   cheque: number;
   demandDraft: number;
   total: number;
+}
+
+// ── Purchases (Purchase Requests → Purchase Orders) ──────────────────────────
+
+export type PurchaseCategory =
+  | 'stationery' | 'furniture' | 'it_equipment' | 'lab_equipment'
+  | 'cleaning_supplies' | 'maintenance_materials' | 'other';
+export type PurchaseRequestStatus = 'pending' | 'approved' | 'rejected' | 'converted';
+export type PurchaseOrderStatus = 'issued' | 'partially_received' | 'received' | 'closed';
+
+export interface PurchaseRequestItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  estimatedCost?: number;
+}
+
+export interface PurchaseRequest extends BaseEntity {
+  requestNo: string;
+  raisedBy: string;
+  raisedByName: string;
+  department?: string;
+  category: PurchaseCategory;
+  items: PurchaseRequestItem[];
+  justification?: string;
+  status: PurchaseRequestStatus;
+  approvedBy?: string;
+  decidedAt?: string;
+  rejectionReason?: string;
+  poId?: string;
+  createdBy: string;
+}
+
+export interface CreatePurchaseRequestPayload {
+  raisedBy: string;
+  department?: string;
+  category: PurchaseCategory;
+  items: PurchaseRequestItem[];
+  justification?: string;
+}
+
+export interface PurchaseRequestListOptions {
+  page?: number;
+  limit?: number;
+  status?: PurchaseRequestStatus;
+  category?: PurchaseCategory;
+}
+
+export interface PurchaseOrderLineItem {
+  itemName: string;
+  inventoryItemId?: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+  quantityReceived: number;
+}
+
+export interface PurchaseOrder extends BaseEntity {
+  poNumber: string;
+  vendorId: string;
+  vendorName: string;
+  requestIds: string[];
+  lineItems: PurchaseOrderLineItem[];
+  totalAmount: number;
+  deliveryDate?: string;
+  status: PurchaseOrderStatus;
+  vendorBillId?: string;
+  createdBy: string;
+}
+
+export interface CreatePurchaseOrderPayload {
+  vendorId: string;
+  requestIds?: string[];
+  lineItems: { itemName: string; quantity: number; unitPrice: number }[];
+  deliveryDate?: string;
+}
+
+export interface ReceivePurchaseOrderPayload {
+  received?: { itemName: string; quantity: number }[];
+}
+
+export interface PurchaseOrderListOptions {
+  page?: number;
+  limit?: number;
+  status?: PurchaseOrderStatus;
+  vendorId?: string;
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────────────
+
+export type InventoryCategory =
+  | 'stationery' | 'furniture' | 'it_equipment' | 'sports_equipment' | 'electrical'
+  | 'lab_equipment' | 'cleaning_materials' | 'consumables' | 'other';
+export type StockMovementType = 'added' | 'issued' | 'returned' | 'damaged' | 'lost';
+export type StockMovementRefType = 'po_receipt' | 'requisition' | 'adjustment';
+
+export interface InventoryItem extends BaseEntity {
+  sku: string;
+  itemName: string;
+  category: InventoryCategory;
+  qtyAvailable: number;
+  minStockLevel: number;
+  unitPrice?: number;
+  preferredVendorId?: string;
+  storageLocation?: string;
+  createdBy: string;
+}
+
+export interface CreateInventoryItemPayload {
+  itemName: string;
+  category: InventoryCategory;
+  sku?: string;
+  qtyAvailable?: number;
+  minStockLevel?: number;
+  unitPrice?: number;
+  preferredVendorId?: string;
+  storageLocation?: string;
+}
+
+export interface UpdateInventoryItemPayload {
+  itemName?: string;
+  category?: InventoryCategory;
+  minStockLevel?: number;
+  unitPrice?: number;
+  preferredVendorId?: string;
+  storageLocation?: string;
+}
+
+export interface InventoryItemListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: InventoryCategory;
+  lowStock?: boolean;
+}
+
+export interface StockMovement {
+  _id: string;
+  itemId: string;
+  itemName: string;
+  type: StockMovementType;
+  qty: number;
+  balanceAfter: number;
+  refType: StockMovementRefType;
+  refId?: string;
+  issuedTo?: string;
+  recordedBy: string;
+  note?: string;
+  createdAt: string;
+}
+
+export interface CreateStockMovementPayload {
+  type: StockMovementType;
+  qty: number;
+  issuedTo?: string;
+  note?: string;
+}
+
+// ── Assets ────────────────────────────────────────────────────────────────────
+
+export type AssetCategory =
+  | 'computers' | 'printers' | 'projectors' | 'ac_units' | 'desks' | 'smart_boards' | 'vehicles' | 'other';
+export type AssetStatus = 'active' | 'under_repair' | 'disposed';
+
+export interface Asset extends BaseEntity {
+  assetId: string;
+  name: string;
+  category: AssetCategory;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  vendorId?: string;
+  warrantyExpiry?: string;
+  amcExpiry?: string;
+  location: string;
+  assignedTo?: string;
+  status: AssetStatus;
+  createdBy: string;
+}
+
+export interface CreateAssetPayload {
+  name: string;
+  category: AssetCategory;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  vendorId?: string;
+  warrantyExpiry?: string;
+  amcExpiry?: string;
+  location: string;
+  assignedTo?: string;
+}
+
+export interface UpdateAssetPayload {
+  name?: string;
+  category?: AssetCategory;
+  purchaseDate?: string;
+  purchaseCost?: number;
+  vendorId?: string;
+  warrantyExpiry?: string;
+  amcExpiry?: string;
+  location?: string;
+  assignedTo?: string;
+  status?: AssetStatus;
+}
+
+export interface AssetListOptions {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: AssetCategory;
+  status?: AssetStatus;
+}
+
+// ── Facility Requests ─────────────────────────────────────────────────────────
+
+export type FacilityIssueType = 'electrical' | 'plumbing' | 'furniture' | 'computer' | 'ac' | 'other';
+export type FacilityRequestPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type FacilityRequestStatus = 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+export type FacilityAssignedToType = 'employee' | 'vendor';
+
+export interface FacilityRequest extends BaseEntity {
+  ticketNo: string;
+  raisedBy: string;
+  raisedByName: string;
+  raisedByRole: string;
+  issueType: FacilityIssueType;
+  priority: FacilityRequestPriority;
+  location: string;
+  assetId?: string;
+  description?: string;
+  assignedToType?: FacilityAssignedToType;
+  assignedToId?: string;
+  assignedToName?: string;
+  status: FacilityRequestStatus;
+  assignedAt?: string;
+  startedAt?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+}
+
+export interface CreateFacilityRequestPayload {
+  issueType: FacilityIssueType;
+  priority?: FacilityRequestPriority;
+  location: string;
+  assetId?: string;
+  description?: string;
+}
+
+export interface AssignFacilityRequestPayload {
+  assignedToType: FacilityAssignedToType;
+  assignedToId: string;
+  assignedToName: string;
+}
+
+export interface UpdateFacilityRequestStatusPayload {
+  status: 'in_progress' | 'completed' | 'cancelled';
+  resolutionNotes?: string;
+}
+
+export interface FacilityRequestListOptions {
+  page?: number;
+  limit?: number;
+  status?: FacilityRequestStatus;
+  issueType?: FacilityIssueType;
+}
+
+export interface FacilityRequestSlaReport {
+  averageResolutionMinutes: number;
+}
+
+// ── Operations & Administration Dashboard ────────────────────────────────────
+
+export interface OperationsSummary {
+  staffPresent: number;
+  staffLate: number;
+  staffAbsent: number;
+  totalStaff: number;
+  pendingPurchaseRequests: number;
+  lowStockItems: number;
+  assetsUnderRepair: number;
+  openFacilityRequests: number;
 }
 
 // ── Accountant Workspace: Dashboard ──────────────────────────────────────────

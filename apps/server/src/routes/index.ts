@@ -69,6 +69,11 @@ import admissionFormRouter from '../features/admission-forms/admission-form.rout
 import candidateRouter from '../features/candidates/candidate.routes';
 import interviewRouter from '../features/interviews/interview.routes';
 import frontOfficeReportsRouter from '../features/front-office-reports/front-office-reports.routes';
+import { purchaseRequestRouter, purchaseOrderRouter } from '../features/purchases/purchase.routes';
+import inventoryRouter from '../features/inventory/inventory.routes';
+import operationsRouter from '../features/operations/operations.routes';
+import assetRouter from '../features/assets/asset.routes';
+import facilityRequestRouter from '../features/facility-requests/facility-request.routes';
 
 const router = Router();
 
@@ -104,6 +109,12 @@ router.use('/salary', salaryRouter);
 router.use('/expenses', expenseRouter);
 router.use('/accountant-workspace', accountantWorkspaceRouter);
 router.use('/vendors', vendorRouter);
+router.use('/purchase-requests', purchaseRequestRouter);
+router.use('/purchase-orders', purchaseOrderRouter);
+router.use('/inventory', inventoryRouter);
+router.use('/assets', assetRouter);
+router.use('/facility-requests', facilityRequestRouter);
+router.use('/operations', operationsRouter);
 router.use('/parent-workspace', parentWorkspaceRouter);
 router.use('/notifications', notificationRouter);
 router.use('/classes', classTeacherRouter);

@@ -30,6 +30,11 @@ export const PERMISSIONS = {
   MODULE_ACCESS_VIEW: 'module-access.view',
   MODULE_ACCESS_MANAGE: 'module-access.manage',
   VISITORS_MANAGE: 'visitors.manage',
+  PROCUREMENT_MANAGE: 'procurement.manage',
+  INVENTORY_MANAGE: 'inventory.manage',
+  ASSET_MANAGE: 'asset.manage',
+  FACILITY_REQUESTS_VIEW: 'facility-requests.view',
+  FACILITY_REQUESTS_MANAGE: 'facility-requests.manage',
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -48,7 +53,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'visitors.manage',
   ],
   teacher: ['students.view', 'communications.view', 'exams.view', 'marks.enter', 'marks.submit'],
-  accountant: ['students.view', 'payroll.view'],
+  // 'facility-requests.view' lets Accountant raise/view their own facility
+  // tickets (Phase 2) — triage stays 'facility-requests.manage', Operations-only.
+  accountant: ['students.view', 'payroll.view', 'facility-requests.view'],
+  // Admin Officer / Operations Manager — Purchase Requests/Orders, Inventory
+  // (Phase 1), and Asset Tracking + Facility Maintenance triage (Phase 2) of
+  // the Operations & Administration Dashboard.
+  operations_manager: ['procurement.manage', 'inventory.manage', 'asset.manage', 'facility-requests.view', 'facility-requests.manage'],
   // Owns the Academic Planning Engine's syllabus/calendar/exam setup — not a
   // general admin permission set, scoped entirely to Academic Plan / Academic
   // Year / exam-configuration endpoints via authorize() there, same as parent/driver below.
@@ -76,6 +87,7 @@ export const ROLE_META: Record<UserRole, { label: string; description: string }>
   reception: { label: 'Receptionist', description: 'Student admissions and communication' },
   teacher: { label: 'Teacher', description: 'View students and communications' },
   accountant: { label: 'Accountant', description: 'Fee collection, salary, and expense management' },
+  operations_manager: { label: 'Operations Manager', description: 'Purchase requests/orders and inventory management' },
   academic_coordinator: { label: 'Academic Coordinator', description: 'Academic calendar, syllabus, and exam setup for the Academic Planning Engine' },
   parent: { label: 'Parent', description: 'View their own children\'s attendance, academics, and fees' },
   driver: { label: 'Driver', description: 'Start/end their assigned route and share live GPS location' },
@@ -116,6 +128,11 @@ export const PERMISSION_META: Record<Permission, { label: string; category: stri
   'module-access.view': { label: 'View Module Access', category: 'Module Access' },
   'module-access.manage': { label: 'Manage Module Access', category: 'Module Access' },
   'visitors.manage': { label: 'Manage Visitor Log', category: 'Front Desk' },
+  'procurement.manage': { label: 'Manage Purchase Requests/Orders', category: 'Operations' },
+  'inventory.manage': { label: 'Manage Inventory', category: 'Operations' },
+  'asset.manage': { label: 'Manage Assets', category: 'Operations' },
+  'facility-requests.view': { label: 'Raise Facility Requests', category: 'Operations' },
+  'facility-requests.manage': { label: 'Triage Facility Requests', category: 'Operations' },
 };
 
 export const hasPermission = (role: UserRole, permission: Permission): boolean =>

@@ -9,6 +9,9 @@ export type UserRole =
   | 'reception'
   | 'teacher'
   | 'accountant'
+  // Admin Officer / Operations Manager — see packages/types UserRole for the
+  // full rationale (kept distinct from the OPS_ROLES/'ops-center' vocabulary).
+  | 'operations_manager'
   // Owns syllabus/calendar/exam setup for the Academic Planning Engine — see
   // packages/types UserRole for the full rationale.
   | 'academic_coordinator'
@@ -76,7 +79,7 @@ const userSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ['admin', 'principal', 'incharge', 'reception', 'teacher', 'accountant', 'academic_coordinator', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
+      enum: ['admin', 'principal', 'incharge', 'reception', 'teacher', 'accountant', 'operations_manager', 'academic_coordinator', 'parent', 'driver', 'owner', 'super_admin', 'devops', 'developer', 'support'],
       required: true,
     },
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
