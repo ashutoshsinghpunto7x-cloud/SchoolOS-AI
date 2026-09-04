@@ -57,7 +57,8 @@ export const communicationController = {
 
   async webhookCallback(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const updated = await communicationService.handleWebhookCallback(req.body);
+      const secret = req.headers['x-automation-secret'] as string | undefined;
+      const updated = await communicationService.handleWebhookCallback(req.body, secret);
       sendSuccess(res, updated, 'Communication updated via webhook');
     } catch (err) {
       next(err);

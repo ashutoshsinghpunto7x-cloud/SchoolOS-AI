@@ -146,17 +146,35 @@ export const communicationService = {
    * that still call POST /communications/webhook.
    * New workflows should use POST /automation/webhook instead.
    */
-  async handleWebhookCallback(rawInput: unknown): Promise<ICommunication> {
+  async handleWebhookCallback(rawInput: unknown, secret?: string): Promise<ICommunication> {
+    // Validate webhook secret when configured — mirrors automation.service.ts's
+    // handleWebhook check. This endpoint has no JWT, so the secret is the only
+    // thing standing between it and an unauthenticated caller.
+    if (env.AUTOMATION_WEBHOOK_SECRET) {
+      if (!secret || secret !== env.AUTOMATION_WEBHOOK_SECRET) {
+        throw new ValidationError('Invalid webhook secret');
+      }
+    }
+
     const { communicationId, status, summary, recommendation, nextFollowUp, metadata } =
       webhookCallbackSchema.parse(rawInput);
 
-    const updated = await communicationRepository.updateById(communicationId, {
-      status,
-      ...(summary !== undefined && { summary }),
-      ...(recommendation !== undefined && { recommendation }),
-      ...(nextFollowUp !== undefined && { nextFollowUp }),
-      ...(metadata !== undefined && { metadata }),
-    });
+    // Scope the update to the communication's own school so a forged/leaked id
+    // can never cross a tenant boundary, even with a valid secret.
+    const existing = await communicationRepository.findById(communicationId);
+    if (!existing) throw new NotFoundError('Communication');
+
+    const updated = await communicationRepository.updateById(
+      communicationId,
+      {
+        status,
+        ...(summary !== undefined && { summary }),
+        ...(recommendation !== undefined && { recommendation }),
+        ...(nextFollowUp !== undefined && { nextFollowUp }),
+        ...(metadata !== undefined && { metadata }),
+      },
+      existing.schoolId
+    );
 
     if (!updated) throw new NotFoundError('Communication');
 
