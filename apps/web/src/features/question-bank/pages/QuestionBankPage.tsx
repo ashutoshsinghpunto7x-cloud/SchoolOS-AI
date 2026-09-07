@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks, Files } from 'lucide-react';
-import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups } from '../hooks/useQuestionBank';
+import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks, Files, Merge } from 'lucide-react';
+import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups, useMergeQuestionGroups } from '../hooks/useQuestionBank';
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
   const navigate = useNavigate();
@@ -88,6 +88,7 @@ export function QuestionBankPage() {
   const { data: groups, isLoading } = useQuestionGroups({ class: cls || undefined, subject: subject || undefined, search: search || undefined });
   const { data: sources } = useAllQuestionSources();
   const deleteGroups = useDeleteQuestionGroups();
+  const mergeGroups = useMergeQuestionGroups();
 
   function openChapter(g: NonNullable<typeof groups>[number]) {
     const params = new URLSearchParams({ class: g.class, subject: g.subject, chapterName: g.chapterName });
@@ -114,6 +115,28 @@ export function QuestionBankPage() {
       toast.success('Chapter deleted');
     } catch (err) {
       toast.error('Could not delete chapter', { description: err instanceof Error ? err.message : undefined });
+    }
+  }
+
+  async function handleMergeSelected() {
+    if (!groups || selected.size < 2) return;
+    const toMerge = groups.filter((g) => selected.has(g.chapterId));
+    if (new Set(toMerge.map((g) => `${g.class}-${g.subject}`)).size > 1) {
+      toast.error('Only chapters from the same class and subject can be merged');
+      return;
+    }
+    const targetChapterName = window.prompt(
+      `Merge ${toMerge.length} chapters into one — what should the combined chapter be called?`,
+      toMerge[0].chapterName,
+    );
+    if (!targetChapterName?.trim()) return;
+    try {
+      await mergeGroups.mutateAsync({ groups: toMerge.map((g) => ({ class: g.class, subject: g.subject, chapterId: g.chapterId, chapterName: g.chapterName })), targetChapterName: targetChapterName.trim() });
+      toast.success(`Merged into "${targetChapterName.trim()}" — each original heading is kept as a topic tag inside it`);
+      setSelected(new Set());
+      setSelectMode(false);
+    } catch (err) {
+      toast.error('Could not merge chapters', { description: err instanceof Error ? err.message : undefined });
     }
   }
 
@@ -168,6 +191,13 @@ export function QuestionBankPage() {
       {selectMode && (
         <div className="sticky top-[57px] z-10 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-100 dark:border-amber-500/20 px-5 py-2.5 flex items-center gap-3">
           <p className="flex-1 text-xs font-medium text-amber-800 dark:text-amber-300">{selected.size} chapter(s) selected</p>
+          <button
+            type="button" onClick={handleMergeSelected} disabled={selected.size < 2 || mergeGroups.isPending}
+            title={selected.size < 2 ? 'Select 2 or more chapters to merge' : undefined}
+            className="h-8 px-3 rounded-lg bg-white dark:bg-white/10 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"
+          >
+            <Merge className="w-3.5 h-3.5" /> Merge selected
+          </button>
           <button
             type="button" onClick={handleDeleteSelected} disabled={selected.size === 0 || deleteGroups.isPending}
             className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40"

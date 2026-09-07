@@ -196,6 +196,33 @@ export const questionRepository = {
     return res.modifiedCount;
   },
 
+  /**
+   * Reassigns every question in the given source chapter groups onto one target chapter — the
+   * landing view's "Merge chapters" action, for fixing up a chapter the AI split into several rows
+   * (each group's own local heading landed in `chapterName` instead of `topic` — see
+   * extractionTargetSchema.chapterName). A source group's own chapterName is preserved as its
+   * questions' `topic` (only where one isn't already set — never clobbers a teacher's own tagging),
+   * so it still surfaces as a sub-heading once nested inside the merged chapter.
+   */
+  async mergeChapterGroups(
+    schoolId: string,
+    groups: { class: string; subject: string; chapterId: string; chapterName: string }[],
+    target: { chapterId: string; chapterName: string },
+  ): Promise<number> {
+    let modified = 0;
+    for (const g of groups) {
+      if (g.chapterId === target.chapterId) continue;
+      const filter = { schoolId, isDeleted: false, class: classNameKey(g.class), subject: g.subject, chapterId: g.chapterId };
+      await Question.updateMany(
+        { ...filter, $or: [{ topic: { $exists: false } }, { topic: null }, { topic: '' }] },
+        { $set: { topic: g.chapterName } },
+      );
+      const reassigned = await Question.updateMany(filter, { $set: { chapterId: target.chapterId, chapterName: target.chapterName } });
+      modified += reassigned.modifiedCount;
+    }
+    return modified;
+  },
+
   async recordUsage(ids: string[], examId: string | undefined, usedAt: Date): Promise<void> {
     if (ids.length === 0) return;
     await Question.updateMany({ _id: { $in: ids } }, { $push: { usageHistory: { examId, usedAt } } });

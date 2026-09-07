@@ -52,12 +52,12 @@ async function pollExtractionJob<T>(jobId: string): Promise<T> {
 
 export const questionBankApi = {
   /** Upload reads the photo directly into question drafts in one AI call — no separate "extract text, then generate" step. `detectImages` is the teacher's "Include images" toggle — opt-in, so the default upload stays exactly as cheap/fast as before figure detection existed. */
-  extractFromImage: async (target: { class: string; subject: string }, file: File, detectImages = false): Promise<QuestionExtractionResult> => {
+  extractFromImage: async (target: { class: string; subject: string }, chapterName: string, file: File, detectImages = false): Promise<QuestionExtractionResult> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/image`, formData, {
-        params: { ...target, ...(detectImages ? { detectImages: 'true' } : {}) },
+        params: { ...target, chapterName, ...(detectImages ? { detectImages: 'true' } : {}) },
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: UPLOAD_TIMEOUT_MS,
       });
@@ -65,12 +65,12 @@ export const questionBankApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  extractFromPdf: async (target: { class: string; subject: string }, file: File): Promise<TextExtractionResult> => {
+  extractFromPdf: async (target: { class: string; subject: string }, chapterName: string, file: File): Promise<TextExtractionResult> => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/pdf`, formData, {
-        params: target,
+        params: { ...target, chapterName },
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: UPLOAD_TIMEOUT_MS,
       });
@@ -81,13 +81,13 @@ export const questionBankApi = {
   // ── Layout-aware chapter capture (multi-page) ───────────────────────────────
 
   /** Starts a multi-page batch job that reads each page straight into question drafts — returns immediately with a jobId to poll (see useChapterCaptureJob), unlike the single-image flow above which polls to completion internally. This lets the review screen show per-page progress. `detectImages` is the teacher's "Include images" toggle, same as extractFromImage. */
-  extractChapter: async (target: { class: string; subject: string }, chapterName: string | undefined, images: File[], detectImages = false): Promise<{ jobId: string }> => {
+  extractChapter: async (target: { class: string; subject: string }, chapterName: string, images: File[], detectImages = false): Promise<{ jobId: string }> => {
     try {
       const formData = new FormData();
       images.forEach((img) => formData.append('images', img));
       formData.append('class', target.class);
       formData.append('subject', target.subject);
-      if (chapterName) formData.append('chapterName', chapterName);
+      formData.append('chapterName', chapterName);
       formData.append('detectImages', String(detectImages));
       const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/chapter`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -224,6 +224,16 @@ export const questionBankApi = {
   deleteQuestionGroups: async (groups: { class: string; subject: string; chapterId: string }[]): Promise<void> => {
     try {
       await apiClient.delete(`${BASE}/questions/groups`, { data: { groups } });
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  /** Combines 2+ chapter groups into one — fixes a chapter the AI split into several landing-page rows. Each merged group's own chapterName becomes its questions' `topic` (when unset), so it still shows as a sub-heading once nested under the merged chapter. */
+  mergeQuestionGroups: async (
+    groups: { class: string; subject: string; chapterId: string; chapterName: string }[], targetChapterName: string,
+  ): Promise<number> => {
+    try {
+      const res = await apiClient.post<{ data: { modified: number } }>(`${BASE}/questions/groups/merge`, { groups, targetChapterName });
+      return res.data.data.modified;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

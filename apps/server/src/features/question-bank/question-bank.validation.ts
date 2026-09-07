@@ -15,6 +15,11 @@ export const BLOOMS_LEVELS = ['remember', 'understand', 'apply', 'analyze', 'eva
 export const extractionTargetSchema = z.object({
   class:   z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+  // Required so every extracted question is stamped with the teacher's own chapter up front —
+  // otherwise the AI's per-page/per-chunk best-guess (a local heading, a story title, an exercise
+  // name) lands directly in chapterName and each guess fragments into its own landing-page row.
+  // See [[project_question_bank_chapter_fragmentation_fix]].
+  chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
   // Query-string boolean — arrives as the literal string "true"/"false" (or is absent), never a
   // real boolean, since this is parsed from req.query.
   detectImages: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
@@ -25,7 +30,8 @@ export const extractionTargetSchema = z.object({
 export const extractChapterTargetSchema = z.object({
   class:   z.string({ required_error: 'class is required' }).min(1).trim(),
   subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
-  chapterName: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  // Required for the same reason as extractionTargetSchema.chapterName above.
+  chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
   detectImages: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
 });
 
@@ -132,6 +138,18 @@ export const deleteQuestionGroupsSchema = z.object({
     subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
     chapterId: z.string({ required_error: 'chapterId is required' }).min(1).trim(),
   })).min(1, 'Select at least one chapter'),
+});
+
+// Combines 2+ landing-view chapter groups into one — the fix-up path for a chapter that got
+// fragmented into several rows (see extractionTargetSchema.chapterName above for the cause).
+export const mergeQuestionGroupsSchema = z.object({
+  groups: z.array(z.object({
+    class: z.string({ required_error: 'class is required' }).min(1).trim(),
+    subject: z.string({ required_error: 'subject is required' }).min(1).trim(),
+    chapterId: z.string({ required_error: 'chapterId is required' }).min(1).trim(),
+    chapterName: z.string({ required_error: 'chapterName is required' }).min(1).trim(),
+  })).min(2, 'Select at least two chapters to merge'),
+  targetChapterName: z.string({ required_error: 'targetChapterName is required' }).min(1).trim(),
 });
 
 export const listChaptersSchema = z.object({
@@ -270,6 +288,7 @@ export type UpdateQuestionInput = z.infer<typeof updateQuestionSchema>;
 export type ListQuestionsInput = z.infer<typeof listQuestionsSchema>;
 export type ListQuestionGroupsInput = z.infer<typeof listQuestionGroupsSchema>;
 export type DeleteQuestionGroupsInput = z.infer<typeof deleteQuestionGroupsSchema>;
+export type MergeQuestionGroupsInput = z.infer<typeof mergeQuestionGroupsSchema>;
 export type ListChaptersInput = z.infer<typeof listChaptersSchema>;
 export type ListSourcesInput = z.infer<typeof listSourcesSchema>;
 export type UpdateSourceInput = z.infer<typeof updateSourceSchema>;

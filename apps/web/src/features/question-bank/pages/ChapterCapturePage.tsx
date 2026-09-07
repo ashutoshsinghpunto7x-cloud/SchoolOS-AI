@@ -37,7 +37,7 @@ export function ChapterCapturePage() {
     if (!options.some((o) => o.cls === next && o.subjectName === subject)) setSubject('');
   }
 
-  const targetReady = !!cls.trim() && !!subject.trim();
+  const targetReady = !!cls.trim() && !!subject.trim() && !!chapterName.trim();
 
   function addFiles(files: File[]) {
     const added: CapturedPage[] = files.map((file) => ({ id: nextId(), file, previewUrl: URL.createObjectURL(file) }));
@@ -65,10 +65,11 @@ export function ChapterCapturePage() {
 
   async function handleProcess() {
     if (pages.length === 0) { toast.error('Capture or choose at least one page first'); return; }
+    if (!chapterName.trim()) { toast.error('Enter the chapter name first'); return; }
     try {
       const { jobId } = await extractChapter.mutateAsync({
         target: { class: cls.trim(), subject: subject.trim() },
-        chapterName: chapterName.trim() || undefined,
+        chapterName: chapterName.trim(),
         images: pages.map((p) => p.file),
         detectImages: includeImages,
       });
@@ -115,7 +116,7 @@ export function ChapterCapturePage() {
             </div>
           )}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Chapter name (optional)</label>
+            <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Chapter name</label>
             <input value={chapterName} onChange={(e) => setChapterName(e.target.value)} placeholder="e.g. Chapter 4 — Light"
               className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
           </div>

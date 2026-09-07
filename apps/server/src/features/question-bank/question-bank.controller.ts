@@ -15,6 +15,7 @@ import {
   listQuestionsSchema,
   listQuestionGroupsSchema,
   deleteQuestionGroupsSchema,
+  mergeQuestionGroupsSchema,
   listChaptersSchema,
   listSourcesSchema,
   updateSourceSchema,
@@ -32,7 +33,7 @@ export const questionBankController = {
       const target = extractionTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
       const job = await questionExtractionService.enqueueExtractFromImage(
-        target.class, target.subject, fileToDataUri(req.file), ctx, req.file.originalname, target.detectImages,
+        target.class, target.subject, target.chapterName, fileToDataUri(req.file), ctx, req.file.originalname, target.detectImages,
       );
       sendCreated(res, job, 'Reading the page…');
     } catch (err) { next(err); }
@@ -45,7 +46,7 @@ export const questionBankController = {
       const target = extractionTargetSchema.parse(req.query);
       const ctx = buildAuthContext(req.user!);
       const job = await questionExtractionService.enqueueExtractFromPdf(
-        target.class, target.subject, req.file.buffer, ctx, req.file.originalname,
+        target.class, target.subject, target.chapterName, req.file.buffer, ctx, req.file.originalname,
       );
       sendCreated(res, job, 'Reading the document…');
     } catch (err) { next(err); }
@@ -188,6 +189,16 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const count = await questionBankService.deleteQuestionGroups(data.groups, ctx);
       sendSuccess(res, null, `${count} question(s) deleted`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/questions/groups/merge — combines 2+ chapter groups into one, for fixing up a chapter the AI split into several landing-page rows. */
+  async mergeQuestionGroups(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = mergeQuestionGroupsSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      const count = await questionBankService.mergeQuestionGroups(data.groups, data.targetChapterName, ctx);
+      sendSuccess(res, { modified: count }, 'Chapters merged');
     } catch (err) { next(err); }
   },
 

@@ -244,6 +244,20 @@ export const questionBankService = {
     return questionRepository.softDeleteByChapterGroups(ctx.schoolId, groups);
   },
 
+  /** POST /questions/groups/merge — combines 2+ landing-view chapter groups (typically ones the AI mistakenly split apart) into one target chapter. All selected groups must share one class/subject. */
+  async mergeQuestionGroups(
+    groups: { class: string; subject: string; chapterId: string; chapterName: string }[],
+    targetChapterName: string,
+    ctx: AuthContext,
+  ): Promise<number> {
+    const [first, ...rest] = groups;
+    if (rest.some((g) => g.class !== first.class || g.subject !== first.subject)) {
+      throw new ValidationError('Only chapters from the same class and subject can be merged');
+    }
+    const chapter = await chapterRepository.findOrCreate(ctx.schoolId, first.class, first.subject, targetChapterName);
+    return questionRepository.mergeChapterGroups(ctx.schoolId, groups, { chapterId: String(chapter._id), chapterName: chapter.chapterName });
+  },
+
   /**
    * DELETE /sources/:id — permanently removes an upload's converted text (and, for chapter
    * captures, its page/block content). This is a hard delete, not a soft one: unlike a question,

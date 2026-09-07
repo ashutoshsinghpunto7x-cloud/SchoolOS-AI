@@ -12,6 +12,7 @@ export function QuestionUploadPage() {
 
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
+  const [chapterName, setChapterName] = useState('');
   const [includeImages, setIncludeImages] = useState(false);
 
   // Picked from the teacher's own timetable, not typed — see the same note
@@ -32,13 +33,14 @@ export function QuestionUploadPage() {
 
   const busy = extractImage.isPending || extractPdf.isPending;
   const target = { class: cls.trim(), subject: subject.trim() };
-  const targetReady = !!target.class && !!target.subject;
+  const chapter = chapterName.trim();
+  const targetReady = !!target.class && !!target.subject && !!chapter;
   const { data: sources } = useQuestionSources(target.class, target.subject);
 
   async function handleImageFile(file: File) {
-    if (!targetReady) { toast.error('Enter class and subject first'); return; }
+    if (!targetReady) { toast.error('Enter class, subject and chapter name first'); return; }
     try {
-      const result = await extractImage.mutateAsync({ target, file, detectImages: includeImages });
+      const result = await extractImage.mutateAsync({ target, chapterName: chapter, file, detectImages: includeImages });
       if (result.extracted.length === 0) { toast.error('No questions could be found on that page'); return; }
       toast.success(`${result.extracted.length} question(s) generated — review before saving`);
       // Land straight on the drafts review screen with the AI's output already in hand — no
@@ -50,9 +52,9 @@ export function QuestionUploadPage() {
   }
 
   async function handlePdfFile(file: File) {
-    if (!targetReady) { toast.error('Enter class and subject first'); return; }
+    if (!targetReady) { toast.error('Enter class, subject and chapter name first'); return; }
     try {
-      const result = await extractPdf.mutateAsync({ target, file });
+      const result = await extractPdf.mutateAsync({ target, chapterName: chapter, file });
       if (!result.extractedText.trim()) toast.error('No readable text was found in that document');
       else toast.success('Text extracted and saved — open it below to generate questions');
     } catch (err) {
@@ -96,6 +98,15 @@ export function QuestionUploadPage() {
             </div>
           </div>
         )}
+
+        <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+          <label className="text-xs font-semibold text-gray-500 dark:text-white/40">Chapter name</label>
+          <input value={chapterName} onChange={(e) => setChapterName(e.target.value)} placeholder="e.g. Chapter 4 — Light"
+            className="mt-1 w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
+          <p className="text-[11px] text-gray-400 dark:text-white/30 mt-1">
+            Every question from this upload is grouped under this chapter — any heading the AI reads off individual pages is kept as a topic tag instead, so one chapter never splits into several.
+          </p>
+        </div>
 
         <p className="text-xs text-gray-400 dark:text-white/30 -mt-2">
           A photo goes straight from upload to a full set of question drafts on the next screen — review and save. A PDF's text is saved first; you generate questions from it on the next screen.

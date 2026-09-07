@@ -978,6 +978,23 @@ function clean(entries: RawExtractedQuestion[]): { extracted: ExtractedQuestionD
   return { extracted, warnings };
 }
 
+/**
+ * Stamps a teacher-assigned chapter name onto every extracted draft, preserving the AI's own
+ * per-question guess as `topic` (only when the draft doesn't already carry a more specific one)
+ * rather than discarding it. This is what stops one real chapter fragmenting into several
+ * landing-page rows — without it, the AI's best-effort guess (a local heading, a story title, an
+ * exercise name — see buildDirectExtractionPrompt/buildSystemPrompt's "chapterName" field) lands
+ * directly in chapterName, and each distinct guess becomes its own group.
+ */
+function applyChapterOverride(questions: ExtractedQuestionDraft[], chapterName: string): ExtractedQuestionDraft[] {
+  const trimmed = chapterName.trim();
+  return questions.map((q) => {
+    const guessedHeading = q.chapterName?.trim();
+    const topic = q.topic?.trim() || (guessedHeading && guessedHeading.toLowerCase() !== trimmed.toLowerCase() ? guessedHeading : undefined);
+    return { ...q, chapterName: trimmed, topic };
+  });
+}
+
 // ── Service ────────────────────────────────────────────────────────────────────
 
 export const questionExtractionService = {
@@ -990,7 +1007,7 @@ export const questionExtractionService = {
    * an editable OCR-text page. `detectImages` is the teacher's "Include images" toggle.
    */
   async extractFromImage(
-    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
+    cls: string, subject: string, chapterName: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
   ): Promise<QuestionExtractionResult> {
     if (!openaiProvider.isAvailable()) {
       throw new ValidationError('AI extraction is not configured on this server.');
@@ -1025,12 +1042,13 @@ export const questionExtractionService = {
 
     const source = await questionSourceRepository.create({
       schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'image', fileName,
-      extractedText: pageText,
+      extractedText: pageText, chapterName: chapterName.trim(),
       ...(pageImageFileId ? { pageImageFileId, figures } : {}),
     });
     const sourceId = String(source._id);
+    await chapterRepository.findOrCreate(ctx.schoolId, cls, subject, chapterName.trim());
 
-    const withSource = extracted.map((q) => ({
+    const withSource = applyChapterOverride(extracted, chapterName).map((q) => ({
       ...q,
       sourceRef: { sourceId },
       imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
@@ -1041,7 +1059,7 @@ export const questionExtractionService = {
 
   /** Upload → extract + store text only (local PDF text layer, no AI call). Question structuring is a separate, repeatable step. */
   async extractFromPdf(
-    cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
+    cls: string, subject: string, chapterName: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
   ): Promise<TextExtractionResult> {
     // Loaded lazily (not as a top-level import) so a broken native dependency in pdf-parse's
     // pdfjs-dist chain (e.g. @napi-rs/canvas failing to load its platform binary) only breaks
@@ -1061,8 +1079,9 @@ export const questionExtractionService = {
 
     const source = await questionSourceRepository.create({
       schoolId: ctx.schoolId, userId: ctx.userId, class: cls, subject, kind: 'pdf_text', fileName,
-      extractedText: text,
+      extractedText: text, chapterName: chapterName.trim(),
     });
+    await chapterRepository.findOrCreate(ctx.schoolId, cls, subject, chapterName.trim());
 
     return { sourceId: String(source._id), sourceType: 'pdf_text', fileName, extractedText: text, warnings: [] };
   },
@@ -1160,10 +1179,11 @@ export const questionExtractionService = {
     // imageRef, when the model picked one of this source's figures, gets the same sourceId
     // stamped on it (clean() only knows the bare figureId — this source is the only place it
     // could have come from, since `figures` above was built entirely from it).
-    const withChapter = extracted.map((q) => {
+    const rebased = source.chapterName ? applyChapterOverride(extracted, source.chapterName) : extracted;
+    const withChapter = rebased.map((q) => {
       const { topicId, subtopicId } = topicTree ? matchTopicIds(q.topic, topicTree) : {};
       return {
-        ...(source.chapterName ? { ...q, chapterName: source.chapterName } : q),
+        ...q,
         topicId,
         subtopicId,
         sourceRef: { sourceId },
@@ -1332,12 +1352,12 @@ export const questionExtractionService = {
   },
 
   async enqueueExtractFromImage(
-    cls: string, subject: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
+    cls: string, subject: string, chapterName: string, imageDataUri: string, ctx: AuthContext, fileName?: string, detectImages = false,
   ): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'image' });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromImage(cls, subject, imageDataUri, ctx, fileName, detectImages)
+    questionExtractionService.extractFromImage(cls, subject, chapterName, imageDataUri, ctx, fileName, detectImages)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background image extraction failed', { jobId, err });
@@ -1348,12 +1368,12 @@ export const questionExtractionService = {
   },
 
   async enqueueExtractFromPdf(
-    cls: string, subject: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
+    cls: string, subject: string, chapterName: string, pdfBuffer: Buffer, ctx: AuthContext, fileName?: string,
   ): Promise<{ jobId: string }> {
     const job = await extractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'pdf_text' });
     const jobId = job._id.toString();
 
-    questionExtractionService.extractFromPdf(cls, subject, pdfBuffer, ctx, fileName)
+    questionExtractionService.extractFromPdf(cls, subject, chapterName, pdfBuffer, ctx, fileName)
       .then((result) => extractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[QuestionExtraction] Background PDF extraction failed', { jobId, err });
@@ -1588,9 +1608,9 @@ async function finalizeChapterCapture(
   });
   const sourceId = String(source._id);
 
-  let finalQuestions: ExtractedQuestionDraft[] = merged.map((q) => ({
+  const rebased = chapterName?.trim() ? applyChapterOverride(merged, chapterName) : merged;
+  let finalQuestions: ExtractedQuestionDraft[] = rebased.map((q) => ({
     ...q,
-    ...(chapterName?.trim() ? { chapterName: chapterName.trim() } : {}),
     sourceRef: { sourceId },
     imageRef: q.imageRef ? { ...q.imageRef, sourceId } : undefined,
   }));

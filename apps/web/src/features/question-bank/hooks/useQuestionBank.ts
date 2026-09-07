@@ -62,14 +62,19 @@ export const useUpdateQuestion = (id: string) => useInvalidatingMutation((payloa
 export const useDeleteQuestion = () => useInvalidatingMutation((id: string) => questionBankApi.deleteQuestion(id));
 /** Deletes one or more whole chapters at once (single-row delete passes a 1-element array). */
 export const useDeleteQuestionGroups = () => useInvalidatingMutation((groups: { class: string; subject: string; chapterId: string }[]) => questionBankApi.deleteQuestionGroups(groups));
+/** Combines 2+ chapter groups into one — for fixing up a chapter the AI split into several landing-page rows. */
+export const useMergeQuestionGroups = () => useInvalidatingMutation(
+  ({ groups, targetChapterName }: { groups: { class: string; subject: string; chapterId: string; chapterName: string }[]; targetChapterName: string }) =>
+    questionBankApi.mergeQuestionGroups(groups, targetChapterName),
+);
 export const useConfirmExtractedQuestions = () => useInvalidatingMutation((payload: ConfirmExtractedQuestionsPayload) => questionBankApi.confirmExtracted(payload));
 
 // Extraction never saves questions to the bank, but it does save the upload's converted text as a source — invalidate that list.
 export const useExtractQuestionsFromImage = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ target, file, detectImages }: { target: { class: string; subject: string }; file: File; detectImages?: boolean }) =>
-      questionBankApi.extractFromImage(target, file, detectImages),
+    mutationFn: ({ target, chapterName, file, detectImages }: { target: { class: string; subject: string }; chapterName: string; file: File; detectImages?: boolean }) =>
+      questionBankApi.extractFromImage(target, chapterName, file, detectImages),
     onSuccess:  (_result, { target }) => {
       qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) });
       qc.invalidateQueries({ queryKey: questionBankKeys.sources() });
@@ -80,7 +85,8 @@ export const useExtractQuestionsFromImage = () => {
 export const useExtractQuestionsFromPdf = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ target, file }: { target: { class: string; subject: string }; file: File }) => questionBankApi.extractFromPdf(target, file),
+    mutationFn: ({ target, chapterName, file }: { target: { class: string; subject: string }; chapterName: string; file: File }) =>
+      questionBankApi.extractFromPdf(target, chapterName, file),
     onSuccess:  (_result, { target }) => {
       qc.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) });
       qc.invalidateQueries({ queryKey: questionBankKeys.sources() });
@@ -92,7 +98,7 @@ export const useExtractQuestionsFromPdf = () => {
 
 export const useExtractChapter = () =>
   useMutation({
-    mutationFn: ({ target, chapterName, images, detectImages }: { target: { class: string; subject: string }; chapterName?: string; images: File[]; detectImages?: boolean }) =>
+    mutationFn: ({ target, chapterName, images, detectImages }: { target: { class: string; subject: string }; chapterName: string; images: File[]; detectImages?: boolean }) =>
       questionBankApi.extractChapter(target, chapterName, images, detectImages),
   });
 
