@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link2, CheckCircle2, AlertCircle, ChevronDown, Loader2 } from 'lucide-react';
+import { Link2, CheckCircle2, AlertCircle, ChevronDown, Loader2, KeyRound } from 'lucide-react';
 import { useUsers } from '@/features/users/hooks/useUsers';
-import { useLinkTeacherUser } from '../hooks/useTeachers';
+import { useLinkTeacherUser, useTeacherLoginStatus } from '../hooks/useTeachers';
+import { CreateLoginModal } from './CreateLoginModal';
 import type { Teacher } from '@schoolos/types';
 
 interface Props {
@@ -11,9 +12,16 @@ interface Props {
 export function LinkUserAccountCard({ teacher }: Props) {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [success, setSuccess] = useState(false);
+  const [creatingLogin, setCreatingLogin] = useState(false);
 
   const { data: usersData, isLoading: usersLoading } = useUsers({ role: 'teacher', limit: 200 });
   const { mutateAsync: linkUser, isPending, error } = useLinkTeacherUser(teacher._id);
+  const { data: loginStatuses } = useTeacherLoginStatus();
+
+  const hasLogin = loginStatuses?.find((s) => s.teacherId === teacher._id)?.hasLogin ?? false;
+  const existingLoginEmails = new Set(
+    (loginStatuses ?? []).map((s) => s.loginEmail).filter((e): e is string => !!e).map((e) => e.toLowerCase()),
+  );
 
   const teacherUsers = usersData?.data ?? [];
 
@@ -54,13 +62,31 @@ export function LinkUserAccountCard({ teacher }: Props) {
           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-amber-800">Email set but no matching user</p>
-            <p className="text-xs text-amber-600">{teacher.email} — create a user with this email, or link below</p>
+            <p className="text-xs text-amber-600">{teacher.email} — create a login below, or link an existing user</p>
           </div>
         </div>
       ) : (
         <div className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl border border-gray-100 mb-4">
           <AlertCircle className="w-4 h-4 text-gray-400 shrink-0" />
           <p className="text-sm text-gray-500">No user account linked — teacher cannot log in</p>
+        </div>
+      )}
+
+      {!isLinked && !hasLogin && (
+        <button
+          onClick={() => setCreatingLogin(true)}
+          className="h-11 w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-bold text-white
+                     transition-colors flex items-center justify-center gap-2 mb-4"
+          type="button"
+        >
+          <KeyRound className="w-4 h-4" /> Create Login for {teacher.fullName.split(' ')[0]}
+        </button>
+      )}
+
+      {hasLogin && !isLinked && (
+        <div className="flex items-center gap-2.5 p-3 bg-green-50 rounded-xl border border-green-100 mb-4">
+          <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+          <p className="text-sm font-semibold text-green-800">School login already created for this teacher</p>
         </div>
       )}
 
@@ -74,7 +100,11 @@ export function LinkUserAccountCard({ teacher }: Props) {
       {/* Link form */}
       <div className="space-y-3">
         <p className="text-xs text-gray-500 font-medium">
-          {isLinked ? 'Change linked account:' : 'Select a teacher-role user to link:'}
+          {isLinked
+            ? 'Change linked account:'
+            : hasLogin
+              ? 'Or link a different existing user:'
+              : 'Or link an existing teacher-role user instead:'}
         </p>
 
         <div className="relative">
@@ -129,6 +159,16 @@ export function LinkUserAccountCard({ teacher }: Props) {
           )}
         </button>
       </div>
+
+      {creatingLogin && (
+        <CreateLoginModal
+          teacherId={teacher._id}
+          fullName={teacher.fullName}
+          email={teacher.email}
+          existingLoginEmails={existingLoginEmails}
+          onClose={() => setCreatingLogin(false)}
+        />
+      )}
     </div>
   );
 }
