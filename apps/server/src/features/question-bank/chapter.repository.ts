@@ -37,6 +37,12 @@ export const chapterRepository = {
     return SyllabusChapter.find({ schoolId, _id: { $in: ids } }).lean<ISyllabusChapter[]>();
   },
 
+  /** Every chapter in the school, across every class/subject — backs the principal's
+   *  materials-by-class overview, which needs the whole syllabus tree at once. */
+  async findAllForSchool(schoolId: string): Promise<ISyllabusChapter[]> {
+    return SyllabusChapter.find({ schoolId }).lean<ISyllabusChapter[]>();
+  },
+
   /** Fuzzy-matches chapterName against existing chapters for this class+subject, creating one if none matches closely enough. */
   async findOrCreate(schoolId: string, cls: string, subject: string, chapterName: string, topic?: string): Promise<ISyllabusChapter> {
     const classKey = classNameKey(cls);

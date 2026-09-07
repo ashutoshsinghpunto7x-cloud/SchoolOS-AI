@@ -11,6 +11,10 @@ export interface QuestionListOptions {
   difficulty?: QuestionDifficulty;
   questionType?: QuestionType;
   search?: string;
+  // Only used when `class`/`subject` are both omitted — narrows an unscoped "browse everything"
+  // query down to a specific set of {class, subject} pairs (e.g. a teacher's own timetable
+  // assignments — see question-bank.service.ts's getTeacherAllowedClassSubjects).
+  classSubjectPairs?: { class: string; subject: string }[];
 }
 
 export interface PaginatedQuestions {
@@ -82,10 +86,16 @@ export const questionRepository = {
     if (opts.topic) query.topic = opts.topic;
     if (opts.difficulty) query.difficulty = opts.difficulty;
     if (opts.questionType) query.questionType = opts.questionType;
+
+    const andClauses: Record<string, unknown>[] = [];
     if (opts.search?.trim()) {
       const regex = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      query.$or = [{ questionText: regex }, { keywords: regex }, { topic: regex }];
+      andClauses.push({ $or: [{ questionText: regex }, { keywords: regex }, { topic: regex }] });
     }
+    if (!opts.class && !opts.subject && opts.classSubjectPairs && opts.classSubjectPairs.length > 0) {
+      andClauses.push({ $or: opts.classSubjectPairs.map((p) => ({ class: classNameKey(p.class), subject: p.subject })) });
+    }
+    if (andClauses.length > 0) query.$and = andClauses;
 
     const [questions, total] = await Promise.all([
       Question.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean<IQuestion[]>(),
@@ -96,14 +106,20 @@ export const questionRepository = {
   },
 
   /** Chapter-grouped counts for the Question Bank landing view, optionally narrowed by class/subject/search. */
-  async findGroups(schoolId: string, opts: Pick<QuestionListOptions, 'class' | 'subject' | 'search'> = {}): Promise<QuestionGroup[]> {
+  async findGroups(schoolId: string, opts: Pick<QuestionListOptions, 'class' | 'subject' | 'search' | 'classSubjectPairs'> = {}): Promise<QuestionGroup[]> {
     const match: Record<string, unknown> = { schoolId, isDeleted: false };
     if (opts.class) match.class = classNameKey(opts.class);
     if (opts.subject) match.subject = opts.subject;
+
+    const andClauses: Record<string, unknown>[] = [];
     if (opts.search?.trim()) {
       const regex = new RegExp(opts.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      match.$or = [{ questionText: regex }, { keywords: regex }, { topic: regex }];
+      andClauses.push({ $or: [{ questionText: regex }, { keywords: regex }, { topic: regex }] });
     }
+    if (!opts.class && !opts.subject && opts.classSubjectPairs && opts.classSubjectPairs.length > 0) {
+      andClauses.push({ $or: opts.classSubjectPairs.map((p) => ({ class: classNameKey(p.class), subject: p.subject })) });
+    }
+    if (andClauses.length > 0) match.$and = andClauses;
 
     const rows = await Question.aggregate<{
       _id: { class: string; subject: string; chapterId: string; chapterName: string };
@@ -221,6 +237,19 @@ export const questionRepository = {
       modified += reassigned.modifiedCount;
     }
     return modified;
+  },
+
+  /** Minimal per-question rows for every class/subject/chapter in the school — backs the
+   *  principal's materials-by-class overview (question counts by type/difficulty, contributing
+   *  teacher, last-updated). Deliberately un-paginated and narrowly projected since this is an
+   *  aggregation source, not a browsing list. */
+  async findAllForSchool(schoolId: string): Promise<{
+    class: string; subject: string; chapterId: string; chapterName: string;
+    questionType: QuestionType; difficulty: QuestionDifficulty; createdBy: string; createdAt: Date;
+  }[]> {
+    return Question.find({ schoolId, isDeleted: false })
+      .select('class subject chapterId chapterName questionType difficulty createdBy createdAt')
+      .lean();
   },
 
   async recordUsage(ids: string[], examId: string | undefined, usedAt: Date): Promise<void> {

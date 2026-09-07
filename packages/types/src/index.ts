@@ -5156,6 +5156,35 @@ export interface GeneratedPaper extends BaseEntity {
   resolvedImages?: Record<string, ResolvedQuestionImage>;
 }
 
+// ── Question Bank — Principal materials-by-class overview (read-only) ────────
+
+export interface PrincipalMaterialsPaper {
+  _id: string;
+  title: string;
+  createdAt: string;
+}
+
+export interface PrincipalMaterialsChapter {
+  chapterId: string;
+  chapterName: string;
+  questionCount: number;
+  questionCountByType: Record<string, number>;
+  questionCountByDifficulty: Record<string, number>;
+  papers: PrincipalMaterialsPaper[];
+  lastUpdated: string | null;
+  teacherNames: string[];
+}
+
+export interface PrincipalMaterialsSubject {
+  subject: string;
+  chapters: PrincipalMaterialsChapter[];
+}
+
+export interface PrincipalMaterialsClass {
+  class: string;
+  subjects: PrincipalMaterialsSubject[];
+}
+
 // ── Teacher Planner ─────────────────────────────────────────────────────────
 
 export type PlannerTaskType =

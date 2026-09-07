@@ -16,6 +16,10 @@ export interface PaperListOptions {
   subject?: string;
   page?: number;
   limit?: number;
+  // Only used when `class`/`subject` are both omitted — narrows an unscoped "browse everything"
+  // query to a specific set of {class, subject} pairs (see question-bank.service.ts's
+  // getTeacherAllowedClassSubjects).
+  classSubjectPairs?: { class: string; subject: string }[];
 }
 
 export interface PaginatedPapers {
@@ -48,6 +52,9 @@ export const paperRepository = {
     const query: Record<string, unknown> = { schoolId, isDeleted: { $ne: true } };
     if (opts.class) query['config.class'] = opts.class;
     if (opts.subject) query['config.subject'] = opts.subject;
+    if (!opts.class && !opts.subject && opts.classSubjectPairs && opts.classSubjectPairs.length > 0) {
+      query.$or = opts.classSubjectPairs.map((p) => ({ 'config.class': p.class, 'config.subject': p.subject }));
+    }
 
     const [papers, total] = await Promise.all([
       GeneratedPaperModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).lean<IGeneratedPaper[]>(),
@@ -55,6 +62,12 @@ export const paperRepository = {
     ]);
 
     return { papers, total, page, limit };
+  },
+
+  /** Every generated paper in the school, across every class/subject — backs the principal's
+   *  materials-by-class overview (paper list per chapter, contributing teacher). */
+  async findAllForSchool(schoolId: string): Promise<IGeneratedPaper[]> {
+    return GeneratedPaperModel.find({ schoolId, isDeleted: { $ne: true } }).lean<IGeneratedPaper[]>();
   },
 
   async softDelete(id: string, schoolId: string): Promise<boolean> {

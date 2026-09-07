@@ -285,4 +285,13 @@ export const questionBankController = {
       sendSuccess(res, null, 'Paper deleted');
     } catch (err) { next(err); }
   },
+
+  /** GET /question-bank/principal/overview — materials-by-class dashboard (admin/principal/academic_coordinator only, route-gated). */
+  async getPrincipalOverview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      const overview = await questionBankService.getPrincipalOverview(ctx);
+      sendSuccess(res, overview);
+    } catch (err) { next(err); }
+  },
 };

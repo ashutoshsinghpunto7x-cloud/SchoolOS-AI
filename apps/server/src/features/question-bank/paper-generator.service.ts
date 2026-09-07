@@ -2,6 +2,7 @@ import { GeneratedPaper, GeneratedPaperSection, PaperGenerationConfig, Question 
 import { AuthContext } from '../../lib/auth-context';
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
+import { classNameKey } from '../../lib/class-name';
 import { chapterRepository } from './chapter.repository';
 import { questionRepository } from './question.repository';
 import { questionSourceRepository } from './question-source.repository';
@@ -12,6 +13,7 @@ import { IQuestion, QuestionDifficulty } from './question.model';
 import { ISyllabusChapter } from './chapter.model';
 import { collectChapterFigures } from './figure-lookup';
 import { resolveQuestionImages } from './image-resolution';
+import { assertTeacherCanAccessQuestionBank, getTeacherAllowedClassSubjects } from './question-bank.service';
 
 function toDto(q: IQuestion): QuestionDto {
   return {
@@ -443,6 +445,7 @@ async function generateBySections(
 
 export const paperGeneratorService = {
   async generate(config: PaperGenerationConfig, ctx: AuthContext): Promise<GeneratedPaper> {
+    await assertTeacherCanAccessQuestionBank(ctx, ctx.schoolId, config.class, config.subject);
     const chapters = await chapterRepository.findByIds(ctx.schoolId, config.chapterIds);
     if (chapters.length === 0) throw new ValidationError('No matching chapters found for this class/subject');
 
@@ -517,6 +520,7 @@ export const paperGeneratorService = {
   async getById(id: string, ctx: AuthContext): Promise<GeneratedPaper> {
     const record = await paperRepository.findById(id, ctx.schoolId);
     if (!record) throw new NotFoundError('Generated paper');
+    await assertTeacherCanAccessQuestionBank(ctx, ctx.schoolId, record.config.class, record.config.subject);
 
     const questions = await questionRepository.findByIds(ctx.schoolId, record.questionIds);
     const byId = new Map(questions.map((q) => [String(q._id), q]));
@@ -557,7 +561,19 @@ export const paperGeneratorService = {
 
   /** Lists papers for a class/subject — a lightweight summary (no re-hydrated questions), used by the browse/list screen. */
   async list(opts: { class?: string; subject?: string; page?: number; limit?: number }, ctx: AuthContext) {
-    const { papers, total, page, limit } = await paperRepository.findAll(ctx.schoolId, opts);
+    const repoOpts: Parameters<typeof paperRepository.findAll>[1] = { ...opts };
+    if (opts.class && opts.subject) {
+      await assertTeacherCanAccessQuestionBank(ctx, ctx.schoolId, opts.class, opts.subject);
+    } else if (ctx.role === 'teacher') {
+      const allowed = await getTeacherAllowedClassSubjects(ctx, ctx.schoolId);
+      const narrowed = allowed.filter(
+        (p) => (!opts.class || classNameKey(p.class) === classNameKey(opts.class)) && (!opts.subject || p.subject === opts.subject),
+      );
+      if (narrowed.length === 0) return { data: [], total: 0, page: opts.page ?? 1, limit: opts.limit ?? 20 };
+      repoOpts.classSubjectPairs = narrowed;
+    }
+
+    const { papers, total, page, limit } = await paperRepository.findAll(ctx.schoolId, repoOpts);
     return {
       data: papers.map((p) => ({
         _id: String(p._id),
@@ -575,6 +591,7 @@ export const paperGeneratorService = {
   async delete(id: string, ctx: AuthContext): Promise<void> {
     const existing = await paperRepository.findById(id, ctx.schoolId);
     if (!existing) throw new NotFoundError('Generated paper');
+    await assertTeacherCanAccessQuestionBank(ctx, ctx.schoolId, existing.config.class, existing.config.subject);
     const deleted = await paperRepository.softDelete(id, ctx.schoolId);
     if (!deleted) throw new NotFoundError('Generated paper');
   },

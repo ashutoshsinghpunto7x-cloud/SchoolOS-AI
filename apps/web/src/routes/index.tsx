@@ -689,6 +689,10 @@ const PrincipalAcademicPlanDetailPage = lazyPage(
   () => import('@/features/academic-plan/pages/PrincipalAcademicPlanDetailPage'),
   'PrincipalAcademicPlanDetailPage',
 );
+const PrincipalQuestionBankOverviewPage = lazyPage(
+  () => import('@/features/question-bank/pages/PrincipalQuestionBankOverviewPage'),
+  'PrincipalQuestionBankOverviewPage',
+);
 const CoordinatorDashboardPage = lazyPage(
   () => import('@/features/academic-year/pages/CoordinatorDashboardPage'),
   'CoordinatorDashboardPage',
@@ -1158,6 +1162,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/academic-plan', element: <PrincipalAcademicPlanPage /> },
                   { path: 'principal/academic-plan/teacher/:teacherId', element: <PrincipalAcademicPlanTeacherPage /> },
                   { path: 'principal/academic-plan/:teacherId/:cls/:section/:subject', element: <PrincipalAcademicPlanDetailPage /> },
+                  { path: 'principal/question-bank-overview', element: <PrincipalQuestionBankOverviewPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },

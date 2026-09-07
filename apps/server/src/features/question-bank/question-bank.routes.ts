@@ -26,6 +26,9 @@ router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 
 router.get('/chapters', questionBankController.listChapters);
 
+// Principal-only materials-by-class dashboard — static route, ahead of nothing that would shadow it.
+router.get('/principal/overview', authorize('admin', 'principal', 'academic_coordinator'), questionBankController.getPrincipalOverview);
+
 router.post('/papers/generate', questionBankController.generatePaper);
 router.get('/papers', questionBankController.listPapers);
 router.get('/papers/:id', questionBankController.getPaper);

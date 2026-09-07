@@ -18,6 +18,7 @@ import type {
   ChapterCaptureJobResult,
   ChapterPage,
   QuestionGenerationOptions,
+  PrincipalMaterialsClass,
 } from '@schoolos/types';
 
 const BASE = '/question-bank';
@@ -266,6 +267,16 @@ export const questionBankApi = {
   deletePaper: async (id: string): Promise<void> => {
     try {
       await apiClient.delete(`${BASE}/papers/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  // ── Principal (read-only) ────────────────────────────────────────────────
+
+  /** Every class → subject → chapter in the school, with question counts, generated papers, last-updated, and contributing teachers. */
+  getPrincipalOverview: async (): Promise<PrincipalMaterialsClass[]> => {
+    try {
+      const res = await apiClient.get<{ data: PrincipalMaterialsClass[] }>(`${BASE}/principal/overview`);
+      return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 };

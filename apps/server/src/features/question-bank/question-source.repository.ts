@@ -34,6 +34,12 @@ export const questionSourceRepository = {
     return QuestionSource.find(filter).sort({ createdAt: -1 }).lean<IQuestionSource[]>();
   },
 
+  /** Every upload in the school, across every class/subject — backs the principal's
+   *  materials-by-class overview (contributing teacher, last-updated timestamp). */
+  async findAllForSchool(schoolId: string): Promise<IQuestionSource[]> {
+    return QuestionSource.find({ schoolId }).lean<IQuestionSource[]>();
+  },
+
   async findById(id: string, schoolId: string): Promise<IQuestionSource | null> {
     return QuestionSource.findOne({ _id: id, schoolId }).lean<IQuestionSource>();
   },

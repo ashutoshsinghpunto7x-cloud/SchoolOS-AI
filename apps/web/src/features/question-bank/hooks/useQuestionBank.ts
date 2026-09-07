@@ -213,3 +213,11 @@ export const useDeletePaper = () => {
     onSuccess: () => { qc.invalidateQueries({ queryKey: [...questionBankKeys.all, 'papers'] }); },
   });
 };
+
+// ── Principal (read-only) ─────────────────────────────────────────────────────
+
+export const usePrincipalMaterialsOverview = () =>
+  useQuery({
+    queryKey: [...questionBankKeys.all, 'principal', 'overview'],
+    queryFn:  () => questionBankApi.getPrincipalOverview(),
+  });
