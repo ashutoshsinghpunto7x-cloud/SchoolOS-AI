@@ -3,8 +3,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMemo } from 'react';
 import { FormSection } from '@/features/students/components/FormSection';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
+import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
 import { SubjectChipEditor } from './SubjectChipEditor';
 import { ExamComponentsEditor } from './ExamComponentsEditor';
 import { GradingBandsEditor } from './GradingBandsEditor';
@@ -85,6 +87,11 @@ const selectCls = (err?: boolean) => cn(inputCls(err), 'cursor-pointer');
 /** ISO timestamp → yyyy-mm-dd for a native date input's value. */
 const toDateInputValue = (iso?: string): string => (iso ? iso.slice(0, 10) : '');
 
+function defaultAcademicYear(): string {
+  const y = new Date().getFullYear();
+  return `${y}-${String(y + 1).slice(2)}`;
+}
+
 // ── ExamForm ──────────────────────────────────────────────────────────────────
 
 interface ExamFormProps {
@@ -98,8 +105,23 @@ interface ExamFormProps {
 
 export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel = 'Create Exam', disabled = false }: ExamFormProps) => {
   const { data: schoolClasses } = useSchoolClasses();
+  // Timetable is the source of truth for "what subjects does this class get taught" (same
+  // source marks.service's teacher-scope guard and the master grid use) — used below to
+  // default Subjects to everything the selected classes are taught, instead of retyping.
+  const { data: masterGrid } = useMasterGrid({ academicYear: defaultAcademicYear() });
+  const subjectsByClass = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const row of masterGrid?.rows ?? []) {
+      const set = map.get(row.class) ?? new Set<string>();
+      for (const cell of Object.values(row.cells)) {
+        if (cell?.subjectName) set.add(cell.subjectName);
+      }
+      map.set(row.class, set);
+    }
+    return map;
+  }, [masterGrid]);
 
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<ExamFormValues>({
+  const { register, control, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<ExamFormValues>({
     resolver: zodResolver(examFormSchema),
     defaultValues: initialData
       ? {
@@ -168,9 +190,24 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
                         key={cls._id}
                         type="button"
                         disabled={disabled}
-                        onClick={() => field.onChange(
-                          checked ? field.value.filter((c) => c !== cls.name) : [...field.value, cls.name],
-                        )}
+                        onClick={() => {
+                          if (checked) {
+                            field.onChange(field.value.filter((c) => c !== cls.name));
+                            return;
+                          }
+                          field.onChange([...field.value, cls.name]);
+                          // Default Subjects to everything this class is taught, on top of
+                          // whatever's already picked — teacher can still add/remove by hand.
+                          const taught = subjectsByClass.get(cls.name);
+                          if (taught?.size) {
+                            const current = getValues('subjects');
+                            const merged = [...current];
+                            for (const subject of taught) {
+                              if (!merged.some((s) => s.toLowerCase() === subject.toLowerCase())) merged.push(subject);
+                            }
+                            setValue('subjects', merged, { shouldValidate: true });
+                          }
+                        }}
                         className={cn(
                           'h-9 px-3.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                           checked
@@ -191,7 +228,7 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
             label="Subjects"
             required
             error={errors.subjects?.message}
-            hint="Type exactly as used in the timetable (e.g. Maths, Science) — matching is case-sensitive."
+            hint="Filled in automatically from what each selected class is taught — add or remove as needed."
           >
             <Controller control={control} name="subjects" render={({ field }) => (
               <SubjectChipEditor values={field.value} onChange={field.onChange} maxItems={30} />
