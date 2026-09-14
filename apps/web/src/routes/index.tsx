@@ -173,6 +173,14 @@ const OpsChapterCaptureUsagePage = lazyPage(
   () => import('@/features/ops-center/pages/OpsChapterCaptureUsagePage'),
   'OpsChapterCaptureUsagePage',
 );
+const OpsChapterCapturePage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsChapterCapturePage'),
+  'OpsChapterCapturePage',
+);
+const OpsChapterReviewPage = lazyPage(
+  () => import('@/features/ops-center/pages/OpsChapterReviewPage'),
+  'OpsChapterReviewPage',
+);
 const OpsTestEnginePage = lazyPage(
   () => import('@/features/ops-center/pages/OpsTestEnginePage'),
   'OpsTestEnginePage',
@@ -1038,6 +1046,8 @@ export const router = createBrowserRouter([
                   { path: 'audit-trail', element: <OpsAuditTrailPage /> },
                   { path: 'applications', element: <OpsApplicationsPage /> },
                   { path: 'chapter-capture-usage', element: <OpsChapterCaptureUsagePage /> },
+                  { path: 'chapter-capture', element: <OpsChapterCapturePage /> },
+                  { path: 'chapter-capture/:jobId/review', element: <OpsChapterReviewPage /> },
                   { path: 'test-engine', element: <OpsTestEnginePage /> },
                   { path: 'performance', element: <OpsPerformancePage /> },
                 ],

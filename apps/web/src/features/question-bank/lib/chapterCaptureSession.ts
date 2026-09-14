@@ -17,6 +17,9 @@ interface ChapterCaptureSession {
   subject: string;
   chapterName?: string;
   pages: CapturedPage[];
+  // Set only by the Ops Centre capture flow, which targets a school explicitly rather than the
+  // caller's own tenant — see apps/web/src/features/ops-center/pages/OpsChapterCapturePage.tsx.
+  schoolId?: string;
 }
 
 let session: ChapterCaptureSession | null = null;
