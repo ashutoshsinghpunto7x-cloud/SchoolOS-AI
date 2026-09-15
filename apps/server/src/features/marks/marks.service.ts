@@ -20,6 +20,29 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { timetableRepository } from '../timetable/timetable.repository';
 
+// ── Compound subjects (skill breakdown) ────────────────────────────────────────
+// A subject's exam config can optionally declare a `skills` list (e.g. English
+// -> Literature, Language, Reading, Writing, Dictation/Spelling). When it does,
+// marks get entered and stored per skill, subjectName `"${subject} - ${skill}"`
+// (see marks.validation.ts / report-card-templates, which key report-card rows
+// off this exact same string). This is purely data-driven off the exam's
+// subjectConfigs — nothing here is hardcoded to a particular subject or class,
+// so any subject on any class's exam can be split into skills going forward.
+
+/** Given a skill-qualified subjectName like "English - Literature", returns
+ *  the base subject ("English") if the exam actually configured that skill
+ *  for that subject; otherwise returns subjectName unchanged (a normal,
+ *  non-compound subject, or a name that merely happens to contain " - "). */
+function resolveBaseSubject(exam: Pick<IExam, 'subjectConfigs'> | undefined | null, subjectName: string): string {
+  for (const cfg of exam?.subjectConfigs ?? []) {
+    if (!cfg.skills?.length) continue;
+    for (const skill of cfg.skills) {
+      if (subjectName === `${cfg.name} - ${skill}`) return cfg.name;
+    }
+  }
+  return subjectName;
+}
+
 // ── Teacher scope guard ────────────────────────────────────────────────────────
 // A subject teacher may only enter marks for a class+section+subject they
 // actually teach. The timetable (per-period entries with teacherId +
@@ -28,7 +51,16 @@ import { timetableRepository } from '../timetable/timetable.repository';
 // teacher's dashboard/class-picker. Teacher.assignedClasses/subjects are
 // separate legacy fields that aren't kept in sync with the timetable, so
 // they're not used here. Admin/principal bypass this entirely.
-async function assertTeacherCanEnterMarks(ctx: AuthContext, cls: string, section: string, subjectName: string): Promise<void> {
+//
+// `exam` is optional and only used to resolve a skill-qualified subjectName
+// (e.g. "English - Literature") back to the timetable's base subject
+// ("English") before matching — pass it whenever the exam is already at
+// hand so compound subjects authorize correctly; omitting it just means a
+// skill-qualified subjectName won't match a base-named timetable entry.
+async function assertTeacherCanEnterMarks(
+  ctx: AuthContext, cls: string, section: string, subjectName: string,
+  exam?: Pick<IExam, 'subjectConfigs'> | null,
+): Promise<void> {
   if (ctx.role !== 'teacher') return;
 
   const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
@@ -40,8 +72,9 @@ async function assertTeacherCanEnterMarks(ctx: AuthContext, cls: string, section
   if (!teacher) throw new ForbiddenError('Teacher profile not found');
 
   const teacherId = String(teacher._id);
+  const baseSubject = resolveBaseSubject(exam, subjectName);
   const timetable = await timetableRepository.findByClassSectionAnyYear(ctx.schoolId, cls, section);
-  const teaches = (timetable?.entries ?? []).some((e) => e.teacherId === teacherId && e.subjectName === subjectName);
+  const teaches = (timetable?.entries ?? []).some((e) => e.teacherId === teacherId && e.subjectName === baseSubject);
   if (!teaches) {
     throw new ForbiddenError('You do not teach this subject in this class');
   }
@@ -130,9 +163,9 @@ async function loadConfiguredExam(examId: string, schoolId: string): Promise<IEx
 export const marksService = {
   async upsertSingle(rawInput: unknown, ctx: AuthContext): Promise<IMarks> {
     const data = upsertMarksSchema.parse(rawInput);
-    await assertTeacherCanEnterMarks(ctx, data.class, data.section, data.subjectName);
-
     const exam = await loadConfiguredExam(data.examId, ctx.schoolId);
+    await assertTeacherCanEnterMarks(ctx, data.class, data.section, data.subjectName, exam);
+
     if (!exam.classesApplicable.includes(data.class)) throw new ValidationError('This exam does not apply to this class');
 
     const student = await studentRepository.findById(data.studentId, ctx.schoolId);
@@ -168,9 +201,9 @@ export const marksService = {
 
   async bulkUpsert(rawInput: unknown, ctx: AuthContext): Promise<IMarks[]> {
     const data = bulkUpsertMarksSchema.parse(rawInput);
-    await assertTeacherCanEnterMarks(ctx, data.class, data.section, data.subjectName);
-
     const exam = await loadConfiguredExam(data.examId, ctx.schoolId);
+    await assertTeacherCanEnterMarks(ctx, data.class, data.section, data.subjectName, exam);
+
     if (!exam.classesApplicable.includes(data.class)) throw new ValidationError('This exam does not apply to this class');
 
     for (const r of data.records) validateComponentScores(r.componentScores, exam);
@@ -217,10 +250,9 @@ export const marksService = {
     rows: { studentId: string; fullName: string; rollNumber?: string; marks: IMarks | null }[];
   }> {
     const query = entryTableQuerySchema.parse(rawQuery);
-    await assertTeacherCanEnterMarks(ctx, query.class, query.section, query.subjectName);
-
     const exam = await examRepository.findById(query.examId, ctx.schoolId);
     if (!exam) throw new NotFoundError('Exam');
+    await assertTeacherCanEnterMarks(ctx, query.class, query.section, query.subjectName, exam);
 
     const [students, marksRecords] = await Promise.all([
       Student.find({ schoolId: ctx.schoolId, class: query.class, section: query.section, admissionStatus: 'active', isDeleted: false })
@@ -245,7 +277,8 @@ export const marksService = {
 
   async getSummary(rawQuery: unknown, ctx: AuthContext): Promise<MarksSummary> {
     const query = entryTableQuerySchema.parse(rawQuery);
-    await assertTeacherCanEnterMarks(ctx, query.class, query.section, query.subjectName);
+    const exam = await examRepository.findById(query.examId, ctx.schoolId);
+    await assertTeacherCanEnterMarks(ctx, query.class, query.section, query.subjectName, exam);
     const totalStudents = await Student.countDocuments({
       schoolId: ctx.schoolId, class: query.class, section: query.section, admissionStatus: 'active', isDeleted: false,
     });
@@ -263,7 +296,8 @@ export const marksService = {
   /** Teacher submits a class+subject+exam's drafts for admin/principal review. */
   async submitForReview(rawInput: unknown, ctx: AuthContext): Promise<{ updated: number }> {
     const target = marksBatchTargetSchema.parse(rawInput);
-    await assertTeacherCanEnterMarks(ctx, target.class, target.section, target.subjectName);
+    const exam = await examRepository.findById(target.examId, ctx.schoolId);
+    await assertTeacherCanEnterMarks(ctx, target.class, target.section, target.subjectName, exam);
 
     const records = await marksRepository.findByBatch({ schoolId: ctx.schoolId, ...target });
     if (records.length === 0) throw new ValidationError('No marks entered yet for this class and subject');
