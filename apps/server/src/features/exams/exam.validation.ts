@@ -29,6 +29,10 @@ const subjectConfigSchema = z.object({
   // Optional skill breakdown — e.g. English -> [Literature, Language, Reading,
   // Writing, Dictation/Spelling]. See ISubjectConfig in exam.model.ts.
   skills: z.array(z.string().min(1).trim()).min(2).max(10).optional(),
+  // Optional alias — the timetable period this subject/skill-group is
+  // actually scheduled under, when it differs from `name` (e.g. "Mathematics"
+  // here maps to "Maths" on the timetable).
+  timetableSubjectName: z.string().min(1).trim().optional(),
 });
 
 // ── Create / Update ───────────────────────────────────────────────────────────

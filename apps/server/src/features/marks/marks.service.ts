@@ -20,25 +20,31 @@ import { User } from '../users/user.model';
 import { Teacher } from '../teachers/teacher.model';
 import { timetableRepository } from '../timetable/timetable.repository';
 
-// ── Compound subjects (skill breakdown) ────────────────────────────────────────
-// A subject's exam config can optionally declare a `skills` list (e.g. English
-// -> Literature, Language, Reading, Writing, Dictation/Spelling). When it does,
-// marks get entered and stored per skill, subjectName `"${subject} - ${skill}"`
-// (see marks.validation.ts / report-card-templates, which key report-card rows
-// off this exact same string). This is purely data-driven off the exam's
-// subjectConfigs — nothing here is hardcoded to a particular subject or class,
-// so any subject on any class's exam can be split into skills going forward.
+// ── Compound subjects & timetable aliasing ─────────────────────────────────────
+// A subject's exam config can optionally declare:
+//  - `skills` (e.g. English -> Literature, Language, Reading, Writing,
+//    Dictation/Spelling) — marks then get entered and stored per skill,
+//    subjectName `"${subject} - ${skill}"` (report-card-templates key rows
+//    off this exact same string — see term-report-card.service.ts's findMark).
+//  - `timetableSubjectName` — the grading subject's name (e.g. "Mathematics",
+//    matching a report-card template row) can differ from the coarser name a
+//    period is scheduled under on the timetable (e.g. "Maths"); this alias
+//    says which timetable period the subject/skill-group actually maps to,
+//    for the teacher-authorization check below.
+// Both are purely data-driven off the exam's subjectConfigs — nothing here is
+// hardcoded to a particular subject or class.
 
-/** Given a skill-qualified subjectName like "English - Literature", returns
- *  the base subject ("English") if the exam actually configured that skill
- *  for that subject; otherwise returns subjectName unchanged (a normal,
- *  non-compound subject, or a name that merely happens to contain " - "). */
+/** Resolves a subjectName (e.g. "English - Literature", or a plainly renamed
+ *  "Mathematics") to whatever name the class's timetable actually schedules
+ *  it under, using the exam's subjectConfigs. Falls back to subjectName
+ *  unchanged when there's no matching config (a normal subject whose name
+ *  already matches the timetable, exactly today's behavior). */
 function resolveBaseSubject(exam: Pick<IExam, 'subjectConfigs'> | undefined | null, subjectName: string): string {
   for (const cfg of exam?.subjectConfigs ?? []) {
-    if (!cfg.skills?.length) continue;
-    for (const skill of cfg.skills) {
-      if (subjectName === `${cfg.name} - ${skill}`) return cfg.name;
-    }
+    const isThisSubject =
+      cfg.name === subjectName ||
+      (cfg.skills ?? []).some((skill) => subjectName === `${cfg.name} - ${skill}`);
+    if (isThisSubject) return cfg.timetableSubjectName || cfg.name;
   }
   return subjectName;
 }

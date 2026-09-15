@@ -4088,6 +4088,11 @@ export interface SubjectConfig {
    *  up (see term-report-card.service.ts's findMark). Admin-configurable per
    *  exam, per subject — not hardcoded to any particular subject or class. */
   skills?: string[];
+  /** Which timetable period this subject (or skill-group) is actually
+   *  scheduled under, when its grading name differs — e.g. "Mathematics"
+   *  here maps to "Maths" on the timetable. Optional; falls back to `name`
+   *  when unset. */
+  timetableSubjectName?: string;
 }
 
 export interface Exam extends BaseEntity {

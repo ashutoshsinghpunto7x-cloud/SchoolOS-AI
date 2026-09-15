@@ -46,6 +46,11 @@ export interface ISubjectConfig {
    *  findMark, both of which key off this exact string. Admin-configurable
    *  per exam, per subject — not hardcoded to any particular subject/class. */
   skills?: string[];
+  /** Which timetable period this subject (or skill-group) is actually
+   *  scheduled under, when its grading name differs — e.g. "Mathematics"
+   *  here maps to "Maths" on the timetable. Optional; falls back to `name`
+   *  when unset, i.e. today's behavior of matching the timetable exactly. */
+  timetableSubjectName?: string;
 }
 
 // ── Document Interface ────────────────────────────────────────────────────────
@@ -111,9 +116,10 @@ const gradeBandSchema = new Schema<IGradeBand>(
 
 const subjectConfigSchema = new Schema<ISubjectConfig>(
   {
-    name:           { type: String, required: true, trim: true },
-    evaluationType: { type: String, enum: ['marks', 'grade', 'both'], default: 'marks' },
-    skills:         { type: [String], default: undefined },
+    name:                 { type: String, required: true, trim: true },
+    evaluationType:       { type: String, enum: ['marks', 'grade', 'both'], default: 'marks' },
+    skills:               { type: [String], default: undefined },
+    timetableSubjectName: { type: String, trim: true },
   },
   { _id: false }
 );
