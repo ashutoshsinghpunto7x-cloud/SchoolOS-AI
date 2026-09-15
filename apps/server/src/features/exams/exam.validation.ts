@@ -26,6 +26,9 @@ export const SUBJECT_EVALUATION_TYPES = ['marks', 'grade', 'both'] as const;
 const subjectConfigSchema = z.object({
   name:           z.string({ required_error: 'subject name is required' }).min(1).trim(),
   evaluationType: z.enum(SUBJECT_EVALUATION_TYPES).default('marks'),
+  // Optional skill breakdown — e.g. English -> [Literature, Language, Reading,
+  // Writing, Dictation/Spelling]. See ISubjectConfig in exam.model.ts.
+  skills: z.array(z.string().min(1).trim()).min(2).max(10).optional(),
 });
 
 // ── Create / Update ───────────────────────────────────────────────────────────

@@ -4080,6 +4080,14 @@ export type SubjectEvaluationType = 'marks' | 'grade' | 'both';
 export interface SubjectConfig {
   name: string;
   evaluationType: SubjectEvaluationType;
+  /** Optional skill breakdown (e.g. English → Literature, Language, Reading,
+   *  Writing, Dictation/Spelling). When set, marks entry for this subject
+   *  collects one score per skill instead of one for the whole subject, each
+   *  stored under subjectName `"${name} - ${skill}"` — that exact string is
+   *  also what a report-card template subject row must be named to pick it
+   *  up (see term-report-card.service.ts's findMark). Admin-configurable per
+   *  exam, per subject — not hardcoded to any particular subject or class. */
+  skills?: string[];
 }
 
 export interface Exam extends BaseEntity {

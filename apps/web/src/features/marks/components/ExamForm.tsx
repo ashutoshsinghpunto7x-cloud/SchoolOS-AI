@@ -8,9 +8,10 @@ import { FormSection } from '@/features/students/components/FormSection';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
 import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
 import { SubjectChipEditor } from './SubjectChipEditor';
+import { SubjectSkillsEditor } from './SubjectSkillsEditor';
 import { ExamComponentsEditor } from './ExamComponentsEditor';
 import { GradingBandsEditor } from './GradingBandsEditor';
-import type { Exam, ExamType } from '@schoolos/types';
+import type { Exam, ExamType, SubjectConfig } from '@schoolos/types';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,13 @@ const gradeBandSchema = z.object({
   maxPercent: z.coerce.number().min(0).max(100),
 });
 
+const subjectConfigSchema = z.object({
+  name: z.string().min(1),
+  evaluationType: z.enum(['marks', 'grade', 'both']),
+  // Optional skill breakdown for this subject — see SubjectSkillsEditor.
+  skills: z.array(z.string().min(1)).min(2).max(10).optional(),
+});
+
 const examFormSchema = z.object({
   name: z.string({ required_error: 'Exam name is required' }).min(2, 'At least 2 characters').max(150),
   examType: z.enum(['unit_test', 'monthly_test', 'half_yearly', 'annual', 'practical', 'internal_assessment', 'other'], {
@@ -45,6 +53,7 @@ const examFormSchema = z.object({
   termLabel: z.string().max(50).optional(),
   classesApplicable: z.array(z.string()).min(1, 'Select at least one class'),
   subjects: z.array(z.string()).min(1, 'Add at least one subject'),
+  subjectConfigs: z.array(subjectConfigSchema),
   components: z.array(examComponentSchema).min(1, 'Add at least one assessment component'),
   gradingBands: z.array(gradeBandSchema),
   passPercent: z.coerce.number().min(0).max(100),
@@ -130,6 +139,7 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
           termLabel: initialData.termLabel ?? '',
           classesApplicable: initialData.classesApplicable,
           subjects: initialData.subjects,
+          subjectConfigs: initialData.subjectConfigs ?? [],
           components: initialData.components,
           gradingBands: initialData.gradingBands ?? [],
           passPercent: initialData.passPercent,
@@ -142,6 +152,7 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
           examType: 'unit_test' as const,
           classesApplicable: [],
           subjects: [],
+          subjectConfigs: [],
           components: [{ name: 'Theory', maxMarks: 100 }],
           gradingBands: [],
           passPercent: 33,
@@ -233,6 +244,43 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
             <Controller control={control} name="subjects" render={({ field }) => (
               <SubjectChipEditor values={field.value} onChange={field.onChange} maxItems={30} />
             )} />
+          </Field>
+
+          <Field
+            label="Subject Skill Breakdown"
+            hint="Optional, per subject — split any subject into multiple skills (e.g. English into Literature/Language/Reading/Writing/Dictation) so marks entry collects one score per skill instead of one for the whole subject."
+          >
+            <Controller
+              control={control}
+              name="subjectConfigs"
+              render={({ field }) => {
+                const subjects: string[] = watch('subjects');
+                const skillsBySubject: Record<string, string[]> = Object.fromEntries(
+                  field.value.filter((c) => (c.skills?.length ?? 0) > 0).map((c) => [c.name, c.skills as string[]]),
+                );
+                return (
+                  <SubjectSkillsEditor
+                    subjects={subjects}
+                    value={skillsBySubject}
+                    onChange={(next) => {
+                      // Preserve each subject's existing evaluationType (and any config for a
+                      // subject not currently split), just replace/add/remove its skills list.
+                      const byName = new Map<string, SubjectConfig>(field.value.map((c) => [c.name, c]));
+                      for (const subject of subjects) {
+                        const skills = next[subject];
+                        const existing = byName.get(subject);
+                        if (skills?.length) {
+                          byName.set(subject, { name: subject, evaluationType: existing?.evaluationType ?? 'marks', skills });
+                        } else if (existing) {
+                          byName.set(subject, { name: subject, evaluationType: existing.evaluationType, skills: undefined });
+                        }
+                      }
+                      field.onChange(Array.from(byName.values()));
+                    }}
+                  />
+                );
+              }}
+            />
           </Field>
         </div>
       </FormSection>

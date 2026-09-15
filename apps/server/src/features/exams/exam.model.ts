@@ -38,6 +38,14 @@ export type SubjectEvaluationType = 'marks' | 'grade' | 'both';
 export interface ISubjectConfig {
   name: string;
   evaluationType: SubjectEvaluationType;
+  /** Optional skill breakdown (e.g. English → Literature, Language, Reading,
+   *  Writing, Dictation/Spelling). When set, marks entry for this subject
+   *  collects one score per skill instead of one for the whole subject, each
+   *  stored under subjectName `"${name} - ${skill}"` — see
+   *  marks.service.ts's resolveBaseSubject and term-report-card.service.ts's
+   *  findMark, both of which key off this exact string. Admin-configurable
+   *  per exam, per subject — not hardcoded to any particular subject/class. */
+  skills?: string[];
 }
 
 // ── Document Interface ────────────────────────────────────────────────────────
@@ -105,6 +113,7 @@ const subjectConfigSchema = new Schema<ISubjectConfig>(
   {
     name:           { type: String, required: true, trim: true },
     evaluationType: { type: String, enum: ['marks', 'grade', 'both'], default: 'marks' },
+    skills:         { type: [String], default: undefined },
   },
   { _id: false }
 );
