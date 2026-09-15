@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send, Pencil } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send, Pencil, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
@@ -99,6 +99,22 @@ export function TermReportCardPreviewPage() {
         <button type="button" onClick={() => setPrinting(true)} className="h-9 px-3.5 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print / Save PDF
         </button>
+        {resolvedCard.status === 'draft' && (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Recompute this card from the latest marks? Any manual "Fix a mark" corrections will be overwritten.')) {
+                generate.mutate({ studentId, academicYear });
+              }
+            }}
+            disabled={generate.isPending}
+            title="Marks entered after this card was first generated don't show up on their own — recompute to pick them up"
+            className="h-9 px-3.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
+          >
+            {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            Regenerate
+          </button>
+        )}
         {resolvedCard.status === 'draft' && canPublish && (
           <button
             type="button" onClick={() => publish.mutate()} disabled={publish.isPending}

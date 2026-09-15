@@ -26,10 +26,16 @@ function scoreFromMarks(m: IMarks | undefined): number | undefined {
   return m && m.result !== 'na' && typeof m.total === 'number' ? m.total : undefined;
 }
 
-async function findMark(schoolId: string, examId: string | undefined, studentId: string, subjectName: string): Promise<IMarks | undefined> {
-  if (!examId) return undefined;
-  const records = await marksRepository.findByStudentExam(schoolId, examId, studentId);
-  return records.find((r) => r.subjectName === subjectName);
+/** Fetches every subject's Marks for one student+exam in a single query — callers
+ *  (buildTermBlock) look subjects up from this in memory instead of re-querying per
+ *  subject. Was previously a per-(exam, subject) query inside buildTermBlock's subject
+ *  loop: since unitTest1ExamId/unitTest2ExamId/mainExamId are the same for every subject
+ *  in a term, that redundantly re-ran the identical query once per subject (21 times for
+ *  a 21-subject template) — ~63 DB round trips per student per term, times every student
+ *  in computeClassStats, made class-wide report-card generation take minutes. */
+async function findMarksForExam(schoolId: string, examId: string | undefined, studentId: string): Promise<IMarks[]> {
+  if (!examId) return [];
+  return marksRepository.findByStudentExam(schoolId, examId, studentId);
 }
 
 /** Best-of-two-unit-tests merge for one term. Never fabricates a total when
@@ -44,12 +50,18 @@ async function buildTermBlock(
   let termTotalObtained = 0;
   let termTotalMax = 0;
 
+  // One query per exam slot (not per subject) — see findMarksForExam.
+  const [ut1Marks, ut2Marks, mainMarks] = await Promise.all([
+    findMarksForExam(schoolId, slot.unitTest1ExamId, studentId),
+    findMarksForExam(schoolId, slot.unitTest2ExamId, studentId),
+    findMarksForExam(schoolId, slot.mainExamId, studentId),
+  ]);
+  const findFor = (records: IMarks[], subjectName: string) => records.find((r) => r.subjectName === subjectName);
+
   for (const subject of template.subjects) {
-    const [ut1, ut2, main] = await Promise.all([
-      findMark(schoolId, slot.unitTest1ExamId, studentId, subject.name),
-      findMark(schoolId, slot.unitTest2ExamId, studentId, subject.name),
-      findMark(schoolId, slot.mainExamId, studentId, subject.name),
-    ]);
+    const ut1 = findFor(ut1Marks, subject.name);
+    const ut2 = findFor(ut2Marks, subject.name);
+    const main = findFor(mainMarks, subject.name);
 
     const unitTest1Score = scoreFromMarks(ut1);
     const unitTest2Score = scoreFromMarks(ut2);
@@ -132,15 +144,22 @@ async function computeClassStats(
   const students = await Student.find({ schoolId, class: cls, section, admissionStatus: 'active', isDeleted: false })
     .select('_id').lean<{ _id: unknown }[]>();
 
-  const averages: number[] = [];
-  const firstTermPercents: number[] = [];
-  const finalTermPercents: number[] = [];
-  for (const s of students) {
+  // Per student this is already just 6 queries (3 exam slots x 2 terms, each one
+  // query covering every subject — see findMarksForExam), so running the whole
+  // class in parallel rather than one student at a time is safe and fast.
+  const perStudent = await Promise.all(students.map(async (s) => {
     const studentId = String(s._id);
     const [firstTerm, finalTerm] = await Promise.all([
       buildTermBlock(schoolId, studentId, template, template.examSlots.firstTerm, 'First Term'),
       buildTermBlock(schoolId, studentId, template, template.examSlots.finalTerm, 'Final Term'),
     ]);
+    return { firstTerm, finalTerm };
+  }));
+
+  const averages: number[] = [];
+  const firstTermPercents: number[] = [];
+  const finalTermPercents: number[] = [];
+  for (const { firstTerm, finalTerm } of perStudent) {
     const grandTotalMax = firstTerm.block.termTotalMax + finalTerm.block.termTotalMax;
     const grandTotalObtained = firstTerm.block.termTotalObtained + finalTerm.block.termTotalObtained;
     if (grandTotalMax > 0) {
