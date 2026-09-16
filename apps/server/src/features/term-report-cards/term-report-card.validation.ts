@@ -19,11 +19,27 @@ const termSubjectMarkCorrectionSchema = z.object({
   evaluationType: z.enum(['marks', 'grade', 'both']).optional(),
 });
 
+// A manual correction/override of one term's attendance summary — for when
+// the auto-computed figures (from the Attendance module, over whatever date
+// range the template's exam slot covers, or the full year if unconfigured)
+// need a manual fix. All fields optional so a partial correction (e.g. just
+// workingDays) doesn't require restating the rest.
+const termAttendanceCorrectionSchema = z.object({
+  term:          z.enum(['firstTerm', 'finalTerm']),
+  workingDays:   z.number().min(0).optional(),
+  present:       z.number().min(0).optional(),
+  absent:        z.number().min(0).optional(),
+  late:          z.number().min(0).optional(),
+  halfDay:       z.number().min(0).optional(),
+  leaveApproved: z.number().min(0).optional(),
+});
+
 export const updateTermReportCardSchema = z.object({
   teacherRemark:   z.string().trim().max(1000).optional(),
   principalRemark: z.string().trim().max(1000).optional(),
   parentFeedback:  z.string().trim().max(1000).optional(),
   subjectMarks:    z.array(termSubjectMarkCorrectionSchema).optional(),
+  attendance:      termAttendanceCorrectionSchema.optional(),
 });
 
 const skillGradeSchema = z.enum(['A', 'B', 'C', 'D']);

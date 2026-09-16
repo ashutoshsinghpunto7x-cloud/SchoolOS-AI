@@ -19,6 +19,7 @@ export function TermReportCardPreviewPage() {
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [editingMarks, setEditingMarks] = useState(false);
+  const [editingAttendance, setEditingAttendance] = useState(false);
   const [warningsOpen, setWarningsOpen] = useState(false);
   const printAreaId = `term-report-card-print-${useId().replace(/[:]/g, '')}`;
 
@@ -161,6 +162,16 @@ export function TermReportCardPreviewPage() {
           editing={editingMarks}
           onToggle={() => setEditingMarks((v) => !v)}
           onSave={(subjectMarks) => { updateCard.mutate({ subjectMarks }); setEditingMarks(false); }}
+          saving={updateCard.isPending}
+        />
+      </div>
+
+      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+        <AttendanceCorrectionPanel
+          card={resolvedCard}
+          editing={editingAttendance}
+          onToggle={() => setEditingAttendance((v) => !v)}
+          onSave={(attendance) => { updateCard.mutate({ attendance }); setEditingAttendance(false); }}
           saving={updateCard.isPending}
         />
       </div>
@@ -370,6 +381,124 @@ function LabeledScoreInput({ label, value, max, onChange }: { label: string; val
         className="h-8 w-14 px-2 rounded-md border border-gray-200 text-xs text-right"
       />
       <span className="text-[9px] text-gray-400">/{max}</span>
+    </div>
+  );
+}
+
+// ── Attendance correction ────────────────────────────────────────────────────
+// Attendance auto-fills from the Attendance module over whatever date range
+// the template's Exam Slots configure (or the full year, with a warning, if
+// that's not set) — this lets a teacher/admin manually correct the figures
+// directly on the card, the same "fix it here" pattern as Correct Marks above.
+
+type AttendanceDraft = { workingDays: string; present: string; absent: string; late: string; halfDay: string; leaveApproved: string };
+const ATTENDANCE_FIELD_LABELS: { key: keyof AttendanceDraft; label: string }[] = [
+  { key: 'workingDays', label: 'Working Days' },
+  { key: 'present', label: 'Present' },
+  { key: 'absent', label: 'Absent' },
+  { key: 'late', label: 'Late' },
+  { key: 'halfDay', label: 'Half Day' },
+  { key: 'leaveApproved', label: 'Leave (Approved)' },
+];
+
+function attendanceDraftFrom(a: import('@schoolos/types').ReportCardAttendance): AttendanceDraft {
+  return {
+    workingDays: a.workingDays.toString(),
+    present: a.present.toString(),
+    absent: a.absent.toString(),
+    late: a.late.toString(),
+    halfDay: a.halfDay.toString(),
+    leaveApproved: a.leaveApproved.toString(),
+  };
+}
+
+function AttendanceCorrectionPanel({
+  card, editing, onToggle, onSave, saving,
+}: {
+  card: import('@schoolos/types').TermReportCard;
+  editing: boolean;
+  onToggle: () => void;
+  onSave: (attendance: import('@schoolos/types').TermAttendanceCorrection) => void;
+  saving: boolean;
+}) {
+  const [drafts, setDrafts] = useState<Record<TermKey, AttendanceDraft>>({
+    firstTerm: attendanceDraftFrom(card.firstTerm.attendance),
+    finalTerm: attendanceDraftFrom(card.finalTerm.attendance),
+  });
+  const [activeTerm, setActiveTerm] = useState<TermKey>('firstTerm');
+
+  function startEditing() {
+    setDrafts({
+      firstTerm: attendanceDraftFrom(card.firstTerm.attendance),
+      finalTerm: attendanceDraftFrom(card.finalTerm.attendance),
+    });
+    onToggle();
+  }
+
+  function save() {
+    const draft = drafts[activeTerm];
+    const original = card[activeTerm].attendance;
+    const correction: import('@schoolos/types').TermAttendanceCorrection = { term: activeTerm };
+    (Object.keys(draft) as (keyof AttendanceDraft)[]).forEach((key) => {
+      const value = draft[key].trim() === '' ? undefined : Number(draft[key]);
+      if (value !== undefined && value !== original[key]) correction[key] = value;
+    });
+    onSave(correction);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5 text-[#1C2B4A]" /> Attendance
+        </p>
+        {!editing && (
+          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#6D4AFF]">
+            Fix attendance
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <p className="text-xs text-gray-400">Auto-calculated from the Attendance module. Click "Fix attendance" to correct a term's figures directly here.</p>
+      ) : (
+        <>
+          <div className="flex gap-2 mb-3">
+            {(['firstTerm', 'finalTerm'] as TermKey[]).map((term) => (
+              <button
+                key={term}
+                type="button"
+                onClick={() => setActiveTerm(term)}
+                className={`h-8 px-3 rounded-lg text-xs font-semibold ${activeTerm === term ? 'bg-[#1C2B4A] text-white' : 'bg-gray-100 text-gray-600'}`}
+              >
+                {TERM_LABEL[term]}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            {ATTENDANCE_FIELD_LABELS.map(({ key, label }) => (
+              <label key={key} className="flex flex-col gap-1">
+                <span className="text-[10px] text-gray-400">{label}</span>
+                <input
+                  type="number" min={0}
+                  value={drafts[activeTerm][key]}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [activeTerm]: { ...d[activeTerm], [key]: e.target.value } }))}
+                  className="h-8 px-2 rounded-md border border-gray-200 text-xs"
+                />
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 mt-3">
+            <button type="button" onClick={onToggle} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+            <button
+              type="button" onClick={save} disabled={saving}
+              className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Save attendance'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

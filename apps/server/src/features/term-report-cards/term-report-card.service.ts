@@ -420,6 +420,22 @@ export const termReportCardService = {
       }
     }
 
+    if (data.attendance) {
+      const block = data.attendance.term === 'firstTerm' ? card.firstTerm : card.finalTerm;
+      const a = block.attendance;
+      if (data.attendance.workingDays !== undefined) a.workingDays = data.attendance.workingDays;
+      if (data.attendance.present !== undefined) a.present = data.attendance.present;
+      if (data.attendance.absent !== undefined) a.absent = data.attendance.absent;
+      if (data.attendance.late !== undefined) a.late = data.attendance.late;
+      if (data.attendance.halfDay !== undefined) a.halfDay = data.attendance.halfDay;
+      if (data.attendance.leaveApproved !== undefined) a.leaveApproved = data.attendance.leaveApproved;
+      // Same formula and precision as attendance.repository.ts's getSummary
+      // (which is what auto-fills this block originally), so a manually
+      // corrected count still produces a consistent percentage.
+      a.percent = a.workingDays > 0 ? Math.round(((a.present + a.late + a.halfDay) / a.workingDays) * 100) : 0;
+      card.markModified(data.attendance.term);
+    }
+
     if (data.teacherRemark !== undefined) card.teacherRemark = data.teacherRemark;
     if (data.principalRemark !== undefined) card.principalRemark = data.principalRemark;
     if (data.parentFeedback !== undefined) card.parentFeedback = data.parentFeedback;

@@ -4654,11 +4654,24 @@ export interface TermSubjectMarkCorrection {
   evaluationType?: SubjectEvaluationType;
 }
 
+/** A manual correction/override of one term's attendance summary — for when
+ *  the auto-computed figures need a fix. All fields optional. */
+export interface TermAttendanceCorrection {
+  term: 'firstTerm' | 'finalTerm';
+  workingDays?: number;
+  present?: number;
+  absent?: number;
+  late?: number;
+  halfDay?: number;
+  leaveApproved?: number;
+}
+
 export interface UpdateTermReportCardPayload {
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;
   subjectMarks?: TermSubjectMarkCorrection[];
+  attendance?: TermAttendanceCorrection;
 }
 
 export interface UpdateTermReportCardSkillsPayload {

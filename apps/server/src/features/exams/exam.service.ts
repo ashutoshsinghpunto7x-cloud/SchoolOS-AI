@@ -4,6 +4,7 @@ import { createExamSchema, updateExamSchema, updateExamStatusSchema, listExamSch
 import { NotFoundError, ValidationError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
+import { examSlotAutoLinkService } from '../report-card-templates/exam-slot-autolink.service';
 
 // Only forward transitions are allowed — an exam moves from draft (still being
 // set up) to configured (ready for marks entry) to locked (no further config
@@ -35,6 +36,8 @@ export const examService = {
       schoolId: ctx.schoolId,
     });
 
+    await examSlotAutoLinkService.syncForClasses(ctx.schoolId, data.classesApplicable);
+
     return exam;
   },
 
@@ -65,6 +68,13 @@ export const examService = {
       ip: ctx.ip,
       schoolId: ctx.schoolId,
     });
+
+    // Re-sync both the exam's classes before and after this edit — covers
+    // a class being added (needs linking now) or removed (the sync
+    // recomputes that class's slots from scratch, so this exam naturally
+    // drops out since it no longer matches).
+    const classesToSync = Array.from(new Set([...existing.classesApplicable, ...exam.classesApplicable]));
+    await examSlotAutoLinkService.syncForClasses(ctx.schoolId, classesToSync);
 
     return exam;
   },
@@ -115,6 +125,8 @@ export const examService = {
       ip: ctx.ip,
       schoolId: ctx.schoolId,
     });
+
+    await examSlotAutoLinkService.syncForClasses(ctx.schoolId, existing.classesApplicable);
   },
 
   async listAll(rawQuery: unknown, ctx: AuthContext): Promise<PaginatedExams> {
