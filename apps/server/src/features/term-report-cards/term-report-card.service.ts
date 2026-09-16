@@ -6,7 +6,7 @@ import { env } from '../../config/env';
 import {
   ITermReportCard, ITermBlock, ITermSubjectRow, ITermReportCardSkillEntry, SkillGrade,
 } from './term-report-card.model';
-import { IReportCardTemplate, ITemplateExamSlot } from '../report-card-templates/report-card-template.model';
+import { IReportCardTemplate, ITemplateExamSlot, ITemplateSubjectRow } from '../report-card-templates/report-card-template.model';
 import {
   generateTermReportCardSchema, updateTermReportCardSchema, updateTermReportCardSkillsSchema, rosterQuerySchema,
 } from './term-report-card.validation';
@@ -56,12 +56,19 @@ async function buildTermBlock(
     findMarksForExam(schoolId, slot.unitTest2ExamId, studentId),
     findMarksForExam(schoolId, slot.mainExamId, studentId),
   ]);
-  const findFor = (records: IMarks[], subjectName: string) => records.find((r) => r.subjectName === subjectName);
+  // Falls back to the row's `marksSubjectName` alias when a lookup by the
+  // report card's own display name comes up empty — the exam/timetable
+  // this class's marks are entered against doesn't always call a subject
+  // the same thing the report card displays it as (e.g. row "Science/EVS"
+  // but marks entered under "Science").
+  const findFor = (records: IMarks[], subject: ITemplateSubjectRow) =>
+    records.find((r) => r.subjectName === subject.name)
+    ?? (subject.marksSubjectName ? records.find((r) => r.subjectName === subject.marksSubjectName) : undefined);
 
   for (const subject of template.subjects) {
-    const ut1 = findFor(ut1Marks, subject.name);
-    const ut2 = findFor(ut2Marks, subject.name);
-    const main = findFor(mainMarks, subject.name);
+    const ut1 = findFor(ut1Marks, subject);
+    const ut2 = findFor(ut2Marks, subject);
+    const main = findFor(mainMarks, subject);
 
     const unitTest1Score = scoreFromMarks(ut1);
     const unitTest2Score = scoreFromMarks(ut2);

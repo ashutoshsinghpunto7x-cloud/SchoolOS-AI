@@ -53,6 +53,13 @@ export const SubjectMarksEditor = ({ subjects, onChange }: SubjectMarksEditorPro
                       placeholder="e.g. Mathematics"
                       className={cellInputCls}
                     />
+                    <input
+                      value={s.marksSubjectName ?? ''}
+                      onChange={(e) => update(i, { marksSubjectName: e.target.value || undefined })}
+                      placeholder="Also matches marks entered as… (optional)"
+                      title="If the exam/timetable calls this subject something else (e.g. this row is Science/EVS but marks are entered under Science), enter that exact name here so this row still picks them up."
+                      className={cn(cellInputCls, 'mt-1 h-8 text-xs text-gray-500 placeholder:text-gray-400')}
+                    />
                   </td>
                   <td className="px-1 py-2">
                     <select

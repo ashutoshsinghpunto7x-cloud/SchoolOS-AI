@@ -4487,6 +4487,11 @@ export interface TemplateSubjectRow {
    *  stable across renames (survives regenerating a subject's name). */
   _id?: string;
   name: string;
+  /** Falls back to this exact string when matching Marks for this row, if a
+   *  lookup by `name` finds nothing — set this when the exam/timetable calls
+   *  a subject something other than what this report card displays it as
+   *  (e.g. row "Science/EVS" but marks are entered under "Science"). */
+  marksSubjectName?: string;
   evaluationType: SubjectEvaluationType;
   order: number;
   unitTestMaxMarks: number;

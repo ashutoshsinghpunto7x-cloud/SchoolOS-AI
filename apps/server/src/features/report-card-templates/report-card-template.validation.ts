@@ -7,6 +7,7 @@ export const SUBJECT_EVALUATION_TYPES = ['marks', 'grade', 'both'] as const;
 const templateSubjectRowSchema = z.object({
   _id:              z.string().optional(),
   name:             z.string({ required_error: 'subject name is required' }).min(1).trim(),
+  marksSubjectName: z.string().trim().optional(),
   evaluationType:   z.enum(SUBJECT_EVALUATION_TYPES).default('marks'),
   order:            z.number().default(0),
   unitTestMaxMarks: z.number({ required_error: 'unitTestMaxMarks is required' }).min(0),

@@ -10,6 +10,13 @@ export type ReportCardTemplateStatus = 'draft' | 'published';
 export interface ITemplateSubjectRow {
   _id: mongoose.Types.ObjectId;
   name: string;
+  /** Falls back to this exact string when looking up Marks for this row, if
+   *  set and a lookup by `name` finds nothing — for when the exam/timetable
+   *  calls a subject something other than what this report card displays it
+   *  as (e.g. row "Science/EVS" but marks are entered under "Science").
+   *  Optional and per-row/per-class: most rows need no alias at all, and two
+   *  classes can name the same underlying subject differently. */
+  marksSubjectName?: string;
   evaluationType: SubjectEvaluationType;
   order: number;
   unitTestMaxMarks: number;
@@ -70,6 +77,7 @@ export interface IReportCardTemplate extends Document {
 const templateSubjectRowSchema = new Schema<ITemplateSubjectRow>(
   {
     name:             { type: String, required: true, trim: true },
+    marksSubjectName: { type: String, trim: true },
     evaluationType:   { type: String, enum: ['marks', 'grade', 'both'], default: 'marks' },
     order:            { type: Number, required: true, default: 0 },
     unitTestMaxMarks: { type: Number, required: true, min: 0, default: 20 },
