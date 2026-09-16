@@ -26,6 +26,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
   const [unitTest1ExamId, setUnitTest1ExamId] = useState('');
   const [unitTest2ExamId, setUnitTest2ExamId] = useState('');
   const [mainExamId, setMainExamId] = useState('');
+  const [skill, setSkill] = useState('');
   const [result, setResult] = useState<TermMarksExtractionResult | null>(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,8 +34,21 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
 
   const extractMutation = useExtractTermMarksFromImage();
 
+  // Some subjects (typically in lower classes — e.g. English → Literature,
+  // Writing, Reading, Dictation/Spelling) are split into skills, each
+  // entered and stored as its own subjectName ("English - Literature") so a
+  // report-card template row can pick it up individually. A skill-split
+  // subject needs to know which skill this particular photo covers before
+  // it can save anywhere — a plain subject (no configured skills) skips
+  // this entirely and behaves exactly as before.
+  const skillsForSubject = Array.from(new Set(
+    exams.flatMap((e) => e.subjectConfigs?.find((c) => c.name === subjectName)?.skills ?? []),
+  ));
+  const effectiveSubjectName = skillsForSubject.length > 0 && skill ? `${subjectName} - ${skill}` : subjectName;
+
   const canContinue = !!unitTest1ExamId && !!unitTest2ExamId && !!mainExamId
-    && new Set([unitTest1ExamId, unitTest2ExamId, mainExamId]).size === 3;
+    && new Set([unitTest1ExamId, unitTest2ExamId, mainExamId]).size === 3
+    && (skillsForSubject.length === 0 || !!skill);
 
   async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -42,7 +56,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
     if (!file) return;
     try {
       const res = await extractMutation.mutateAsync({
-        target: { class: cls, section, subjectName, unitTest1ExamId, unitTest2ExamId, mainExamId },
+        target: { class: cls, section, subjectName: effectiveSubjectName, unitTest1ExamId, unitTest2ExamId, mainExamId },
         file,
       });
       setResult(res);
@@ -110,7 +124,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
       await Promise.all(
         calls
           .filter((c) => c.records.length > 0)
-          .map((c) => marksApi.bulkUpsert({ examId: c.examId, class: cls, section, subjectName, records: c.records })),
+          .map((c) => marksApi.bulkUpsert({ examId: c.examId, class: cls, section, subjectName: effectiveSubjectName, records: c.records })),
       );
       await queryClient.invalidateQueries({ queryKey: marksKeys.all });
       toast.success('Marks saved', { description: `${rowsToSave.length} student(s) saved across Unit Test 1, Unit Test 2 and Half Yearly` });
@@ -151,6 +165,24 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
             <p className="text-xs text-gray-500 dark:text-white/50">
               Pick the three exams this combined register covers. One photo will fill all three at once.
             </p>
+            {skillsForSubject.length > 0 && (
+              <label className="block">
+                <span className="text-xs font-semibold text-gray-500 dark:text-white/40">
+                  {subjectName} skill (this register is for)
+                </span>
+                <select
+                  value={skill}
+                  onChange={(e) => setSkill(e.target.value)}
+                  className="mt-1 w-full h-10 px-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                >
+                  <option value="">Select a skill…</option>
+                  {skillsForSubject.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <span className="text-[11px] text-gray-400 dark:text-white/30 mt-1 block">
+                  {subjectName} is split into skills here — each is entered and saved separately so it lands correctly on the report card. Repeat this AI Fill once per skill.
+                </span>
+              </label>
+            )}
             {[
               { label: 'Unit Test 1 exam', value: unitTest1ExamId, set: setUnitTest1ExamId },
               { label: 'Unit Test 2 exam', value: unitTest2ExamId, set: setUnitTest2ExamId },
@@ -198,6 +230,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
 
         {step === 'review' && result && (
           <div className="p-4 space-y-3">
+            <p className="text-xs font-semibold text-violet-600 dark:text-violet-300 uppercase tracking-wide">{effectiveSubjectName}</p>
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
               {result.rows.length} student{result.rows.length === 1 ? '' : 's'} read — review before saving
             </p>
