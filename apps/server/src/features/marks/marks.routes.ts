@@ -13,6 +13,7 @@ router.use(authorize('admin', 'principal', 'teacher'));
 router.get('/entry-table',                                    marksController.getEntryTable);
 router.get('/summary',                                        marksController.getSummary);
 router.post('/extract/image',     aiImageUploadMiddleware,    marksController.extractFromImage);
+router.post('/extract/term-image',aiImageUploadMiddleware,    marksController.extractTermFromImage);
 router.post('/extract/voice',     audioUploadMiddleware,      marksController.extractFromVoice);
 router.get('/extract/jobs/:id',                               marksController.getExtractionJob);
 router.post('/extract/transcript',                            marksController.extractFromTranscript);

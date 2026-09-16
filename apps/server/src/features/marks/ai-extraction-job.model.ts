@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import type { MarksExtractionResult } from './marks-extraction.service';
+import type { MarksExtractionResult, TermMarksExtractionResult } from './marks-extraction.service';
 
 export type AiExtractionJobStatus = 'processing' | 'completed' | 'failed';
-export type AiExtractionJobKind = 'image' | 'voice';
+export type AiExtractionJobKind = 'image' | 'voice' | 'term-image';
 
 /**
  * Tracks one AI marks-extraction request (photo or voice note) processed in
@@ -21,7 +21,7 @@ export interface IAiExtractionJob extends Document {
   userId: string;
   kind: AiExtractionJobKind;
   status: AiExtractionJobStatus;
-  result?: MarksExtractionResult;
+  result?: MarksExtractionResult | TermMarksExtractionResult;
   error?: string;
   createdAt: Date;
   updatedAt: Date;

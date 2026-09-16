@@ -124,6 +124,14 @@ export const marksRepository = {
     return Marks.findOne({ _id: id, schoolId, isDeleted: false }).lean<IMarks>();
   },
 
+  /** Just the ownership fields of an existing record, if any — used to check
+   *  the per-record edit lock before a save without fetching the full document. */
+  async findExisting(schoolId: string, examId: string, studentId: string, subjectName: string): Promise<{ enteredById: string; enteredByName: string } | null> {
+    return Marks.findOne({ schoolId, examId, studentId, subjectName, isDeleted: false })
+      .select('enteredById enteredByName')
+      .lean<{ enteredById: string; enteredByName: string }>();
+  },
+
   /** Full entry table for one class+section+subject+exam. */
   async findByBatch(target: BatchTarget): Promise<IMarks[]> {
     return Marks.find({

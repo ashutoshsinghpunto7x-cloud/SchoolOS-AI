@@ -4315,6 +4315,42 @@ export interface MarksExtractionResult {
   transcript?: string;
 }
 
+// ── Term (multi-exam) AI capture — one combined register photo covering Unit
+// Test 1, Unit Test 2 and Half Yearly for a single subject at once ───────────
+
+export interface TermExtractionTarget {
+  class: string;
+  section: string;
+  subjectName: string;
+  unitTest1ExamId: string;
+  unitTest2ExamId: string;
+  mainExamId: string;
+}
+
+export interface TermExtractedRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  unitTest1?: number;
+  unitTest2?: number;
+  bestUnitTest?: number;
+  mainExam?: number;
+  total?: number;
+  absent: boolean;
+}
+
+export interface TermExamRef {
+  examId: string;
+  componentName: string;
+}
+
+export interface TermMarksExtractionResult {
+  rows: TermExtractedRow[];
+  unmatched: UnmatchedExtraction[];
+  warnings: string[];
+  exams: { unitTest1: TermExamRef; unitTest2: TermExamRef; mainExam: TermExamRef };
+}
+
 export interface PayrollSummary {
   totalGross: number;
   totalDeductions: number;

@@ -7,6 +7,7 @@ import type {
   MarksBatchTarget,
   MarksReviewActionPayload,
   MarksReopenPayload,
+  TermExtractionTarget,
 } from '@schoolos/types';
 
 export const marksKeys = {
@@ -71,3 +72,6 @@ export const useExtractMarksFromVoice = () =>
 
 export const useExtractMarksFromTranscript = () =>
   useMutation({ mutationFn: ({ target, transcript, timeoutMs }: { target: MarksBatchTarget; transcript: string; timeoutMs?: number }) => marksApi.extractFromTranscript(target, transcript, timeoutMs) });
+
+export const useExtractTermMarksFromImage = () =>
+  useMutation({ mutationFn: ({ target, file }: { target: TermExtractionTarget; file: File }) => marksApi.extractTermFromImage(target, file) });

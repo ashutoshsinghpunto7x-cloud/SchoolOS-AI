@@ -1175,6 +1175,8 @@ export const router = createBrowserRouter([
                   { path: 'principal/question-bank-overview', element: <PrincipalQuestionBankOverviewPage /> },
                   { path: 'principal/employees', element: <EmployeesPage basePath="/principal/employees" readOnly /> },
                   { path: 'principal/employees/:id', element: <EmployeeDirectoryProfilePage basePath="/principal/employees" /> },
+                  { path: 'principal/marks', element: <MarksHubPage basePath="/principal" /> },
+                  { path: 'principal/marks/:cls/:section/:subjectName/:examId', element: <MarksEntryPage /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },
                 ],
               },

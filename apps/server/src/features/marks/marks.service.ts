@@ -16,73 +16,36 @@ import { auditService } from '../audit/audit.service';
 import { examRepository } from '../exams/exam.repository';
 import { studentRepository } from '../students/student.repository';
 import { Student } from '../students/student.model';
-import { User } from '../users/user.model';
-import { Teacher } from '../teachers/teacher.model';
-import { timetableRepository } from '../timetable/timetable.repository';
-
-// ── Compound subjects & timetable aliasing ─────────────────────────────────────
-// A subject's exam config can optionally declare:
-//  - `skills` (e.g. English -> Literature, Language, Reading, Writing,
-//    Dictation/Spelling) — marks then get entered and stored per skill,
-//    subjectName `"${subject} - ${skill}"` (report-card-templates key rows
-//    off this exact same string — see term-report-card.service.ts's findMark).
-//  - `timetableSubjectName` — the grading subject's name (e.g. "Mathematics",
-//    matching a report-card template row) can differ from the coarser name a
-//    period is scheduled under on the timetable (e.g. "Maths"); this alias
-//    says which timetable period the subject/skill-group actually maps to,
-//    for the teacher-authorization check below.
-// Both are purely data-driven off the exam's subjectConfigs — nothing here is
-// hardcoded to a particular subject or class.
-
-/** Resolves a subjectName (e.g. "English - Literature", or a plainly renamed
- *  "Mathematics") to whatever name the class's timetable actually schedules
- *  it under, using the exam's subjectConfigs. Falls back to subjectName
- *  unchanged when there's no matching config (a normal subject whose name
- *  already matches the timetable, exactly today's behavior). */
-function resolveBaseSubject(exam: Pick<IExam, 'subjectConfigs'> | undefined | null, subjectName: string): string {
-  for (const cfg of exam?.subjectConfigs ?? []) {
-    const isThisSubject =
-      cfg.name === subjectName ||
-      (cfg.skills ?? []).some((skill) => subjectName === `${cfg.name} - ${skill}`);
-    if (isThisSubject) return cfg.timetableSubjectName || cfg.name;
-  }
-  return subjectName;
-}
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
-// A subject teacher may only enter marks for a class+section+subject they
-// actually teach. The timetable (per-period entries with teacherId +
-// subjectName) is the real source of truth for this — mirrors exactly how
-// teacher-workspace.service.ts derives "subjects taught" for the same
-// teacher's dashboard/class-picker. Teacher.assignedClasses/subjects are
-// separate legacy fields that aren't kept in sync with the timetable, so
-// they're not used here. Admin/principal bypass this entirely.
-//
-// `exam` is optional and only used to resolve a skill-qualified subjectName
-// (e.g. "English - Literature") back to the timetable's base subject
-// ("English") before matching — pass it whenever the exam is already at
-// hand so compound subjects authorize correctly; omitting it just means a
-// skill-qualified subjectName won't match a base-named timetable entry.
+// Marks access is intentionally open school-wide (2026-09-16): any teacher
+// may view and enter marks for any class/section/subject, not just the ones
+// they're timetabled for — this was a deliberate product decision, not an
+// oversight. What still protects a saved record is the per-record edit lock
+// below (assertCanEditExisting): once a teacher has saved marks, only that
+// same account (or admin/principal) can edit them afterward. This function
+// is kept as a no-op call site (rather than deleted) so re-introducing a
+// scope restriction later is a one-line change, and so `exam`/`cls`/
+// `section`/`subjectName` stay available at every call site if needed again.
 async function assertTeacherCanEnterMarks(
-  ctx: AuthContext, cls: string, section: string, subjectName: string,
-  exam?: Pick<IExam, 'subjectConfigs'> | null,
+  _ctx: AuthContext, _cls: string, _section: string, _subjectName: string,
+  _exam?: Pick<IExam, 'subjectConfigs'> | null,
 ): Promise<void> {
-  if (ctx.role !== 'teacher') return;
+  // Intentionally no-op — see comment above.
+}
 
-  const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
-  if (!user?.email) throw new ForbiddenError('Your account has no email — cannot verify class/subject assignment');
-
-  const teacher = await Teacher.findOne({ schoolId: ctx.schoolId, email: user.email, isDeleted: false })
-    .select('_id')
-    .lean() as { _id: unknown } | null;
-  if (!teacher) throw new ForbiddenError('Teacher profile not found');
-
-  const teacherId = String(teacher._id);
-  const baseSubject = resolveBaseSubject(exam, subjectName);
-  const timetable = await timetableRepository.findByClassSectionAnyYear(ctx.schoolId, cls, section);
-  const teaches = (timetable?.entries ?? []).some((e) => e.teacherId === teacherId && e.subjectName === baseSubject);
-  if (!teaches) {
-    throw new ForbiddenError('You do not teach this subject in this class');
+// ── Per-record edit lock ────────────────────────────────────────────────────────
+// Once a teacher saves a marks record, only that same account may edit it
+// again — a different teacher (even one now also permitted to enter marks
+// for this class/subject under the open-access policy above) gets a
+// read-only view instead. Admin/principal are never blocked by this.
+async function assertCanEditExisting(
+  existing: { enteredById: string; enteredByName: string } | null,
+  ctx: AuthContext,
+): Promise<void> {
+  if (!existing) return;
+  if (ctx.role === 'teacher' && existing.enteredById !== ctx.userId) {
+    throw new ForbiddenError(`These marks were entered by ${existing.enteredByName} — only they can edit them`);
   }
 }
 
@@ -177,6 +140,9 @@ export const marksService = {
     const student = await studentRepository.findById(data.studentId, ctx.schoolId);
     if (!student) throw new NotFoundError('Student');
 
+    const existing = await marksRepository.findExisting(ctx.schoolId, data.examId, data.studentId, data.subjectName);
+    await assertCanEditExisting(existing, ctx);
+
     validateComponentScores(data.componentScores, exam);
     const computed = computeResult(data.componentScores, exam);
 
@@ -214,8 +180,21 @@ export const marksService = {
 
     for (const r of data.records) validateComponentScores(r.componentScores, exam);
 
+    // A teacher may be resubmitting a batch that includes some students
+    // another teacher already entered marks for (open class/subject access
+    // means overlap is now possible) — silently skip those locked rows
+    // rather than failing the whole batch, since the entry-table UI already
+    // renders them read-only and shouldn't have sent them in the first place.
+    const existingByStudent = ctx.role === 'teacher'
+      ? new Map((await marksRepository.findByBatch({ schoolId: ctx.schoolId, examId: data.examId, class: data.class, section: data.section, subjectName: data.subjectName })).map((m) => [m.studentId, m]))
+      : new Map<string, IMarks>();
+    const editable = data.records.filter((r) => {
+      const existing = existingByStudent.get(r.studentId);
+      return !existing || existing.enteredById === ctx.userId;
+    });
+
     const records = await marksRepository.bulkUpsert(
-      data.records.map((r) => {
+      editable.map((r) => {
         const computed = computeResult(r.componentScores, exam);
         return {
           schoolId: ctx.schoolId,

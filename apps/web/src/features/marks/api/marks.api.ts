@@ -10,6 +10,8 @@ import type {
   MarksEntryTable,
   MarksSummary,
   MarksExtractionResult,
+  TermExtractionTarget,
+  TermMarksExtractionResult,
   PaginatedResponse,
 } from '@schoolos/types';
 
@@ -17,9 +19,9 @@ const BASE = '/marks';
 
 interface BatchResult { updated: number }
 
-interface ExtractionJobStatus {
+interface ExtractionJobStatus<T> {
   status: 'processing' | 'completed' | 'failed';
-  result?: MarksExtractionResult;
+  result?: T;
   error?: string;
 }
 
@@ -29,10 +31,10 @@ const EXTRACTION_POLL_TIMEOUT_MS = 90_000;
 /** The extract endpoints return a job id immediately (the AI call runs in the
  *  background) — poll until it's done rather than holding one HTTP request
  *  open for the whole OpenAI/Whisper round trip. */
-async function pollExtractionJob(jobId: string): Promise<MarksExtractionResult> {
+async function pollExtractionJob<T = MarksExtractionResult>(jobId: string): Promise<T> {
   const deadline = Date.now() + EXTRACTION_POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const res = await apiClient.get<{ data: ExtractionJobStatus }>(`${BASE}/extract/jobs/${jobId}`);
+    const res = await apiClient.get<{ data: ExtractionJobStatus<T> }>(`${BASE}/extract/jobs/${jobId}`);
     const job = res.data.data;
     if (job.status === 'completed' && job.result) return job.result;
     if (job.status === 'failed') throw new Error(job.error || 'AI extraction failed');
@@ -135,6 +137,18 @@ export const marksApi = {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return await pollExtractionJob(res.data.data.jobId);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  extractTermFromImage: async (target: TermExtractionTarget, file: File): Promise<TermMarksExtractionResult> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await apiClient.post<{ data: { jobId: string } }>(`${BASE}/extract/term-image`, formData, {
+        params: target,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return await pollExtractionJob<TermMarksExtractionResult>(res.data.data.jobId);
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 

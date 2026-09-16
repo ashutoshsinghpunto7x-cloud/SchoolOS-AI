@@ -1,5 +1,5 @@
 import { marksService } from './marks.service';
-import { entryTableQuerySchema } from './marks.validation';
+import { entryTableQuerySchema, termExtractionQuerySchema } from './marks.validation';
 import { openaiProvider, estimateCost } from '../ai/providers/llm/openai.provider';
 import { openaiWhisperProvider } from '../ai/providers/stt/openai-whisper.provider';
 import { aiUsageRepository } from '../ai/ai.repository';
@@ -32,6 +32,39 @@ export interface MarksExtractionResult {
   transcript?: string;
 }
 
+// ── Term (multi-exam) capture output shapes ────────────────────────────────────
+// One combined register photo covering Unit Test 1 + Unit Test 2 + Half
+// Yearly (main exam) for a single subject — as opposed to the single-exam
+// capture above, which only ever fills one exam's components. "Best" and
+// "Total" are read off the sheet only to cross-check the arithmetic
+// (Best = max(UT1, UT2), Total = Best + Half Yearly); the values actually
+// applied always come from the computed arithmetic, with a warning raised
+// whenever the sheet disagrees.
+
+export interface TermExtractedRow {
+  studentId: string;
+  fullName: string;
+  rollNumber?: string;
+  unitTest1?: number;
+  unitTest2?: number;
+  bestUnitTest?: number;
+  mainExam?: number;
+  total?: number;
+  absent: boolean;
+}
+
+export interface TermExamRef {
+  examId: string;
+  componentName: string;
+}
+
+export interface TermMarksExtractionResult {
+  rows: TermExtractedRow[];
+  unmatched: UnmatchedExtraction[];
+  warnings: string[];
+  exams: { unitTest1: TermExamRef; unitTest2: TermExamRef; mainExam: TermExamRef };
+}
+
 // ── Raw shape the model is asked to return ─────────────────────────────────────
 
 interface RawExtractedEntry {
@@ -39,6 +72,17 @@ interface RawExtractedEntry {
   name?: string | null;
   absent?: boolean;
   scores?: Record<string, number | string | null>;
+}
+
+interface RawTermEntry {
+  rollNumber?: string | null;
+  name?: string | null;
+  absent?: boolean;
+  unitTest1?: number | string | null;
+  unitTest2?: number | string | null;
+  best?: number | string | null;
+  halfYearly?: number | string | null;
+  total?: number | string | null;
 }
 
 // ── Prompt building ────────────────────────────────────────────────────────────
@@ -57,7 +101,28 @@ For each student you can identify, return one entry with:
 Return ONLY a valid JSON object: {"entries": [...]}. No markdown, no explanation. If you cannot confidently read a value, omit that field rather than guessing.`;
 }
 
-function parseEntries(raw: string): RawExtractedEntry[] {
+function buildTermSystemPrompt(maxMarks: { ut1: number; ut2: number; main: number }): string {
+  return `You read a teacher's handwritten term mark register (a combined result sheet) and convert it into structured JSON.
+
+This register has five score columns, in this exact left-to-right order:
+1. "Unit Test 1" (max ${maxMarks.ut1})
+2. "Unit Test 2" (max ${maxMarks.ut2})
+3. "Best" — the higher of Unit Test 1 and Unit Test 2
+4. "Half Yearly" (max ${maxMarks.main})
+5. "Total" — Best + Half Yearly
+
+The students are handwritten in whatever order the teacher filled the sheet in — this is NOT the roll-number or attendance-list order. Identify each row by the name written next to it, not by its position on the page.
+
+For each student row you can identify, return one entry with:
+- "rollNumber": the roll number if visible, else null
+- "name": the student's name as written, else null
+- "absent": true only if explicitly marked absent, else false
+- "unitTest1", "unitTest2", "best", "halfYearly", "total": the number actually written in that column, or null if blank/illegible — report only what is written, never calculate a value yourself
+
+Return ONLY a valid JSON object: {"entries": [...]}. No markdown, no explanation. If you cannot confidently read a value, use null for it rather than guessing.`;
+}
+
+function parseEntries<T>(raw: string): T[] {
   try {
     const body = JSON.parse(raw);
     const entries = Array.isArray(body) ? body : body.entries;
@@ -126,9 +191,14 @@ function reconcile(
   for (const entry of entries) {
     const rollKey = entry.rollNumber ? normalize(String(entry.rollNumber)) : undefined;
     const nameKey = entry.name ? normalize(entry.name) : undefined;
-    const student = (rollKey && byRoll.get(rollKey))
-      || (nameKey && byName.get(nameKey))
-      || (nameKey && findClosestName(nameKey, byName));
+    // Match by name first, roll number only as a fallback. The sheet's
+    // student order is not the roster/attendance order — names get written
+    // in whatever order the teacher filled them in — so a roll number read
+    // off the page is the less reliable signal here; the name the teacher
+    // actually wrote next to each score is what should drive the match.
+    const student = (nameKey && byName.get(nameKey))
+      || (nameKey && findClosestName(nameKey, byName))
+      || (rollKey && byRoll.get(rollKey));
 
     const cleanScores: Record<string, number> = {};
     for (const [componentName, value] of Object.entries(entry.scores ?? {})) {
@@ -171,6 +241,105 @@ function reconcile(
   return { extracted, unmatched, warnings };
 }
 
+function toNumberOrUndefined(value: number | string | null | undefined): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  const num = typeof value === 'string' ? Number(value) : value;
+  return typeof num === 'number' && !Number.isNaN(num) ? num : undefined;
+}
+
+/** Same name-first matching as reconcile() above, but for a combined
+ *  UT1+UT2+Half-Yearly register. Best/Total are read off the sheet only to
+ *  flag arithmetic disagreements — the values actually returned always come
+ *  from computing Best = max(UT1, UT2) and Total = Best + Half Yearly, never
+ *  from a possibly-misread Best/Total column. */
+function reconcileTerm(
+  entries: RawTermEntry[],
+  roster: { studentId: string; fullName: string; rollNumber?: string }[],
+  maxMarks: { ut1: number; ut2: number; main: number },
+): { rows: TermExtractedRow[]; unmatched: UnmatchedExtraction[]; warnings: string[] } {
+  const byRoll = new Map(roster.filter((r) => r.rollNumber).map((r) => [normalize(r.rollNumber!), r]));
+  const byName = new Map(roster.map((r) => [normalize(r.fullName), r]));
+
+  const rows: TermExtractedRow[] = [];
+  const unmatched: UnmatchedExtraction[] = [];
+  const warnings: string[] = [];
+
+  for (const entry of entries) {
+    const rollKey = entry.rollNumber ? normalize(String(entry.rollNumber)) : undefined;
+    const nameKey = entry.name ? normalize(entry.name) : undefined;
+    const student = (nameKey && byName.get(nameKey))
+      || (nameKey && findClosestName(nameKey, byName))
+      || (rollKey && byRoll.get(rollKey));
+    const who = entry.name ?? entry.rollNumber ?? 'A student';
+
+    let unitTest1 = toNumberOrUndefined(entry.unitTest1);
+    let unitTest2 = toNumberOrUndefined(entry.unitTest2);
+    let bestUnitTest = toNumberOrUndefined(entry.best);
+    let mainExam = toNumberOrUndefined(entry.halfYearly);
+    let total = toNumberOrUndefined(entry.total);
+
+    if (unitTest1 !== undefined && unitTest1 > maxMarks.ut1) {
+      warnings.push(`${who}: Unit Test 1 read as ${unitTest1}, exceeds max ${maxMarks.ut1} — capped, please verify.`);
+      unitTest1 = maxMarks.ut1;
+    }
+    if (unitTest2 !== undefined && unitTest2 > maxMarks.ut2) {
+      warnings.push(`${who}: Unit Test 2 read as ${unitTest2}, exceeds max ${maxMarks.ut2} — capped, please verify.`);
+      unitTest2 = maxMarks.ut2;
+    }
+    if (mainExam !== undefined && mainExam > maxMarks.main) {
+      warnings.push(`${who}: Half Yearly read as ${mainExam}, exceeds max ${maxMarks.main} — capped, please verify.`);
+      mainExam = maxMarks.main;
+    }
+
+    if (unitTest1 !== undefined && unitTest2 !== undefined) {
+      const expectedBest = Math.max(unitTest1, unitTest2);
+      if (bestUnitTest !== undefined && Math.abs(bestUnitTest - expectedBest) > 0.01) {
+        warnings.push(`${who}: sheet shows Best=${bestUnitTest}, but the higher of Unit Test 1/2 is ${expectedBest} — using ${expectedBest}, please verify.`);
+      }
+      bestUnitTest = expectedBest;
+    } else {
+      bestUnitTest = unitTest1 ?? unitTest2 ?? bestUnitTest;
+    }
+
+    if (bestUnitTest !== undefined && mainExam !== undefined) {
+      const expectedTotal = bestUnitTest + mainExam;
+      if (total !== undefined && Math.abs(total - expectedTotal) > 0.01) {
+        warnings.push(`${who}: sheet shows Total=${total}, but Best+Half Yearly is ${expectedTotal} — using ${expectedTotal}, please verify.`);
+      }
+      total = expectedTotal;
+    }
+
+    if (!student) {
+      if (unitTest1 !== undefined || unitTest2 !== undefined || mainExam !== undefined || entry.name || entry.rollNumber) {
+        unmatched.push({
+          rawName: entry.name ?? undefined,
+          rawRollNumber: entry.rollNumber ?? undefined,
+          scores: {
+            ...(unitTest1 !== undefined ? { unitTest1 } : {}),
+            ...(unitTest2 !== undefined ? { unitTest2 } : {}),
+            ...(mainExam !== undefined ? { halfYearly: mainExam } : {}),
+          },
+        });
+      }
+      continue;
+    }
+
+    rows.push({
+      studentId: student.studentId,
+      fullName: student.fullName,
+      rollNumber: student.rollNumber,
+      unitTest1: entry.absent ? undefined : unitTest1,
+      unitTest2: entry.absent ? undefined : unitTest2,
+      bestUnitTest: entry.absent ? undefined : bestUnitTest,
+      mainExam: entry.absent ? undefined : mainExam,
+      total: entry.absent ? undefined : total,
+      absent: !!entry.absent,
+    });
+  }
+
+  return { rows, unmatched, warnings };
+}
+
 // ── Service ────────────────────────────────────────────────────────────────────
 
 export const marksExtractionService = {
@@ -206,11 +375,84 @@ export const marksExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const entries = parseEntries(result.content);
+    const entries = parseEntries<RawExtractedEntry>(result.content);
     const roster = table.rows.map((r) => ({ studentId: r.studentId, fullName: r.fullName, rollNumber: r.rollNumber }));
     const { extracted, unmatched, warnings } = reconcile(entries, roster, table.exam.components);
 
     return { source: 'image', extracted, unmatched, warnings };
+  },
+
+  /**
+   * One photo of a combined term register (Unit Test 1 + Unit Test 2 + Half
+   * Yearly columns for one subject) filling all three underlying exams at
+   * once, instead of the single-exam extractFromImage above. Each of the
+   * three exams must currently have exactly one score component — a
+   * combined register has one number per exam per student, so a
+   * multi-component exam can't be unambiguously filled from it.
+   */
+  async extractTermFromImage(
+    rawQuery: unknown,
+    imageDataUri: string,
+    ctx: AuthContext,
+  ): Promise<TermMarksExtractionResult> {
+    if (!openaiProvider.isAvailable()) {
+      throw new ValidationError('AI extraction is not configured on this server.');
+    }
+    const target = termExtractionQuerySchema.parse(rawQuery);
+
+    const [ut1Table, ut2Table, mainTable] = await Promise.all([
+      marksService.getEntryTable({ examId: target.unitTest1ExamId, class: target.class, section: target.section, subjectName: target.subjectName }, ctx),
+      marksService.getEntryTable({ examId: target.unitTest2ExamId, class: target.class, section: target.section, subjectName: target.subjectName }, ctx),
+      marksService.getEntryTable({ examId: target.mainExamId, class: target.class, section: target.section, subjectName: target.subjectName }, ctx),
+    ]);
+
+    for (const [label, table] of [['Unit Test 1', ut1Table], ['Unit Test 2', ut2Table], ['Half Yearly', mainTable]] as const) {
+      if (table.exam.components.length !== 1) {
+        throw new ValidationError(
+          `The ${label} exam must have exactly one score component to use combined AI capture (it has ${table.exam.components.length}). Use single-exam AI Fill for this exam instead.`,
+        );
+      }
+    }
+
+    const ut1Component = ut1Table.exam.components[0];
+    const ut2Component = ut2Table.exam.components[0];
+    const mainComponent = mainTable.exam.components[0];
+
+    const start = Date.now();
+    const result = await openaiProvider.complete({
+      systemPrompt: buildTermSystemPrompt({ ut1: ut1Component.maxMarks, ut2: ut2Component.maxMarks, main: mainComponent.maxMarks }),
+      userPrompt: 'Read the combined term mark register in this photo and extract every student row you can identify.',
+      imageDataUri,
+      temperature: 0.1,
+      maxTokens: 3000,
+      jsonResponse: true,
+    });
+
+    aiUsageRepository.record({
+      provider: 'openai',
+      aiModel: result.model,
+      promptTokens: result.promptTokens,
+      completionTokens: result.completionTokens,
+      totalTokens: result.totalTokens,
+      estimatedCostUsd: estimateCost(result.model, result.promptTokens, result.completionTokens),
+      durationMs: Date.now() - start,
+      schoolId: ctx.schoolId,
+    });
+
+    const entries = parseEntries<RawTermEntry>(result.content);
+    const roster = ut1Table.rows.map((r) => ({ studentId: r.studentId, fullName: r.fullName, rollNumber: r.rollNumber }));
+    const { rows, unmatched, warnings } = reconcileTerm(entries, roster, { ut1: ut1Component.maxMarks, ut2: ut2Component.maxMarks, main: mainComponent.maxMarks });
+
+    return {
+      rows,
+      unmatched,
+      warnings,
+      exams: {
+        unitTest1: { examId: target.unitTest1ExamId, componentName: ut1Component.name },
+        unitTest2: { examId: target.unitTest2ExamId, componentName: ut2Component.name },
+        mainExam: { examId: target.mainExamId, componentName: mainComponent.name },
+      },
+    };
   },
 
   async extractFromVoice(
@@ -249,7 +491,7 @@ export const marksExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const entries = parseEntries(result.content);
+    const entries = parseEntries<RawExtractedEntry>(result.content);
     const roster = table.rows.map((r) => ({ studentId: r.studentId, fullName: r.fullName, rollNumber: r.rollNumber }));
     const { extracted, unmatched, warnings } = reconcile(entries, roster, table.exam.components);
 
@@ -295,7 +537,7 @@ export const marksExtractionService = {
       schoolId: ctx.schoolId,
     });
 
-    const entries = parseEntries(result.content);
+    const entries = parseEntries<RawExtractedEntry>(result.content);
     const roster = table.rows.map((r) => ({ studentId: r.studentId, fullName: r.fullName, rollNumber: r.rollNumber }));
     const { extracted, unmatched, warnings } = reconcile(entries, roster, table.exam.components);
 
@@ -338,6 +580,25 @@ export const marksExtractionService = {
       .then((result) => aiExtractionJobRepository.markCompleted(jobId, result))
       .catch((err) => {
         logger.error('[MarksExtraction] Background voice extraction failed', { jobId, err });
+        aiExtractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
+      });
+
+    return { jobId };
+  },
+
+  /** Same background-job pattern, for the combined term (UT1+UT2+Half Yearly) register capture. */
+  async enqueueExtractTermFromImage(
+    rawQuery: unknown,
+    imageDataUri: string,
+    ctx: AuthContext,
+  ): Promise<{ jobId: string }> {
+    const job = await aiExtractionJobRepository.create({ schoolId: ctx.schoolId, userId: ctx.userId, kind: 'term-image' });
+    const jobId = job._id.toString();
+
+    marksExtractionService.extractTermFromImage(rawQuery, imageDataUri, ctx)
+      .then((result) => aiExtractionJobRepository.markCompleted(jobId, result))
+      .catch((err) => {
+        logger.error('[MarksExtraction] Background term-image extraction failed', { jobId, err });
         aiExtractionJobRepository.markFailed(jobId, err instanceof Error ? err.message : 'Extraction failed').catch(() => {});
       });
 

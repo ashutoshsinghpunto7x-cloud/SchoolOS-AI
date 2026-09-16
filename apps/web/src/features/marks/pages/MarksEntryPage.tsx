@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -32,6 +32,8 @@ interface RowState {
   workflowStatus: MarksWorkflowStatus | null; // null = never saved
   total?: number;
   percentage?: number;
+  enteredById?: string;
+  enteredByName?: string;
 }
 
 // Teachers only get Present/Absent day-to-day — Exempt/Medical/Not Assessed
@@ -58,6 +60,17 @@ const WORKFLOW_BADGE: Record<MarksWorkflowStatus, { label: string; className: st
 
 function rowIsEditable(status: MarksWorkflowStatus | null): boolean {
   return status === null || status === 'draft' || status === 'needs_correction' || status === 'reopened';
+}
+
+// Once someone has saved a row's marks, only that same account (or an
+// admin/principal, who never hit this check) may edit it further — a
+// different teacher gets a read-only view instead, even though open access
+// now lets them view/enter marks for any class/subject. Mirrors
+// marks.service.ts's assertCanEditExisting on the server, which is the
+// real enforcement; this just keeps the UI from offering an edit the save
+// would reject anyway.
+function rowIsLockedByOther(row: RowState, currentUserId: string | undefined, role: string | undefined): boolean {
+  return role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId;
 }
 
 // A row is "complete" once every present-status component has a valid score
@@ -111,12 +124,13 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
 // ── Student row ───────────────────────────────────────────────────────────────
 
 function StudentRow({
-  row, index, maxByComponent, editable, aiFilled, onChangeScore, onChangeStatus,
+  row, index, maxByComponent, editable, lockedByOther, aiFilled, onChangeScore, onChangeStatus,
 }: {
   row: RowState;
   index: number;
   maxByComponent: { name: string; maxMarks: number }[];
   editable: boolean;
+  lockedByOther?: boolean;
   aiFilled?: boolean;
   onChangeScore: (studentId: string, componentName: string, score: number | undefined) => void;
   onChangeStatus: (studentId: string, status: ComponentStatus) => void;
@@ -143,6 +157,13 @@ function StudentRow({
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
             {row.fullName}
           </p>
+          {row.enteredByName && (
+            <p className="text-[10px] text-gray-400 dark:text-white/30 truncate flex items-center gap-1">
+              {lockedByOther && <Lock className="w-2.5 h-2.5 shrink-0" />}
+              Entered by {row.enteredByName}
+              {lockedByOther && ' — read-only'}
+            </p>
+          )}
         </div>
         {row.workflowStatus && (
           <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full shrink-0', WORKFLOW_BADGE[row.workflowStatus].className)}>
@@ -256,6 +277,10 @@ function SimpleMarksEntryPage() {
   }>();
   const subjectName = encodedSubject ? decodeURIComponent(encodedSubject) : undefined;
   const navigate = useNavigate();
+  // Works under both /teacher/marks/... and /principal/marks/... — derive
+  // "back to the hub" from wherever this page is actually mounted rather
+  // than threading a basePath prop through every nested component.
+  const basePath = useLocation().pathname.split('/marks/')[0] || '/teacher';
 
   const target: Partial<MarksBatchTarget> = { examId, class: cls, section, subjectName };
   const { data: table, isLoading, isError } = useMarksEntryTable(target);
@@ -307,6 +332,8 @@ function SimpleMarksEntryPage() {
           workflowStatus: existing?.workflowStatus ?? null,
           total: existing?.total,
           percentage: existing?.percentage,
+          enteredById: existing?.enteredById,
+          enteredByName: existing?.enteredByName,
         };
       }),
     );
@@ -352,7 +379,7 @@ function SimpleMarksEntryPage() {
     const byStudent = new Map(result.extracted.map((e) => [e.studentId, e]));
     setRows((prev) => prev.map((r) => {
       const ext = byStudent.get(r.studentId);
-      if (!ext || !rowIsEditable(r.workflowStatus)) return r;
+      if (!ext || !canEditRow(r)) return r;
       return { ...r, componentScores: ext.componentScores };
     }));
     setAiFilledIds(new Set(result.extracted.map((e) => e.studentId)));
@@ -365,6 +392,9 @@ function SimpleMarksEntryPage() {
   const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus));
   const allEditable = rows.length > 0 && editableRows.length === rows.length;
   const someLocked = rows.length > 0 && editableRows.length === 0;
+
+  const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus) && !rowIsLockedByOther(r, user?.userId, user?.role);
+  const otherOwnedCount = editableRows.filter((r) => rowIsLockedByOther(r, user?.userId, user?.role)).length;
 
   const maxByComponentName = useMemo(
     () => new Map((table?.exam.components ?? []).map((c) => [c.name, c.maxMarks])),
@@ -388,7 +418,7 @@ function SimpleMarksEntryPage() {
 
   async function handleSaveDraft() {
     if (!cls || !section || !examId || !subjectName) return;
-    const ready = editableRows.filter((r) => rowIsComplete(r, maxByComponentName) && !rowIsUntouched(r));
+    const ready = editableRows.filter((r) => canEditRow(r) && rowIsComplete(r, maxByComponentName) && !rowIsUntouched(r));
     if (ready.length === 0) {
       toast.error('Nothing to save yet', { description: 'Enter at least one student’s marks first.' });
       return;
@@ -450,7 +480,7 @@ function SimpleMarksEntryPage() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/teacher/marks')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+          <button type="button" onClick={() => navigate(`${basePath}/marks`)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/70" />
           </button>
           <div className="flex-1 min-w-0">
@@ -525,6 +555,14 @@ function SimpleMarksEntryPage() {
               </p>
             </div>
           )}
+          {!someLocked && otherOwnedCount > 0 && (
+            <div className="mx-4 mt-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
+              <Lock className="w-5 h-5 text-gray-500 dark:text-white/40 shrink-0" />
+              <p className="text-sm font-semibold text-gray-600 dark:text-white/60">
+                {otherOwnedCount} student{otherOwnedCount === 1 ? '' : 's'} already {otherOwnedCount === 1 ? 'has' : 'have'} marks entered by another teacher — shown read-only below.
+              </p>
+            </div>
+          )}
 
           <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
             {rows.length === 0 ? (
@@ -538,7 +576,8 @@ function SimpleMarksEntryPage() {
                   row={row}
                   index={i}
                   maxByComponent={table.exam.components}
-                  editable={rowIsEditable(row.workflowStatus)}
+                  editable={canEditRow(row)}
+                  lockedByOther={rowIsLockedByOther(row, user?.userId, user?.role)}
                   aiFilled={aiFilledIds.has(row.studentId)}
                   onChangeScore={handleChangeScore}
                   onChangeStatus={handleChangeStatus}
@@ -607,6 +646,8 @@ interface SkillRowState {
   workflowStatus: MarksWorkflowStatus | null;
   total?: number;
   percentage?: number;
+  enteredById?: string;
+  enteredByName?: string;
 }
 
 interface CompoundRowState {
@@ -622,6 +663,10 @@ function defaultComponentScores(exam: Exam): ComponentScore[] {
 
 function skillRowIsEditable(status: MarksWorkflowStatus | null): boolean {
   return status === null || status === 'draft' || status === 'needs_correction' || status === 'reopened';
+}
+
+function skillRowCanEditByUser(row: SkillRowState, currentUserId: string | undefined, role: string | undefined): boolean {
+  return skillRowIsEditable(row.workflowStatus) && !(role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId);
 }
 
 function skillRowIsComplete(row: SkillRowState, maxByName: Map<string, number>): boolean {
@@ -641,7 +686,9 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
   cls: string; section: string; subjectName: string; examId: string; skills: string[]; exam: Exam;
 }) {
   const navigate = useNavigate();
+  const basePath = useLocation().pathname.split('/marks/')[0] || '/teacher';
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const skillTargets = useMemo(
     () => skills.map((skill) => ({ skill, subjectName: `${subjectName} - ${skill}`, target: { examId, class: cls, section, subjectName: `${subjectName} - ${skill}` } as MarksBatchTarget })),
@@ -687,6 +734,8 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
               workflowStatus: existing?.workflowStatus ?? null,
               total: existing?.total,
               percentage: existing?.percentage,
+              enteredById: existing?.enteredById,
+              enteredByName: existing?.enteredByName,
             };
             return [skill, state];
           }),
@@ -756,7 +805,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
     try {
       let savedAny = false;
       for (const { skill, subjectName: skillSubject } of skillTargets) {
-        const ready = rows.filter((r) => skillRowIsEditable(r.bySkill[skill].workflowStatus) && skillRowIsComplete(r.bySkill[skill], maxByComponentName) && !skillRowIsUntouched(r.bySkill[skill]));
+        const ready = rows.filter((r) => skillRowCanEditByUser(r.bySkill[skill], user?.userId, user?.role) && skillRowIsComplete(r.bySkill[skill], maxByComponentName) && !skillRowIsUntouched(r.bySkill[skill]));
         if (ready.length === 0) continue;
         savedAny = true;
         await marksApi.bulkUpsert({
@@ -802,7 +851,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/teacher/marks')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+          <button type="button" onClick={() => navigate(`${basePath}/marks`)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-white/70" />
           </button>
           <div className="flex-1 min-w-0">
@@ -864,7 +913,8 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                     <div className="flex flex-wrap gap-3 pl-9">
                       {skills.map((skill) => {
                         const skillRow = row.bySkill[skill];
-                        const canEdit = skillRowIsEditable(skillRow.workflowStatus);
+                        const canEdit = skillRowCanEditByUser(skillRow, user?.userId, user?.role);
+                        const lockedByOther = !!skillRow.enteredById && user?.role === 'teacher' && skillRow.enteredById !== user?.userId;
                         const status = skillRow.componentScores[0]?.status ?? 'present';
                         const isPresent = status === 'present';
                         return (
@@ -877,6 +927,12 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                                 </span>
                               )}
                             </div>
+                            {skillRow.enteredByName && (
+                              <p className="text-[9px] text-gray-400 dark:text-white/30 truncate flex items-center gap-1">
+                                {lockedByOther && <Lock className="w-2.5 h-2.5 shrink-0" />}
+                                {skillRow.enteredByName}
+                              </p>
+                            )}
                             <select
                               value={status}
                               disabled={!canEdit}

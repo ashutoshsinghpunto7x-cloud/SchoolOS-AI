@@ -136,6 +136,7 @@ const NAV_SECTION_PRINCIPAL_ACADEMICS = [
   { label: 'Planner (Legacy)',     icon: CalendarClock,  path: '/principal/planner',       end: false },
   { label: 'Academic Plan',        icon: Sparkles,       path: '/principal/academic-plan', end: false },
   { label: 'Question Bank Overview', icon: Library,      path: '/principal/question-bank-overview', end: false },
+  { label: 'Marks & Report Cards', icon: ClipboardCheck, path: '/principal/marks',          end: false },
   { label: 'Exams',                icon: ClipboardList,  path: '/exams',                    end: false },
   { label: 'Report Card Templates', icon: FileBarChart,  path: '/report-card-templates',   end: false },
   { label: 'Report Cards',         icon: ClipboardCheck, path: '/term-report-cards',        end: false },

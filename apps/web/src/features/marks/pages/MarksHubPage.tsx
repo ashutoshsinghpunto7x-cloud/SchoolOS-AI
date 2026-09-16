@@ -1,10 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText } from 'lucide-react';
-import { useTeacherWorkspace } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
+import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles } from 'lucide-react';
+import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
 import { useExamsForClass } from '../hooks/useExams';
+import { TermAiCaptureModal } from '../components/TermAiCaptureModal';
 import { cn } from '@/lib/utils';
 import type { Exam } from '@schoolos/types';
+
+function defaultAcademicYear(): string {
+  const y = new Date().getFullYear();
+  return `${y}-${String(y + 1).slice(2)}`;
+}
 
 interface SubjectEntry {
   cls: string;
@@ -38,6 +44,7 @@ function SkeletonCard() {
 function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack: () => void; onPickExam: (exam: Exam) => void }) {
   const { data: exams, isLoading, isError } = useExamsForClass(entry.cls);
   const applicable = (exams ?? []).filter((e) => e.subjects.includes(entry.subjectName));
+  const [showTermAi, setShowTermAi] = useState(false);
 
   return (
     <div className="px-4 py-5 max-w-2xl mx-auto">
@@ -97,25 +104,60 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
           ))
         )}
       </div>
+
+      {applicable.length >= 2 && (
+        <button
+          type="button"
+          onClick={() => setShowTermAi(true)}
+          className="w-full text-left flex items-center gap-4 rounded-2xl px-4 py-4 mt-3 shadow-sm hover:shadow-md transition-shadow bg-gradient-to-r from-violet-600 to-pink-500"
+        >
+          <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white">AI Fill — Unit Tests + Half Yearly</p>
+            <p className="text-xs text-white/70 mt-0.5">One combined register photo fills all three exams at once</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
+        </button>
+      )}
+
+      {showTermAi && (
+        <TermAiCaptureModal
+          cls={entry.cls}
+          section={entry.section}
+          subjectName={entry.subjectName}
+          exams={applicable}
+          onClose={() => setShowTermAi(false)}
+        />
+      )}
     </div>
   );
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export function MarksHubPage() {
+// Marks access is open school-wide (2026-09-16): every teacher can see and
+// enter marks for every class/section/subject in the school, not just the
+// ones they're personally timetabled for. The whole-school master grid
+// (the same data source as the Principal's School Timetable screen) already
+// lists every class+section+subject combination, so it doubles as this
+// "all classes and subjects" picker with no separate endpoint needed. A
+// saved record is still protected — see the per-record edit lock shown on
+// each student row once an exam is opened.
+export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useTeacherWorkspace();
+  const { data, isLoading, isError } = useMasterGrid({ academicYear: defaultAcademicYear() });
   const [selected, setSelected] = useState<SubjectEntry | null>(null);
 
   const entries = useMemo<SubjectEntry[]>(() => {
     if (!data) return [];
     const seen = new Map<string, SubjectEntry>();
-    for (const day of data.weekSchedule) {
-      for (const e of day.entries) {
-        if (!e.subjectName) continue;
-        const key = `${e.class}||${e.section}||${e.subjectName}`;
-        seen.set(key, { cls: e.class, section: e.section, subjectName: e.subjectName });
+    for (const row of data.rows) {
+      for (const cell of Object.values(row.cells)) {
+        if (!cell?.subjectName) continue;
+        const key = `${row.class}||${row.section}||${cell.subjectName}`;
+        seen.set(key, { cls: row.class, section: row.section, subjectName: cell.subjectName });
       }
     }
     return Array.from(seen.values()).sort((a, b) =>
@@ -130,7 +172,7 @@ export function MarksHubPage() {
         onBack={() => setSelected(null)}
         onPickExam={(exam) =>
           navigate(
-            `/teacher/marks/${selected.cls}/${selected.section}/${encodeURIComponent(selected.subjectName)}/${exam._id}`,
+            `${basePath}/marks/${selected.cls}/${selected.section}/${encodeURIComponent(selected.subjectName)}/${exam._id}`,
           )
         }
       />
@@ -141,7 +183,7 @@ export function MarksHubPage() {
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button
-          onClick={() => navigate('/teacher')}
+          onClick={() => navigate(basePath)}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-4 -ml-1 p-1"
           type="button"
         >
@@ -187,9 +229,9 @@ export function MarksHubPage() {
           ) : entries.length === 0 ? (
             <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
               <BookOpen className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
-              <p className="text-base font-semibold text-gray-700 dark:text-white/80">No subjects assigned</p>
+              <p className="text-base font-semibold text-gray-700 dark:text-white/80">No classes or subjects yet</p>
               <p className="text-sm text-gray-400 dark:text-white/30 mt-1">
-                Your principal hasn't assigned you a subject on the timetable yet.
+                No class timetable has been set up yet — ask an admin to configure one first.
               </p>
             </div>
           ) : (

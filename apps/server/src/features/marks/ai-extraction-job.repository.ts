@@ -1,5 +1,5 @@
 import { AiExtractionJob, IAiExtractionJob, AiExtractionJobKind } from './ai-extraction-job.model';
-import type { MarksExtractionResult } from './marks-extraction.service';
+import type { MarksExtractionResult, TermMarksExtractionResult } from './marks-extraction.service';
 
 export const aiExtractionJobRepository = {
   async create(data: { schoolId: string; userId: string; kind: AiExtractionJobKind }): Promise<IAiExtractionJob> {
@@ -10,7 +10,7 @@ export const aiExtractionJobRepository = {
     return AiExtractionJob.findOne({ _id: id, schoolId }).lean<IAiExtractionJob>();
   },
 
-  async markCompleted(id: string, result: MarksExtractionResult): Promise<void> {
+  async markCompleted(id: string, result: MarksExtractionResult | TermMarksExtractionResult): Promise<void> {
     await AiExtractionJob.updateOne({ _id: id }, { $set: { status: 'completed', result } });
   },
 

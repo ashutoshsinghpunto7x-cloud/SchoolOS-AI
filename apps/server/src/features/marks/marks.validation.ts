@@ -83,6 +83,17 @@ export const entryTableQuerySchema = z.object({
   subjectName: z.string({ required_error: 'subjectName is required' }).min(1).trim(),
 });
 
+// ── Term (multi-exam) AI capture — one combined register photo covering Unit
+// Test 1, Unit Test 2 and the Half Yearly/main exam for a single subject ────
+export const termExtractionQuerySchema = z.object({
+  class:           z.string({ required_error: 'class is required' }).min(1).trim(),
+  section:         z.string({ required_error: 'section is required' }).min(1).trim(),
+  subjectName:     z.string({ required_error: 'subjectName is required' }).min(1).trim(),
+  unitTest1ExamId: z.string({ required_error: 'unitTest1ExamId is required' }).min(1),
+  unitTest2ExamId: z.string({ required_error: 'unitTest2ExamId is required' }).min(1),
+  mainExamId:      z.string({ required_error: 'mainExamId is required' }).min(1),
+});
+
 // ── Inferred types ────────────────────────────────────────────────────────────
 
 export type UpsertMarksInput     = z.infer<typeof upsertMarksSchema>;
@@ -92,3 +103,4 @@ export type ReviewActionInput    = z.infer<typeof reviewActionSchema>;
 export type ReopenActionInput    = z.infer<typeof reopenActionSchema>;
 export type ListMarksInput       = z.infer<typeof listMarksSchema>;
 export type EntryTableQuery      = z.infer<typeof entryTableQuerySchema>;
+export type TermExtractionQuery  = z.infer<typeof termExtractionQuerySchema>;

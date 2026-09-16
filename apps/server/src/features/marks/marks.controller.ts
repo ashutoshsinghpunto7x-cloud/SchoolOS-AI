@@ -118,6 +118,18 @@ export const marksController = {
     } catch (err) { next(err); }
   },
 
+  /** POST /marks/extract/term-image — same background-job pattern, for a
+   *  combined register photo covering Unit Test 1 + Unit Test 2 + Half
+   *  Yearly at once. */
+  async extractTermFromImage(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) throw new ValidationError('An image file is required');
+      const ctx = buildAuthContext(req.user!);
+      const job = await marksExtractionService.enqueueExtractTermFromImage(req.query, fileToDataUri(req.file), ctx);
+      sendCreated(res, job, 'Reading the photo…');
+    } catch (err) { next(err); }
+  },
+
   /** POST /marks/extract/voice — same as extractFromImage, for a voice note
    *  (Whisper transcription + GPT can take up to ~60s — always backgrounded). */
   async extractFromVoice(req: Request, res: Response, next: NextFunction): Promise<void> {
