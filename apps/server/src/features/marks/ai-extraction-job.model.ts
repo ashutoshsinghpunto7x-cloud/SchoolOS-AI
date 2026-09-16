@@ -31,7 +31,7 @@ const aiExtractionJobSchema = new Schema<IAiExtractionJob>(
   {
     schoolId: { type: String, required: true },
     userId:   { type: String, required: true },
-    kind:     { type: String, enum: ['image', 'voice'], required: true },
+    kind:     { type: String, enum: ['image', 'voice', 'term-image'], required: true },
     status:   { type: String, enum: ['processing', 'completed', 'failed'], default: 'processing' },
     result:   { type: Schema.Types.Mixed },
     error:    { type: String },
