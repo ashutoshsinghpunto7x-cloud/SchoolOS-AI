@@ -100,9 +100,8 @@ export const reportCardTemplateService = {
   async update(id: string, rawInput: unknown, ctx: AuthContext): Promise<IReportCardTemplate> {
     const existing = await reportCardTemplateRepository.findById(id, ctx.schoolId);
     if (!existing) throw new NotFoundError('Report card template');
-    if (existing.status === 'published') {
-      throw new ValidationError('This template is published — a principal can still edit it, but any change immediately affects future report-card generation for this class');
-    }
+    // Editing a published template is allowed (route access is already admin/principal-only) —
+    // it just means the change immediately affects future report-card generation for this class.
 
     const data = updateReportCardTemplateSchema.parse(rawInput);
     const update: Record<string, unknown> = { updatedBy: ctx.displayName };
