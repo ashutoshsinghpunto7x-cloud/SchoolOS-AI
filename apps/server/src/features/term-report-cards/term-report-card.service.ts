@@ -215,29 +215,27 @@ function gradeForPercent(gradingKey: IReportCardTemplate['gradingKey'], percent:
   return gradingKey.find((g) => g.minPercent != null && g.maxPercent != null && percent >= g.minPercent && percent <= g.maxPercent)?.label;
 }
 
-/** SS1/SS2 skill grades reflect the student's overall performance for that term — they are
- *  derived from the term's percentage against the template's grading key, not entered by hand.
- *  A prior manual correction (via updateSkills) is preserved across regenerates; only rows with
- *  no existing override get the freshly computed grade. */
+/** SS1/SS2 skill grades reflect the student's overall performance for that term — they're
+ *  always (re)derived from the term's percentage against the template's grading key, never
+ *  left as whatever was typed in previously, so they can't drift out of sync with the marks
+ *  a mark correction just changed. `updateSkills` can still set a one-off override, but the
+ *  next mark correction or regenerate recomputes over it. */
 function reconcileSkills(
-  template: IReportCardTemplate, existing: ITermReportCardSkillEntry[], firstTermPercent: number, finalTermPercent: number,
+  template: IReportCardTemplate, firstTermPercent: number, finalTermPercent: number,
 ): ITermReportCardSkillEntry[] {
-  const existingByRowId = new Map(existing.map((e) => [e.rowId, e]));
   const autoFirstTermGrade = gradeForPercent(template.gradingKey, firstTermPercent) as SkillGrade | undefined;
   const autoFinalTermGrade = gradeForPercent(template.gradingKey, finalTermPercent) as SkillGrade | undefined;
   const result: ITermReportCardSkillEntry[] = [];
 
   for (const section of template.skillSections) {
     for (const row of section.rows) {
-      const rowId = row._id.toString();
-      const prev = existingByRowId.get(rowId);
       result.push({
         sectionId: section._id.toString(),
         sectionName: section.name,
-        rowId,
+        rowId: row._id.toString(),
         rowLabel: row.label,
-        firstTermGrade: prev?.firstTermGrade ?? autoFirstTermGrade,
-        finalTermGrade: prev?.finalTermGrade ?? autoFinalTermGrade,
+        firstTermGrade: autoFirstTermGrade,
+        finalTermGrade: autoFinalTermGrade,
       });
     }
   }
@@ -296,7 +294,7 @@ export const termReportCardService = {
 
     const existing = await termReportCardRepository.findByStudentYear(ctx.schoolId, studentId, academicYear);
     const skills = reconcileSkills(
-      template, existing?.skills ?? [],
+      template,
       firstTerm.termTotalMax > 0 ? firstTerm.termPercentage : NaN,
       finalTerm.termTotalMax > 0 ? finalTerm.termPercentage : NaN,
     );
@@ -437,6 +435,15 @@ export const termReportCardService = {
           ? averages.filter((a) => a > card.grandAveragePercent).length + 1
           : card.summary.rank;
         card.summary.classSize = classSize;
+
+        // A mark correction changes the same percentages the skill/overall grades are
+        // derived from — keep them in step rather than only refreshing on full regenerate.
+        card.overallGrade = card.grandTotalMax > 0 ? gradeForPercent(template.gradingKey, card.grandAveragePercent) : undefined;
+        card.skills = reconcileSkills(
+          template,
+          card.firstTerm.termTotalMax > 0 ? card.firstTerm.termPercentage : NaN,
+          card.finalTerm.termTotalMax > 0 ? card.finalTerm.termPercentage : NaN,
+        );
       }
     }
 
