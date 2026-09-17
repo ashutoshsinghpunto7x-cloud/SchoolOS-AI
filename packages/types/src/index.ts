@@ -4401,6 +4401,9 @@ export interface ReportCardAttendance {
   halfDay: number;
   leaveApproved: number;
   percent: number;
+  /** Term report cards only: set once a teacher/admin corrects this term's
+   *  attendance via "Fix attendance" — a regenerate then leaves it as corrected. */
+  manuallyCorrected?: boolean;
 }
 
 export interface ReportCardAiRemark {
@@ -4584,6 +4587,9 @@ export interface TermReportCardSubjectRow {
   termMaxMarks: number;
   grade?: string;
   result: MarksResultStatus;
+  /** Set once a teacher/admin corrects this row via "Fix a mark" — a regenerate then
+   *  leaves this row exactly as corrected instead of overwriting it from Marks. */
+  manuallyCorrected?: boolean;
 }
 
 export interface TermReportCardTermBlock {

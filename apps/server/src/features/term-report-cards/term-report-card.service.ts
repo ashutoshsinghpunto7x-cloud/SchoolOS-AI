@@ -4,7 +4,7 @@ import { termReportCardRepository } from './term-report-card.repository';
 import { reportCardTemplateRepository } from '../report-card-templates/report-card-template.repository';
 import { env } from '../../config/env';
 import {
-  ITermReportCard, ITermBlock, ITermSubjectRow, ITermReportCardSkillEntry, SkillGrade,
+  ITermReportCard, ITermBlock, ITermSubjectRow, ITermAttendance, ITermReportCardSkillEntry, SkillGrade,
 } from './term-report-card.model';
 import { IReportCardTemplate, ITemplateExamSlot, ITemplateSubjectRow } from '../report-card-templates/report-card-template.model';
 import {
@@ -41,14 +41,21 @@ async function findMarksForExam(schoolId: string, examId: string | undefined, st
 /** Best-of-two-unit-tests merge for one term. Never fabricates a total when
  *  the main exam score is still missing — surfaces a warning instead, so a
  *  teacher can generate the card after only Unit Test 1 exists and regenerate
- *  once more marks land without losing anything. */
+ *  once more marks land without losing anything.
+ *
+ *  `existingRows` are this term's subject rows from the card as it stood before
+ *  this (re)generate — any row already flagged `manuallyCorrected` (via "Fix a
+ *  mark") is carried over untouched instead of being overwritten from Marks, so
+ *  regenerating to pick up newly-entered marks elsewhere never wipes a correction. */
 async function buildTermBlock(
   schoolId: string, studentId: string, template: IReportCardTemplate, slot: ITemplateExamSlot, termLabel: string,
+  existingRows: ITermSubjectRow[],
 ): Promise<{ block: Omit<ITermBlock, 'attendance'>; warnings: string[] }> {
   const warnings: string[] = [];
   const subjectRows: ITermSubjectRow[] = [];
   let termTotalObtained = 0;
   let termTotalMax = 0;
+  const existingBySubjectId = new Map(existingRows.map((r) => [r.subjectId, r]));
 
   // One query per exam slot (not per subject) — see findMarksForExam.
   const [ut1Marks, ut2Marks, mainMarks] = await Promise.all([
@@ -66,6 +73,19 @@ async function buildTermBlock(
     ?? (subject.marksSubjectName ? records.find((r) => r.subjectName === subject.marksSubjectName) : undefined);
 
   for (const subject of template.subjects) {
+    const subjectId = subject._id.toString();
+    const existingRow = existingBySubjectId.get(subjectId);
+    const termMaxMarks = subject.unitTestMaxMarks + subject.mainExamMaxMarks;
+
+    if (existingRow?.manuallyCorrected) {
+      subjectRows.push({ ...existingRow, subjectName: subject.name, unitTestMaxMarks: subject.unitTestMaxMarks, mainExamMaxMarks: subject.mainExamMaxMarks, termMaxMarks });
+      if (existingRow.termTotal != null && (existingRow.evaluationType === 'marks' || existingRow.evaluationType === 'both')) {
+        termTotalObtained += existingRow.termTotal;
+        termTotalMax += termMaxMarks;
+      }
+      continue;
+    }
+
     const ut1 = findFor(ut1Marks, subject);
     const ut2 = findFor(ut2Marks, subject);
     const main = findFor(mainMarks, subject);
@@ -78,14 +98,13 @@ async function buildTermBlock(
         : unitTest1Score ?? unitTest2Score ?? undefined;
     const mainExamScore = scoreFromMarks(main);
 
-    const termMaxMarks = subject.unitTestMaxMarks + subject.mainExamMaxMarks;
     const termTotal = bestUnitTestScore != null && mainExamScore != null ? bestUnitTestScore + mainExamScore : undefined;
 
     if (bestUnitTestScore == null) warnings.push(`${subject.name}: no Unit Test score yet for ${termLabel}`);
     if (mainExamScore == null) warnings.push(`${subject.name}: main exam score not yet entered for ${termLabel}`);
 
     subjectRows.push({
-      subjectId: subject._id.toString(),
+      subjectId,
       subjectName: subject.name,
       evaluationType: subject.evaluationType,
       unitTestMaxMarks: subject.unitTestMaxMarks,
@@ -122,7 +141,15 @@ async function buildTermBlock(
   };
 }
 
-async function buildTermAttendance(schoolId: string, studentId: string, slot: ITemplateExamSlot, warnings: string[], termLabel: string) {
+/** `existingAttendance` is this term's attendance from the card as it stood before this
+ *  (re)generate — if it was flagged `manuallyCorrected` (via "Fix attendance"), it's carried
+ *  over untouched instead of being recomputed from the Attendance module. */
+async function buildTermAttendance(
+  schoolId: string, studentId: string, slot: ITemplateExamSlot, warnings: string[], termLabel: string,
+  existingAttendance: ITermAttendance | undefined,
+): Promise<ITermAttendance> {
+  if (existingAttendance?.manuallyCorrected) return existingAttendance;
+
   if (!slot.startDate || !slot.endDate) {
     warnings.push(`${termLabel}: term date range not configured on the template — showing full-year attendance`);
   }
@@ -156,9 +183,11 @@ async function computeClassStats(
   // class in parallel rather than one student at a time is safe and fast.
   const perStudent = await Promise.all(students.map(async (s) => {
     const studentId = String(s._id);
+    // Classmate averages/ranks are a fresh read of the underlying Marks — not the
+    // one card being viewed — so there's no "existing corrected rows" to carry over here.
     const [firstTerm, finalTerm] = await Promise.all([
-      buildTermBlock(schoolId, studentId, template, template.examSlots.firstTerm, 'First Term'),
-      buildTermBlock(schoolId, studentId, template, template.examSlots.finalTerm, 'Final Term'),
+      buildTermBlock(schoolId, studentId, template, template.examSlots.firstTerm, 'First Term', []),
+      buildTermBlock(schoolId, studentId, template, template.examSlots.finalTerm, 'Final Term', []),
     ]);
     return { firstTerm, finalTerm };
   }));
@@ -258,15 +287,19 @@ export const termReportCardService = {
       throw new ValidationError(`The report card template for class "${student.class}" (${academicYear}) is still a draft — publish it before generating cards`);
     }
 
+    // Fetched up front (not just for verificationToken, below) so a regenerate can carry
+    // forward any row/attendance a teacher already corrected by hand instead of wiping it.
+    const existing = await termReportCardRepository.findByStudentYear(ctx.schoolId, studentId, academicYear);
+
     const [firstTermResult, finalTermResult] = await Promise.all([
-      buildTermBlock(ctx.schoolId, studentId, template, template.examSlots.firstTerm, 'First Term'),
-      buildTermBlock(ctx.schoolId, studentId, template, template.examSlots.finalTerm, 'Final Term'),
+      buildTermBlock(ctx.schoolId, studentId, template, template.examSlots.firstTerm, 'First Term', existing?.firstTerm.subjectRows ?? []),
+      buildTermBlock(ctx.schoolId, studentId, template, template.examSlots.finalTerm, 'Final Term', existing?.finalTerm.subjectRows ?? []),
     ]);
 
     const warnings = [...firstTermResult.warnings, ...finalTermResult.warnings];
 
-    const firstTermAttendance = await buildTermAttendance(ctx.schoolId, studentId, template.examSlots.firstTerm, warnings, 'First Term');
-    const finalTermAttendance = await buildTermAttendance(ctx.schoolId, studentId, template.examSlots.finalTerm, warnings, 'Final Term');
+    const firstTermAttendance = await buildTermAttendance(ctx.schoolId, studentId, template.examSlots.firstTerm, warnings, 'First Term', existing?.firstTerm.attendance);
+    const finalTermAttendance = await buildTermAttendance(ctx.schoolId, studentId, template.examSlots.finalTerm, warnings, 'Final Term', existing?.finalTerm.attendance);
 
     const firstTerm: ITermBlock = { ...firstTermResult.block, attendance: firstTermAttendance };
     const finalTerm: ITermBlock = { ...finalTermResult.block, attendance: finalTermAttendance };
@@ -292,7 +325,6 @@ export const termReportCardService = {
     const hasFinalTermData = finalTerm.termTotalMax > 0;
     const promotionStatus = derivePromotionStatus(hasFinalTermData, 33, grandAveragePercent);
 
-    const existing = await termReportCardRepository.findByStudentYear(ctx.schoolId, studentId, academicYear);
     const skills = reconcileSkills(
       template,
       firstTerm.termTotalMax > 0 ? firstTerm.termPercentage : NaN,
@@ -412,6 +444,9 @@ export const termReportCardService = {
         }
         if (correction.grade !== undefined) row.grade = correction.grade;
         if (correction.evaluationType !== undefined) row.evaluationType = correction.evaluationType;
+        // From here on, a regenerate leaves this row exactly as corrected instead of
+        // overwriting it from Marks — that's the whole point of correcting it by hand.
+        row.manuallyCorrected = true;
       }
       card.markModified('firstTerm');
       card.markModified('finalTerm');
@@ -460,6 +495,9 @@ export const termReportCardService = {
       // (which is what auto-fills this block originally), so a manually
       // corrected count still produces a consistent percentage.
       a.percent = a.workingDays > 0 ? Math.round(((a.present + a.late + a.halfDay) / a.workingDays) * 100) : 0;
+      // From here on, a regenerate leaves this term's attendance exactly as corrected
+      // instead of recomputing it from the Attendance module.
+      a.manuallyCorrected = true;
       card.markModified(data.attendance.term);
     }
 

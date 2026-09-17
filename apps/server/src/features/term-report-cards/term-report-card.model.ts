@@ -24,6 +24,9 @@ export interface ITermSubjectRow {
   termMaxMarks: number;
   grade?: string;
   result: ResultStatus;
+  /** Set once a teacher/admin corrects this row via "Fix a mark" — a regenerate then
+   *  leaves this row exactly as corrected instead of overwriting it from Marks. */
+  manuallyCorrected?: boolean;
 }
 
 export interface ITermAttendance {
@@ -34,6 +37,9 @@ export interface ITermAttendance {
   halfDay: number;
   leaveApproved: number;
   percent: number;
+  /** Set once a teacher/admin corrects this term's attendance via "Fix attendance" — a
+   *  regenerate then leaves it exactly as corrected instead of recomputing it. */
+  manuallyCorrected?: boolean;
 }
 
 export interface ITermBlock {
@@ -113,19 +119,21 @@ const termSubjectRowSchema = new Schema<ITermSubjectRow>(
     termMaxMarks:      { type: Number, required: true, min: 0 },
     grade:             { type: String, trim: true },
     result:            { type: String, enum: ['pass', 'fail', 'na'], default: 'na' },
+    manuallyCorrected: { type: Boolean, default: false },
   },
   { _id: false },
 );
 
 const termAttendanceSchema = new Schema<ITermAttendance>(
   {
-    workingDays:   { type: Number, required: true, default: 0 },
-    present:       { type: Number, required: true, default: 0 },
-    absent:        { type: Number, required: true, default: 0 },
-    late:          { type: Number, required: true, default: 0 },
-    halfDay:       { type: Number, required: true, default: 0 },
-    leaveApproved: { type: Number, required: true, default: 0 },
-    percent:       { type: Number, required: true, default: 0 },
+    workingDays:       { type: Number, required: true, default: 0 },
+    present:           { type: Number, required: true, default: 0 },
+    absent:            { type: Number, required: true, default: 0 },
+    late:              { type: Number, required: true, default: 0 },
+    halfDay:           { type: Number, required: true, default: 0 },
+    leaveApproved:     { type: Number, required: true, default: 0 },
+    percent:           { type: Number, required: true, default: 0 },
+    manuallyCorrected: { type: Boolean, default: false },
   },
   { _id: false },
 );

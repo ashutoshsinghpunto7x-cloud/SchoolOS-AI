@@ -105,13 +105,9 @@ export function TermReportCardPreviewPage() {
         {resolvedCard.status === 'draft' && (
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm('Recompute this card from the latest marks? Any manual "Fix a mark" corrections will be overwritten.')) {
-                generate.mutate({ studentId, academicYear });
-              }
-            }}
+            onClick={() => generate.mutate({ studentId, academicYear })}
             disabled={generate.isPending}
-            title="Marks entered after this card was first generated don't show up on their own — recompute to pick them up"
+            title="Pulls in marks entered after this card was first generated — any row you've corrected by hand with 'Fix a mark' is left exactly as you set it"
             className="h-9 px-3.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
           >
             {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
