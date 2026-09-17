@@ -4480,7 +4480,7 @@ export interface ReportCardVerification {
 // ── Report Card Templates (per-class, per-year configurable CBSE-style layout) ─
 
 export type ReportCardTemplateStatus = 'draft' | 'published';
-export type SkillGrade = 'A' | 'B' | 'C' | 'D';
+export type SkillGrade = 'A+' | 'A' | 'B' | 'C' | 'D';
 
 export interface TemplateSubjectRow {
   /** Absent for a row not yet saved to the server — set once persisted, and

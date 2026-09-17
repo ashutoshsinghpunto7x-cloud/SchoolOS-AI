@@ -42,7 +42,7 @@ export const updateTermReportCardSchema = z.object({
   attendance:      termAttendanceCorrectionSchema.optional(),
 });
 
-const skillGradeSchema = z.enum(['A', 'B', 'C', 'D']);
+const skillGradeSchema = z.enum(['A+', 'A', 'B', 'C', 'D']);
 
 const skillUpdateEntrySchema = z.object({
   rowId:          z.string({ required_error: 'rowId is required' }).min(1),

@@ -7,7 +7,7 @@ import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSet
 import { useReportCardTemplateByClassYear } from '@/features/report-card-templates/hooks/useReportCardTemplate';
 import {
   useTermReportCardByStudentYear, useGenerateTermReportCard, useTermReportCardQr,
-  useUpdateTermReportCard, usePublishTermReportCard,
+  useUpdateTermReportCard, useUpdateTermReportCardSkills, usePublishTermReportCard,
 } from '../hooks/useTermReportCard';
 import { TermReportCardDocument } from '../components/TermReportCardDocument';
 
@@ -20,6 +20,7 @@ export function TermReportCardPreviewPage() {
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [editingMarks, setEditingMarks] = useState(false);
   const [editingAttendance, setEditingAttendance] = useState(false);
+  const [editingSkills, setEditingSkills] = useState(false);
   const [warningsOpen, setWarningsOpen] = useState(false);
   const printAreaId = `term-report-card-print-${useId().replace(/[:]/g, '')}`;
 
@@ -32,6 +33,7 @@ export function TermReportCardPreviewPage() {
 
   const card = existingCard;
   const updateCard = useUpdateTermReportCard(card?._id ?? '');
+  const updateSkills = useUpdateTermReportCardSkills(card?._id ?? '');
   const publish = usePublishTermReportCard(card?._id ?? '');
 
   useEffect(() => {
@@ -173,6 +175,17 @@ export function TermReportCardPreviewPage() {
           onToggle={() => setEditingAttendance((v) => !v)}
           onSave={(attendance) => { updateCard.mutate({ attendance }); setEditingAttendance(false); }}
           saving={updateCard.isPending}
+        />
+      </div>
+
+      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+        <SkillsCorrectionPanel
+          card={resolvedCard}
+          template={template}
+          editing={editingSkills}
+          onToggle={() => setEditingSkills((v) => !v)}
+          onSave={(skills) => { updateSkills.mutate({ skills }); setEditingSkills(false); }}
+          saving={updateSkills.isPending}
         />
       </div>
 
@@ -495,6 +508,123 @@ function AttendanceCorrectionPanel({
               className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
             >
               {saving ? 'Saving…' : 'Save attendance'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Skills correction ────────────────────────────────────────────────────────
+// The "English Language Skills" / "Personal, Social and Work Habits" sections
+// (SS1/SS2) have no marks basis — a teacher assigns each row's grade directly,
+// per term. Same "fix it here" pattern as marks/attendance above; this was the
+// one piece of the card nothing in the app could actually write to.
+
+const SKILL_GRADE_OPTIONS: import('@schoolos/types').SkillGrade[] = ['A+', 'A', 'B', 'C', 'D'];
+
+function SkillsCorrectionPanel({
+  card, template, editing, onToggle, onSave, saving,
+}: {
+  card: import('@schoolos/types').TermReportCard;
+  template: import('@schoolos/types').ReportCardTemplate;
+  editing: boolean;
+  onToggle: () => void;
+  onSave: (skills: { rowId: string; firstTermGrade?: import('@schoolos/types').SkillGrade; finalTermGrade?: import('@schoolos/types').SkillGrade }[]) => void;
+  saving: boolean;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, { firstTermGrade: string; finalTermGrade: string }>>({});
+
+  const gradeByRowId = new Map(card.skills.map((s) => [s.rowId, s]));
+
+  function startEditing() {
+    const initial: Record<string, { firstTermGrade: string; finalTermGrade: string }> = {};
+    for (const section of template.skillSections) {
+      for (const row of section.rows) {
+        const rowId = row._id ?? '';
+        const existing = gradeByRowId.get(rowId);
+        initial[rowId] = { firstTermGrade: existing?.firstTermGrade ?? '', finalTermGrade: existing?.finalTermGrade ?? '' };
+      }
+    }
+    setDrafts(initial);
+    onToggle();
+  }
+
+  function save() {
+    const skills: { rowId: string; firstTermGrade?: import('@schoolos/types').SkillGrade; finalTermGrade?: import('@schoolos/types').SkillGrade }[] = [];
+    for (const [rowId, draft] of Object.entries(drafts)) {
+      const existing = gradeByRowId.get(rowId);
+      const firstTermGrade = draft.firstTermGrade.trim() !== '' ? (draft.firstTermGrade as import('@schoolos/types').SkillGrade) : undefined;
+      const finalTermGrade = draft.finalTermGrade.trim() !== '' ? (draft.finalTermGrade as import('@schoolos/types').SkillGrade) : undefined;
+      if (firstTermGrade === undefined && finalTermGrade === undefined) continue;
+      if (firstTermGrade === existing?.firstTermGrade && finalTermGrade === existing?.finalTermGrade) continue;
+      const entry: { rowId: string; firstTermGrade?: import('@schoolos/types').SkillGrade; finalTermGrade?: import('@schoolos/types').SkillGrade } = { rowId };
+      if (firstTermGrade !== undefined) entry.firstTermGrade = firstTermGrade;
+      if (finalTermGrade !== undefined) entry.finalTermGrade = finalTermGrade;
+      skills.push(entry);
+    }
+    onSave(skills);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5 text-[#1C2B4A]" /> Skill Grades
+        </p>
+        {!editing && (
+          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#6D4AFF]">
+            Fix skill grades
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <p className="text-xs text-gray-400">English Language Skills and Personal/Social/Work Habits grades — click "Fix skill grades" to set each row's I Term / II Term grade.</p>
+      ) : (
+        <>
+          {template.skillSections.map((section) => (
+            <div key={section._id} className="mb-4 last:mb-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 mb-1.5">{section.name}</p>
+              <div className="space-y-1.5">
+                {section.rows.map((row) => {
+                  const rowId = row._id ?? '';
+                  const draft = drafts[rowId] ?? { firstTermGrade: '', finalTermGrade: '' };
+                  return (
+                    <div key={rowId} className="flex items-center gap-2 flex-wrap">
+                      <span className="w-48 shrink-0 text-xs text-gray-700">{row.label}</span>
+                      <select
+                        value={draft.firstTermGrade}
+                        onChange={(e) => setDrafts((d) => ({ ...d, [rowId]: { ...draft, firstTermGrade: e.target.value } }))}
+                        className="h-8 px-1.5 rounded-md border border-gray-200 text-xs text-gray-600"
+                        title="I Term grade"
+                      >
+                        <option value="">I Term —</option>
+                        {SKILL_GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      <select
+                        value={draft.finalTermGrade}
+                        onChange={(e) => setDrafts((d) => ({ ...d, [rowId]: { ...draft, finalTermGrade: e.target.value } }))}
+                        className="h-8 px-1.5 rounded-md border border-gray-200 text-xs text-gray-600"
+                        title="II Term grade"
+                      >
+                        <option value="">II Term —</option>
+                        {SKILL_GRADE_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end gap-2 mt-3">
+            <button type="button" onClick={onToggle} className="h-8 px-3 rounded-lg text-xs font-semibold text-gray-500">Cancel</button>
+            <button
+              type="button" onClick={save} disabled={saving}
+              className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-60"
+            >
+              {saving ? 'Saving…' : 'Save skill grades'}
             </button>
           </div>
         </>

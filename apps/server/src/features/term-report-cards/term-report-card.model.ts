@@ -6,7 +6,7 @@ import { PromotionStatus } from '../report-cards/report-card.model';
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
 export type TermReportCardStatus = 'draft' | 'published';
-export type SkillGrade = 'A' | 'B' | 'C' | 'D';
+export type SkillGrade = 'A+' | 'A' | 'B' | 'C' | 'D';
 
 // ── Sub-document interfaces ───────────────────────────────────────────────────
 
@@ -152,8 +152,8 @@ const skillEntrySchema = new Schema<ITermReportCardSkillEntry>(
     sectionName:    { type: String, required: true, trim: true },
     rowId:          { type: String, required: true },
     rowLabel:       { type: String, required: true, trim: true },
-    firstTermGrade: { type: String, enum: ['A', 'B', 'C', 'D'] },
-    finalTermGrade: { type: String, enum: ['A', 'B', 'C', 'D'] },
+    firstTermGrade: { type: String, enum: ['A+', 'A', 'B', 'C', 'D'] },
+    finalTermGrade: { type: String, enum: ['A+', 'A', 'B', 'C', 'D'] },
   },
   { _id: false },
 );
