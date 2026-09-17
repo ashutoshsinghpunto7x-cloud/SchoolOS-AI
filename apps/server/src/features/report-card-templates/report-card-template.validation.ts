@@ -31,6 +31,11 @@ const templateGradingKeyEntrySchema = z.object({
   label:       z.string({ required_error: 'grading key label is required' }).min(1).trim(),
   description: z.string({ required_error: 'grading key description is required' }).min(1).trim(),
   order:       z.number().default(0),
+  // Percentage band this grade covers — lets subject/skill grades be derived automatically
+  // from marks instead of typed in by hand. Optional: a grading key with no bands set falls
+  // back to manual entry everywhere it's used.
+  minPercent:  z.number().min(0).max(100).optional(),
+  maxPercent:  z.number().min(0).max(100).optional(),
 });
 
 const templateExamSlotSchema = z.object({

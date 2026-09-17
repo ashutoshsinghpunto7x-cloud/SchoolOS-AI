@@ -207,8 +207,24 @@ function recomputeTermBlockTotals(block: ITermBlock): void {
   block.termPercentage = termTotalMax > 0 ? Math.round((termTotalObtained / termTotalMax) * 10000) / 100 : 0;
 }
 
-function reconcileSkills(template: IReportCardTemplate, existing: ITermReportCardSkillEntry[]): ITermReportCardSkillEntry[] {
+/** Picks the grading-key label whose percentage band covers `percent`, or undefined if the
+ *  key has no percentage-banded entries (or none of them cover it). Used to derive both the
+ *  overall/subject grade and the SS1/SS2 skill grades from actual marks, rather than leaving
+ *  them for someone to type in by hand. */
+function gradeForPercent(gradingKey: IReportCardTemplate['gradingKey'], percent: number): string | undefined {
+  return gradingKey.find((g) => g.minPercent != null && g.maxPercent != null && percent >= g.minPercent && percent <= g.maxPercent)?.label;
+}
+
+/** SS1/SS2 skill grades reflect the student's overall performance for that term — they are
+ *  derived from the term's percentage against the template's grading key, not entered by hand.
+ *  A prior manual correction (via updateSkills) is preserved across regenerates; only rows with
+ *  no existing override get the freshly computed grade. */
+function reconcileSkills(
+  template: IReportCardTemplate, existing: ITermReportCardSkillEntry[], firstTermPercent: number, finalTermPercent: number,
+): ITermReportCardSkillEntry[] {
   const existingByRowId = new Map(existing.map((e) => [e.rowId, e]));
+  const autoFirstTermGrade = gradeForPercent(template.gradingKey, firstTermPercent) as SkillGrade | undefined;
+  const autoFinalTermGrade = gradeForPercent(template.gradingKey, finalTermPercent) as SkillGrade | undefined;
   const result: ITermReportCardSkillEntry[] = [];
 
   for (const section of template.skillSections) {
@@ -220,8 +236,8 @@ function reconcileSkills(template: IReportCardTemplate, existing: ITermReportCar
         sectionName: section.name,
         rowId,
         rowLabel: row.label,
-        firstTermGrade: prev?.firstTermGrade,
-        finalTermGrade: prev?.finalTermGrade,
+        firstTermGrade: prev?.firstTermGrade ?? autoFirstTermGrade,
+        finalTermGrade: prev?.finalTermGrade ?? autoFinalTermGrade,
       });
     }
   }
@@ -260,10 +276,10 @@ export const termReportCardService = {
     const grandTotalObtained = firstTerm.termTotalObtained + finalTerm.termTotalObtained;
     const grandTotalMax = firstTerm.termTotalMax + finalTerm.termTotalMax;
     const grandAveragePercent = grandTotalMax > 0 ? Math.round((grandTotalObtained / grandTotalMax) * 10000) / 100 : 0;
-    // Grading key entries are label+description only (no numeric bands), so
-    // there's no automatic percentage→letter mapping — overallGrade stays
-    // unset unless a principal enters one via remarks/UI in a later iteration.
-    const overallGrade: string | undefined = undefined;
+    // Only derived once there's a grand total to derive it from — a grading key
+    // with no percentage bands configured also leaves this unset (gradeForPercent
+    // returns undefined), same as before percentage bands existed.
+    const overallGrade = grandTotalMax > 0 ? gradeForPercent(template.gradingKey, grandAveragePercent) : undefined;
 
     const { averages, firstTermPercents, finalTermPercents, classSize } =
       await computeClassStats(ctx.schoolId, template, student.class, student.section);
@@ -279,7 +295,11 @@ export const termReportCardService = {
     const promotionStatus = derivePromotionStatus(hasFinalTermData, 33, grandAveragePercent);
 
     const existing = await termReportCardRepository.findByStudentYear(ctx.schoolId, studentId, academicYear);
-    const skills = reconcileSkills(template, existing?.skills ?? []);
+    const skills = reconcileSkills(
+      template, existing?.skills ?? [],
+      firstTerm.termTotalMax > 0 ? firstTerm.termPercentage : NaN,
+      finalTerm.termTotalMax > 0 ? finalTerm.termPercentage : NaN,
+    );
 
     const saved = await termReportCardRepository.upsert({
       schoolId: ctx.schoolId,

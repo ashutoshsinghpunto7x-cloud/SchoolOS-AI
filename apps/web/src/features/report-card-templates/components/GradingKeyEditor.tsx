@@ -18,15 +18,24 @@ export const GradingKeyEditor = ({ entries, onChange }: GradingKeyEditorProps) =
 
   const add = () => onChange([...entries, { label: '', description: '', order: entries.length }]);
 
+  const updatePercent = (index: number, key: 'minPercent' | 'maxPercent', raw: string) =>
+    update(index, { [key]: raw.trim() === '' ? undefined : Number(raw) });
+
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-xs text-gray-400">
+        Min%/Max% are optional — set them so this grade is calculated automatically from marks
+        (subject and skill grades alike) instead of being typed in by hand.
+      </p>
       {entries.length > 0 && (
         <div className="overflow-x-auto -mx-1">
-          <table className="w-full text-sm min-w-[420px]">
+          <table className="w-full text-sm min-w-[560px]">
             <thead>
               <tr className="text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                <th className="px-1 py-2 w-24">Label</th>
+                <th className="px-1 py-2 w-20">Label</th>
                 <th className="px-1 py-2">Description</th>
+                <th className="px-1 py-2 w-20">Min%</th>
+                <th className="px-1 py-2 w-20">Max%</th>
                 <th className="px-1 py-2 w-10" />
               </tr>
             </thead>
@@ -46,6 +55,24 @@ export const GradingKeyEditor = ({ entries, onChange }: GradingKeyEditorProps) =
                       value={e.description}
                       onChange={(ev) => update(i, { description: ev.target.value })}
                       placeholder="e.g. Excellent"
+                      className={cellInputCls}
+                    />
+                  </td>
+                  <td className="px-1 py-2">
+                    <input
+                      type="number" min={0} max={100}
+                      value={e.minPercent ?? ''}
+                      onChange={(ev) => updatePercent(i, 'minPercent', ev.target.value)}
+                      placeholder="e.g. 90"
+                      className={cellInputCls}
+                    />
+                  </td>
+                  <td className="px-1 py-2">
+                    <input
+                      type="number" min={0} max={100}
+                      value={e.maxPercent ?? ''}
+                      onChange={(ev) => updatePercent(i, 'maxPercent', ev.target.value)}
+                      placeholder="e.g. 100"
                       className={cellInputCls}
                     />
                   </td>

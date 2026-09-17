@@ -4515,6 +4515,11 @@ export interface TemplateGradingKeyEntry {
   label: string;
   description: string;
   order: number;
+  /** Percentage band this grade covers — lets grades be derived automatically from
+   *  marks instead of typed in by hand. Optional: unset on either bound means this
+   *  entry isn't used for automatic derivation. */
+  minPercent?: number;
+  maxPercent?: number;
 }
 
 export interface TemplateExamSlot {

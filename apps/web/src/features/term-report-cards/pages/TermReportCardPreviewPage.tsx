@@ -581,7 +581,7 @@ function SkillsCorrectionPanel({
       </div>
 
       {!editing ? (
-        <p className="text-xs text-gray-400">English Language Skills and Personal/Social/Work Habits grades — click "Fix skill grades" to set each row's I Term / II Term grade.</p>
+        <p className="text-xs text-gray-400">Auto-calculated from this term's overall percentage against the template's grading key. Click "Fix skill grades" to override a specific row.</p>
       ) : (
         <>
           {template.skillSections.map((section) => (

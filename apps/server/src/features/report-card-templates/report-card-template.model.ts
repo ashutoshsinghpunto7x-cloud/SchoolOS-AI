@@ -40,6 +40,11 @@ export interface ITemplateGradingKeyEntry {
   label: string;
   description: string;
   order: number;
+  /** Percentage band this grade covers — lets grades be derived automatically from
+   *  marks instead of typed in by hand. Optional: unset on either bound means this
+   *  entry isn't used for automatic derivation. */
+  minPercent?: number;
+  maxPercent?: number;
 }
 
 export interface ITemplateExamSlot {
@@ -108,6 +113,8 @@ const templateGradingKeyEntrySchema = new Schema<ITemplateGradingKeyEntry>(
     label:       { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     order:       { type: Number, required: true, default: 0 },
+    minPercent:  { type: Number, min: 0, max: 100 },
+    maxPercent:  { type: Number, min: 0, max: 100 },
   },
   { _id: false },
 );
