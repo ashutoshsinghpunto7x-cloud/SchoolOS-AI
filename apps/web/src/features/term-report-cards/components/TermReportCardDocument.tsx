@@ -126,6 +126,10 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
       style={{
         width: '297mm', height: '210mm', padding: '12mm 16mm', color: '#000',
         fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '11px',
+        // Georgia's default figures are oldstyle (proportional, uneven heights) — fine for
+        // prose but reads as sloppy in a marks table. Force standard lining/tabular digits
+        // everywhere on the card instead.
+        fontVariantNumeric: 'lining-nums tabular-nums',
         display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
       }}
     >
