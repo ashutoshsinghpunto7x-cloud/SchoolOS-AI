@@ -3,9 +3,12 @@ import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-do
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download, Sparkles, ListTree,
+  ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download, Sparkles, ListTree, Undo2, RotateCcw,
 } from 'lucide-react';
-import { useMarksEntryTable, useMarksSummary, useBulkUpsertMarks, useSubmitMarksForReview, marksKeys } from '../hooks/useMarks';
+import {
+  useMarksEntryTable, useMarksSummary, useBulkUpsertMarks, useSubmitMarksForReview,
+  useApproveMarks, useRequestMarksCorrection, usePublishMarks, useLockMarks, useReopenMarks, marksKeys,
+} from '../hooks/useMarks';
 import { marksApi } from '../api/marks.api';
 import { AiCaptureModal } from '../components/AiCaptureModal';
 import { avatarColorFor } from '@/features/teacher-workspace/utils/avatarColor';
@@ -58,8 +61,18 @@ const WORKFLOW_BADGE: Record<MarksWorkflowStatus, { label: string; className: st
   reopened:          { label: 'Reopened',          className: 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300' },
 };
 
-function rowIsEditable(status: MarksWorkflowStatus | null): boolean {
-  return status === null || status === 'draft' || status === 'needs_correction' || status === 'reopened';
+// Draft/needs_correction/reopened are always editable (any role). Beyond
+// that, a teacher may keep correcting their own marks all the way through
+// review — submitted/approved/published stay open to them; only an explicit
+// Lock (principal/admin-only, see marks.service.ts's lock) stops them.
+// Re-saving after submission pulls the record back to 'draft' server-side
+// (marks.repository.ts's upsert), so it re-enters review automatically.
+// Principal/admin editing is gated the other way: they use the review
+// actions (Approve/Request Correction/Publish/Lock/Reopen) to move a batch
+// back to an editable status rather than bypassing the workflow.
+function rowIsEditable(status: MarksWorkflowStatus | null, role?: string): boolean {
+  if (status === null || status === 'draft' || status === 'needs_correction' || status === 'reopened') return true;
+  return role === 'teacher' && status !== 'locked';
 }
 
 // Once someone has saved a row's marks, only that same account (or an
@@ -287,6 +300,11 @@ function SimpleMarksEntryPage() {
   const { data: summary } = useMarksSummary(target);
   const { mutateAsync: bulkSave, isPending: isSaving } = useBulkUpsertMarks();
   const { mutateAsync: submitForReview, isPending: isSubmitting } = useSubmitMarksForReview();
+  const { mutateAsync: approveMarks, isPending: isApproving } = useApproveMarks();
+  const { mutateAsync: requestCorrection, isPending: isRequestingCorrection } = useRequestMarksCorrection();
+  const { mutateAsync: publishMarks, isPending: isPublishing } = usePublishMarks();
+  const { mutateAsync: lockMarks, isPending: isLocking } = useLockMarks();
+  const { mutateAsync: reopenMarks, isPending: isReopening } = useReopenMarks();
 
   const [rows, setRows] = useState<RowState[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -389,11 +407,12 @@ function SimpleMarksEntryPage() {
     });
   }
 
-  const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus));
+  const isPrincipalOrAdmin = user?.role === 'principal' || user?.role === 'admin';
+  const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus, user?.role));
   const allEditable = rows.length > 0 && editableRows.length === rows.length;
   const someLocked = rows.length > 0 && editableRows.length === 0;
 
-  const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus) && !rowIsLockedByOther(r, user?.userId, user?.role);
+  const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus, user?.role) && !rowIsLockedByOther(r, user?.userId, user?.role);
   const otherOwnedCount = editableRows.filter((r) => rowIsLockedByOther(r, user?.userId, user?.role)).length;
 
   const maxByComponentName = useMemo(
@@ -445,6 +464,61 @@ function SimpleMarksEntryPage() {
       toast.success(`Submitted for review`, { description: `${result.updated} record(s) sent to your admin/principal` });
     } catch (err) {
       toast.error('Could not submit', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleApprove() {
+    if (!cls || !section || !examId || !subjectName) return;
+    try {
+      const result = await approveMarks({ examId, class: cls, section, subjectName });
+      toast.success('Marks approved', { description: `${result.updated} record(s) approved` });
+    } catch (err) {
+      toast.error('Could not approve', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleRequestCorrection() {
+    if (!cls || !section || !examId || !subjectName) return;
+    const reason = window.prompt('Why are these marks being sent back for correction?');
+    if (!reason?.trim()) return;
+    try {
+      const result = await requestCorrection({ examId, class: cls, section, subjectName, reason: reason.trim() });
+      toast.success('Sent back for correction', { description: `${result.updated} record(s) returned to the teacher` });
+    } catch (err) {
+      toast.error('Could not send back', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handlePublish() {
+    if (!cls || !section || !examId || !subjectName) return;
+    try {
+      const result = await publishMarks({ examId, class: cls, section, subjectName });
+      toast.success('Marks published', { description: `${result.updated} record(s) published` });
+    } catch (err) {
+      toast.error('Could not publish', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleLock() {
+    if (!cls || !section || !examId || !subjectName) return;
+    if (!window.confirm('Lock these marks? Once locked, they can only be edited again after a principal reopens them.')) return;
+    try {
+      const result = await lockMarks({ examId, class: cls, section, subjectName });
+      toast.success('Marks locked', { description: `${result.updated} record(s) locked` });
+    } catch (err) {
+      toast.error('Could not lock', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleReopen() {
+    if (!cls || !section || !examId || !subjectName) return;
+    const reason = window.prompt('Why are these marks being reopened?');
+    if (!reason?.trim()) return;
+    try {
+      const result = await reopenMarks({ examId, class: cls, section, subjectName, reason: reason.trim() });
+      toast.success('Marks reopened', { description: `${result.updated} record(s) reopened for editing` });
+    } catch (err) {
+      toast.error('Could not reopen', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
     }
   }
 
@@ -547,12 +621,45 @@ function SimpleMarksEntryPage() {
               <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">This exam is still in draft — ask an admin to configure it.</p>
             </div>
           )}
-          {someLocked && (
+          {someLocked && !isPrincipalOrAdmin && (
             <div className="mx-4 mt-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
               <Lock className="w-5 h-5 text-gray-500 dark:text-white/40 shrink-0" />
               <p className="text-sm font-semibold text-gray-600 dark:text-white/60">
-                These marks have moved past draft — ask an admin to send them back or reopen them to edit.
+                These marks are locked — ask your principal to reopen them to edit.
               </p>
+            </div>
+          )}
+
+          {isPrincipalOrAdmin && summary && (summary.submitted + summary.approved + summary.published + summary.locked) > 0 && (
+            <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wide mb-3">Review Actions</p>
+              <div className="flex flex-wrap gap-2">
+                {summary.submitted > 0 && (
+                  <>
+                    <button type="button" onClick={handleApprove} disabled={isApproving} className="h-9 px-3 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                      {isApproving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Approve ({summary.submitted})
+                    </button>
+                    <button type="button" onClick={handleRequestCorrection} disabled={isRequestingCorrection} className="h-9 px-3 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors">
+                      {isRequestingCorrection ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Undo2 className="w-3.5 h-3.5" />} Request Correction
+                    </button>
+                  </>
+                )}
+                {summary.approved > 0 && (
+                  <button type="button" onClick={handlePublish} disabled={isPublishing} className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                    {isPublishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Publish ({summary.approved})
+                  </button>
+                )}
+                {summary.published > 0 && (
+                  <button type="button" onClick={handleLock} disabled={isLocking} className="h-9 px-3 rounded-xl bg-gray-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                    {isLocking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />} Lock ({summary.published})
+                  </button>
+                )}
+                {(summary.published > 0 || summary.locked > 0) && (
+                  <button type="button" onClick={handleReopen} disabled={isReopening} className="h-9 px-3 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors">
+                    {isReopening ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Reopen
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {!someLocked && otherOwnedCount > 0 && (
@@ -661,12 +768,12 @@ function defaultComponentScores(exam: Exam): ComponentScore[] {
   return exam.components.map((c) => ({ componentName: c.name, status: 'present' as ComponentStatus }));
 }
 
-function skillRowIsEditable(status: MarksWorkflowStatus | null): boolean {
-  return status === null || status === 'draft' || status === 'needs_correction' || status === 'reopened';
+function skillRowIsEditable(status: MarksWorkflowStatus | null, role?: string): boolean {
+  return rowIsEditable(status, role);
 }
 
 function skillRowCanEditByUser(row: SkillRowState, currentUserId: string | undefined, role: string | undefined): boolean {
-  return skillRowIsEditable(row.workflowStatus) && !(role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId);
+  return skillRowIsEditable(row.workflowStatus, role) && !(role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId);
 }
 
 function skillRowIsComplete(row: SkillRowState, maxByName: Map<string, number>): boolean {
@@ -789,9 +896,10 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
     setDirty(true);
   }
 
-  const allSkillsEditableFor = (r: CompoundRowState) => skills.every((s) => skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null));
+  const isPrincipalOrAdmin = user?.role === 'principal' || user?.role === 'admin';
+  const allSkillsEditableFor = (r: CompoundRowState) => skills.every((s) => skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null, user?.role));
   const allEditable = rows.length > 0 && rows.every(allSkillsEditableFor);
-  const someLocked = rows.length > 0 && rows.every((r) => skills.every((s) => !skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null)));
+  const someLocked = rows.length > 0 && rows.every((r) => skills.every((s) => !skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null, user?.role)));
 
   const isRowComplete = (r: CompoundRowState) => skills.every((s) => skillRowIsComplete(r.bySkill[s], maxByComponentName));
   const isRowUntouched = (r: CompoundRowState) => skills.every((s) => skillRowIsUntouched(r.bySkill[s]));
@@ -847,6 +955,56 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
 
   const submitDisabled = isSubmitting || dirty || hasInvalid || unfilledCount === rows.length || rows.length === 0 || !allEditable;
 
+  const [isReviewActionPending, setIsReviewActionPending] = useState(false);
+  const aggregateSummary = summaryQueries.reduce(
+    (acc, q) => {
+      const s = q.data;
+      if (!s) return acc;
+      return {
+        submitted: acc.submitted + s.submitted, approved: acc.approved + s.approved,
+        published: acc.published + s.published, locked: acc.locked + s.locked,
+      };
+    },
+    { submitted: 0, approved: 0, published: 0, locked: 0 },
+  );
+
+  async function runReviewAction(
+    action: (target: MarksBatchTarget) => Promise<{ updated: number }>,
+    successMessage: string,
+  ) {
+    setIsReviewActionPending(true);
+    try {
+      let updated = 0;
+      for (const { subjectName: skillSubject } of skillTargets) {
+        const result = await action({ examId, class: cls, section, subjectName: skillSubject });
+        updated += result.updated;
+      }
+      await queryClient.invalidateQueries({ queryKey: marksKeys.all });
+      toast.success(successMessage, { description: `${updated} record(s) updated` });
+    } catch (err) {
+      toast.error('Action failed', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    } finally {
+      setIsReviewActionPending(false);
+    }
+  }
+
+  const handleApprove = () => runReviewAction((t) => marksApi.approve(t), 'Marks approved');
+  const handlePublish = () => runReviewAction((t) => marksApi.publish(t), 'Marks published');
+  const handleLock = () => {
+    if (!window.confirm('Lock these marks? Once locked, they can only be edited again after a principal reopens them.')) return;
+    return runReviewAction((t) => marksApi.lock(t), 'Marks locked');
+  };
+  const handleRequestCorrection = () => {
+    const reason = window.prompt('Why are these marks being sent back for correction?');
+    if (!reason?.trim()) return;
+    return runReviewAction((t) => marksApi.requestCorrection({ ...t, reason: reason.trim() }), 'Sent back for correction');
+  };
+  const handleReopen = () => {
+    const reason = window.prompt('Why are these marks being reopened?');
+    if (!reason?.trim()) return;
+    return runReviewAction((t) => marksApi.reopen({ ...t, reason: reason.trim() }), 'Marks reopened');
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
@@ -883,12 +1041,45 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
         </div>
       ) : (
         <>
-          {someLocked && (
+          {someLocked && !isPrincipalOrAdmin && (
             <div className="mx-4 mt-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
               <Lock className="w-5 h-5 text-gray-500 dark:text-white/40 shrink-0" />
               <p className="text-sm font-semibold text-gray-600 dark:text-white/60">
-                These marks have moved past draft — ask an admin to send them back or reopen them to edit.
+                These marks are locked — ask your principal to reopen them to edit.
               </p>
+            </div>
+          )}
+
+          {isPrincipalOrAdmin && (aggregateSummary.submitted + aggregateSummary.approved + aggregateSummary.published + aggregateSummary.locked) > 0 && (
+            <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-4">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-white/30 uppercase tracking-wide mb-3">Review Actions (all skills)</p>
+              <div className="flex flex-wrap gap-2">
+                {aggregateSummary.submitted > 0 && (
+                  <>
+                    <button type="button" onClick={handleApprove} disabled={isReviewActionPending} className="h-9 px-3 rounded-xl bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve ({aggregateSummary.submitted})
+                    </button>
+                    <button type="button" onClick={handleRequestCorrection} disabled={isReviewActionPending} className="h-9 px-3 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors">
+                      <Undo2 className="w-3.5 h-3.5" /> Request Correction
+                    </button>
+                  </>
+                )}
+                {aggregateSummary.approved > 0 && (
+                  <button type="button" onClick={handlePublish} disabled={isReviewActionPending} className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                    <Send className="w-3.5 h-3.5" /> Publish ({aggregateSummary.approved})
+                  </button>
+                )}
+                {aggregateSummary.published > 0 && (
+                  <button type="button" onClick={handleLock} disabled={isReviewActionPending} className="h-9 px-3 rounded-xl bg-gray-700 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                    <Lock className="w-3.5 h-3.5" /> Lock ({aggregateSummary.published})
+                  </button>
+                )}
+                {(aggregateSummary.published > 0 || aggregateSummary.locked > 0) && (
+                  <button type="button" onClick={handleReopen} disabled={isReviewActionPending} className="h-9 px-3 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white/80 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50 transition-colors">
+                    <RotateCcw className="w-3.5 h-3.5" /> Reopen
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
