@@ -1,64 +1,77 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, ChevronRight } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
+import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 
-const selectCls =
-  'h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 font-medium ' +
-  'focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer';
-
-const inputCls =
-  'h-12 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 ' +
-  'focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500';
+/** Derives the "2026-27" style label the report-card templates/cards key off of,
+ *  straight from the Academic Year the principal already set in School Settings —
+ *  so this page never asks anyone to retype a year that's configured elsewhere. */
+function academicYearLabel(startIso?: string, endIso?: string): string {
+  if (!startIso) return '';
+  const startYear = new Date(startIso).getFullYear();
+  const endYear = endIso ? new Date(endIso).getFullYear() : startYear + 1;
+  return `${startYear}-${String(endYear).slice(-2)}`;
+}
 
 export const TermReportCardHubPage = () => {
   const navigate = useNavigate();
-  const { data: schoolClasses } = useSchoolClasses();
-  const [cls, setCls] = useState('');
-  const [section, setSection] = useState('');
-  const [academicYear, setAcademicYear] = useState('');
+  const { data: schoolClasses, isLoading } = useSchoolClasses();
+  const { data: schoolSettings } = useSchoolSettings();
 
-  const sections = (schoolClasses ?? []).find((c) => c.name === cls)?.sections ?? [];
+  const academicYear = academicYearLabel(schoolSettings?.academicYearStart, schoolSettings?.academicYearEnd);
 
-  const canContinue = Boolean(cls && section && academicYear.trim());
+  const tiles = (schoolClasses ?? []).flatMap((c) =>
+    (c.sections.length > 0 ? c.sections : ['—']).map((section) => ({ cls: c.name, section })),
+  );
 
   return (
-    <PageContainer narrow>
-      <WorkspaceHeader title="Term Report Cards" subtitle="Pick a class, section and academic year to generate two-term report cards." />
+    <PageContainer>
+      <WorkspaceHeader
+        title="Term Report Cards"
+        subtitle={academicYear ? `${academicYear} · Pick a class to open its roster.` : 'Pick a class to open its roster.'}
+      />
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="text-sm font-bold text-gray-700 block mb-2">Class</label>
-            <select value={cls} onChange={(e) => { setCls(e.target.value); setSection(''); }} className={selectCls}>
-              <option value="">Select…</option>
-              {(schoolClasses ?? []).map((c) => <option key={c._id} value={c.name}>Class {c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-gray-700 block mb-2">Section</label>
-            <select value={section} onChange={(e) => setSection(e.target.value)} className={selectCls} disabled={!cls}>
-              <option value="">Select…</option>
-              {sections.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-gray-700 block mb-2">Academic Year</label>
-            <input value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} placeholder="e.g. 2026-27" className={inputCls} />
-          </div>
+      {!academicYear && (
+        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm font-semibold text-amber-800">
+          Set the Academic Year in School Settings first — report cards are generated against it.
         </div>
+      )}
 
-        <button
-          type="button"
-          disabled={!canContinue}
-          onClick={() => navigate(`/term-report-cards/${cls}/${section}/${academicYear.trim()}`)}
-          className="h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-        >
-          <GraduationCap className="w-4 h-4" /> View Roster
-        </button>
-      </div>
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="h-28 rounded-2xl bg-white border border-gray-100 animate-pulse" />
+          ))}
+        </div>
+      ) : tiles.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
+          No classes set up yet.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {tiles.map(({ cls, section }) => (
+            <button
+              key={`${cls}-${section}`}
+              type="button"
+              disabled={!academicYear}
+              onClick={() => navigate(`/term-report-cards/${cls}/${section}/${academicYear}`)}
+              className="group text-left bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[#F3EEFF] flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-[#6D4AFF]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Class {cls}{section !== '—' ? ` – ${section}` : ''}</p>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-semibold text-indigo-600 group-hover:gap-1.5 transition-all">
+                View Roster <ChevronRight className="w-3.5 h-3.5" />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </PageContainer>
   );
 };

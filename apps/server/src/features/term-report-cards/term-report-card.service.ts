@@ -236,6 +236,22 @@ function recomputeTermBlockTotals(block: ITermBlock): void {
   block.termPercentage = termTotalMax > 0 ? Math.round((termTotalObtained / termTotalMax) * 10000) / 100 : 0;
 }
 
+/** Re-derives just the "no Unit Test score yet" / "main exam score not yet entered" warnings
+ *  for one term block, off its current (possibly just-corrected) subject rows — same rule
+ *  buildTermBlock uses when generating from scratch. Used after a "Fix a mark" correction so
+ *  the Review-before-publishing list shrinks to match what's actually still missing, instead
+ *  of staying frozen at whatever it was when the card was first generated. */
+function deriveSubjectRowWarnings(block: ITermBlock, termLabel: string): string[] {
+  const warnings: string[] = [];
+  for (const row of block.subjectRows) {
+    if (row.bestUnitTestScore == null) warnings.push(`${row.subjectName}: no Unit Test score yet for ${termLabel}`);
+    if (row.mainExamScore == null) warnings.push(`${row.subjectName}: main exam score not yet entered for ${termLabel}`);
+  }
+  return warnings;
+}
+
+const SUBJECT_WARNING_PATTERN = /: no Unit Test score yet for |: main exam score not yet entered for /;
+
 /** Picks the grading-key label whose percentage band covers `percent`, or undefined if the
  *  key has no percentage-banded entries (or none of them cover it). Used to derive both the
  *  overall/subject grade and the SS1/SS2 skill grades from actual marks, rather than leaving
@@ -480,6 +496,17 @@ export const termReportCardService = {
           card.finalTerm.termTotalMax > 0 ? card.finalTerm.termPercentage : NaN,
         );
       }
+
+      // Shrink the "Review before publishing" list to match what's actually still
+      // missing after this correction — otherwise it stays frozen at whatever it
+      // was when the card was first generated, even once every score is filled in.
+      const nonSubjectWarnings = card.warnings.filter((w) => !SUBJECT_WARNING_PATTERN.test(w));
+      card.warnings = [
+        ...nonSubjectWarnings,
+        ...deriveSubjectRowWarnings(card.firstTerm, 'First Term'),
+        ...deriveSubjectRowWarnings(card.finalTerm, 'Final Term'),
+      ];
+      card.markModified('warnings');
     }
 
     if (data.attendance) {

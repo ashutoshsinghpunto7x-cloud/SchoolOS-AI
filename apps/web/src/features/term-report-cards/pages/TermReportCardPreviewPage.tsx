@@ -130,7 +130,7 @@ export function TermReportCardPreviewPage() {
       </div>
 
       {resolvedCard.warnings.length > 0 && (
-        <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+        <div className="print:hidden max-w-6xl mx-auto mt-4 px-5">
           <div className="rounded-xl bg-amber-50 border border-amber-200 overflow-hidden">
             <button
               type="button"
@@ -154,7 +154,7 @@ export function TermReportCardPreviewPage() {
 
       {/* Marks correction — screen only, available to teachers and leadership alike. Every other
           field (principal remark, parent feedback, template structure) is leadership-only. */}
-      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+      <div className="print:hidden max-w-6xl mx-auto mt-4 px-5 grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <MarksCorrectionPanel
           card={resolvedCard}
           editing={editingMarks}
@@ -162,9 +162,7 @@ export function TermReportCardPreviewPage() {
           onSave={(subjectMarks) => { updateCard.mutate({ subjectMarks }); setEditingMarks(false); }}
           saving={updateCard.isPending}
         />
-      </div>
 
-      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
         <AttendanceCorrectionPanel
           card={resolvedCard}
           editing={editingAttendance}
@@ -172,9 +170,7 @@ export function TermReportCardPreviewPage() {
           onSave={(attendance) => { updateCard.mutate({ attendance }); setEditingAttendance(false); }}
           saving={updateCard.isPending}
         />
-      </div>
 
-      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
         <SkillsCorrectionPanel
           card={resolvedCard}
           template={template}
@@ -185,7 +181,7 @@ export function TermReportCardPreviewPage() {
         />
       </div>
 
-      <div className="print:hidden max-w-3xl mx-auto mt-4 px-5">
+      <div className="print:hidden max-w-6xl mx-auto mt-4 px-5">
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Class Teacher's Remark</p>
           <textarea
@@ -491,7 +487,23 @@ function AttendanceCorrectionPanel({
                 <input
                   type="number" min={0}
                   value={drafts[activeTerm][key]}
-                  onChange={(e) => setDrafts((d) => ({ ...d, [activeTerm]: { ...d[activeTerm], [key]: e.target.value } }))}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setDrafts((d) => {
+                      const term = { ...d[activeTerm], [key]: raw };
+                      // Absent auto-fills from Working Days − Present as either is typed,
+                      // so a teacher only has to enter the two numbers they actually know —
+                      // it stays editable afterwards in case a half-day/leave split applies.
+                      if (key === 'workingDays' || key === 'present') {
+                        const workingDays = Number(key === 'workingDays' ? raw : term.workingDays);
+                        const present = Number(key === 'present' ? raw : term.present);
+                        if (term.workingDays.trim() !== '' && term.present.trim() !== '' && !Number.isNaN(workingDays) && !Number.isNaN(present)) {
+                          term.absent = String(Math.max(0, workingDays - present));
+                        }
+                      }
+                      return { ...d, [activeTerm]: term };
+                    });
+                  }}
                   className="h-8 px-2 rounded-md border border-gray-200 text-xs"
                 />
               </label>

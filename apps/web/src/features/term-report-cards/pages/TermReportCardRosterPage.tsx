@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, ChevronRight, Users, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertCircle, ChevronRight, Users, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
 import { useTermReportCardRoster } from '../hooks/useTermReportCard';
 
 function initials(name: string): string {
@@ -24,8 +24,21 @@ export function TermReportCardRosterPage() {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <h1 className="text-[24px] font-bold text-gray-900 dark:text-white tracking-tight">Class {cls} – {section}</h1>
-        <p className="text-sm text-gray-500 dark:text-white/40 mt-1">{academicYear} · Pick a student to generate their report card.</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-[24px] font-bold text-gray-900 dark:text-white tracking-tight">Class {cls} – {section}</h1>
+            <p className="text-sm text-gray-500 dark:text-white/40 mt-1">{academicYear} · Pick a student to generate their report card.</p>
+          </div>
+          {!templateNotPublished && (data?.rows.length ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate(`/term-report-cards/${cls}/${section}/${academicYear}/print-all`)}
+              className="h-10 px-4 rounded-xl bg-[#1C2B4A] text-white text-xs font-bold flex items-center gap-1.5 shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" /> Download Whole Class
+            </button>
+          )}
+        </div>
 
         {templateNotPublished && (
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">

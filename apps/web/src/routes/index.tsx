@@ -605,6 +605,10 @@ const TermReportCardPreviewPage = lazyPage(
   () => import('@/features/term-report-cards/pages/TermReportCardPreviewPage'),
   'TermReportCardPreviewPage',
 );
+const TermReportCardBulkPrintPage = lazyPage(
+  () => import('@/features/term-report-cards/pages/TermReportCardBulkPrintPage'),
+  'TermReportCardBulkPrintPage',
+);
 const VerifyTermReportCardPage = lazyPage(
   () => import('@/features/term-report-cards/pages/VerifyTermReportCardPage'),
   'VerifyTermReportCardPage',
@@ -1377,6 +1381,7 @@ export const router = createBrowserRouter([
                 children: [
                   { path: 'term-report-cards', element: <TermReportCardHubPage /> },
                   { path: 'term-report-cards/:cls/:section/:academicYear', element: <TermReportCardRosterPage /> },
+                  { path: 'term-report-cards/:cls/:section/:academicYear/print-all', element: <TermReportCardBulkPrintPage /> },
                   { path: 'term-report-cards/:cls/:section/:academicYear/student/:studentId', element: <TermReportCardPreviewPage /> },
                 ],
               },
