@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { normalizeAcademicYear } from '../../lib/academic-year';
 
 export const generateTermReportCardSchema = z.object({
   studentId:    z.string({ required_error: 'studentId is required' }).min(1),
-  academicYear: z.string({ required_error: 'academicYear is required' }).min(1),
+  academicYear: z.string({ required_error: 'academicYear is required' }).min(1).transform(normalizeAcademicYear),
 });
 
 // A direct correction to one subject's scores on an already-generated term card — lets a teacher
@@ -57,7 +58,7 @@ export const updateTermReportCardSkillsSchema = z.object({
 export const rosterQuerySchema = z.object({
   class:        z.string({ required_error: 'class is required' }).min(1),
   section:      z.string({ required_error: 'section is required' }).min(1),
-  academicYear: z.string({ required_error: 'academicYear is required' }).min(1),
+  academicYear: z.string({ required_error: 'academicYear is required' }).min(1).transform(normalizeAcademicYear),
 });
 
 export type GenerateTermReportCardInput    = z.infer<typeof generateTermReportCardSchema>;

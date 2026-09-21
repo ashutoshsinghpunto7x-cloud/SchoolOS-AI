@@ -6,6 +6,7 @@ import {
   ITemplateGradingKeyEntry,
   ITemplateExamSlots,
 } from './report-card-template.model';
+import { normalizeAcademicYear } from '../../lib/academic-year';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,7 +43,7 @@ export const reportCardTemplateRepository = {
   },
 
   async findByClassYear(schoolId: string, cls: string, academicYear: string): Promise<IReportCardTemplate | null> {
-    return ReportCardTemplate.findOne({ schoolId, class: cls, academicYear });
+    return ReportCardTemplate.findOne({ schoolId, class: cls, academicYear: normalizeAcademicYear(academicYear) });
   },
 
   async findAll(schoolId: string, opts: FindReportCardTemplateOptions): Promise<IReportCardTemplate[]> {

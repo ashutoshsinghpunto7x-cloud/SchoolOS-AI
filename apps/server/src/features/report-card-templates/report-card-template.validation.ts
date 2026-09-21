@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeAcademicYear } from '../../lib/academic-year';
 
 export const SUBJECT_EVALUATION_TYPES = ['marks', 'grade', 'both'] as const;
 
@@ -55,7 +56,7 @@ const templateExamSlotsSchema = z.object({
 
 export const createReportCardTemplateSchema = z.object({
   class:         z.string({ required_error: 'class is required' }).min(1).trim(),
-  academicYear:  z.string({ required_error: 'academicYear is required' }).min(1).trim(),
+  academicYear:  z.string({ required_error: 'academicYear is required' }).min(1).trim().transform(normalizeAcademicYear),
   subjects:      z.array(templateSubjectRowSchema).default([]),
   skillSections: z.array(templateSkillSectionSchema).default([]),
   gradingKey:    z.array(templateGradingKeyEntrySchema).default([]),
@@ -67,13 +68,13 @@ export const updateReportCardTemplateSchema = createReportCardTemplateSchema
   .partial();
 
 export const cloneReportCardTemplateSchema = z.object({
-  fromAcademicYear: z.string({ required_error: 'fromAcademicYear is required' }).min(1).trim(),
-  toAcademicYear:   z.string({ required_error: 'toAcademicYear is required' }).min(1).trim(),
+  fromAcademicYear: z.string({ required_error: 'fromAcademicYear is required' }).min(1).trim().transform(normalizeAcademicYear),
+  toAcademicYear:   z.string({ required_error: 'toAcademicYear is required' }).min(1).trim().transform(normalizeAcademicYear),
 });
 
 export const listReportCardTemplateSchema = z.object({
   class:        z.string().optional(),
-  academicYear: z.string().optional(),
+  academicYear: z.string().optional().transform((v) => (v ? normalizeAcademicYear(v) : v)),
 });
 
 // ── Inferred types ────────────────────────────────────────────────────────────

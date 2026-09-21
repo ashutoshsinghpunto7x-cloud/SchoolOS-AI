@@ -5,6 +5,7 @@ import {
   ITermReportCardSkillEntry,
   ITermReportCardSummary,
 } from './term-report-card.model';
+import { normalizeAcademicYear } from '../../lib/academic-year';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -86,7 +87,7 @@ export const termReportCardRepository = {
   },
 
   async findByStudentYear(schoolId: string, studentId: string, academicYear: string): Promise<ITermReportCard | null> {
-    return TermReportCard.findOne({ schoolId, studentId, academicYear });
+    return TermReportCard.findOne({ schoolId, studentId, academicYear: normalizeAcademicYear(academicYear) });
   },
 
   async findByToken(token: string): Promise<ITermReportCard | null> {
@@ -94,7 +95,7 @@ export const termReportCardRepository = {
   },
 
   async findByClassYear(schoolId: string, cls: string, section: string, academicYear: string): Promise<ITermReportCard[]> {
-    return TermReportCard.find({ schoolId, class: cls, section, academicYear }).lean<ITermReportCard[]>();
+    return TermReportCard.find({ schoolId, class: cls, section, academicYear: normalizeAcademicYear(academicYear) }).lean<ITermReportCard[]>();
   },
 
   /** Most recent published card for a student, regardless of academic year —
