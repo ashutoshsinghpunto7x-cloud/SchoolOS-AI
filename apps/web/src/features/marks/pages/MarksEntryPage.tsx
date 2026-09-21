@@ -37,6 +37,7 @@ interface RowState {
   percentage?: number;
   enteredById?: string;
   enteredByName?: string;
+  enteredByRole?: string;
 }
 
 // Teachers only get Present/Absent day-to-day — Exempt/Medical/Not Assessed
@@ -83,7 +84,9 @@ function rowIsEditable(status: MarksWorkflowStatus | null, role?: string): boole
 // real enforcement; this just keeps the UI from offering an edit the save
 // would reject anyway.
 function rowIsLockedByOther(row: RowState, currentUserId: string | undefined, role: string | undefined): boolean {
-  return role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId;
+  // A principal/admin-entered row (enteredByRole !== 'teacher') never locks
+  // out the actual subject teacher — see marks.service.ts's assertCanEditExisting.
+  return role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId && row.enteredByRole === 'teacher';
 }
 
 // A row is "complete" once every present-status component has a valid score
@@ -352,6 +355,7 @@ function SimpleMarksEntryPage() {
           percentage: existing?.percentage,
           enteredById: existing?.enteredById,
           enteredByName: existing?.enteredByName,
+          enteredByRole: existing?.enteredByRole,
         };
       }),
     );
@@ -567,7 +571,7 @@ function SimpleMarksEntryPage() {
           <button
             type="button"
             onClick={() => setShowAiModal(true)}
-            disabled={!table || !allEditable}
+            disabled={!table || editableRows.length === 0}
             className="h-9 px-3 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 disabled:opacity-40 flex items-center gap-1.5 shrink-0 transition-colors"
             title="Fill marks from a photo or voice note"
           >
@@ -693,7 +697,7 @@ function SimpleMarksEntryPage() {
             )}
           </div>
 
-          {allEditable && rows.length > 0 && (
+          {editableRows.length > 0 && (
             <>
               <div className="h-24" aria-hidden="true" />
               <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5">
@@ -710,7 +714,13 @@ function SimpleMarksEntryPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitDisabled}
-                  title={unfilledCount > 0 ? `${unfilledCount} student(s) have missing marks` : hasInvalid ? 'Fix invalid marks first' : dirty ? 'Save your changes first' : undefined}
+                  title={
+                    unfilledCount > 0 ? `${unfilledCount} student(s) have missing marks`
+                    : hasInvalid ? 'Fix invalid marks first'
+                    : dirty ? 'Save your changes first'
+                    : !allEditable ? 'Some students are already submitted/approved — use Review Actions above, or ask to reopen'
+                    : undefined
+                  }
                   className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white text-sm font-bold flex items-center justify-center gap-2 hover:from-violet-700 hover:to-pink-600 disabled:opacity-40 transition-colors"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -755,6 +765,7 @@ interface SkillRowState {
   percentage?: number;
   enteredById?: string;
   enteredByName?: string;
+  enteredByRole?: string;
 }
 
 interface CompoundRowState {
@@ -773,7 +784,8 @@ function skillRowIsEditable(status: MarksWorkflowStatus | null, role?: string): 
 }
 
 function skillRowCanEditByUser(row: SkillRowState, currentUserId: string | undefined, role: string | undefined): boolean {
-  return skillRowIsEditable(row.workflowStatus, role) && !(role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId);
+  return skillRowIsEditable(row.workflowStatus, role)
+    && !(role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId && row.enteredByRole === 'teacher');
 }
 
 function skillRowIsComplete(row: SkillRowState, maxByName: Map<string, number>): boolean {
@@ -843,6 +855,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
               percentage: existing?.percentage,
               enteredById: existing?.enteredById,
               enteredByName: existing?.enteredByName,
+              enteredByRole: existing?.enteredByRole,
             };
             return [skill, state];
           }),
@@ -1105,7 +1118,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                       {skills.map((skill) => {
                         const skillRow = row.bySkill[skill];
                         const canEdit = skillRowCanEditByUser(skillRow, user?.userId, user?.role);
-                        const lockedByOther = !!skillRow.enteredById && user?.role === 'teacher' && skillRow.enteredById !== user?.userId;
+                        const lockedByOther = !!skillRow.enteredById && user?.role === 'teacher' && skillRow.enteredById !== user?.userId && skillRow.enteredByRole === 'teacher';
                         const status = skillRow.componentScores[0]?.status ?? 'present';
                         const isPresent = status === 'present';
                         return (
@@ -1169,7 +1182,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
             )}
           </div>
 
-          {allEditable && rows.length > 0 && (
+          {!someLocked && rows.length > 0 && (
             <>
               <div className="h-24" aria-hidden="true" />
               <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5">
@@ -1186,7 +1199,13 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitDisabled}
-                  title={unfilledCount > 0 ? `${unfilledCount} student(s) have missing marks` : hasInvalid ? 'Fix invalid marks first' : dirty ? 'Save your changes first' : undefined}
+                  title={
+                    unfilledCount > 0 ? `${unfilledCount} student(s) have missing marks`
+                    : hasInvalid ? 'Fix invalid marks first'
+                    : dirty ? 'Save your changes first'
+                    : !allEditable ? 'Some students are already submitted/approved — use Review Actions above, or ask to reopen'
+                    : undefined
+                  }
                   className="flex-1 h-12 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white text-sm font-bold flex items-center justify-center gap-2 hover:from-violet-700 hover:to-pink-600 disabled:opacity-40 transition-colors"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

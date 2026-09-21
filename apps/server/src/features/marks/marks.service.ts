@@ -40,11 +40,15 @@ async function assertTeacherCanEnterMarks(
 // for this class/subject under the open-access policy above) gets a
 // read-only view instead. Admin/principal are never blocked by this.
 async function assertCanEditExisting(
-  existing: { enteredById: string; enteredByName: string } | null,
+  existing: { enteredById: string; enteredByName: string; enteredByRole?: string } | null,
   ctx: AuthContext,
 ): Promise<void> {
   if (!existing) return;
-  if (ctx.role === 'teacher' && existing.enteredById !== ctx.userId) {
+  // Only a teacher-entered record locks out other teachers — one a
+  // principal/admin created (e.g. covering a gap) stays open to whichever
+  // teacher picks it up, so a supervisory save never strands the real
+  // subject teacher out of their own class.
+  if (ctx.role === 'teacher' && existing.enteredById !== ctx.userId && existing.enteredByRole === 'teacher') {
     throw new ForbiddenError(`These marks were entered by ${existing.enteredByName} — only they can edit them`);
   }
 }
@@ -158,6 +162,7 @@ export const marksService = {
       remark: data.remark,
       enteredById: ctx.userId,
       enteredByName: ctx.displayName,
+      enteredByRole: ctx.role,
       auditEntry: makeAuditEntry('marks.saved', ctx),
     });
 
@@ -190,7 +195,9 @@ export const marksService = {
       : new Map<string, IMarks>();
     const editable = data.records.filter((r) => {
       const existing = existingByStudent.get(r.studentId);
-      return !existing || existing.enteredById === ctx.userId;
+      // Same rule as assertCanEditExisting: a principal/admin-entered record
+      // (enteredByRole !== 'teacher') never locks another teacher out.
+      return !existing || existing.enteredById === ctx.userId || existing.enteredByRole !== 'teacher';
     });
 
     const records = await marksRepository.bulkUpsert(
@@ -208,6 +215,7 @@ export const marksService = {
           remark: r.remark,
           enteredById: ctx.userId,
           enteredByName: ctx.displayName,
+          enteredByRole: ctx.role,
           auditEntry: makeAuditEntry('marks.bulk_saved', ctx),
         };
       })

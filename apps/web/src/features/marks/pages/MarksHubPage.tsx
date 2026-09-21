@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles, Search, X } from 'lucide-react';
 import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
 import { useExamsForClass } from '../hooks/useExams';
 import { TermAiCaptureModal } from '../components/TermAiCaptureModal';
@@ -149,6 +149,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useMasterGrid({ academicYear: defaultAcademicYear() });
   const [selected, setSelected] = useState<SubjectEntry | null>(null);
+  const [search, setSearch] = useState('');
 
   const entries = useMemo<SubjectEntry[]>(() => {
     if (!data) return [];
@@ -164,6 +165,19 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
       `${a.cls}${a.section}${a.subjectName}`.localeCompare(`${b.cls}${b.section}${b.subjectName}`),
     );
   }, [data]);
+
+  // Free-text filter over class, section and subject — lets a teacher/
+  // principal jump straight to e.g. "II A maths" instead of scanning a long
+  // list, without needing a separate dropdown per field.
+  const filteredEntries = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return entries;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return entries.filter((e) => {
+      const haystack = `class ${e.cls} ${e.cls} ${e.section} ${e.subjectName}`.toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [entries, search]);
 
   if (selected) {
     return (
@@ -214,6 +228,29 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
           <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />
         </button>
 
+        {!isLoading && !isError && entries.length > 0 && (
+          <div className="relative mt-5">
+            <Search className="w-4 h-4 text-gray-400 dark:text-white/30 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by class or subject — e.g. &quot;II A Maths&quot;"
+              className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/30 hover:text-gray-600 dark:hover:text-white/60"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-3 mt-6">
           {isLoading ? (
             <>
@@ -234,8 +271,14 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
                 No class timetable has been set up yet — ask an admin to configure one first.
               </p>
             </div>
+          ) : filteredEntries.length === 0 ? (
+            <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
+              <Search className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
+              <p className="text-base font-semibold text-gray-700 dark:text-white/80">No matches</p>
+              <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Try a different class or subject name.</p>
+            </div>
           ) : (
-            entries.map((entry, i) => {
+            filteredEntries.map((entry, i) => {
               const accent = ACCENTS[i % ACCENTS.length];
               return (
                 <button

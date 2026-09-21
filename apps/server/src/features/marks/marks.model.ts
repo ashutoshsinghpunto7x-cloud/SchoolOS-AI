@@ -52,6 +52,11 @@ export interface IMarks extends Document {
   // Who did what
   enteredById: string;
   enteredByName: string;
+  // Role of whoever first created this record — a principal/admin covering
+  // for a class doesn't "own" it the way a teacher does, so the per-record
+  // edit lock (assertCanEditExisting in marks.service.ts) only kicks in for
+  // teacher-entered records; a principal-entered one stays open to any teacher.
+  enteredByRole?: string;
   enteredAt: Date;
   lastEditedById?: string;
   lastEditedByName?: string;
@@ -118,6 +123,7 @@ const marksSchema = new Schema<IMarks>(
     workflowStatus:   { type: String, enum: WORKFLOW_STATUSES, default: 'draft' },
     enteredById:      { type: String, required: true },
     enteredByName:    { type: String, required: true },
+    enteredByRole:    { type: String },
     enteredAt:        { type: Date, required: true },
     lastEditedById:   { type: String },
     lastEditedByName: { type: String },

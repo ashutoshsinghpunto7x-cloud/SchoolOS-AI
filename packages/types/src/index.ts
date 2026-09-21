@@ -4203,6 +4203,7 @@ export interface Marks extends BaseEntity {
   workflowStatus: MarksWorkflowStatus;
   enteredById: string;
   enteredByName: string;
+  enteredByRole?: string;
   enteredAt: string;
   lastEditedById?: string;
   lastEditedByName?: string;

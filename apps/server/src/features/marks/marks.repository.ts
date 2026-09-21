@@ -18,6 +18,7 @@ export interface UpsertMarksData {
   remark?: string;
   enteredById: string;
   enteredByName: string;
+  enteredByRole?: string;
   auditEntry: IMarksAuditEntry;
 }
 
@@ -110,6 +111,7 @@ export const marksRepository = {
       workflowStatus: 'draft',
       enteredById: data.enteredById,
       enteredByName: data.enteredByName,
+      enteredByRole: data.enteredByRole,
       enteredAt: new Date(),
       auditTrail: [data.auditEntry],
       isDeleted: false,
@@ -126,10 +128,10 @@ export const marksRepository = {
 
   /** Just the ownership fields of an existing record, if any — used to check
    *  the per-record edit lock before a save without fetching the full document. */
-  async findExisting(schoolId: string, examId: string, studentId: string, subjectName: string): Promise<{ enteredById: string; enteredByName: string } | null> {
+  async findExisting(schoolId: string, examId: string, studentId: string, subjectName: string): Promise<{ enteredById: string; enteredByName: string; enteredByRole?: string } | null> {
     return Marks.findOne({ schoolId, examId, studentId, subjectName, isDeleted: false })
-      .select('enteredById enteredByName')
-      .lean<{ enteredById: string; enteredByName: string }>();
+      .select('enteredById enteredByName enteredByRole')
+      .lean<{ enteredById: string; enteredByName: string; enteredByRole?: string }>();
   },
 
   /** Full entry table for one class+section+subject+exam. */
