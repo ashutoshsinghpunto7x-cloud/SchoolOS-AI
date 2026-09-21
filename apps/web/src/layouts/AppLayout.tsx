@@ -98,9 +98,14 @@ function AppLayoutInner() {
         />
       )}
 
-      {/* Main content — offset by sidebar on desktop (not for teacher/parent/accountant/driver, whose sidebar doesn't apply) */}
+      {/* Main content — offset by sidebar on desktop (not for teacher/parent/accountant/driver, whose sidebar doesn't apply).
+          min-h-0 (not min-h-screen) is deliberate: as a flex-1 column item inside the outer h-screen row,
+          it must be allowed to shrink to the space actually available rather than asserting its own 100vh
+          floor — forcing 100vh here just adds a second overflow-hidden clipping boundary on top of `main`'s
+          own overflow-y-auto, which on some zoom/DPI combinations clips part of `main`'s scrollable content
+          before its scrollbar ever gets a chance to reach it. */}
       <div className={cn(
-        'flex flex-1 flex-col min-h-screen overflow-hidden',
+        'flex flex-1 flex-col min-h-0',
         !isTeacher && !isParentWorkspace && !isAccountant && !isDriver && 'lg:ml-[260px]'
       )}>
         {/* Accountant gets one combined header (AccountantTopNav: nav boxes +
