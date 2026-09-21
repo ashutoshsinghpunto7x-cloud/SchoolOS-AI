@@ -4,7 +4,7 @@ import { Camera, ImagePlus, X, Loader2, AlertTriangle, CheckCircle2, ArrowLeft }
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { marksApi } from '../api/marks.api';
-import { marksKeys, useExtractTermMarksFromImage } from '../hooks/useMarks';
+import { marksKeys, useExtractTermMarksFromImage, useMarksEntryTable } from '../hooks/useMarks';
 import type { Exam, TermExtractedRow, TermMarksExtractionResult } from '@schoolos/types';
 
 interface Props {
@@ -34,6 +34,16 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
   const queryClient = useQueryClient();
 
   const extractMutation = useExtractTermMarksFromImage();
+
+  // Class roster for the "Student" column's dropdown — lets a reviewer
+  // reassign a row to the correct student when the AI read the wrong name
+  // off the register. Any of the three exams gives the same class roster.
+  const { data: rosterTable } = useMarksEntryTable(
+    unitTest1ExamId
+      ? { examId: unitTest1ExamId, class: cls, section, subjectName }
+      : {},
+  );
+  const roster = rosterTable?.rows ?? [];
 
   // Some subjects (typically in lower classes — e.g. English → Literature,
   // Writing, Reading, Dictation/Spelling) are split into skills, each
@@ -65,6 +75,25 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
     } catch (err) {
       toast.error('Could not read the photo', { description: err instanceof Error ? err.message : undefined });
     }
+  }
+
+  // Re-point a row at a different student when the AI matched the wrong one
+  // off the register photo — keeps the scores it already read, just changes
+  // who they belong to.
+  function reassignRow(studentId: string, newStudentId: string) {
+    const student = roster.find((s) => s.studentId === newStudentId);
+    if (!student) return;
+    setResult((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rows: prev.rows.map((r) => (
+          r.studentId !== studentId
+            ? r
+            : { ...r, studentId: student.studentId, fullName: student.fullName, rollNumber: student.rollNumber }
+        )),
+      };
+    });
   }
 
   function editRow(studentId: string, field: keyof TermExtractedRow, value: number | undefined) {
@@ -251,42 +280,61 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
               {result.rows.length} student{result.rows.length === 1 ? '' : 's'} read — review before saving
             </p>
+            <div className="grid grid-cols-[1fr_2.25rem_2.25rem_2.25rem_2.25rem_2.25rem] gap-1 px-2.5">
+              <span />
+              {['UT1', 'UT2', 'Best', 'Half Yr', 'Total'].map((label) => (
+                <span key={label} className="text-[9px] font-bold text-gray-400 dark:text-white/40 text-center uppercase tracking-wide">{label}</span>
+              ))}
+            </div>
             <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
               {result.rows.map((row) => (
-                <div key={row.studentId} className="flex items-center justify-between gap-2 text-xs bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-2.5 py-1.5">
-                  <span className="flex items-center gap-1.5 text-gray-700 dark:text-white/80 font-medium truncate min-w-0 w-24 shrink-0">
+                <div key={row.studentId} className="grid grid-cols-[1fr_2.25rem_2.25rem_2.25rem_2.25rem_2.25rem] items-center gap-1 text-xs bg-emerald-50 dark:bg-emerald-500/10 rounded-lg px-2.5 py-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <span className="truncate">{row.fullName}</span>
-                  </span>
-                  {row.absent ? (
-                    <span className="text-[10px] font-semibold text-gray-400">Absent</span>
-                  ) : (
-                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                      {([
-                        ['unitTest1', 'UT1'],
-                        ['unitTest2', 'UT2'],
-                        ['mainExam', 'Half Yr'],
-                      ] as const).map(([field, label]) => (
-                        <label key={field} className="flex items-center gap-1">
-                          <span className="text-[9px] text-gray-400 dark:text-white/40">{label}</span>
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            value={row[field] ?? ''}
-                            onChange={(e) => editRow(row.studentId, field, e.target.value === '' ? undefined : Number(e.target.value))}
-                            className="w-11 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
-                          />
-                        </label>
+                    {/* Editable so a wrong AI-matched name/student can be corrected —
+                        reassigning here re-points this row's scores at the picked
+                        student instead of just relabeling the text. */}
+                    <select
+                      value={row.studentId}
+                      onChange={(e) => reassignRow(row.studentId, e.target.value)}
+                      className="min-w-0 flex-1 bg-transparent text-gray-700 dark:text-white/80 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 rounded"
+                    >
+                      {!roster.some((s) => s.studentId === row.studentId) && (
+                        <option value={row.studentId}>{row.fullName}</option>
+                      )}
+                      {roster.map((s) => (
+                        <option key={s.studentId} value={s.studentId}>{s.fullName}</option>
                       ))}
-                      <span className="flex items-center gap-1">
-                        <span className="text-[9px] text-gray-400 dark:text-white/40">Best</span>
-                        <span className="w-9 text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.bestUnitTest ?? '—'}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="text-[9px] text-gray-400 dark:text-white/40">Total</span>
-                        <span className="w-9 text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.total ?? '—'}</span>
-                      </span>
-                    </div>
+                    </select>
+                  </div>
+                  {row.absent ? (
+                    <span className="col-span-5 text-[10px] font-semibold text-gray-400 text-center">Absent</span>
+                  ) : (
+                    <>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={row.unitTest1 ?? ''}
+                        onChange={(e) => editRow(row.studentId, 'unitTest1', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                      />
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={row.unitTest2 ?? ''}
+                        onChange={(e) => editRow(row.studentId, 'unitTest2', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                      />
+                      <span className="text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.bestUnitTest ?? '—'}</span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={row.mainExam ?? ''}
+                        onChange={(e) => editRow(row.studentId, 'mainExam', e.target.value === '' ? undefined : Number(e.target.value))}
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                      />
+                      <span className="text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.total ?? '—'}</span>
+                    </>
                   )}
                 </div>
               ))}
