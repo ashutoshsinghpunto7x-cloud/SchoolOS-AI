@@ -217,7 +217,10 @@ function StudentRow({
                     onChangeScore(row.studentId, c.name, v);
                   }}
                   className={cn(
-                    'w-16 h-9 px-2 rounded-lg border text-sm tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed',
+                    // text-base (16px), not text-sm — anything smaller makes iOS Safari
+                    // auto-zoom the whole page in on focus, which is what made this
+                    // field look broken/oversized on phones.
+                    'w-[4.5rem] h-10 px-2 rounded-lg border text-base tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed',
                     invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#A855F7]/30',
                   )}
                 />
@@ -1163,7 +1166,8 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                                         onChange={(e) => handleChangeScore(row.studentId, skill, c.name, e.target.value === '' ? undefined : Number(e.target.value))}
                                         placeholder={`/${c.maxMarks}`}
                                         className={cn(
-                                          'w-16 h-8 px-2 rounded-lg border text-xs tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50',
+                                          // text-base (16px) avoids iOS Safari's auto-zoom-on-focus for small inputs.
+                                          'w-[4.5rem] h-9 px-2 rounded-lg border text-base tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50',
                                           invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#A855F7]/30',
                                         )}
                                       />

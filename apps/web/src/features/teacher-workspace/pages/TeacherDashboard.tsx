@@ -179,7 +179,7 @@ function TodayClassCard({
     >
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
-        <div className="flex items-center gap-20">
+        <div className="flex items-center gap-2">
           <p className="text-xs text-gray-400 dark:text-white/35 font-medium">
             {cls.startTime} - {cls.endTime}
           </p>

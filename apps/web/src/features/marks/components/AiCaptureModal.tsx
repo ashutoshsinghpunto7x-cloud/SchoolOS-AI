@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Mic, Square, X, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Camera, ImagePlus, Mic, Square, X, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useExtractMarksFromImage, useExtractMarksFromVoice, useExtractMarksFromTranscript } from '../hooks/useMarks';
@@ -85,7 +85,8 @@ const LIVE_EXTRACT_TIMEOUT_MS = 12_000;
 export function AiCaptureModal({ target, onApply, onClose }: Props) {
   const [tab, setTab] = useState<'photo' | 'voice'>('photo');
   const [result, setResult] = useState<MarksExtractionResult | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -127,7 +128,6 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
   const imageMutation = useExtractMarksFromImage();
   const voiceMutation = useExtractMarksFromVoice();
   const transcriptMutation = useExtractMarksFromTranscript();
-  const isBusy = imageMutation.isPending || voiceMutation.isPending;
 
   useEffect(() => () => {
     recognitionRef.current?.stop();
@@ -401,17 +401,31 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
 
             <div className="p-4">
               {tab === 'photo' ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isBusy}
-                  className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50 disabled:opacity-50"
-                >
-                  {imageMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-                  <span className="text-xs font-semibold px-4 text-center">
-                    {imageMutation.isPending ? 'Reading photo…' : 'Take or upload a photo of the marks sheet'}
-                  </span>
-                </button>
+                imageMutation.isPending ? (
+                  <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span className="text-xs font-semibold px-4 text-center">Reading photo…</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                    >
+                      <Camera className="w-6 h-6" />
+                      <span className="text-xs font-semibold px-2 text-center">Take Photo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => uploadInputRef.current?.click()}
+                      className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                    >
+                      <ImagePlus className="w-6 h-6" />
+                      <span className="text-xs font-semibold px-2 text-center">Upload Photo</span>
+                    </button>
+                  </div>
+                )
               ) : showingLiveDictation ? (
                 <div className="space-y-3">
                   <div className="w-full rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-500/30 bg-violet-50/50 dark:bg-violet-500/5 p-3 min-h-[5rem]">
@@ -471,7 +485,8 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
                   )}
                 </div>
               )}
-              <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
+              <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
             </div>
           </>
         )}

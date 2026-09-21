@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Camera, X, Loader2, AlertTriangle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Camera, ImagePlus, X, Loader2, AlertTriangle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { marksApi } from '../api/marks.api';
@@ -29,7 +29,8 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
   const [skill, setSkill] = useState('');
   const [result, setResult] = useState<TermMarksExtractionResult | null>(null);
   const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   const extractMutation = useExtractTermMarksFromImage();
@@ -213,18 +214,34 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
 
         {step === 'capture' && (
           <div className="p-4">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={extractMutation.isPending}
-              className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50 disabled:opacity-50"
-            >
-              {extractMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
-              <span className="text-xs font-semibold px-4 text-center">
-                {extractMutation.isPending ? 'Reading photo…' : 'Take or upload a photo of the combined register'}
-              </span>
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
+            {extractMutation.isPending ? (
+              <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span className="text-xs font-semibold px-4 text-center">Reading photo…</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                >
+                  <Camera className="w-6 h-6" />
+                  <span className="text-xs font-semibold px-2 text-center">Take Photo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => uploadInputRef.current?.click()}
+                  className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                >
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-xs font-semibold px-2 text-center">Upload Photo</span>
+                </button>
+              </div>
+            )}
+            <p className="text-[11px] text-gray-400 dark:text-white/30 text-center mt-2">Combined register covering all three exams</p>
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
+            <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
           </div>
         )}
 
