@@ -105,7 +105,7 @@ function AppLayoutInner() {
           own overflow-y-auto, which on some zoom/DPI combinations clips part of `main`'s scrollable content
           before its scrollbar ever gets a chance to reach it. */}
       <div className={cn(
-        'flex flex-1 flex-col min-h-0',
+        'flex flex-1 flex-col min-h-0 min-w-0',
         !isTeacher && !isParentWorkspace && !isAccountant && !isDriver && 'lg:ml-[260px]'
       )}>
         {/* Accountant gets one combined header (AccountantTopNav: nav boxes +
