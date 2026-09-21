@@ -558,7 +558,14 @@ function SimpleMarksEntryPage() {
   const submitDisabled = isSubmitting || dirty || hasInvalid || unfilledCount === rows.length || rows.length === 0 || !allEditable;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
+    // shrink-0 is load-bearing: `main` (AppLayout) is itself a flex-col container, so
+    // without it this page — as main's sole flex child — gets flex-shrunk down to
+    // main's own viewport-sized box instead of growing to its full content height.
+    // The rows list's own `overflow-hidden` then silently clips everything past the
+    // first few students (no scrollbar, no error) since it's the descendant that
+    // absorbs that shrink. shrink-0 forces this div to its natural content size so
+    // `main`'s overflow-y-auto has something real to scroll.
+    <div className="min-h-screen shrink-0 bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate(`${basePath}/marks`)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
@@ -702,8 +709,17 @@ function SimpleMarksEntryPage() {
 
           {editableRows.length > 0 && (
             <>
-              <div className="h-24" aria-hidden="true" />
-              <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5">
+              {/* Spacer must clear the fixed bar's full footprint (its own height plus
+                  whatever bottom offset it sits at) or the last row stays permanently
+                  hidden behind it, no matter how far you scroll. Only the teacher portal
+                  has its own mobile bottom nav to clear (bottom-16); principal/admin
+                  render this page under the plain sidebar shell, which has none — giving
+                  it that same bottom-16 offset just floats the bar above dead space. */}
+              <div className={cn('h-24', !isPrincipalOrAdmin && 'max-lg:h-[136px]')} aria-hidden="true" />
+              <div className={cn(
+                'fixed inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5',
+                isPrincipalOrAdmin ? 'bottom-0' : 'bottom-16 lg:bottom-0',
+              )}>
                 <button
                   type="button"
                   onClick={handleSaveDraft}
@@ -1022,7 +1038,10 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
+    // shrink-0: see SimpleMarksEntryPage's identical root div for why this is required —
+    // without it, `main`'s flex-col layout crushes this page down to viewport height and
+    // the rows list's overflow-hidden silently eats everything past the first few rows.
+    <div className="min-h-screen shrink-0 bg-[#F8FAFC] dark:bg-[#0B0518] flex flex-col">
       <div className="bg-white dark:bg-[#0F0821] border-b border-gray-100 dark:border-white/5 px-4 py-4">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate(`${basePath}/marks`)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
@@ -1188,8 +1207,13 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
 
           {!someLocked && rows.length > 0 && (
             <>
-              <div className="h-24" aria-hidden="true" />
-              <div className="fixed bottom-16 lg:bottom-0 inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5">
+              {/* See SimpleMarksEntryPage's identical spacer/bar for why this must be
+                  role-aware: only the teacher portal has a mobile bottom nav to clear. */}
+              <div className={cn('h-24', !isPrincipalOrAdmin && 'max-lg:h-[136px]')} aria-hidden="true" />
+              <div className={cn(
+                'fixed inset-x-0 z-30 px-4 py-3 bg-[#F8FAFC] dark:bg-[#0B0518] border-t border-gray-200/60 dark:border-white/5 flex gap-2.5',
+                isPrincipalOrAdmin ? 'bottom-0' : 'bottom-16 lg:bottom-0',
+              )}>
                 <button
                   type="button"
                   onClick={handleSaveDraft}
