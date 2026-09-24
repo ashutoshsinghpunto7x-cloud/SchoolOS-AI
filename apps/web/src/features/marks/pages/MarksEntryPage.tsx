@@ -86,10 +86,30 @@ function rowIsEditable(status: MarksWorkflowStatus | null, role?: string): boole
 // marks.service.ts's assertCanEditExisting on the server, which is the
 // real enforcement; this just keeps the UI from offering an edit the save
 // would reject anyway.
-function rowIsLockedByOther(row: RowState, currentUserId: string | undefined, role: string | undefined): boolean {
-  // A principal/admin-entered row (enteredByRole !== 'teacher') never locks
-  // out the actual subject teacher — see marks.service.ts's assertCanEditExisting.
-  return role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId && row.enteredByRole === 'teacher';
+function rowIsLockedByOther(
+  row: RowState,
+  currentUserId: string | undefined,
+  role: string | undefined,
+  sheetOwner?: { enteredById: string; enteredByName: string } | null,
+): boolean {
+  if (role !== 'teacher') return false;
+  if (row.enteredById) {
+    // A principal/admin-entered row (enteredByRole !== 'teacher') never locks
+    // out the actual subject teacher — see marks.service.ts's assertCanEditExisting.
+    return row.enteredById !== currentUserId && row.enteredByRole === 'teacher';
+  }
+  // A still-blank row is reserved for whoever already owns this class+subject
+  // sheet — mirrors marks.service.ts's assertCanEnterNewRecord, so the UI
+  // doesn't offer an entry the server would reject anyway.
+  return !!sheetOwner;
+}
+
+// The teacher who has already saved at least one mark in this class+subject
+// sheet, if it isn't the current user — the remaining blank rows are theirs
+// to fill, not up for grabs. Mirrors marks.service.ts's findBatchOwner.
+function findSheetOwner(rows: RowState[], currentUserId: string | undefined): { enteredById: string; enteredByName: string } | null {
+  const owner = rows.find((r) => r.enteredByRole === 'teacher' && r.enteredById && r.enteredById !== currentUserId);
+  return owner ? { enteredById: owner.enteredById as string, enteredByName: owner.enteredByName ?? 'another teacher' } : null;
 }
 
 // Delete follows the same ownership rule as edit: the entering teacher, or a
@@ -152,7 +172,7 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
 // ── Student row ───────────────────────────────────────────────────────────────
 
 function StudentRow({
-  row, index, maxByComponent, editable, lockedByOther, aiFilled, onChangeScore, onChangeStatus,
+  row, index, maxByComponent, editable, lockedByOther, sheetOwnerName, aiFilled, onChangeScore, onChangeStatus,
   deletable, selectMode, selected, onToggleSelect, onDelete,
 }: {
   row: RowState;
@@ -160,6 +180,7 @@ function StudentRow({
   maxByComponent: { name: string; maxMarks: number }[];
   editable: boolean;
   lockedByOther?: boolean;
+  sheetOwnerName?: string;
   aiFilled?: boolean;
   onChangeScore: (studentId: string, componentName: string, score: number | undefined) => void;
   onChangeStatus: (studentId: string, status: ComponentStatus) => void;
@@ -202,13 +223,21 @@ function StudentRow({
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
             {row.fullName}
           </p>
-          {row.workflowStatus && (
-            <p className="text-[10px] text-gray-400 dark:text-white/30 truncate flex items-center gap-1">
+          {row.workflowStatus ? (
+            <p
+              className="text-[10px] text-gray-400 dark:text-white/30 flex items-center gap-1 flex-wrap"
+              title={`Entered by ${row.enteredByName || 'Unknown teacher'}`}
+            >
               {lockedByOther && <Lock className="w-2.5 h-2.5 shrink-0" />}
-              Entered by {row.enteredByName || 'Unknown teacher'}
-              {lockedByOther && ' — read-only'}
+              <span>Entered by {row.enteredByName || 'Unknown teacher'}</span>
+              {lockedByOther && <span>— read-only</span>}
             </p>
-          )}
+          ) : lockedByOther && sheetOwnerName ? (
+            <p className="text-[10px] text-gray-400 dark:text-white/30 flex items-center gap-1 flex-wrap" title={`Reserved for ${sheetOwnerName}`}>
+              <Lock className="w-2.5 h-2.5 shrink-0" />
+              <span>Reserved for {sheetOwnerName}</span>
+            </p>
+          ) : null}
         </div>
         {row.workflowStatus && (
           <span className={cn('text-[10px] font-bold px-2 py-1 rounded-full shrink-0', WORKFLOW_BADGE[row.workflowStatus].className)}>
@@ -460,12 +489,13 @@ function SimpleMarksEntryPage() {
   }
 
   const isPrincipalOrAdmin = user?.role === 'principal' || user?.role === 'admin';
+  const sheetOwner = useMemo(() => findSheetOwner(rows, user?.userId), [rows, user?.userId]);
   const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus, user?.role));
   const allEditable = rows.length > 0 && editableRows.length === rows.length;
   const someLocked = rows.length > 0 && editableRows.length === 0;
 
-  const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus, user?.role) && !rowIsLockedByOther(r, user?.userId, user?.role);
-  const otherOwnedCount = editableRows.filter((r) => rowIsLockedByOther(r, user?.userId, user?.role)).length;
+  const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus, user?.role) && !rowIsLockedByOther(r, user?.userId, user?.role, sheetOwner);
+  const otherOwnedCount = editableRows.filter((r) => rowIsLockedByOther(r, user?.userId, user?.role, sheetOwner)).length;
 
   // A teacher who has never entered a single mark in this class+subject (only
   // ever viewing another teacher's already-entered rows) has nothing of their
@@ -796,7 +826,7 @@ function SimpleMarksEntryPage() {
             <div className="mx-4 mt-4 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3">
               <Lock className="w-5 h-5 text-gray-500 dark:text-white/40 shrink-0" />
               <p className="text-sm font-semibold text-gray-600 dark:text-white/60">
-                {otherOwnedCount} student{otherOwnedCount === 1 ? '' : 's'} already {otherOwnedCount === 1 ? 'has' : 'have'} marks entered by another teacher — shown read-only below.
+                {otherOwnedCount} student{otherOwnedCount === 1 ? '' : 's'} {otherOwnedCount === 1 ? 'is' : 'are'} reserved for {sheetOwner?.enteredByName ?? 'another teacher'} — shown read-only below.
               </p>
             </div>
           )}
@@ -844,7 +874,8 @@ function SimpleMarksEntryPage() {
                   index={i}
                   maxByComponent={table.exam.components}
                   editable={canEditRow(row)}
-                  lockedByOther={rowIsLockedByOther(row, user?.userId, user?.role)}
+                  lockedByOther={rowIsLockedByOther(row, user?.userId, user?.role, sheetOwner)}
+                  sheetOwnerName={sheetOwner?.enteredByName}
                   aiFilled={aiFilledIds.has(row.studentId)}
                   onChangeScore={handleChangeScore}
                   onChangeStatus={handleChangeStatus}

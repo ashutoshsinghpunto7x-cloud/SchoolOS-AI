@@ -54,6 +54,26 @@ async function assertCanEditExisting(
   }
 }
 
+// Once a teacher has entered ANY student's marks for a given class+section+
+// subject+exam, the still-blank students in that same sheet are reserved for
+// them too — a second teacher can't "fill in the gaps" of someone else's
+// sheet even though open access lets them open it. Mirrors
+// assertCanEditExisting's per-record rule, just applied before a record
+// exists yet.
+function findBatchOwner(
+  batchRecords: { enteredById: string; enteredByName: string; enteredByRole?: string }[],
+  ctx: AuthContext,
+): { enteredById: string; enteredByName: string } | null {
+  const owner = batchRecords.find((r) => r.enteredByRole === 'teacher' && r.enteredById !== ctx.userId);
+  return owner ? { enteredById: owner.enteredById, enteredByName: owner.enteredByName } : null;
+}
+
+function assertCanEnterNewRecord(owner: { enteredById: string; enteredByName: string } | null, ctx: AuthContext): void {
+  if (owner && ctx.role === 'teacher') {
+    throw new ForbiddenError(`These marks are being entered by ${owner.enteredByName} — only they can add the remaining students`);
+  }
+}
+
 // ── Delete authorization ────────────────────────────────────────────────────────
 // A teacher may only delete marks they themselves entered. Principal/admin can
 // delete any record — same override the review workflow already grants them.
@@ -154,7 +174,14 @@ export const marksService = {
     if (!student) throw new NotFoundError('Student');
 
     const existing = await marksRepository.findExisting(ctx.schoolId, data.examId, data.studentId, data.subjectName);
-    await assertCanEditExisting(existing, ctx);
+    if (existing) {
+      await assertCanEditExisting(existing, ctx);
+    } else if (ctx.role === 'teacher') {
+      const batchRecords = await marksRepository.findByBatch({
+        schoolId: ctx.schoolId, examId: data.examId, class: data.class, section: data.section, subjectName: data.subjectName,
+      });
+      assertCanEnterNewRecord(findBatchOwner(batchRecords, ctx), ctx);
+    }
 
     validateComponentScores(data.componentScores, exam);
     const computed = computeResult(data.componentScores, exam);
@@ -199,14 +226,19 @@ export const marksService = {
     // means overlap is now possible) — silently skip those locked rows
     // rather than failing the whole batch, since the entry-table UI already
     // renders them read-only and shouldn't have sent them in the first place.
-    const existingByStudent = ctx.role === 'teacher'
-      ? new Map((await marksRepository.findByBatch({ schoolId: ctx.schoolId, examId: data.examId, class: data.class, section: data.section, subjectName: data.subjectName })).map((m) => [m.studentId, m]))
-      : new Map<string, IMarks>();
+    // The still-blank students (no existing record) are skipped the same way
+    // once another teacher owns this batch — see findBatchOwner.
+    const batchRecords = ctx.role === 'teacher'
+      ? await marksRepository.findByBatch({ schoolId: ctx.schoolId, examId: data.examId, class: data.class, section: data.section, subjectName: data.subjectName })
+      : [];
+    const existingByStudent = new Map<string, IMarks>(batchRecords.map((m) => [m.studentId, m]));
+    const batchOwner = findBatchOwner(batchRecords, ctx);
     const editable = data.records.filter((r) => {
       const existing = existingByStudent.get(r.studentId);
       // Same rule as assertCanEditExisting: a principal/admin-entered record
       // (enteredByRole !== 'teacher') never locks another teacher out.
-      return !existing || existing.enteredById === ctx.userId || existing.enteredByRole !== 'teacher';
+      if (existing) return existing.enteredById === ctx.userId || existing.enteredByRole !== 'teacher';
+      return !batchOwner;
     });
 
     const records = await marksRepository.bulkUpsert(
