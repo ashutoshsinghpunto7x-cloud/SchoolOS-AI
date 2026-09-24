@@ -13,6 +13,8 @@ import type {
   TermExtractionTarget,
   TermMarksExtractionResult,
   PaginatedResponse,
+  MarksDeleteBulkPayload,
+  MarksDeleteResult,
 } from '@schoolos/types';
 
 const BASE = '/marks';
@@ -170,6 +172,26 @@ export const marksApi = {
         params: target,
         ...(timeoutMs ? { timeout: timeoutMs } : {}),
       });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  deleteOne: async (id: string): Promise<void> => {
+    try {
+      await apiClient.delete(`${BASE}/${id}`);
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  deleteBulk: async (payload: MarksDeleteBulkPayload): Promise<MarksDeleteResult> => {
+    try {
+      const res = await apiClient.post<{ data: MarksDeleteResult }>(`${BASE}/delete-bulk`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  deleteBatch: async (target: MarksBatchTarget): Promise<MarksDeleteResult> => {
+    try {
+      const res = await apiClient.post<{ data: MarksDeleteResult }>(`${BASE}/delete-batch`, target);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

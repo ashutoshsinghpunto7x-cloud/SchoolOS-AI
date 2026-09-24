@@ -4257,6 +4257,15 @@ export interface MarksReopenPayload extends MarksBatchTarget {
   reason: string;
 }
 
+export interface MarksDeleteBulkPayload {
+  ids: string[];
+}
+
+export interface MarksDeleteResult {
+  deleted: number;
+  skipped?: number;
+}
+
 export interface MarksEntryRow {
   studentId: string;
   fullName: string;

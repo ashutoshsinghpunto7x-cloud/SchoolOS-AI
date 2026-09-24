@@ -8,6 +8,7 @@ import type {
   MarksReviewActionPayload,
   MarksReopenPayload,
   TermExtractionTarget,
+  MarksDeleteBulkPayload,
 } from '@schoolos/types';
 
 export const marksKeys = {
@@ -62,6 +63,9 @@ export const useRequestMarksCorrection = () => useBatchMutation((payload: MarksR
 export const usePublishMarks = () => useBatchMutation((target: MarksBatchTarget) => marksApi.publish(target));
 export const useLockMarks = () => useBatchMutation((target: MarksBatchTarget) => marksApi.lock(target));
 export const useReopenMarks = () => useBatchMutation((payload: MarksReopenPayload) => marksApi.reopen(payload));
+export const useDeleteMarks = () => useBatchMutation((id: string) => marksApi.deleteOne(id));
+export const useDeleteMarksBulk = () => useBatchMutation((payload: MarksDeleteBulkPayload) => marksApi.deleteBulk(payload));
+export const useDeleteMarksBatch = () => useBatchMutation((target: MarksBatchTarget) => marksApi.deleteBatch(target));
 
 // AI extraction never saves anything, so no query invalidation on success.
 export const useExtractMarksFromImage = () =>

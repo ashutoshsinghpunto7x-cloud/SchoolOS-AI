@@ -4,10 +4,12 @@ import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   ArrowLeft, AlertCircle, Loader2, CheckCircle2, Lock, Send, Save, Info, Download, Sparkles, ListTree, Undo2, RotateCcw,
+  Trash2, CheckSquare, X,
 } from 'lucide-react';
 import {
   useMarksEntryTable, useMarksSummary, useBulkUpsertMarks, useSubmitMarksForReview,
-  useApproveMarks, useRequestMarksCorrection, usePublishMarks, useLockMarks, useReopenMarks, marksKeys,
+  useApproveMarks, useRequestMarksCorrection, usePublishMarks, useLockMarks, useReopenMarks,
+  useDeleteMarks, useDeleteMarksBulk, useDeleteMarksBatch, marksKeys,
 } from '../hooks/useMarks';
 import { marksApi } from '../api/marks.api';
 import { AiCaptureModal } from '../components/AiCaptureModal';
@@ -27,6 +29,7 @@ import type {
 // ── Row state ─────────────────────────────────────────────────────────────────
 
 interface RowState {
+  id?: string; // the underlying Marks record's _id — undefined until first saved
   studentId: string;
   fullName: string;
   rollNumber?: string;
@@ -89,6 +92,15 @@ function rowIsLockedByOther(row: RowState, currentUserId: string | undefined, ro
   return role === 'teacher' && !!row.enteredById && row.enteredById !== currentUserId && row.enteredByRole === 'teacher';
 }
 
+// Delete follows the same ownership rule as edit: the entering teacher, or a
+// principal/admin, for a record that isn't locked. Mirrors marks.service.ts's
+// canDeleteRecord — this is only a UI convenience, the server enforces it too.
+function rowIsDeletable(row: RowState, currentUserId: string | undefined, role: string | undefined): boolean {
+  if (!row.id || row.workflowStatus === 'locked') return false;
+  if (role === 'admin' || role === 'principal') return true;
+  return row.enteredById === currentUserId;
+}
+
 // A row is "complete" once every present-status component has a valid score
 // in range — the server rejects a bulk save outright if any record in the
 // batch fails this, so an untouched row (still defaulted to present/no
@@ -141,6 +153,7 @@ function KpiPill({ label, value, tone }: { label: string; value: number; tone?: 
 
 function StudentRow({
   row, index, maxByComponent, editable, lockedByOther, aiFilled, onChangeScore, onChangeStatus,
+  deletable, selectMode, selected, onToggleSelect, onDelete,
 }: {
   row: RowState;
   index: number;
@@ -150,6 +163,11 @@ function StudentRow({
   aiFilled?: boolean;
   onChangeScore: (studentId: string, componentName: string, score: number | undefined) => void;
   onChangeStatus: (studentId: string, status: ComponentStatus) => void;
+  deletable?: boolean;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (studentId: string) => void;
+  onDelete?: (row: RowState) => void;
 }) {
   const color = avatarColorFor(row.studentId);
   const initials = row.fullName.split(' ').slice(0, 2).map((w) => w[0] ?? '').join('').toUpperCase();
@@ -165,7 +183,18 @@ function StudentRow({
   return (
     <div className={cn('px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0', aiFilled && 'bg-violet-50/60 dark:bg-violet-500/[0.06]')}>
       <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono tabular-nums">{index + 1}</span>
+        {selectMode ? (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            disabled={!deletable}
+            onChange={() => onToggleSelect?.(row.studentId)}
+            className="w-4 h-4 shrink-0 rounded border-gray-300 dark:border-white/20 text-[#A855F7] focus:ring-[#A855F7]/30 disabled:opacity-30"
+            title={deletable ? undefined : 'Not yours to delete'}
+          />
+        ) : (
+          <span className="text-xs text-gray-400 dark:text-white/30 w-6 text-right shrink-0 font-mono tabular-nums">{index + 1}</span>
+        )}
         <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0', color.bg)}>
           <span className={cn('text-[10px] font-bold', color.text)}>{initials}</span>
         </div>
@@ -173,10 +202,10 @@ function StudentRow({
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
             {row.fullName}
           </p>
-          {row.enteredByName && (
+          {row.workflowStatus && (
             <p className="text-[10px] text-gray-400 dark:text-white/30 truncate flex items-center gap-1">
               {lockedByOther && <Lock className="w-2.5 h-2.5 shrink-0" />}
-              Entered by {row.enteredByName}
+              Entered by {row.enteredByName || 'Unknown teacher'}
               {lockedByOther && ' — read-only'}
             </p>
           )}
@@ -194,6 +223,16 @@ function StudentRow({
         >
           {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        {!selectMode && deletable && (
+          <button
+            type="button"
+            onClick={() => onDelete?.(row)}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 dark:text-white/20 dark:hover:text-red-400 dark:hover:bg-red-500/10 shrink-0 transition-colors"
+            title="Delete this student's marks"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {isPresent && (
@@ -311,11 +350,16 @@ function SimpleMarksEntryPage() {
   const { mutateAsync: publishMarks, isPending: isPublishing } = usePublishMarks();
   const { mutateAsync: lockMarks, isPending: isLocking } = useLockMarks();
   const { mutateAsync: reopenMarks, isPending: isReopening } = useReopenMarks();
+  const { mutateAsync: deleteOneMarks } = useDeleteMarks();
+  const { mutateAsync: deleteBulkMarks, isPending: isDeletingBulk } = useDeleteMarksBulk();
+  const { mutateAsync: deleteBatchMarks, isPending: isDeletingBatch } = useDeleteMarksBatch();
 
   const [rows, setRows] = useState<RowState[]>([]);
   const [dirty, setDirty] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiFilledIds, setAiFilledIds] = useState<Set<string>>(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // ── Smart draft (client-side autosave + crash recovery) ───────────────────
   const { user } = useAuth();
@@ -346,6 +390,7 @@ function SimpleMarksEntryPage() {
       table.rows.map((r): RowState => {
         const existing = r.marks;
         return {
+          id: existing?._id,
           studentId: r.studentId,
           fullName: r.fullName,
           rollNumber: r.rollNumber,
@@ -421,6 +466,66 @@ function SimpleMarksEntryPage() {
 
   const canEditRow = (r: RowState) => rowIsEditable(r.workflowStatus, user?.role) && !rowIsLockedByOther(r, user?.userId, user?.role);
   const otherOwnedCount = editableRows.filter((r) => rowIsLockedByOther(r, user?.userId, user?.role)).length;
+
+  // A teacher who has never entered a single mark in this class+subject (only
+  // ever viewing another teacher's already-entered rows) has nothing of their
+  // own to submit — mirrors marks.service.ts's submitForReview ownership
+  // filter, which would otherwise 403 on a click that looked available.
+  const savedRows = rows.filter((r) => r.workflowStatus !== null);
+  const teacherHasNoOwnRecords = user?.role === 'teacher' && savedRows.length > 0
+    && savedRows.every((r) => r.enteredById !== user?.userId && r.enteredByRole === 'teacher');
+
+  const deletableRows = rows.filter((r) => rowIsDeletable(r, user?.userId, user?.role));
+  const canBulkDelete = deletableRows.length > 0;
+
+  function toggleSelectStudent(studentId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(studentId)) next.delete(studentId); else next.add(studentId);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  async function handleDeleteRow(row: RowState) {
+    if (!row.id) return;
+    if (!window.confirm(`Delete ${row.fullName}'s marks for this exam? This can't be undone.`)) return;
+    try {
+      await deleteOneMarks(row.id);
+      toast.success('Marks deleted', { description: `${row.fullName}'s marks were removed` });
+    } catch (err) {
+      toast.error('Could not delete', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleDeleteSelected() {
+    const ids = rows.filter((r) => selectedIds.has(r.studentId) && r.id).map((r) => r.id as string);
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete marks for ${ids.length} student${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return;
+    try {
+      const result = await deleteBulkMarks({ ids });
+      toast.success(`${result.deleted} record(s) deleted`, result.skipped ? { description: `${result.skipped} skipped` } : undefined);
+      exitSelectMode();
+    } catch (err) {
+      toast.error('Could not delete', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
+
+  async function handleDeleteAll() {
+    if (!cls || !section || !examId || !subjectName) return;
+    if (!window.confirm(`Delete all entered marks for Class ${cls}-${section} · ${subjectName}? This can't be undone.`)) return;
+    try {
+      const result = await deleteBatchMarks({ examId, class: cls, section, subjectName });
+      toast.success(`${result.deleted} record(s) deleted`, result.skipped ? { description: `${result.skipped} skipped` } : undefined);
+      exitSelectMode();
+    } catch (err) {
+      toast.error('Could not delete', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
+    }
+  }
 
   const maxByComponentName = useMemo(
     () => new Map((table?.exam.components ?? []).map((c) => [c.name, c.maxMarks])),
@@ -555,7 +660,7 @@ function SimpleMarksEntryPage() {
   }
 
   const isLoadingAny = isLoading;
-  const submitDisabled = isSubmitting || dirty || hasInvalid || unfilledCount === rows.length || rows.length === 0 || !allEditable;
+  const submitDisabled = isSubmitting || dirty || hasInvalid || unfilledCount === rows.length || rows.length === 0 || !allEditable || teacherHasNoOwnRecords;
 
   return (
     // shrink-0 is load-bearing: `main` (AppLayout) is itself a flex-col container, so
@@ -596,6 +701,17 @@ function SimpleMarksEntryPage() {
           >
             <Download className="w-3.5 h-3.5" /> Download
           </button>
+          {canBulkDelete && (
+            <button
+              type="button"
+              onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+              className="h-9 px-3 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5 flex items-center gap-1.5 shrink-0 transition-colors"
+              title="Select marks to delete"
+            >
+              {selectMode ? <X className="w-3.5 h-3.5" /> : <CheckSquare className="w-3.5 h-3.5" />}
+              {selectMode ? 'Cancel' : 'Select'}
+            </button>
+          )}
         </div>
 
         {summary && (
@@ -685,6 +801,36 @@ function SimpleMarksEntryPage() {
             </div>
           )}
 
+          {canBulkDelete && (
+            <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-3 flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs font-semibold text-gray-500 dark:text-white/50">
+                {selectMode ? `${selectedIds.size} selected` : `${deletableRows.length} record(s) you can delete`}
+              </p>
+              <div className="flex gap-2">
+                {selectMode && selectedIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteSelected}
+                    disabled={isDeletingBulk}
+                    className="h-8 px-3 rounded-lg bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {isDeletingBulk ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Delete Selected ({selectedIds.size})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleDeleteAll}
+                  disabled={isDeletingBatch}
+                  className="h-8 px-3 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                >
+                  {isDeletingBatch ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Delete All
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="mx-4 mt-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm overflow-hidden">
             {rows.length === 0 ? (
               <div className="py-12 text-center">
@@ -702,6 +848,11 @@ function SimpleMarksEntryPage() {
                   aiFilled={aiFilledIds.has(row.studentId)}
                   onChangeScore={handleChangeScore}
                   onChangeStatus={handleChangeStatus}
+                  deletable={rowIsDeletable(row, user?.userId, user?.role)}
+                  selectMode={selectMode}
+                  selected={selectedIds.has(row.studentId)}
+                  onToggleSelect={toggleSelectStudent}
+                  onDelete={handleDeleteRow}
                 />
               ))
             )}
@@ -1153,10 +1304,10 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                                 </span>
                               )}
                             </div>
-                            {skillRow.enteredByName && (
+                            {skillRow.workflowStatus && (
                               <p className="text-[9px] text-gray-400 dark:text-white/30 truncate flex items-center gap-1">
                                 {lockedByOther && <Lock className="w-2.5 h-2.5 shrink-0" />}
-                                {skillRow.enteredByName}
+                                {skillRow.enteredByName || 'Unknown teacher'}
                               </p>
                             )}
                             <select

@@ -62,6 +62,12 @@ export const reopenActionSchema = marksBatchTargetSchema.extend({
   reason: z.string({ required_error: 'A reason is required to reopen published marks' }).min(3).max(500),
 });
 
+// ── Delete ────────────────────────────────────────────────────────────────────
+
+export const deleteBulkMarksSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, 'At least one id is required').max(300, 'Max 300 records per request'),
+});
+
 // ── List / filter query ───────────────────────────────────────────────────────
 
 export const listMarksSchema = z.object({
@@ -104,3 +110,4 @@ export type ReopenActionInput    = z.infer<typeof reopenActionSchema>;
 export type ListMarksInput       = z.infer<typeof listMarksSchema>;
 export type EntryTableQuery      = z.infer<typeof entryTableQuerySchema>;
 export type TermExtractionQuery  = z.infer<typeof termExtractionQuerySchema>;
+export type DeleteBulkMarksInput = z.infer<typeof deleteBulkMarksSchema>;

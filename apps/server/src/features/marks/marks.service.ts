@@ -9,6 +9,7 @@ import {
   reopenActionSchema,
   listMarksSchema,
   entryTableQuerySchema,
+  deleteBulkMarksSchema,
 } from './marks.validation';
 import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
@@ -51,6 +52,14 @@ async function assertCanEditExisting(
   if (ctx.role === 'teacher' && existing.enteredById !== ctx.userId && existing.enteredByRole === 'teacher') {
     throw new ForbiddenError(`These marks were entered by ${existing.enteredByName} — only they can edit them`);
   }
+}
+
+// ── Delete authorization ────────────────────────────────────────────────────────
+// A teacher may only delete marks they themselves entered. Principal/admin can
+// delete any record — same override the review workflow already grants them.
+function canDeleteRecord(record: { enteredById: string; enteredByRole?: string }, ctx: AuthContext): boolean {
+  if (ctx.role === 'admin' || ctx.role === 'principal') return true;
+  return record.enteredById === ctx.userId;
 }
 
 // ── Result computation ─────────────────────────────────────────────────────────
@@ -295,12 +304,26 @@ export const marksService = {
     const records = await marksRepository.findByBatch({ schoolId: ctx.schoolId, ...target });
     if (records.length === 0) throw new ValidationError('No marks entered yet for this class and subject');
 
-    const incomplete = records.filter((r) =>
+    // A teacher may only submit the records they themselves entered — a
+    // record another teacher entered (open class/subject access allows
+    // overlap) stays out of scope, the same rule as assertCanEditExisting
+    // and bulkUpsert's per-record edit lock above.
+    const ownRecords = ctx.role === 'teacher'
+      ? records.filter((r) => r.enteredById === ctx.userId || r.enteredByRole !== 'teacher')
+      : records;
+
+    if (ownRecords.length === 0) {
+      throw new ForbiddenError('These marks were entered by another teacher — only they can submit them for review');
+    }
+
+    const incomplete = ownRecords.filter((r) =>
       r.componentScores.some((c) => c.status === 'present' && typeof c.score !== 'number'),
     );
     if (incomplete.length > 0) {
       throw new ValidationError(`${incomplete.length} student(s) have missing marks. Fix them before submitting.`);
     }
+
+    const studentIds = ctx.role === 'teacher' ? ownRecords.map((r) => r.studentId) : undefined;
 
     const updated = await marksRepository.transitionBatch(
       { schoolId: ctx.schoolId, ...target },
@@ -308,6 +331,7 @@ export const marksService = {
       'submitted',
       makeAuditEntry('marks.submitted', ctx),
       {},
+      studentIds,
     );
 
     auditService.log({
@@ -426,5 +450,81 @@ export const marksService = {
     });
 
     return { updated };
+  },
+
+  /** Deletes a single student's marks record — the entering teacher or an
+   *  admin/principal only. */
+  async deleteOne(id: string, ctx: AuthContext): Promise<void> {
+    const record = await marksRepository.findById(id, ctx.schoolId);
+    if (!record) throw new NotFoundError('Marks record');
+    if (!canDeleteRecord(record, ctx)) {
+      throw new ForbiddenError(`These marks were entered by ${record.enteredByName} — only they or a principal can delete them`);
+    }
+    if (record.workflowStatus === 'locked') {
+      throw new ValidationError('These marks are locked — ask an admin to reopen them before deleting');
+    }
+
+    await marksRepository.softDelete(id, ctx.schoolId, ctx.userId);
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.deleted', resource: 'marks',
+      resourceId: id,
+      details: { studentId: record.studentId, examId: record.examId, subjectName: record.subjectName },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+  },
+
+  /** Deletes several marks records by id in one call (bulk-select delete on the
+   *  entry table). Records the caller isn't allowed to delete are silently
+   *  skipped rather than failing the whole request. */
+  async deleteBulk(rawInput: unknown, ctx: AuthContext): Promise<{ deleted: number; skipped: number }> {
+    const data = deleteBulkMarksSchema.parse(rawInput);
+    const records = await marksRepository.findByIds(data.ids, ctx.schoolId);
+
+    const deletable = records.filter((r) => canDeleteRecord(r, ctx) && r.workflowStatus !== 'locked');
+    const skipped = data.ids.length - deletable.length;
+    if (deletable.length === 0) {
+      throw new ForbiddenError('None of the selected marks can be deleted — they were entered by other teachers, or are locked');
+    }
+
+    const ids = deletable.map((r) => r._id.toString());
+    const deleted = await marksRepository.softDeleteMany(ids, ctx.schoolId, ctx.userId);
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.bulk_deleted', resource: 'marks',
+      resourceId: ids.join(','),
+      details: { count: deleted, studentIds: deletable.map((r) => r.studentId) },
+      ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return { deleted, skipped };
+  },
+
+  /** Deletes an entire class+section+subject+exam batch in one go — for a
+   *  teacher this only removes the records they themselves entered; a
+   *  principal/admin can clear the whole batch. */
+  async deleteBatch(rawInput: unknown, ctx: AuthContext): Promise<{ deleted: number; skipped: number }> {
+    const target = marksBatchTargetSchema.parse(rawInput);
+    const records = await marksRepository.findByBatch({ schoolId: ctx.schoolId, ...target });
+    if (records.length === 0) throw new ValidationError('No marks found for this class and subject');
+
+    const deletable = records.filter((r) => canDeleteRecord(r, ctx) && r.workflowStatus !== 'locked');
+    const skipped = records.length - deletable.length;
+    if (deletable.length === 0) {
+      throw new ForbiddenError('These marks were entered by another teacher, or are locked — only they or a principal can delete them');
+    }
+
+    // Always scope to the exact deletable set (not just for teachers) so a
+    // locked record never gets swept up in a principal's "delete all" either.
+    const studentIds = deletable.map((r) => r.studentId);
+    const deleted = await marksRepository.softDeleteBatch({ schoolId: ctx.schoolId, ...target }, ctx.userId, studentIds);
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.batch_deleted', resource: 'marks',
+      resourceId: `${target.class}-${target.section}-${target.examId}-${target.subjectName}`,
+      details: { ...target, deleted, skipped }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return { deleted, skipped };
   },
 };

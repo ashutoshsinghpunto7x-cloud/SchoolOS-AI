@@ -173,4 +173,31 @@ export const marksController = {
       sendSuccess(res, result, `${result.updated} record(s) reopened`);
     } catch (err) { next(err); }
   },
+
+  /** DELETE /marks/:id — the entering teacher (or admin/principal) deletes one student's marks record */
+  async deleteOne(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      await marksService.deleteOne(req.params.id, ctx);
+      sendSuccess(res, null, 'Marks record deleted');
+    } catch (err) { next(err); }
+  },
+
+  /** POST /marks/delete-bulk — delete several marks records by id (bulk-select) */
+  async deleteBulk(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await marksService.deleteBulk(req.body, ctx);
+      sendSuccess(res, result, `${result.deleted} record(s) deleted${result.skipped ? `, ${result.skipped} skipped` : ''}`);
+    } catch (err) { next(err); }
+  },
+
+  /** POST /marks/delete-batch — delete an entire class+subject+exam batch (scoped to the caller's own entries for teachers) */
+  async deleteBatch(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await marksService.deleteBatch(req.body, ctx);
+      sendSuccess(res, result, `${result.deleted} record(s) deleted${result.skipped ? `, ${result.skipped} skipped` : ''}`);
+    } catch (err) { next(err); }
+  },
 };

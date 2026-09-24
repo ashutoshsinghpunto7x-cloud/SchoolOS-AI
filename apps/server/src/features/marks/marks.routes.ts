@@ -24,10 +24,13 @@ router.post('/request-correction',authorize('admin', 'principal'), marksControll
 router.post('/publish',           authorize('admin', 'principal'), marksController.publish);
 router.post('/lock',              authorize('admin', 'principal'), marksController.lock);
 router.post('/reopen',            authorize('admin', 'principal'), marksController.reopen);
+router.post('/delete-bulk',                                   marksController.deleteBulk);
+router.post('/delete-batch',                                  marksController.deleteBatch);
 
 // Generic resource routes
 router.post('/',                                              marksController.upsertSingle);
 router.get('/',                                                marksController.list);
 router.get('/:id',                                             marksController.getById);
+router.delete('/:id',                                          marksController.deleteOne);
 
 export default router;

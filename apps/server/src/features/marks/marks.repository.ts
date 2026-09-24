@@ -126,6 +126,10 @@ export const marksRepository = {
     return Marks.findOne({ _id: id, schoolId, isDeleted: false }).lean<IMarks>();
   },
 
+  async findByIds(ids: string[], schoolId: string): Promise<IMarks[]> {
+    return Marks.find({ _id: { $in: ids }, schoolId, isDeleted: false }).lean<IMarks[]>();
+  },
+
   /** Just the ownership fields of an existing record, if any — used to check
    *  the per-record edit lock before a save without fetching the full document. */
   async findExisting(schoolId: string, examId: string, studentId: string, subjectName: string): Promise<{ enteredById: string; enteredByName: string; enteredByRole?: string } | null> {
@@ -196,6 +200,42 @@ export const marksRepository = {
     const result = await Marks.updateMany(query, {
       $set: { workflowStatus: toStatus, ...extraFields },
       $push: { auditTrail: auditEntry },
+    });
+    return result.modifiedCount;
+  },
+
+  /** Soft-deletes one marks record by id. Returns false if it didn't exist
+   *  (or was already deleted) rather than throwing — the service decides
+   *  whether that's an error worth surfacing. */
+  async softDelete(id: string, schoolId: string, deletedBy: string): Promise<boolean> {
+    const result = await Marks.updateOne(
+      { _id: id, schoolId, isDeleted: false },
+      { $set: { isDeleted: true, deletedAt: new Date(), deletedBy } },
+    );
+    return result.modifiedCount > 0;
+  },
+
+  /** Soft-deletes several marks records by id in one call (bulk-select delete). */
+  async softDeleteMany(ids: string[], schoolId: string, deletedBy: string): Promise<number> {
+    const result = await Marks.updateMany(
+      { _id: { $in: ids }, schoolId, isDeleted: false },
+      { $set: { isDeleted: true, deletedAt: new Date(), deletedBy } },
+    );
+    return result.modifiedCount;
+  },
+
+  /** Soft-deletes every record in a class+section+subject+exam batch, optionally
+   *  scoped to specific students — used to restrict a teacher's "delete all" to
+   *  only the entries they themselves own. */
+  async softDeleteBatch(target: BatchTarget, deletedBy: string, studentIds?: string[]): Promise<number> {
+    const query: Record<string, unknown> = {
+      schoolId: target.schoolId, examId: target.examId, class: target.class,
+      section: target.section, subjectName: target.subjectName, isDeleted: false,
+    };
+    if (studentIds?.length) query.studentId = { $in: studentIds };
+
+    const result = await Marks.updateMany(query, {
+      $set: { isDeleted: true, deletedAt: new Date(), deletedBy },
     });
     return result.modifiedCount;
   },
