@@ -17,6 +17,8 @@ import { auditService } from '../audit/audit.service';
 import { examRepository } from '../exams/exam.repository';
 import { studentRepository } from '../students/student.repository';
 import { Student } from '../students/student.model';
+import { reportCardRepository } from '../report-cards/report-card.repository';
+import { termReportCardRepository } from '../term-report-cards/term-report-card.repository';
 
 // ── Teacher scope guard ────────────────────────────────────────────────────────
 // Marks access is intentionally open school-wide (2026-09-16): any teacher
@@ -78,7 +80,7 @@ function assertCanEnterNewRecord(owner: { enteredById: string; enteredByName: st
 // A teacher may only delete marks they themselves entered. Principal/admin can
 // delete any record — same override the review workflow already grants them.
 function canDeleteRecord(record: { enteredById: string; enteredByRole?: string }, ctx: AuthContext): boolean {
-  if (ctx.role === 'admin' || ctx.role === 'principal') return true;
+  if (ctx.role === 'admin' || ctx.role === 'principal' || ctx.role === 'incharge') return true;
   return record.enteredById === ctx.userId;
 }
 
@@ -151,6 +153,21 @@ function makeAuditEntry(action: string, ctx: AuthContext, reason?: string, fromV
     toValue,
     at: new Date(),
   };
+}
+
+// ── Report-card invalidation ────────────────────────────────────────────────────
+// Report cards and term report cards are generated snapshots (see their
+// repositories' upsert) — deleting a marks record that fed one doesn't rewrite
+// it, so without this the card would keep showing deleted students' old
+// values forever. Flagging it stale instead of silently leaving it (or
+// auto-regenerating, which would also re-trigger AI remarks) lets staff see
+// it's out of date and choose to regenerate.
+async function invalidateGeneratedCards(schoolId: string, examId: string, studentIds: string[]): Promise<void> {
+  const uniqueStudentIds = [...new Set(studentIds)];
+  await Promise.all([
+    reportCardRepository.markStaleByExamStudents(schoolId, examId, uniqueStudentIds),
+    termReportCardRepository.markStaleByExamStudents(schoolId, examId, uniqueStudentIds),
+  ]);
 }
 
 async function loadConfiguredExam(examId: string, schoolId: string): Promise<IExam> {
@@ -497,6 +514,7 @@ export const marksService = {
     }
 
     await marksRepository.softDelete(id, ctx.schoolId, ctx.userId);
+    await invalidateGeneratedCards(ctx.schoolId, record.examId, [record.studentId]);
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.deleted', resource: 'marks',
@@ -521,6 +539,17 @@ export const marksService = {
 
     const ids = deletable.map((r) => r._id.toString());
     const deleted = await marksRepository.softDeleteMany(ids, ctx.schoolId, ctx.userId);
+
+    // Records in a bulk delete can span multiple exams — group by exam before invalidating.
+    const studentIdsByExam = new Map<string, string[]>();
+    for (const r of deletable) {
+      const list = studentIdsByExam.get(r.examId) ?? [];
+      list.push(r.studentId);
+      studentIdsByExam.set(r.examId, list);
+    }
+    await Promise.all(
+      [...studentIdsByExam.entries()].map(([examId, studentIds]) => invalidateGeneratedCards(ctx.schoolId, examId, studentIds)),
+    );
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.bulk_deleted', resource: 'marks',
@@ -550,6 +579,7 @@ export const marksService = {
     // locked record never gets swept up in a principal's "delete all" either.
     const studentIds = deletable.map((r) => r.studentId);
     const deleted = await marksRepository.softDeleteBatch({ schoolId: ctx.schoolId, ...target }, ctx.userId, studentIds);
+    await invalidateGeneratedCards(ctx.schoolId, target.examId, studentIds);
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName, action: 'marks.batch_deleted', resource: 'marks',

@@ -55,6 +55,7 @@ export const termReportCardRepository = {
       existing.generatedById = data.generatedById;
       existing.generatedByName = data.generatedByName;
       existing.generatedAt = new Date();
+      existing.isStale = false;
       return existing.save();
     }
 
@@ -102,5 +103,21 @@ export const termReportCardRepository = {
    *  used by the parent workspace, which doesn't ask the parent to pick a year. */
   async findLatestPublishedByStudent(schoolId: string, studentId: string): Promise<ITermReportCard | null> {
     return TermReportCard.findOne({ schoolId, studentId, status: 'published' }).sort({ generatedAt: -1 });
+  },
+
+  /** Flags any already-generated card as stale when a marks record from the
+   *  given exam (unit test 1/2 or main, either term) is deleted — same
+   *  reasoning as reportCardRepository.markStaleByExamStudents. */
+  async markStaleByExamStudents(schoolId: string, examId: string, studentIds: string[]): Promise<number> {
+    if (studentIds.length === 0) return 0;
+    const examFields = [
+      'firstTerm.unitTest1ExamId', 'firstTerm.unitTest2ExamId', 'firstTerm.mainExamId',
+      'finalTerm.unitTest1ExamId', 'finalTerm.unitTest2ExamId', 'finalTerm.mainExamId',
+    ];
+    const result = await TermReportCard.updateMany(
+      { schoolId, studentId: { $in: studentIds }, $or: examFields.map((field) => ({ [field]: examId })) },
+      { $set: { isStale: true } },
+    );
+    return result.modifiedCount;
   },
 };

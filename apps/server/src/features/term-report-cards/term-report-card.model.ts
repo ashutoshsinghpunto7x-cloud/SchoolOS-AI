@@ -98,6 +98,9 @@ export interface ITermReportCard extends Document {
   generatedById: string;
   generatedByName: string;
   generatedAt: Date;
+  /** Set true when a marks record feeding either term block is deleted after
+   *  this card was generated — see report-card.model.ts's isStale for why. */
+  isStale: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -200,6 +203,7 @@ const termReportCardSchema = new Schema<ITermReportCard>(
     generatedById:       { type: String, required: true },
     generatedByName:     { type: String, required: true },
     generatedAt:         { type: Date, required: true },
+    isStale:             { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

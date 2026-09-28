@@ -36,6 +36,7 @@ export const reportCardRepository = {
       existing.generatedById = data.generatedById;
       existing.generatedByName = data.generatedByName;
       existing.generatedAt = new Date();
+      existing.isStale = false;
       return existing.save();
     }
 
@@ -72,5 +73,17 @@ export const reportCardRepository = {
 
   async findByClassExam(schoolId: string, examId: string, cls: string, section: string): Promise<IReportCard[]> {
     return ReportCard.find({ schoolId, examId, class: cls, section }).lean<IReportCard[]>();
+  },
+
+  /** Flags any already-generated card for this exam+student(s) as stale — called
+   *  when a marks record feeding it is deleted, so staff see the card is out of
+   *  date instead of it silently keeping deleted marks' values. */
+  async markStaleByExamStudents(schoolId: string, examId: string, studentIds: string[]): Promise<number> {
+    if (studentIds.length === 0) return 0;
+    const result = await ReportCard.updateMany(
+      { schoolId, examId, studentId: { $in: studentIds } },
+      { $set: { isStale: true } },
+    );
+    return result.modifiedCount;
   },
 };

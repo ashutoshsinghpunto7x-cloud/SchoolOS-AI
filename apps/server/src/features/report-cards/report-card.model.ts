@@ -76,6 +76,11 @@ export interface IReportCard extends Document {
   generatedById: string;
   generatedByName: string;
   generatedAt: Date;
+  /** Set true when a marks record feeding this card is deleted after it was
+   *  generated — the card still shows its last-computed values (deleting
+   *  marks doesn't retroactively rewrite them), but this flags that they're
+   *  out of date so staff know to regenerate rather than trust them as-is. */
+  isStale: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +168,7 @@ const reportCardSchema = new Schema<IReportCard>(
     generatedById:     { type: String, required: true },
     generatedByName:   { type: String, required: true },
     generatedAt:       { type: Date, required: true },
+    isStale:           { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false },
 );

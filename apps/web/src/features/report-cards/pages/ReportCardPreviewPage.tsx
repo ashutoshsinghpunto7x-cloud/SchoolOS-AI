@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Sparkles, Smartphone, Monitor, Loader2, AlertTriangle, CheckCircle2, Send, Pencil } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useExam } from '@/features/marks/hooks/useExams';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
@@ -19,7 +20,7 @@ export function ReportCardPreviewPage() {
   // Publishing — and every other field except subject marks — is admin/principal-only on the
   // backend (see report-card.service.ts's update()); teachers can only correct marks directly on
   // the card, so remark editing and publishing are hidden for them here rather than 403ing.
-  const canPublish = user?.role === 'admin' || user?.role === 'principal';
+  const canPublish = user?.role === 'admin' || isPrincipalRole(user?.role);
   const isLeadership = canPublish;
   const [view, setView] = useState<'desktop' | 'mobile'>('desktop');
   const [printing, setPrinting] = useState(false);
@@ -122,6 +123,18 @@ export function ReportCardPreviewPage() {
         <button type="button" onClick={() => setPrinting(true)} className="h-9 px-3.5 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print / Save PDF
         </button>
+        {resolvedCard.isStale && (
+          <button
+            type="button"
+            onClick={() => generate.mutate({ examId, studentId })}
+            disabled={generate.isPending}
+            title="Marks feeding this card were deleted since it was generated — regenerate to refresh it"
+            className="h-9 px-3.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
+          >
+            {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+            {generate.isPending ? 'Regenerating…' : 'Marks changed — Regenerate'}
+          </button>
+        )}
         {resolvedCard.status === 'draft' && canPublish && (
           <button
             type="button" onClick={() => publish.mutate()} disabled={publish.isPending}

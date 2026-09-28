@@ -4442,6 +4442,10 @@ export interface ReportCard extends BaseEntity {
   generatedById: string;
   generatedByName: string;
   generatedAt: string;
+  /** True once a marks record feeding this card has been deleted since it was
+   *  generated — the card still shows its last-computed values; regenerate it
+   *  to refresh them. */
+  isStale: boolean;
 }
 
 export interface GenerateReportCardPayload {
@@ -4655,6 +4659,9 @@ export interface TermReportCard extends BaseEntity {
   generatedById: string;
   generatedByName: string;
   generatedAt: string;
+  /** True once a marks record feeding either term has been deleted since this
+   *  card was generated — see ReportCard.isStale. */
+  isStale: boolean;
 }
 
 export interface GenerateTermReportCardPayload {

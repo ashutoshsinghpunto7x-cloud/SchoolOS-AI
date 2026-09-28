@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send, Pencil, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useStudent } from '@/features/students/hooks/useStudents';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { useReportCardTemplateByClassYear } from '@/features/report-card-templates/hooks/useReportCardTemplate';
@@ -15,7 +16,7 @@ export function TermReportCardPreviewPage() {
   const { cls = '', academicYear = '', studentId = '' } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canPublish = user?.role === 'admin' || user?.role === 'principal';
+  const canPublish = user?.role === 'admin' || isPrincipalRole(user?.role);
   const [printing, setPrinting] = useState(false);
   const [remarkDraft, setRemarkDraft] = useState<string | null>(null);
   const [editingMarks, setEditingMarks] = useState(false);
@@ -102,16 +103,22 @@ export function TermReportCardPreviewPage() {
         <button type="button" onClick={() => setPrinting(true)} className="h-9 px-3.5 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print / Save PDF
         </button>
-        {resolvedCard.status === 'draft' && (
+        {(resolvedCard.status === 'draft' || resolvedCard.isStale) && (
           <button
             type="button"
             onClick={() => generate.mutate({ studentId, academicYear })}
             disabled={generate.isPending}
-            title="Pulls in marks entered after this card was first generated — any row you've corrected by hand with 'Fix a mark' is left exactly as you set it"
-            className="h-9 px-3.5 rounded-lg border border-gray-200 text-gray-700 text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60"
+            title={resolvedCard.isStale
+              ? 'Marks feeding this card were deleted since it was generated — regenerate to refresh it'
+              : "Pulls in marks entered after this card was first generated — any row you've corrected by hand with 'Fix a mark' is left exactly as you set it"}
+            className={`h-9 px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 disabled:opacity-60 ${
+              resolvedCard.isStale ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-700'
+            }`}
           >
-            {generate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            Regenerate
+            {generate.isPending
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : resolvedCard.isStale ? <AlertTriangle className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            {generate.isPending ? 'Regenerating…' : resolvedCard.isStale ? 'Marks changed — Regenerate' : 'Regenerate'}
           </button>
         )}
         {resolvedCard.status === 'draft' && canPublish && (
