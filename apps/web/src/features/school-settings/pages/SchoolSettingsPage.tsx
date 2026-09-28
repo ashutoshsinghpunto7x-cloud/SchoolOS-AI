@@ -4,6 +4,7 @@ import { Building2, Upload, X, Loader2, ShieldCheck, LogOut, ChevronRight, Palet
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useSchoolSettings, useUploadSchoolLogo, useRemoveSchoolLogo } from '../hooks/useSchoolSettings';
 import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
 import { BehaviorSettingsPanel } from '../components/BehaviorSettingsPanel';
@@ -94,7 +95,7 @@ export function SchoolSettingsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
-        {user?.role !== 'principal' && (
+        {!isPrincipalRole(user?.role) && (
           <>
             <div className="flex items-center gap-2 mb-1">
               <Palette className="w-4 h-4 text-gray-400" />
@@ -112,7 +113,7 @@ export function SchoolSettingsPage() {
           </>
         )}
 
-        <div className={cn('flex items-center justify-between', user?.role !== 'principal' && 'mt-5 pt-5 border-t border-gray-50')}>
+        <div className={cn('flex items-center justify-between', !isPrincipalRole(user?.role) && 'mt-5 pt-5 border-t border-gray-50')}>
           <div>
             <span className="text-sm font-semibold text-gray-800 block">{t('settings.notifSounds.title')}</span>
             <span className="text-xs text-gray-400">{t('settings.notifSounds.subtitle')}</span>
@@ -121,7 +122,7 @@ export function SchoolSettingsPage() {
         </div>
       </div>
 
-      {user?.role === 'principal' && (
+      {isPrincipalRole(user?.role) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
           <div className="flex items-center gap-2 mb-1">
             <Languages className="w-4 h-4 text-gray-400" />
@@ -141,12 +142,12 @@ export function SchoolSettingsPage() {
 
       {user?.role === 'admin' && <AttendanceRulesPanel />}
 
-      {(user?.role === 'admin' || user?.role === 'principal') && <BehaviorSettingsPanel />}
+      {(user?.role === 'admin' || isPrincipalRole(user?.role)) && <BehaviorSettingsPanel />}
 
-      {(user?.role === 'admin' || user?.role === 'principal') && <AttendanceEditCutoffPanel />}
-      {(user?.role === 'admin' || user?.role === 'principal') && <AcademicYearPanel />}
+      {(user?.role === 'admin' || isPrincipalRole(user?.role)) && <AttendanceEditCutoffPanel />}
+      {(user?.role === 'admin' || isPrincipalRole(user?.role)) && <AcademicYearPanel />}
 
-      {user?.role === 'principal' && (
+      {isPrincipalRole(user?.role) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mt-5 overflow-hidden divide-y divide-gray-50">
           <button
             type="button"

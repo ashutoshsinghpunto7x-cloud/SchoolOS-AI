@@ -17,6 +17,7 @@ import { avatarColorFor } from '@/features/teacher-workspace/utils/avatarColor';
 import { cn } from '@/lib/utils';
 import { downloadCsv } from '@/lib/csv';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useSmartDraft } from '@/hooks/useSmartDraft';
 import { buildDraftKey } from '@/lib/drafts/buildDraftKey';
 import { RecoveryBanner } from '@/components/drafts/RecoveryBanner';
@@ -117,7 +118,7 @@ function findSheetOwner(rows: RowState[], currentUserId: string | undefined): { 
 // canDeleteRecord — this is only a UI convenience, the server enforces it too.
 function rowIsDeletable(row: RowState, currentUserId: string | undefined, role: string | undefined): boolean {
   if (!row.id || row.workflowStatus === 'locked') return false;
-  if (role === 'admin' || role === 'principal') return true;
+  if (role === 'admin' || role === 'principal' || role === 'incharge') return true;
   return row.enteredById === currentUserId;
 }
 
@@ -488,7 +489,7 @@ function SimpleMarksEntryPage() {
     });
   }
 
-  const isPrincipalOrAdmin = user?.role === 'principal' || user?.role === 'admin';
+  const isPrincipalOrAdmin = isPrincipalRole(user?.role) || user?.role === 'admin';
   const sheetOwner = useMemo(() => findSheetOwner(rows, user?.userId), [rows, user?.userId]);
   const editableRows = rows.filter((r) => rowIsEditable(r.workflowStatus, user?.role));
   const allEditable = rows.length > 0 && editableRows.length === rows.length;
@@ -1110,7 +1111,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
     setDirty(true);
   }
 
-  const isPrincipalOrAdmin = user?.role === 'principal' || user?.role === 'admin';
+  const isPrincipalOrAdmin = isPrincipalRole(user?.role) || user?.role === 'admin';
   const allSkillsEditableFor = (r: CompoundRowState) => skills.every((s) => skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null, user?.role));
   const allEditable = rows.length > 0 && rows.every(allSkillsEditableFor);
   const someLocked = rows.length > 0 && rows.every((r) => skills.every((s) => !skillRowIsEditable(r.bySkill[s]?.workflowStatus ?? null, user?.role)));

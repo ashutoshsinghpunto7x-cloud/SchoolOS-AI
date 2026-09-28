@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Loader2, CalendarClock, X } from 'lucide-react';
 import { useSubstitutes, useUpdateSubstitute, useTimetables, usePeriodSlots } from '../hooks/useTimetable';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import type { SubstituteListOptions, Timetable } from '@schoolos/types';
 import { SubstituteForm } from '../components/SubstituteForm';
 
@@ -13,7 +14,7 @@ export const SubstituteWorkspace = () => {
   // Only admin/principal may assign or cancel a substitution — matches the
   // server-side authorize() on POST/PATCH /timetable/substitutes. A daily
   // substitution should only ever begin because the Principal assigned it.
-  const canManage = user?.role === 'admin' || user?.role === 'principal';
+  const canManage = user?.role === 'admin' || isPrincipalRole(user?.role);
   const today = new Date().toISOString().slice(0, 10);
 
   const [filters, setFilters] = useState<SubstituteListOptions>({

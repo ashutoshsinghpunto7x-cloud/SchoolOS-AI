@@ -190,13 +190,14 @@ export const notificationService = {
     );
   },
 
-  /** Notifies every admin and principal User in the school (e.g. a new leave request awaiting review). */
+  /** Notifies every admin, principal, and incharge (mirrors principal 1:1) User in the school (e.g. a new leave request awaiting review). */
   async sendToApprovers(input: Omit<SendToUserInput, 'recipientUserId'>, ctx: AuthContext): Promise<void> {
-    const [admins, principals] = await Promise.all([
+    const [admins, principals, incharges] = await Promise.all([
       userRepository.findAll(ctx.schoolId, { role: 'admin', limit: 100 }),
       userRepository.findAll(ctx.schoolId, { role: 'principal', limit: 100 }),
+      userRepository.findAll(ctx.schoolId, { role: 'incharge', limit: 100 }),
     ]);
-    const approvers = [...admins.data, ...principals.data];
+    const approvers = [...admins.data, ...principals.data, ...incharges.data];
     await Promise.all(
       approvers.map((approver) =>
         notificationRepository.create({

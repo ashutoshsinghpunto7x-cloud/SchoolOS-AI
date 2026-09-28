@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import {
   useTimetable, usePeriodSlots, useConflicts,
   useUpdateTimetableStatus, useDeleteTimetable,
@@ -25,7 +26,7 @@ export const TimetableGridPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin  = user?.role === 'admin' || user?.role === 'principal';
+  const isAdmin  = user?.role === 'admin' || isPrincipalRole(user?.role);
 
   const { data: tt,        isLoading: ttLoading }     = useTimetable(id!);
   const { data: slots = [], isLoading: slotsLoading } = usePeriodSlots();

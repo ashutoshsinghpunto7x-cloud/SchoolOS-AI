@@ -15,6 +15,7 @@ import {
 import { EventStatusBadge } from '../components/EventStatusBadge';
 import { EventTypeBadge, EVENT_TYPE_COLOR } from '../components/EventTypeBadge';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import type { EventStatus } from '@schoolos/types';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ export const EventDetailPage = () => {
   const { id }   = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isAdmin  = user?.role === 'admin' || user?.role === 'principal';
+  const isAdmin  = user?.role === 'admin' || isPrincipalRole(user?.role);
 
   const { data: event, isLoading, isError } = useEvent(id!);
   const { mutateAsync: updateStatus, isPending: changingStatus } = useUpdateEventStatus(id!);

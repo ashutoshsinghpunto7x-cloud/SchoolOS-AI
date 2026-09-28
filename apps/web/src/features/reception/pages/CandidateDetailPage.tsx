@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { InterviewRecommendation } from '@schoolos/types';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useCandidate, useSetCandidateFinalDecision } from '../hooks/useCandidates';
 import { useInterviewsByCandidate, useSetInterviewStatus, useSubmitInterviewFeedback } from '../hooks/useInterviews';
 import { ScheduleInterviewModal } from '../components/ScheduleInterviewModal';
@@ -48,7 +49,7 @@ export function CandidateDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canDecide = user?.role === 'admin' || user?.role === 'principal';
+  const canDecide = user?.role === 'admin' || isPrincipalRole(user?.role);
 
   const { data: candidate, isLoading } = useCandidate(id!);
   const { data: interviews = [] } = useInterviewsByCandidate(id!);

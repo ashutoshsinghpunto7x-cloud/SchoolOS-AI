@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 
 interface SidebarNavItemProps {
   to: string;
@@ -14,7 +15,7 @@ interface SidebarNavItemProps {
 export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNavItemProps) => {
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
-  const isPrincipal = user?.role === 'principal';
+  const isPrincipal = isPrincipalRole(user?.role);
   // Accountant renders on the purple/pink liquid-glass sidebar (same as
   // Teacher) — the white/transparent nav-item styling here is built for
   // that background.

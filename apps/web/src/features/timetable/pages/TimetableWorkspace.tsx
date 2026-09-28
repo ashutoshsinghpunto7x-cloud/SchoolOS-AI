@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Loader2, CalendarClock, AlertTriangle, Settings } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { BackLink } from '@/components/workspace/BackLink';
 import { useTimetables, useConflicts } from '../hooks/useTimetable';
 import { TimetableStatusBadge } from '../components/TimetableStatusBadge';
@@ -17,10 +18,10 @@ const selectCls = `h-10 pl-3 pr-8 rounded-xl border border-[var(--tt-border)] bg
 export const TimetableWorkspace = () => {
   const navigate = useNavigate();
   const { user }  = useAuth();
-  const isAdmin   = user?.role === 'admin' || user?.role === 'principal';
+  const isAdmin   = user?.role === 'admin' || isPrincipalRole(user?.role);
   // Principal's sidebar is an overlay (not permanently docked), so pages it
   // links to need an explicit way back — admin's sidebar is always visible.
-  const isPrincipal = user?.role === 'principal';
+  const isPrincipal = isPrincipalRole(user?.role);
 
   const [filters, setFilters] = useState<TimetableListOptions>({});
   const [page, setPage] = useState(1);

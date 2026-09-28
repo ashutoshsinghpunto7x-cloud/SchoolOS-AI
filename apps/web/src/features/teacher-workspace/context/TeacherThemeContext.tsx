@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 
 type Theme = 'light' | 'dark';
 
@@ -30,7 +31,7 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
   // attempts. The toggle UI itself is also hidden in Settings for these
   // roles; this is the enforcement behind that, in case it's ever reachable
   // another way.
-  const isLockedLight = user?.role === 'principal' || user?.role === 'accountant';
+  const isLockedLight = isPrincipalRole(user?.role) || user?.role === 'accountant';
 
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [isTransitioning, setIsTransitioning] = useState(false);

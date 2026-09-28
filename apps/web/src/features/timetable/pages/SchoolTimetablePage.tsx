@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, LayoutGrid, Settings2, Plus, X, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { BackLink } from '@/components/workspace/BackLink';
 import { useMasterGrid } from '../hooks/useTimetable';
 import {
@@ -80,8 +81,8 @@ function compareClassNames(a: string, b: string): number {
  */
 export const SchoolTimetablePage = () => {
   const { user } = useAuth();
-  const isPrincipal = user?.role === 'principal';
-  const isAdmin = user?.role === 'admin' || user?.role === 'principal';
+  const isPrincipal = isPrincipalRole(user?.role);
+  const isAdmin = user?.role === 'admin' || isPrincipalRole(user?.role);
 
   const [academicYear, setAcademicYear] = useState(defaultAcademicYear());
   const [term, setTerm] = useState('');

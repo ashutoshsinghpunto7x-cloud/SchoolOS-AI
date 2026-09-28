@@ -2,6 +2,7 @@ import { useMemo, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Send, Loader2, BookmarkPlus, Trash2, Inbox, PenSquare, CheckCircle2, Search, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import type { InternalMessagePriority, StaffDirectoryEntry, UserRole } from '@schoolos/types';
 import {
   useInternalMessages,
@@ -33,14 +34,14 @@ const RECIPIENT_FILTERS: Array<{ label: string; value: RecipientFilter }> = [
 ];
 function matchesRecipientFilter(role: UserRole, filter: RecipientFilter): boolean {
   if (filter === 'all') return true;
-  if (filter === 'management') return role === 'admin' || role === 'principal';
+  if (filter === 'management') return role === 'admin' || isPrincipalRole(role);
   return role === filter;
 }
 
 export const MessagesPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canCompose = user?.role === 'principal' || user?.role === 'admin';
+  const canCompose = isPrincipalRole(user?.role) || user?.role === 'admin';
   const isTeacher = user?.role === 'teacher';
   const [tab, setTab] = useState<'inbox' | 'compose'>('inbox');
 

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useTeacher, useUploadTeacherPhoto, useRemoveTeacherPhoto, useDeleteTeacher } from '../hooks/useTeachers';
 import { EmploymentStatusBadge } from '../components/EmploymentStatusBadge';
 import { TeacherNotesPanel } from '../components/TeacherNotesPanel';
@@ -46,7 +47,7 @@ export const TeacherProfilePage = () => {
   const { mutateAsync: deleteTeacher, isPending: deleting } = useDeleteTeacher();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const canManagePhoto = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'accountant';
-  const canEdit = user?.role === 'admin' || user?.role === 'reception' || user?.role === 'principal';
+  const canEdit = user?.role === 'admin' || user?.role === 'reception' || isPrincipalRole(user?.role);
   const canDelete = user?.role === 'admin';
 
   async function handleDelete() {

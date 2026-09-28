@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Loader2, AlertCircle, CalendarClock, Check } from 'lucide-react';
 import { useLeaveRequest, useApproveLeaveRequest, useRejectLeaveRequest } from '../hooks/useLeaveRequests';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -18,7 +19,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 export function LeaveRequestReviewModal({ leaveRequestId, onClose }: Props) {
   const { user } = useAuth();
-  const canReview = user?.role === 'admin' || user?.role === 'principal';
+  const canReview = user?.role === 'admin' || isPrincipalRole(user?.role);
 
   const { data: request, isLoading, isError } = useLeaveRequest(leaveRequestId);
   const { mutateAsync: approve, isPending: approving } = useApproveLeaveRequest();

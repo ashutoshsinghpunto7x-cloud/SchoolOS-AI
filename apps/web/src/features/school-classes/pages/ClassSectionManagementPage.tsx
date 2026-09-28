@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Plus, X, Loader2, GraduationCap, AlertCircle, Pencil, Check } from 'lucide-react';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import {
   useSchoolClasses, useCreateSchoolClass, useRenameSchoolClass, useAddSection, useRemoveSection, useDeleteSchoolClass,
   useClassFeeOverview,
@@ -153,7 +154,7 @@ function ClassCard({ cls, feeSummary }: { cls: SchoolClass; feeSummary?: { colle
 
 export function ClassSectionManagementPage() {
   const { user } = useAuth();
-  const canManageFees = user?.role === 'admin' || user?.role === 'principal' || user?.role === 'accountant';
+  const canManageFees = user?.role === 'admin' || isPrincipalRole(user?.role) || user?.role === 'accountant';
   const { data: classes, isLoading, isError } = useSchoolClasses();
   const { data: feeOverview } = useClassFeeOverview();
   const { mutateAsync: createClass, isPending: creating } = useCreateSchoolClass();

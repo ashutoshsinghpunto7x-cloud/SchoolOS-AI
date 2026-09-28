@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Calendar, List, LayoutGrid, Loader2, AlertCircle } fro
 import { cn } from '@/lib/utils';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import { useEvents } from '../hooks/useEvents';
 import { CalendarGrid } from '../components/CalendarGrid';
 import { WeekView } from '../components/WeekView';
@@ -28,7 +29,7 @@ function getWeekStart(date: Date): Date {
 export const CalendarWorkspace = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canCreate = user?.role === 'admin' || user?.role === 'principal';
+  const canCreate = user?.role === 'admin' || isPrincipalRole(user?.role);
   const today    = new Date();
 
   const [view, setView]               = useState<CalendarView>('month');
