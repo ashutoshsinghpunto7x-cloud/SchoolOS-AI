@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation, useBlocker } from 'react-router-dom';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -13,6 +13,8 @@ import {
 } from '../hooks/useMarks';
 import { marksApi } from '../api/marks.api';
 import { AiCaptureModal } from '../components/AiCaptureModal';
+import { MARKS_PHOTO_JOB_KIND, sameMarksTarget, type MarksPhotoJobMeta } from '../lib/marksPhotoJob';
+import { backgroundJobs, useBackgroundJobs, useViewingJobId } from '@/lib/backgroundJobs';
 import { avatarColorFor } from '@/features/teacher-workspace/utils/avatarColor';
 import { cn } from '@/lib/utils';
 import { downloadCsv } from '@/lib/csv';
@@ -387,6 +389,7 @@ function SimpleMarksEntryPage() {
   const [rows, setRows] = useState<RowState[]>([]);
   const [dirty, setDirty] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [aiResumeJobId, setAiResumeJobId] = useState<string | undefined>(undefined);
   const [aiFilledIds, setAiFilledIds] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -474,6 +477,26 @@ function SimpleMarksEntryPage() {
     setAiFilledIds((prev) => { if (!prev.has(studentId)) return prev; const next = new Set(prev); next.delete(studentId); return next; });
     setDirty(true);
   }
+
+  // A photo-reading AI Fill for this exact sheet that finished while the
+  // modal was closed (or this page was elsewhere) re-opens its review here —
+  // once automatically per job, and again whenever opened from the tray/toast.
+  const bgJobs = useBackgroundJobs();
+  const viewingJobId = useViewingJobId();
+  const autoOpenedJobs = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (showAiModal || rows.length === 0 || !examId || !cls || !section || !subjectName) return;
+    const here = { examId, class: cls, section, subjectName };
+    const match = bgJobs.find((j) => {
+      if (j.kind !== MARKS_PHOTO_JOB_KIND || j.dismissed || j.status !== 'done' || backgroundJobs.isHeld(j.id)) return false;
+      if (!sameMarksTarget((j.meta as MarksPhotoJobMeta).target, here)) return false;
+      return j.id === viewingJobId || !autoOpenedJobs.current.has(j.id);
+    });
+    if (!match) return;
+    autoOpenedJobs.current.add(match.id);
+    setAiResumeJobId(match.id);
+    setShowAiModal(true);
+  }, [bgJobs, viewingJobId, showAiModal, rows.length, examId, cls, section, subjectName]);
 
   function handleApplyExtraction(result: MarksExtractionResult) {
     const byStudent = new Map(result.extracted.map((e) => [e.studentId, e]));
@@ -945,7 +968,8 @@ function SimpleMarksEntryPage() {
         <AiCaptureModal
           target={{ examId, class: cls, section, subjectName }}
           onApply={handleApplyExtraction}
-          onClose={() => setShowAiModal(false)}
+          resumeJobId={aiResumeJobId}
+          onClose={() => { setShowAiModal(false); setAiResumeJobId(undefined); }}
         />
       )}
     </div>

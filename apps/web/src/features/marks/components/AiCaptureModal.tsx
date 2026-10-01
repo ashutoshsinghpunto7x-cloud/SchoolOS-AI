@@ -1,15 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Camera, ImagePlus, Mic, Square, X, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useExtractMarksFromImage, useExtractMarksFromVoice, useExtractMarksFromTranscript } from '../hooks/useMarks';
+import { backgroundJobs, useBackgroundJob } from '@/lib/backgroundJobs';
+import { startMarksPhotoJob, type MarksPhotoJobMeta } from '../lib/marksPhotoJob';
+import { useExtractMarksFromVoice, useExtractMarksFromTranscript } from '../hooks/useMarks';
 import type { MarksBatchTarget, MarksExtractionResult, ExtractedMarksRow } from '@schoolos/types';
 
 interface Props {
   target: MarksBatchTarget;
   onApply: (result: MarksExtractionResult) => void;
+  /** Re-open a photo-reading job that kept running in the background. */
+  resumeJobId?: string;
   onClose: () => void;
 }
+
+const MAX_PHOTOS = 10;
 
 // Minimal shape of the Web Speech API — not part of TS's DOM lib.
 interface SpeechRecognitionResultLike {
@@ -82,7 +89,15 @@ const LIVE_EXTRACT_POLL_MS = 2200;
 // look frozen.
 const LIVE_EXTRACT_TIMEOUT_MS = 12_000;
 
-export function AiCaptureModal({ target, onApply, onClose }: Props) {
+export function AiCaptureModal({ target, onApply, resumeJobId, onClose }: Props) {
+  const navigate = useNavigate();
+  const [jobId, setJobId] = useState<string | null>(resumeJobId ?? null);
+  const job = useBackgroundJob<MarksPhotoJobMeta, MarksExtractionResult>(jobId);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const photoUrls = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos]);
+  useEffect(() => () => photoUrls.forEach((u) => URL.revokeObjectURL(u)), [photoUrls]);
+  useEffect(() => (jobId ? backgroundJobs.hold(jobId) : undefined), [jobId]);
+  const readingPhotos = job?.status === 'running';
   const [tab, setTab] = useState<'photo' | 'voice'>('photo');
   const [result, setResult] = useState<MarksExtractionResult | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -125,7 +140,6 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
   const overridesRef = useRef(overrides);
   useEffect(() => { overridesRef.current = overrides; }, [overrides]);
 
-  const imageMutation = useExtractMarksFromImage();
   const voiceMutation = useExtractMarksFromVoice();
   const transcriptMutation = useExtractMarksFromTranscript();
 
@@ -134,16 +148,37 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current);
   }, []);
 
-  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  // Photos are read as a background job — closing this modal or leaving the
+  // page keeps it running; the page re-opens the review when it's ready.
+  useEffect(() => {
+    if (job?.status === 'done' && job.result && !result) setResult(job.result);
+  }, [job?.status, job?.result, result]);
+
+  function handlePhotosSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file) return;
-    try {
-      const res = await imageMutation.mutateAsync({ target, file });
-      setResult(res);
-    } catch (err) {
-      toast.error('Could not read the photo', { description: err instanceof Error ? err.message : undefined });
-    }
+    if (picked.length === 0) return;
+    if (photos.length + picked.length > MAX_PHOTOS) toast.error(`Up to ${MAX_PHOTOS} photos at a time`);
+    setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
+  }
+
+  function handleReadPhotos() {
+    if (photos.length === 0) return;
+    const id = startMarksPhotoJob(target, photos, window.location.pathname, (path) => navigate(path));
+    setPhotos([]);
+    setResult(null);
+    setJobId(id);
+  }
+
+  function discardJob() {
+    if (jobId) backgroundJobs.dismiss(jobId);
+    setJobId(null);
+    setResult(null);
+  }
+
+  function closeModal() {
+    backgroundJobs.closeViewing();
+    onClose();
   }
 
   function withOverrides(res: MarksExtractionResult): MarksExtractionResult {
@@ -358,20 +393,21 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
   function handleApply() {
     if (!result) return;
     onApply(result);
-    onClose();
+    if (jobId) backgroundJobs.dismiss(jobId);
+    closeModal();
   }
 
   const showingLiveDictation = tab === 'voice' && speechSupported && (recording || liveCaption) && !result;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end lg:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end lg:items-center justify-center" onClick={closeModal}>
       <div
         className="bg-white dark:bg-[#0F0821] rounded-t-2xl lg:rounded-2xl w-full lg:max-w-md max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/5">
           <h2 className="text-sm font-bold text-gray-900 dark:text-white">AI Fill Marks</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+          <button type="button" onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
             <X className="w-4 h-4 text-gray-500 dark:text-white/50" />
           </button>
         </div>
@@ -401,30 +437,72 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
 
             <div className="p-4">
               {tab === 'photo' ? (
-                imageMutation.isPending ? (
-                  <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50">
+                readingPhotos ? (
+                  <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-violet-50/50 dark:bg-violet-500/5 flex flex-col items-center justify-center gap-2 text-violet-700 dark:text-violet-300 py-6 px-4">
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <span className="text-xs font-semibold px-4 text-center">Reading photo…</span>
+                    <span className="text-xs font-semibold text-center">
+                      Reading {job?.meta.photoCount === 1 ? 'the photo' : `${job?.meta.photoCount} photos`}…
+                    </span>
+                    <span className="text-[11px] text-center text-violet-600/80 dark:text-violet-300/60">
+                      This keeps running in the background — you can close this, go back, or switch apps. We&apos;ll tell you when it&apos;s ready.
+                    </span>
+                    <button type="button" onClick={closeModal} className="mt-1 h-9 px-4 rounded-lg border border-violet-200 dark:border-violet-500/30 text-xs font-semibold">
+                      Close &amp; keep working
+                    </button>
+                  </div>
+                ) : job?.status === 'failed' ? (
+                  <div className="rounded-xl bg-red-50 dark:bg-red-500/10 p-3 space-y-2">
+                    <p className="text-xs font-semibold text-red-700 dark:text-red-300">Could not read the photos</p>
+                    <p className="text-xs text-red-600 dark:text-red-300/80">{job.error}</p>
+                    <button type="button" onClick={discardJob} className="h-9 px-4 rounded-lg bg-red-600 text-white text-xs font-bold">Try again</button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
-                    >
-                      <Camera className="w-6 h-6" />
-                      <span className="text-xs font-semibold px-2 text-center">Take Photo</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => uploadInputRef.current?.click()}
-                      className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
-                    >
-                      <ImagePlus className="w-6 h-6" />
-                      <span className="text-xs font-semibold px-2 text-center">Upload Photo</span>
-                    </button>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                      >
+                        <Camera className="w-6 h-6" />
+                        <span className="text-xs font-semibold px-2 text-center">{photos.length > 0 ? 'Add Another Photo' : 'Take Photo'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => uploadInputRef.current?.click()}
+                        className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                      >
+                        <ImagePlus className="w-6 h-6" />
+                        <span className="text-xs font-semibold px-2 text-center">Upload Photos</span>
+                      </button>
+                    </div>
+                    {photos.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {photos.map((f, i) => (
+                            <div key={`${f.name}-${i}`} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+                              <img src={photoUrls[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                aria-label={`Remove photo ${i + 1}`}
+                                onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleReadPhotos}
+                          className="w-full h-10 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white text-xs font-bold"
+                        >
+                          Read {photos.length} photo{photos.length === 1 ? '' : 's'}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )
               ) : showingLiveDictation ? (
                 <div className="space-y-3">
@@ -485,8 +563,8 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
                   )}
                 </div>
               )}
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
-              <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotosSelected} />
+              <input ref={uploadInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotosSelected} />
             </div>
           </>
         )}
@@ -533,7 +611,7 @@ export function AiCaptureModal({ target, onApply, onClose }: Props) {
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button type="button" onClick={() => setResult(null)} className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-600 dark:text-white/60">
+              <button type="button" onClick={discardJob} className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-600 dark:text-white/60">
                 Retry
               </button>
               <button
