@@ -1,10 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Camera, ImagePlus, X, Loader2, AlertTriangle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { backgroundJobs, useBackgroundJob } from '@/lib/backgroundJobs';
+import { startTermMarksJob, type TermMarksJobMeta } from '../lib/termMarksJob';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { marksApi } from '../api/marks.api';
-import { marksKeys, useExtractTermMarksFromImage, useMarksEntryTable } from '../hooks/useMarks';
+import { marksKeys, useMarksEntryTable } from '../hooks/useMarks';
 import type { Exam, TermExtractedRow, TermMarksExtractionResult } from '@schoolos/types';
 
 interface Props {
@@ -12,8 +14,12 @@ interface Props {
   section: string;
   subjectName: string;
   exams: Exam[];
+  /** Re-open a photo-reading job that was started earlier (and kept running in the background). */
+  resumeJobId?: string;
   onClose: () => void;
 }
+
+const MAX_PHOTOS = 10;
 
 type Step = 'pick-exams' | 'capture' | 'review';
 
@@ -21,29 +27,37 @@ type Step = 'pick-exams' | 'capture' | 'review';
 // columns for a single subject — fills all three underlying exams at once,
 // instead of the single-exam "AI Fill" on the entry-table page which only
 // ever touches whichever exam that page happens to be open on.
-export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }: Props) {
-  const [step, setStep] = useState<Step>('pick-exams');
+export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subjectName, exams, resumeJobId, onClose }: Props) {
+  const [jobId, setJobId] = useState<string | null>(resumeJobId ?? null);
+  const job = useBackgroundJob<TermMarksJobMeta, TermMarksExtractionResult>(jobId);
+  // A resumed job carries its own target; a fresh one uses the props.
+  const cls = job?.meta.cls ?? clsProp;
+  const section = job?.meta.section ?? sectionProp;
+  const [step, setStep] = useState<Step>(resumeJobId ? 'capture' : 'pick-exams');
   const [unitTest1ExamId, setUnitTest1ExamId] = useState('');
   const [unitTest2ExamId, setUnitTest2ExamId] = useState('');
   const [mainExamId, setMainExamId] = useState('');
   const [skill, setSkill] = useState('');
   const [result, setResult] = useState<TermMarksExtractionResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const photoUrls = useMemo(() => photos.map((f) => URL.createObjectURL(f)), [photos]);
+  useEffect(() => () => photoUrls.forEach((u) => URL.revokeObjectURL(u)), [photoUrls]);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const extractMutation = useExtractTermMarksFromImage();
+  // The AI reads in the background (see lib/termMarksJob) — this modal only
+  // starts it and later shows the result, so closing it mid-read loses nothing.
+  useEffect(() => (jobId ? backgroundJobs.hold(jobId) : undefined), [jobId]);
+  const reading = job?.status === 'running';
+  useEffect(() => {
+    if (job?.status === 'done' && job.result && !result) {
+      setResult(job.result);
+      setStep('review');
+    }
+  }, [job?.status, job?.result, result]);
 
-  // Class roster for the "Student" column's dropdown — lets a reviewer
-  // reassign a row to the correct student when the AI read the wrong name
-  // off the register. Any of the three exams gives the same class roster.
-  const { data: rosterTable } = useMarksEntryTable(
-    unitTest1ExamId
-      ? { examId: unitTest1ExamId, class: cls, section, subjectName }
-      : {},
-  );
-  const roster = rosterTable?.rows ?? [];
 
   // Some subjects (typically in lower classes — e.g. English → Literature,
   // Writing, Reading, Dictation/Spelling) are split into skills, each
@@ -57,24 +71,49 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
   ));
   const effectiveSubjectName = skillsForSubject.length > 0 && skill ? `${subjectName} - ${skill}` : subjectName;
 
+  // Class roster for the "Student" column's dropdown — lets a reviewer
+  // reassign a row to the correct student when the AI read the wrong name
+  // off the register. Any of the three exams gives the same class roster.
+  const rosterExamId = job?.meta.unitTest1ExamId ?? unitTest1ExamId;
+  const { data: rosterTable } = useMarksEntryTable(
+    rosterExamId
+      ? { examId: rosterExamId, class: cls, section, subjectName: job?.meta.subjectName ?? effectiveSubjectName }
+      : {},
+  );
+  const roster = rosterTable?.rows ?? [];
+
   const canContinue = !!unitTest1ExamId && !!unitTest2ExamId && !!mainExamId
     && new Set([unitTest1ExamId, unitTest2ExamId, mainExamId]).size === 3
     && (skillsForSubject.length === 0 || !!skill);
 
-  async function handlePhotoSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function handlePhotosSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file) return;
-    try {
-      const res = await extractMutation.mutateAsync({
-        target: { class: cls, section, subjectName: effectiveSubjectName, unitTest1ExamId, unitTest2ExamId, mainExamId },
-        file,
-      });
-      setResult(res);
-      setStep('review');
-    } catch (err) {
-      toast.error('Could not read the photo', { description: err instanceof Error ? err.message : undefined });
-    }
+    if (picked.length === 0) return;
+    if (photos.length + picked.length > MAX_PHOTOS) toast.error(`Up to ${MAX_PHOTOS} photos at a time`);
+    setPhotos((prev) => [...prev, ...picked].slice(0, MAX_PHOTOS));
+  }
+
+  function handleReadPhotos() {
+    if (photos.length === 0) return;
+    const id = startTermMarksJob(
+      { cls, section, subjectName: effectiveSubjectName, unitTest1ExamId, unitTest2ExamId, mainExamId },
+      photos,
+    );
+    setPhotos([]);
+    setResult(null);
+    setJobId(id);
+  }
+
+  function discardJob() {
+    if (jobId) backgroundJobs.dismiss(jobId);
+    setJobId(null);
+    setResult(null);
+  }
+
+  function closeModal() {
+    backgroundJobs.closeViewing();
+    onClose();
   }
 
   // Re-point a row at a different student when the AI matched the wrong one
@@ -126,25 +165,27 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
       toast.error('Nothing to save', { description: 'No student rows were read from the photo.' });
       return;
     }
+    const ids = job?.meta ?? { unitTest1ExamId, unitTest2ExamId, mainExamId };
+    const savedSubject = job?.meta.subjectName ?? effectiveSubjectName;
     setSaving(true);
     try {
       const calls = [
         {
-          examId: unitTest1ExamId,
+          examId: ids.unitTest1ExamId,
           records: rowsToSave.filter((r) => r.unitTest1 !== undefined).map((r) => ({
             studentId: r.studentId,
             componentScores: [{ componentName: result.exams.unitTest1.componentName, score: r.unitTest1, status: 'present' as const }],
           })),
         },
         {
-          examId: unitTest2ExamId,
+          examId: ids.unitTest2ExamId,
           records: rowsToSave.filter((r) => r.unitTest2 !== undefined).map((r) => ({
             studentId: r.studentId,
             componentScores: [{ componentName: result.exams.unitTest2.componentName, score: r.unitTest2, status: 'present' as const }],
           })),
         },
         {
-          examId: mainExamId,
+          examId: ids.mainExamId,
           records: rowsToSave.filter((r) => r.mainExam !== undefined).map((r) => ({
             studentId: r.studentId,
             componentScores: [{ componentName: result.exams.mainExam.componentName, score: r.mainExam, status: 'present' as const }],
@@ -154,11 +195,12 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
       await Promise.all(
         calls
           .filter((c) => c.records.length > 0)
-          .map((c) => marksApi.bulkUpsert({ examId: c.examId, class: cls, section, subjectName: effectiveSubjectName, records: c.records })),
+          .map((c) => marksApi.bulkUpsert({ examId: c.examId, class: cls, section, subjectName: savedSubject, records: c.records })),
       );
       await queryClient.invalidateQueries({ queryKey: marksKeys.all });
+      if (jobId) backgroundJobs.dismiss(jobId);
       toast.success('Marks saved', { description: `${rowsToSave.length} student(s) saved across Unit Test 1, Unit Test 2 and Half Yearly` });
-      onClose();
+      closeModal();
     } catch (err) {
       toast.error('Could not save marks', { description: err instanceof Error ? err.message : 'Check your connection and try again.' });
     } finally {
@@ -167,7 +209,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end lg:items-center justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end lg:items-center justify-center" onClick={closeModal}>
       <div
         className="bg-white dark:bg-[#0F0821] rounded-t-2xl lg:rounded-2xl w-full lg:max-w-lg max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
@@ -185,7 +227,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
             )}
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">AI Fill — Unit Tests + Half Yearly</h2>
           </div>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
+          <button type="button" onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
             <X className="w-4 h-4 text-gray-500 dark:text-white/50" />
           </button>
         </div>
@@ -243,34 +285,78 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
 
         {step === 'capture' && (
           <div className="p-4">
-            {extractMutation.isPending ? (
-              <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50">
+            {reading ? (
+              <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-violet-50/50 dark:bg-violet-500/5 flex flex-col items-center justify-center gap-2 text-violet-700 dark:text-violet-300 py-6 px-4">
                 <Loader2 className="w-6 h-6 animate-spin" />
-                <span className="text-xs font-semibold px-4 text-center">Reading photo…</span>
+                <span className="text-xs font-semibold text-center">
+                  Reading {job?.meta.photoCount === 1 ? 'the photo' : `${job?.meta.photoCount} photos`}…
+                </span>
+                <span className="text-[11px] text-center text-violet-600/80 dark:text-violet-300/60">
+                  This keeps running in the background — you can close this, go back, or switch apps. We&apos;ll tell you when it&apos;s ready.
+                </span>
+                <button type="button" onClick={closeModal} className="mt-1 h-9 px-4 rounded-lg border border-violet-200 dark:border-violet-500/30 text-xs font-semibold">
+                  Close &amp; keep working
+                </button>
+              </div>
+            ) : job?.status === 'failed' ? (
+              <div className="rounded-xl bg-red-50 dark:bg-red-500/10 p-3 space-y-2">
+                <p className="text-xs font-semibold text-red-700 dark:text-red-300">Could not read the photos</p>
+                <p className="text-xs text-red-600 dark:text-red-300/80">{job.error}</p>
+                <button type="button" onClick={discardJob} className="h-9 px-4 rounded-lg bg-red-600 text-white text-xs font-bold">Try again</button>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => cameraInputRef.current?.click()}
-                  className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
-                >
-                  <Camera className="w-6 h-6" />
-                  <span className="text-xs font-semibold px-2 text-center">Take Photo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => uploadInputRef.current?.click()}
-                  className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
-                >
-                  <ImagePlus className="w-6 h-6" />
-                  <span className="text-xs font-semibold px-2 text-center">Upload Photo</span>
-                </button>
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                  >
+                    <Camera className="w-6 h-6" />
+                    <span className="text-xs font-semibold px-2 text-center">{photos.length > 0 ? 'Add Another Photo' : 'Take Photo'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => uploadInputRef.current?.click()}
+                    className="h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-white/50"
+                  >
+                    <ImagePlus className="w-6 h-6" />
+                    <span className="text-xs font-semibold px-2 text-center">Upload Photos</span>
+                  </button>
+                </div>
+                {photos.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {photos.map((f, i) => (
+                        <div key={`${f.name}-${i}`} className="relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
+                          <img src={photoUrls[i]} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            aria-label={`Remove photo ${i + 1}`}
+                            onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleReadPhotos}
+                      className="w-full h-10 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white text-xs font-bold"
+                    >
+                      Read {photos.length} photo{photos.length === 1 ? '' : 's'}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
-            <p className="text-[11px] text-gray-400 dark:text-white/30 text-center mt-2">Combined register covering all three exams</p>
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelected} />
-            <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelected} />
+            <p className="text-[11px] text-gray-400 dark:text-white/30 text-center mt-2">
+              Combined register covering all three exams — add several photos if it doesn&apos;t fit in one
+            </p>
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotosSelected} />
+            <input ref={uploadInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotosSelected} />
           </div>
         )}
 
@@ -361,7 +447,7 @@ export function TermAiCaptureModal({ cls, section, subjectName, exams, onClose }
               </div>
             )}
             <div className="flex gap-2 pt-1">
-              <button type="button" onClick={() => { setResult(null); setStep('capture'); }} className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-600 dark:text-white/60">
+              <button type="button" onClick={() => { discardJob(); setStep('capture'); }} className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-600 dark:text-white/60">
                 Retry
               </button>
               <button

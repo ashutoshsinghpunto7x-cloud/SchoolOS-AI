@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Sparkles, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-import { useChapters, useGeneratePaper, useQuestionSources } from '../hooks/useQuestionBank';
-import type { LanguageComplexity, PaperGenerationConfig, PaperMarksBreakdownEntry, PaperSectionConfig, QuestionDifficulty, QuestionType } from '@schoolos/types';
+import { useChapters, useQuestionSources } from '../hooks/useQuestionBank';
+import { questionBankApi } from '../api/question-bank.api';
+import { backgroundJobs, useBackgroundJob } from '@/lib/backgroundJobs';
+import type { GeneratedPaper, LanguageComplexity, PaperGenerationConfig, PaperMarksBreakdownEntry, PaperSectionConfig, QuestionDifficulty, QuestionType } from '@schoolos/types';
 
 const QUESTION_TYPES: QuestionType[] = ['mcq', 'fill_blank', 'true_false', 'assertion_reason', 'very_short', 'short', 'long', 'hots', 'case_study'];
 const DIFFICULTY_LEVELS = ['easy', 'medium', 'hard'] as const;
@@ -95,7 +97,43 @@ export function PaperGeneratorPage() {
       .map((s) => s.chapterName?.trim())
       .filter((name): name is string => !!name && !savedChapterNames.has(name.toLowerCase())),
   )];
-  const generate = useGeneratePaper();
+  // Generating can take a minute or more (AI fills any gaps the bank can't) — it
+  // runs as a background job, so leaving this page or locking the phone doesn't
+  // abandon it. The paper is saved server-side either way.
+  const [paperJobId, setPaperJobId] = useState<string | null>(null);
+  const paperJob = useBackgroundJob<unknown, GeneratedPaper>(paperJobId);
+  const generating = paperJob?.status === 'running';
+  useEffect(() => (paperJobId ? backgroundJobs.hold(paperJobId) : undefined), [paperJobId]);
+  useEffect(() => {
+    if (!paperJobId || !paperJob) return;
+    if (paperJob.status === 'done' && paperJob.result) {
+      backgroundJobs.dismiss(paperJobId);
+      setPaperJobId(null);
+      navigate(`/teacher/question-bank/papers/${paperJob.result._id}`);
+    } else if (paperJob.status === 'failed') {
+      backgroundJobs.dismiss(paperJobId);
+      setPaperJobId(null);
+      toast.error('Could not generate the paper', { description: paperJob.error });
+    }
+  }, [paperJob, paperJobId, navigate]);
+
+  function runGenerate(config: PaperGenerationConfig) {
+    const id = backgroundJobs.start<unknown, GeneratedPaper>({
+      kind: 'paper',
+      label: `Question paper — Class ${config.class} ${config.subject}`,
+      meta: null,
+      openLabel: 'View paper',
+      successMessage: 'Your question paper is ready',
+      run: () => questionBankApi.generatePaper(config),
+      onOpen: (job) => {
+        if (!job.result) return;
+        backgroundJobs.dismiss(job.id);
+        navigate(`/teacher/question-bank/papers/${job.result._id}`);
+      },
+    });
+    setPaperJobId(id);
+    toast.info('Generating your paper — you can leave this page, we’ll let you know when it’s ready');
+  }
 
   const simpleTotalMarks = DIFFICULTY_LEVELS.reduce(
     (sum, level) => sum + Number(difficultyMix[level] || 0) * Number(marksPerDifficulty[level] || 0),
@@ -181,7 +219,7 @@ export function PaperGeneratorPage() {
         }));
       if (validSections.length === 0) { toast.error('Add at least one section with a question count'); return; }
       try {
-        const paper = await generate.mutateAsync({
+        runGenerate({
           class: cls.trim(),
           subject: subject.trim(),
           examType,
@@ -197,7 +235,6 @@ export function PaperGeneratorPage() {
           includeImages,
           blackAndWhite,
         });
-        navigate(`/teacher/question-bank/papers/${paper._id}`);
       } catch (err) {
         toast.error('Could not generate the paper', { description: err instanceof Error ? err.message : undefined });
       }
@@ -211,7 +248,7 @@ export function PaperGeneratorPage() {
     );
     if (missingMarks) { toast.error('Set marks per question for every difficulty level you’re using'); return; }
     try {
-      const paper = await generate.mutateAsync({
+      runGenerate({
         class: cls.trim(),
         subject: subject.trim(),
         examType,
@@ -230,7 +267,6 @@ export function PaperGeneratorPage() {
         includeImages,
         blackAndWhite,
       });
-      navigate(`/teacher/question-bank/papers/${paper._id}`);
     } catch (err) {
       toast.error('Could not generate the paper', { description: err instanceof Error ? err.message : undefined });
     }
@@ -493,10 +529,10 @@ export function PaperGeneratorPage() {
         </div>
 
         <button
-          type="button" onClick={handleGenerate} disabled={generate.isPending}
+          type="button" onClick={handleGenerate} disabled={generating}
           className="w-full h-11 rounded-xl bg-[#1C2B4A] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          {generate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           Generate Paper
         </button>
       </div>

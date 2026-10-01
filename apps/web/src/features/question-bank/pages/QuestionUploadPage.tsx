@@ -1,8 +1,13 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Camera, FileText, Loader2, ChevronRight, Image as ImageIcon, BookOpen } from 'lucide-react';
-import { useExtractQuestionsFromImage, useExtractQuestionsFromPdf, useQuestionSources } from '../hooks/useQuestionBank';
+import { useExtractQuestionsFromPdf, useQuestionSources } from '../hooks/useQuestionBank';
+import { backgroundJobs, useBackgroundJob } from '@/lib/backgroundJobs';
+import { questionBankApi } from '../api/question-bank.api';
+import { questionBankKeys } from '../hooks/useQuestionBank';
+import { queryClient } from '@/lib/queryClient';
+import type { QuestionExtractionResult } from '@schoolos/types';
 import { useTeacherSubjectOptions } from '@/features/teacher-workspace/hooks/useTeacherWorkspace';
 
 export function QuestionUploadPage() {
@@ -28,27 +33,61 @@ export function QuestionUploadPage() {
     if (!options.some((o) => o.cls === next && o.subjectName === subject)) setSubject('');
   }
 
-  const extractImage = useExtractQuestionsFromImage();
+  // The photo is read as a background job — leaving this page (or locking the
+  // phone) doesn't lose it; the tray / toast offers the drafts when ready.
+  const [imageJobId, setImageJobId] = useState<string | null>(null);
+  const imageJob = useBackgroundJob<unknown, QuestionExtractionResult>(imageJobId);
+  const imageReading = imageJob?.status === 'running';
   const extractPdf = useExtractQuestionsFromPdf();
 
-  const busy = extractImage.isPending || extractPdf.isPending;
+  const busy = imageReading || extractPdf.isPending;
   const target = { class: cls.trim(), subject: subject.trim() };
   const chapter = chapterName.trim();
   const targetReady = !!target.class && !!target.subject && !!chapter;
   const { data: sources } = useQuestionSources(target.class, target.subject);
 
-  async function handleImageFile(file: File) {
-    if (!targetReady) { toast.error('Enter class, subject and chapter name first'); return; }
-    try {
-      const result = await extractImage.mutateAsync({ target, chapterName: chapter, file, detectImages: includeImages });
+  useEffect(() => (imageJobId ? backgroundJobs.hold(imageJobId) : undefined), [imageJobId]);
+
+  // Page still open when the AI finishes → go straight to the drafts, as before.
+  useEffect(() => {
+    if (!imageJobId || !imageJob) return;
+    if (imageJob.status === 'done' && imageJob.result) {
+      const result = imageJob.result;
+      backgroundJobs.dismiss(imageJobId);
+      setImageJobId(null);
       if (result.extracted.length === 0) { toast.error('No questions could be found on that page'); return; }
       toast.success(`${result.extracted.length} question(s) generated — review before saving`);
-      // Land straight on the drafts review screen with the AI's output already in hand — no
-      // separate "open the upload, then click Generate Questions" step.
       navigate(`/teacher/question-bank/sources/${result.sourceId}`, { state: { initialResult: result } });
-    } catch (err) {
-      toast.error('Could not read that photo', { description: err instanceof Error ? err.message : undefined });
+    } else if (imageJob.status === 'failed') {
+      backgroundJobs.dismiss(imageJobId);
+      setImageJobId(null);
+      toast.error('Could not read that photo', { description: imageJob.error });
     }
+  }, [imageJob, imageJobId, navigate]);
+
+  function handleImageFile(file: File) {
+    if (!targetReady) { toast.error('Enter class, subject and chapter name first'); return; }
+    const id = backgroundJobs.start<unknown, QuestionExtractionResult>({
+      kind: 'question-photo',
+      label: `Questions from photo — ${chapter}`,
+      meta: null,
+      openLabel: 'Review',
+      successMessage: 'Questions are ready — review before saving',
+      run: async () => {
+        const result = await questionBankApi.extractFromImage(target, chapter, file, includeImages);
+        queryClient.invalidateQueries({ queryKey: questionBankKeys.sources(target.class, target.subject) });
+        queryClient.invalidateQueries({ queryKey: questionBankKeys.sources() });
+        return result;
+      },
+      onOpen: (job) => {
+        const result = job.result;
+        if (!result) return;
+        backgroundJobs.dismiss(job.id);
+        if (result.extracted.length === 0) { toast.error('No questions could be found on that page'); return; }
+        navigate(`/teacher/question-bank/sources/${result.sourceId}`, { state: { initialResult: result } });
+      },
+    });
+    setImageJobId(id);
   }
 
   async function handlePdfFile(file: File) {
@@ -137,7 +176,7 @@ export function QuestionUploadPage() {
             onClick={() => imageInputRef.current?.click()}
             className="h-24 rounded-2xl border-2 border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-1.5 text-gray-500 dark:text-white/40 disabled:opacity-50"
           >
-            {extractImage.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+            {imageReading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
             <span className="text-xs font-semibold">Photo of a page</span>
           </button>
           <button

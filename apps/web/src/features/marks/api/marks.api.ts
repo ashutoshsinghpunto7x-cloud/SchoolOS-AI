@@ -28,18 +28,34 @@ interface ExtractionJobStatus<T> {
 }
 
 const EXTRACTION_POLL_INTERVAL_MS = 1500;
-const EXTRACTION_POLL_TIMEOUT_MS = 90_000;
+// Generous because extraction now keeps running in the background while the
+// teacher is elsewhere (or the phone is locked) — a hidden tab's timers are
+// throttled, so a tight deadline would give up on a job the server finished.
+const EXTRACTION_POLL_TIMEOUT_MS = 5 * 60_000;
+const EXTRACTION_MAX_CONSECUTIVE_POLL_ERRORS = 8;
 
 /** The extract endpoints return a job id immediately (the AI call runs in the
  *  background) — poll until it's done rather than holding one HTTP request
  *  open for the whole OpenAI/Whisper round trip. */
 async function pollExtractionJob<T = MarksExtractionResult>(jobId: string): Promise<T> {
   const deadline = Date.now() + EXTRACTION_POLL_TIMEOUT_MS;
+  let consecutiveErrors = 0;
   while (Date.now() < deadline) {
-    const res = await apiClient.get<{ data: ExtractionJobStatus<T> }>(`${BASE}/extract/jobs/${jobId}`);
-    const job = res.data.data;
-    if (job.status === 'completed' && job.result) return job.result;
-    if (job.status === 'failed') throw new Error(job.error || 'AI extraction failed');
+    let job: ExtractionJobStatus<T> | null = null;
+    try {
+      const res = await apiClient.get<{ data: ExtractionJobStatus<T> }>(`${BASE}/extract/jobs/${jobId}`);
+      job = res.data.data;
+      consecutiveErrors = 0;
+    } catch (err) {
+      // A backgrounded/locked phone drops connections — the server job is
+      // still running, so a failed poll is retried rather than treated as a
+      // failed extraction.
+      if (++consecutiveErrors >= EXTRACTION_MAX_CONSECUTIVE_POLL_ERRORS) throw err;
+    }
+    if (job) {
+      if (job.status === 'completed' && job.result) return job.result;
+      if (job.status === 'failed') throw new Error(job.error || 'AI extraction failed');
+    }
     await new Promise((resolve) => setTimeout(resolve, EXTRACTION_POLL_INTERVAL_MS));
   }
   throw new Error('AI extraction is taking longer than expected — try again.');
