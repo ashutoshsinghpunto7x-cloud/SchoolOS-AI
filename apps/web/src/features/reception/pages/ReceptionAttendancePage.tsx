@@ -767,7 +767,12 @@ export function ReceptionAttendancePage() {
                       const nonSchool = rangeRegister.nonSchoolDates[d];
                       const code = nonSchool ? (nonSchool === 'sunday' ? 'S' : 'H') : (r.statuses[d] ? STATUS_CODE[r.statuses[d]!] : '—');
                       return (
-                        <td key={d} className="py-1 px-1 text-center text-gray-700">{code}</td>
+                        <td
+                          key={d}
+                          className={nonSchool ? 'py-1 px-1 text-center text-[13px] font-extrabold text-gray-900' : 'py-1 px-1 text-center text-gray-700'}
+                        >
+                          {code}
+                        </td>
                       );
                     })}
                     <td className="py-1 px-1 text-center font-semibold text-gray-900 border-l border-gray-300">{r.presentDays}</td>
