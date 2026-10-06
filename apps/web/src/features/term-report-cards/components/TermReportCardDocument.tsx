@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { BEHAVIOUR_REMARK_OPTIONS } from '@schoolos/types';
 import type { TermReportCard, ReportCardTemplate, SchoolSettings, TermReportCardTermBlock, TermReportCardSkillEntry } from '@schoolos/types';
 
 /** Only the header fields this document actually renders — lets the parent
@@ -235,7 +236,10 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
                 </tr>
               </thead>
               <tbody>
-                {(skillBySection.get(section._id ?? '') ?? []).map((row) => (
+                {(skillBySection.get(section._id ?? '') ?? [])
+                  // Cards generated before a template row was removed still carry its entry — don't print it.
+                  .filter((row) => section.rows.some((r) => r._id === row.rowId))
+                  .map((row) => (
                   <tr key={row.rowId}>
                     <td style={{ ...tdSubject, fontSize: '7.3px' }}>{row.rowLabel}</td>
                     <td style={tdNum}>{row.firstTermGrade ?? '—'}</td>
@@ -245,6 +249,19 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
               </tbody>
             </table>
           ))}
+
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr><th style={{ ...th, textAlign: 'left', textTransform: 'uppercase' }}>Behaviour Remark</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ ...tdSubject, fontSize: '8px', height: '46px', verticalAlign: 'middle', whiteSpace: 'normal' }}>
+                  {BEHAVIOUR_REMARK_OPTIONS.find((o) => o.key === reportCard.behaviourRemark)?.label ?? ''}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

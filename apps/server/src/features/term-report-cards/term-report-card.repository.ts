@@ -28,6 +28,8 @@ export interface UpsertTermReportCardData {
   verificationToken: string;
   generatedById: string;
   generatedByName: string;
+  /** Suggested from Behaviour Marking; only applied if the card has none yet. */
+  behaviourRemark?: string;
 }
 
 // ── Repository ────────────────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ export const termReportCardRepository = {
       existing.skills = data.skills;
       existing.summary = data.summary;
       existing.warnings = data.warnings;
+      if (data.behaviourRemark && !existing.behaviourRemark) existing.behaviourRemark = data.behaviourRemark;
       existing.generatedById = data.generatedById;
       existing.generatedByName = data.generatedByName;
       existing.generatedAt = new Date();
@@ -66,6 +69,7 @@ export const termReportCardRepository = {
       section: data.section,
       academicYear: data.academicYear,
       templateId: data.templateId,
+      behaviourRemark: data.behaviourRemark,
       firstTerm: data.firstTerm,
       finalTerm: data.finalTerm,
       grandTotalObtained: data.grandTotalObtained,

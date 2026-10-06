@@ -1,3 +1,4 @@
+import { BEHAVIOUR_REMARK_OPTIONS, type BehaviourRemarkKey } from '@schoolos/types';
 import { useEffect, useId, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, AlertTriangle, CheckCircle2, Send, Pencil, RefreshCw } from 'lucide-react';
@@ -189,6 +190,19 @@ export function TermReportCardPreviewPage() {
       </div>
 
       <div className="print:hidden max-w-6xl mx-auto mt-4 px-5">
+        <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Behaviour Remark (printed on the card)</p>
+          <p className="text-xs text-gray-400 mb-2">Pre-filled from this student's Behaviour Marking. Change it if it doesn't fit.</p>
+          <select
+            className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg p-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#6D4AFF]/30"
+            value={resolvedCard.behaviourRemark ?? ''}
+            onChange={(e) => updateCard.mutate({ behaviourRemark: e.target.value as BehaviourRemarkKey | '' })}
+            disabled={updateCard.isPending}
+          >
+            <option value="">— No remark —</option>
+            {BEHAVIOUR_REMARK_OPTIONS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
+        </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Class Teacher's Remark</p>
           <textarea

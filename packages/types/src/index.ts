@@ -4636,6 +4636,18 @@ export interface TermReportCardSummary {
   promotionStatus: PromotionStatus;
 }
 
+/** One-box behaviour remark printed on the term report card under "Personal, Social and
+ *  Work Habits". The teacher picks one; it is pre-suggested from the term's Behaviour Marking
+ *  records. Stored on the card as the key. */
+export const BEHAVIOUR_REMARK_OPTIONS = [
+  { key: 'excellent', label: 'Excellent conduct. A role model for classmates.' },
+  { key: 'very_good', label: 'Very good conduct and a positive attitude.' },
+  { key: 'good', label: 'Good conduct. Can be more consistent.' },
+  { key: 'satisfactory', label: 'Satisfactory conduct. Needs to follow class rules more regularly.' },
+  { key: 'needs_improvement', label: 'Needs improvement in conduct and discipline.' },
+] as const;
+export type BehaviourRemarkKey = typeof BEHAVIOUR_REMARK_OPTIONS[number]['key'];
+
 export interface TermReportCard extends BaseEntity {
   studentId: string;
   class: string;
@@ -4650,6 +4662,7 @@ export interface TermReportCard extends BaseEntity {
   overallGrade?: string;
   skills: TermReportCardSkillEntry[];
   summary: TermReportCardSummary;
+  behaviourRemark?: BehaviourRemarkKey;
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;
@@ -4695,6 +4708,8 @@ export interface TermAttendanceCorrection {
 }
 
 export interface UpdateTermReportCardPayload {
+  /** Empty string clears it. */
+  behaviourRemark?: BehaviourRemarkKey | '';
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;

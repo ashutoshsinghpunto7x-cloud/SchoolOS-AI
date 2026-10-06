@@ -35,7 +35,10 @@ const termAttendanceCorrectionSchema = z.object({
   leaveApproved: z.number().min(0).optional(),
 });
 
+export const BEHAVIOUR_REMARK_KEYS = ['excellent', 'very_good', 'good', 'satisfactory', 'needs_improvement'] as const;
+
 export const updateTermReportCardSchema = z.object({
+  behaviourRemark: z.enum([...BEHAVIOUR_REMARK_KEYS, '']).optional(),
   teacherRemark:   z.string().trim().max(1000).optional(),
   principalRemark: z.string().trim().max(1000).optional(),
   parentFeedback:  z.string().trim().max(1000).optional(),

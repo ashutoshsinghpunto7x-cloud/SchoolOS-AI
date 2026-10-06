@@ -31,6 +31,18 @@ export const behaviorRecordRepository = {
     return BehaviorRecord.insertMany(records);
   },
 
+  /** Positive/negative record counts for one student between two dates (inclusive, YYYY-MM-DD). */
+  async countByCategory(
+    schoolId: string, studentId: string, dateFrom: string, dateTo: string,
+  ): Promise<{ positive: number; negative: number }> {
+    const rows = await BehaviorRecord.aggregate<{ _id: string; n: number }>([
+      { $match: { schoolId, studentId, isDeleted: false, date: { $gte: dateFrom, $lte: dateTo } } },
+      { $group: { _id: '$category', n: { $sum: 1 } } },
+    ]);
+    const n = (c: string) => rows.find((r) => r._id === c)?.n ?? 0;
+    return { positive: n('positive'), negative: n('negative') };
+  },
+
   async findById(id: string, schoolId: string): Promise<IBehaviorRecord | null> {
     return BehaviorRecord.findOne({ _id: id, schoolId, isDeleted: false }).lean<IBehaviorRecord>();
   },

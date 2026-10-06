@@ -89,6 +89,7 @@ export interface ITermReportCard extends Document {
   overallGrade?: string;
   skills: ITermReportCardSkillEntry[];
   summary: ITermReportCardSummary;
+  behaviourRemark?: string;
   teacherRemark?: string;
   principalRemark?: string;
   parentFeedback?: string;
@@ -194,6 +195,7 @@ const termReportCardSchema = new Schema<ITermReportCard>(
     overallGrade:        { type: String, trim: true },
     skills:              { type: [skillEntrySchema], default: [] },
     summary:             { type: summarySchema, required: true, default: () => ({}) },
+    behaviourRemark:     { type: String, enum: ['excellent', 'very_good', 'good', 'satisfactory', 'needs_improvement'] },
     teacherRemark:       { type: String, trim: true, maxlength: 1000 },
     principalRemark:     { type: String, trim: true, maxlength: 1000 },
     parentFeedback:      { type: String, trim: true, maxlength: 1000 },

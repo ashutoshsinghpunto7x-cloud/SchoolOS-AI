@@ -15,6 +15,7 @@ import { Student } from '../students/student.model';
 import { marksRepository } from '../marks/marks.repository';
 import { IMarks } from '../marks/marks.model';
 import { attendanceRepository } from '../attendance/attendance.repository';
+import { behaviorRecordRepository } from '../behavior/behavior-record.repository';
 import { NotFoundError, ValidationError, ForbiddenError } from '../../middlewares/errorHandler';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
@@ -288,6 +289,22 @@ function reconcileSkills(
   return result;
 }
 
+/** Suggests the behaviour remark from the academic year's Behaviour Marking records
+ *  ("2026-27" runs 1 Apr 2026 – 31 Mar 2027). No records → no suggestion, so the teacher picks. */
+async function suggestBehaviourRemark(schoolId: string, studentId: string, academicYear: string): Promise<string | undefined> {
+  const startYear = Number(academicYear.slice(0, 4));
+  if (!Number.isFinite(startYear)) return undefined;
+  const { positive, negative } = await behaviorRecordRepository.countByCategory(schoolId, studentId, `${startYear}-04-01`, `${startYear + 1}-03-31`);
+  const total = positive + negative;
+  if (total === 0) return undefined;
+  const negShare = negative / total;
+  if (negShare === 0) return positive >= 3 ? 'excellent' : 'very_good';
+  if (negShare <= 0.15) return 'very_good';
+  if (negShare <= 0.3) return 'good';
+  if (negShare <= 0.5) return 'satisfactory';
+  return 'needs_improvement';
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const termReportCardService = {
@@ -362,6 +379,7 @@ export const termReportCardService = {
       overallGrade,
       skills,
       summary: { rank, classSize, promotionStatus },
+      behaviourRemark: existing?.behaviourRemark ? undefined : await suggestBehaviourRemark(ctx.schoolId, studentId, academicYear),
       warnings,
       verificationToken: existing?.verificationToken ?? crypto.randomUUID(),
       generatedById: ctx.userId,
@@ -528,6 +546,7 @@ export const termReportCardService = {
       card.markModified(data.attendance.term);
     }
 
+    if (data.behaviourRemark !== undefined) card.behaviourRemark = data.behaviourRemark === '' ? undefined : data.behaviourRemark;
     if (data.teacherRemark !== undefined) card.teacherRemark = data.teacherRemark;
     if (data.principalRemark !== undefined) card.principalRemark = data.principalRemark;
     if (data.parentFeedback !== undefined) card.parentFeedback = data.parentFeedback;
