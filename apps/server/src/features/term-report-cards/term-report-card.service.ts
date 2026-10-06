@@ -101,8 +101,14 @@ async function buildTermBlock(
 
     const termTotal = bestUnitTestScore != null && mainExamScore != null ? bestUnitTestScore + mainExamScore : undefined;
 
-    if (bestUnitTestScore == null) warnings.push(`${subject.name}: no Unit Test score yet for ${termLabel}`);
-    if (mainExamScore == null) warnings.push(`${subject.name}: main exam score not yet entered for ${termLabel}`);
+    // A subject with nothing at all entered this term (e.g. an optional subject this student
+    // doesn't take) is simply skipped — no warning, and it's already left out of the totals.
+    // Only a half-filled subject (one score but not the other) is worth flagging.
+    const nothingEntered = bestUnitTestScore == null && mainExamScore == null && !main?.grade;
+    if (!nothingEntered) {
+      if (bestUnitTestScore == null) warnings.push(`${subject.name}: no Unit Test score yet for ${termLabel}`);
+      if (mainExamScore == null) warnings.push(`${subject.name}: main exam score not yet entered for ${termLabel}`);
+    }
 
     subjectRows.push({
       subjectId,
@@ -245,6 +251,7 @@ function recomputeTermBlockTotals(block: ITermBlock): void {
 function deriveSubjectRowWarnings(block: ITermBlock, termLabel: string): string[] {
   const warnings: string[] = [];
   for (const row of block.subjectRows) {
+    if (row.bestUnitTestScore == null && row.mainExamScore == null && !row.grade) continue;
     if (row.bestUnitTestScore == null) warnings.push(`${row.subjectName}: no Unit Test score yet for ${termLabel}`);
     if (row.mainExamScore == null) warnings.push(`${row.subjectName}: main exam score not yet entered for ${termLabel}`);
   }
