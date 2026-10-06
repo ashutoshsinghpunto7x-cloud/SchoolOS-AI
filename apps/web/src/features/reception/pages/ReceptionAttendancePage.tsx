@@ -173,6 +173,9 @@ export function ReceptionAttendancePage() {
   const [allRegisters, setAllRegisters] = useState<ClassRegister[] | null>(null);
   const [generatingAll, setGeneratingAll] = useState(false);
   const [printingAll, setPrintingAll] = useState(false);
+  // Optional class span for "Generate All" — blank means first/last class.
+  const [allFromClass, setAllFromClass] = useState('');
+  const [allToClass, setAllToClass] = useState('');
 
   // Date-range register — a separate "To" date that, once it differs from
   // the single "date" above, lets the front desk print several days'
@@ -355,7 +358,13 @@ export function ReceptionAttendancePage() {
     if (!classes || classes.length === 0 || generatingAll) return;
     setGeneratingAll(true);
     try {
-      const targets = classes.flatMap((c) => c.sections.map((s) => ({ cls: c.name, section: s })));
+      const fromIdx = allFromClass ? classes.findIndex((c) => c.name === allFromClass) : 0;
+      const toIdx = allToClass ? classes.findIndex((c) => c.name === allToClass) : classes.length - 1;
+      const lo = Math.min(fromIdx, toIdx);
+      const hi = Math.max(fromIdx, toIdx);
+      const targets = classes
+        .slice(lo, hi + 1)
+        .flatMap((c) => c.sections.map((s) => ({ cls: c.name, section: s })));
       const registers: ClassRegister[] = [];
       for (const t of targets) {
         const [studentsRes, recordsRes] = await Promise.all([
@@ -485,12 +494,40 @@ export function ReceptionAttendancePage() {
             <Printer className="w-4 h-4" /> Print / Save PDF
           </button>
         )}
+        <div className="flex items-end gap-2 pl-3 border-l border-gray-200">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">All: from class</label>
+            <select
+              value={allFromClass}
+              onChange={(e) => setAllFromClass(e.target.value)}
+              className="h-10 min-w-[120px] px-3 rounded-lg border border-gray-200 text-sm bg-white"
+            >
+              <option value="">First class</option>
+              {(classes ?? []).map((c) => (
+                <option key={c._id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">to class</label>
+            <select
+              value={allToClass}
+              onChange={(e) => setAllToClass(e.target.value)}
+              className="h-10 min-w-[120px] px-3 rounded-lg border border-gray-200 text-sm bg-white"
+            >
+              <option value="">Last class</option>
+              {(classes ?? []).map((c) => (
+                <option key={c._id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <button
           type="button"
           onClick={handleGenerateAll}
           disabled={classesLoading || generatingAll || !classes?.length}
           className="h-10 px-4 rounded-lg bg-white border border-gray-300 text-gray-800 text-sm font-semibold flex items-center gap-2 disabled:opacity-40"
-          title="Print every class and section's attendance for the selected date, one register per page"
+          title="Print attendance for the chosen class span (default: every class) for the selected date, one register per page"
         >
           {generatingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Layers className="w-4 h-4" />}
           Generate All
