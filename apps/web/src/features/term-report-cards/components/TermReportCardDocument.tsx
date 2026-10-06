@@ -139,7 +139,7 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
        *  name — mirrors the paper card's top-right corner block — while the
        *  student/father name row underneath runs full width. */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ width: '110px' }} />
+        <div style={{ width: '160px' }} />
         <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
           {schoolSettings?.logoUrl && <img src={schoolSettings.logoUrl} alt={schoolName} style={{ width: '34px', height: '34px', objectFit: 'contain' }} />}
           <div style={{ textAlign: 'center' }}>
@@ -147,8 +147,8 @@ export function TermReportCardDocument({ reportCard, template, student, schoolSe
             {branding?.address && <p style={{ fontSize: '9px', margin: '1px 0 0' }}>({branding.address})</p>}
           </div>
         </div>
-        <div style={{ width: '110px', textAlign: 'right' }}>
-          <p style={{ margin: '1px 0', fontWeight: 700, fontSize: '9px' }}>CLASS/SECTION : {student.class} - {student.section}</p>
+        <div style={{ width: '160px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+          <p style={{ margin: '1px 0', fontWeight: 700, fontSize: '9px' }}>CLASS / SECTION : {student.class} - {student.section}</p>
           <p style={{ margin: '1px 0', fontWeight: 700, fontSize: '9px' }}>ROLL No : {student.rollNumber ?? '—'}</p>
           {qrDataUri && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginTop: '3px' }}>
