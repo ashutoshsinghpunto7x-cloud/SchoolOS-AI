@@ -7,6 +7,7 @@ import { useReportCardTemplates } from '@/features/report-card-templates/hooks/u
 import { useExamsForClass } from '../hooks/useExams';
 import { TermAiCaptureModal } from '../components/TermAiCaptureModal';
 import { cn } from '@/lib/utils';
+import { matchesClassQuery } from '@/lib/classSearch';
 import type { Exam } from '@schoolos/types';
 
 function defaultAcademicYear(): string {
@@ -215,15 +216,10 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   // Free-text filter over class, section and subject — lets a teacher/
   // principal jump straight to e.g. "II A maths" instead of scanning a long
   // list, without needing a separate dropdown per field.
-  const filteredEntries = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return entries;
-    const terms = q.split(/\s+/).filter(Boolean);
-    return entries.filter((e) => {
-      const haystack = `class ${e.cls} ${e.cls} ${e.section} ${e.subjectName}`.toLowerCase();
-      return terms.every((t) => haystack.includes(t));
-    });
-  }, [entries, search]);
+  const filteredEntries = useMemo(
+    () => entries.filter((e) => matchesClassQuery(search, e.cls, `${e.section} ${e.subjectName} ${e.label ?? ''} ${e.alias ?? ''}`)),
+    [entries, search],
+  );
 
   if (selected) {
     return (
@@ -283,7 +279,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by class or subject — e.g. &quot;II A Maths&quot;"
+              placeholder="Search by class or subject — e.g. &quot;6 A Maths&quot; or &quot;VI A Maths&quot;"
               className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
             />
             {search && (

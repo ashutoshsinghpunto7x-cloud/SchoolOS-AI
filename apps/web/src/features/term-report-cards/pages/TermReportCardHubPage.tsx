@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, ChevronRight } from 'lucide-react';
+import { GraduationCap, ChevronRight, Search, X } from 'lucide-react';
+import { matchesClassQuery } from '@/lib/classSearch';
 import { PageContainer } from '@/components/workspace/PageContainer';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
@@ -22,8 +24,14 @@ export const TermReportCardHubPage = () => {
 
   const academicYear = academicYearLabel(schoolSettings?.academicYearStart, schoolSettings?.academicYearEnd);
 
-  const tiles = (schoolClasses ?? []).flatMap((c) =>
+  const [search, setSearch] = useState('');
+  const allTiles = (schoolClasses ?? []).flatMap((c) =>
     (c.sections.length > 0 ? c.sections : ['—']).map((section) => ({ cls: c.name, section })),
+  );
+  const tiles = useMemo(
+    () => allTiles.filter((t) => matchesClassQuery(search, t.cls, t.section)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [schoolClasses, search],
   );
 
   return (
@@ -39,6 +47,22 @@ export const TermReportCardHubPage = () => {
         </div>
       )}
 
+      {allTiles.length > 0 && (
+        <div className="relative mb-5 max-w-md">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder='Search class — e.g. "6 A" or "VI A"'
+            className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+          />
+          {search && (
+            <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear search">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: 10 }).map((_, i) => (
@@ -47,7 +71,7 @@ export const TermReportCardHubPage = () => {
         </div>
       ) : tiles.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
-          No classes set up yet.
+          {allTiles.length === 0 ? 'No classes set up yet.' : 'No classes match your search.'}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
