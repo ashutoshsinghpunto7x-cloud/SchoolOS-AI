@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles, Search, X } from 'lucide-react';
 import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
+import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
+import { useReportCardTemplates } from '@/features/report-card-templates/hooks/useReportCardTemplate';
 import { useExamsForClass } from '../hooks/useExams';
 import { TermAiCaptureModal } from '../components/TermAiCaptureModal';
 import { cn } from '@/lib/utils';
@@ -16,6 +18,22 @@ interface SubjectEntry {
   cls: string;
   section: string;
   subjectName: string;
+  /** Name the report-card template shows, when it differs from the name marks are stored under. */
+  label?: string;
+  /** Other name this subject's marks/exams may use (template `marksSubjectName`). */
+  alias?: string;
+}
+
+const PRE_PRIMARY_ORDER = ['mont', 'montessori', 'nur', 'nursery', 'prep', 'lkg', 'ukg'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+/** Pre-primary first, then Class I..XII in real order (a plain string sort puts IX before V). */
+function classRank(cls: string): number {
+  const pre = PRE_PRIMARY_ORDER.indexOf(cls.trim().toLowerCase());
+  if (pre >= 0) return pre;
+  const roman = ROMAN.indexOf(cls.trim().toUpperCase());
+  if (roman >= 0) return 100 + roman;
+  const n = parseInt(cls, 10);
+  return Number.isFinite(n) ? 100 + n - 1 : 1000;
 }
 
 const ACCENTS = [
@@ -43,7 +61,7 @@ function SkeletonCard() {
 
 function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack: () => void; onPickExam: (exam: Exam) => void }) {
   const { data: exams, isLoading, isError } = useExamsForClass(entry.cls);
-  const applicable = (exams ?? []).filter((e) => e.subjects.includes(entry.subjectName));
+  const applicable = (exams ?? []).filter((e) => e.subjects.includes(entry.subjectName) || (entry.alias && e.subjects.includes(entry.alias)));
   const [showTermAi, setShowTermAi] = useState(false);
 
   return (
@@ -126,7 +144,7 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
         <TermAiCaptureModal
           cls={entry.cls}
           section={entry.section}
-          subjectName={entry.subjectName}
+          subjectName={applicable.some((e) => e.subjects.includes(entry.subjectName)) ? entry.subjectName : (entry.alias ?? entry.subjectName)}
           exams={applicable}
           onClose={() => setShowTermAi(false)}
         />
@@ -147,24 +165,52 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
 // each student row once an exam is opened.
 export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   const navigate = useNavigate();
-  const { data, isLoading, isError } = useMasterGrid({ academicYear: defaultAcademicYear() });
+  const academicYear = defaultAcademicYear();
+  const { data, isLoading: gridLoading, isError } = useMasterGrid({ academicYear });
+  const { data: schoolClasses, isLoading: classesLoading } = useSchoolClasses();
+  const { data: templates, isLoading: templatesLoading } = useReportCardTemplates({ academicYear });
+  const isLoading = gridLoading || classesLoading || templatesLoading;
   const [selected, setSelected] = useState<SubjectEntry | null>(null);
   const [search, setSearch] = useState('');
 
+  // Every class that has a published report-card template lists its template subjects for every
+  // section — so classes with no timetable yet (e.g. VI–XII) are still visible. Classes without
+  // a template fall back to whatever the timetable grid lists for them.
   const entries = useMemo<SubjectEntry[]>(() => {
-    if (!data) return [];
     const seen = new Map<string, SubjectEntry>();
-    for (const row of data.rows) {
-      for (const cell of Object.values(row.cells)) {
-        if (!cell?.subjectName) continue;
-        const key = `${row.class}||${row.section}||${cell.subjectName}`;
-        seen.set(key, { cls: row.class, section: row.section, subjectName: cell.subjectName });
+    const templated = new Set<string>();
+
+    for (const t of templates ?? []) {
+      if (t.status !== 'published') continue;
+      const sections = schoolClasses?.find((c) => c.name === t.class)?.sections ?? [];
+      if (sections.length === 0) continue;
+      templated.add(t.class);
+      for (const section of sections) {
+        for (const subj of [...t.subjects].sort((a, b) => a.order - b.order)) {
+          const alias = subj.marksSubjectName || undefined;
+          seen.set(`${t.class}||${section}||${subj.name}`, {
+            cls: t.class, section, subjectName: subj.name, alias,
+          });
+        }
       }
     }
+
+    for (const row of data?.rows ?? []) {
+      if (templated.has(row.class)) continue;
+      for (const cell of Object.values(row.cells)) {
+        if (!cell?.subjectName) continue;
+        seen.set(`${row.class}||${row.section}||${cell.subjectName}`, { cls: row.class, section: row.section, subjectName: cell.subjectName });
+      }
+    }
+
+    // Keep each class's subjects in the order they appear on its report card.
+    const order = new Map([...seen.keys()].map((k, i) => [k, i]));
     return Array.from(seen.values()).sort((a, b) =>
-      `${a.cls}${a.section}${a.subjectName}`.localeCompare(`${b.cls}${b.section}${b.subjectName}`),
+      classRank(a.cls) - classRank(b.cls)
+      || a.section.localeCompare(b.section)
+      || (order.get(`${a.cls}||${a.section}||${a.subjectName}`) ?? 0) - (order.get(`${b.cls}||${b.section}||${b.subjectName}`) ?? 0),
     );
-  }, [data]);
+  }, [data, templates, schoolClasses]);
 
   // Free-text filter over class, section and subject — lets a teacher/
   // principal jump straight to e.g. "II A maths" instead of scanning a long
@@ -186,7 +232,9 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
         onBack={() => setSelected(null)}
         onPickExam={(exam) =>
           navigate(
-            `${basePath}/marks/${selected.cls}/${selected.section}/${encodeURIComponent(selected.subjectName)}/${exam._id}`,
+            `${basePath}/marks/${selected.cls}/${selected.section}/${encodeURIComponent(
+              exam.subjects.includes(selected.subjectName) ? selected.subjectName : (selected.alias ?? selected.subjectName),
+            )}/${exam._id}`,
           )
         }
       />
