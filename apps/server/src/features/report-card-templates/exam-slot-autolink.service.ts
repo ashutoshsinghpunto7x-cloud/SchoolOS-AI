@@ -2,6 +2,7 @@ import { Exam } from '../exams/exam.model';
 import { ReportCardTemplate } from './report-card-template.model';
 import { AcademicYear } from '../academic-year/academic-year.model';
 import { logger } from '../../lib/logger';
+import { normalizeAcademicYear } from '../../lib/academic-year';
 
 /**
  * Whenever an exam is saved, keeps the active academic year's report-card
@@ -36,7 +37,8 @@ export const examSlotAutoLinkService = {
 
     for (const cls of classes) {
       try {
-        await syncOneClass(schoolId, cls, activeYear.label);
+        // Templates store the short "2026-27" form; the AcademicYear label may be "2026-2027".
+        await syncOneClass(schoolId, cls, normalizeAcademicYear(activeYear.label));
       } catch (err) {
         // Never let a slot-sync failure block the exam save itself.
         logger.error('[ExamSlotAutoLink] Failed to sync report-card exam slots', { schoolId, class: cls, err });
