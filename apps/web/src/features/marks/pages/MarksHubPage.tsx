@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles, Search, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, AlertCircle, ChevronRight, ClipboardList, Lock, FileText, Sparkles, Search, X, GraduationCap } from 'lucide-react';
 import { useMasterGrid } from '@/features/timetable/hooks/useTimetable';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
 import { useReportCardTemplates } from '@/features/report-card-templates/hooks/useReportCardTemplate';
@@ -172,6 +172,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   const { data: templates, isLoading: templatesLoading } = useReportCardTemplates({ academicYear });
   const isLoading = gridLoading || classesLoading || templatesLoading;
   const [selected, setSelected] = useState<SubjectEntry | null>(null);
+  const [selectedClass, setSelectedClass] = useState<{ cls: string; section: string } | null>(null);
   const [search, setSearch] = useState('');
 
   // Every class that has a published report-card template lists its template subjects for every
@@ -216,10 +217,32 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   // Free-text filter over class, section and subject — lets a teacher/
   // principal jump straight to e.g. "II A maths" instead of scanning a long
   // list, without needing a separate dropdown per field.
-  const filteredEntries = useMemo(
-    () => entries.filter((e) => matchesClassQuery(search, e.cls, `${e.section} ${e.subjectName} ${e.label ?? ''} ${e.alias ?? ''}`)),
-    [entries, search],
+  // Step 1 lists classes only; step 2 lists the chosen class's subjects; step 3 (ExamPicker) the exams.
+  const classTiles = useMemo(() => {
+    const groups = new Map<string, { cls: string; section: string; subjects: number }>();
+    for (const e of entries) {
+      const key = `${e.cls}||${e.section}`;
+      const g = groups.get(key) ?? { cls: e.cls, section: e.section, subjects: 0 };
+      g.subjects += 1;
+      groups.set(key, g);
+    }
+    return [...groups.values()];
+  }, [entries]);
+
+  const visibleClasses = useMemo(
+    () => classTiles.filter((t) => matchesClassQuery(search, t.cls, t.section)),
+    [classTiles, search],
   );
+
+  const visibleSubjects = useMemo(() => {
+    if (!selectedClass) return [];
+    return entries.filter((e) =>
+      e.cls === selectedClass.cls && e.section === selectedClass.section
+      && matchesClassQuery(search, e.cls, `${e.subjectName} ${e.label ?? ''} ${e.alias ?? ''}`),
+    );
+  }, [entries, selectedClass, search]);
+
+  const pickClass = (t: { cls: string; section: string } | null) => { setSelectedClass(t); setSearch(''); };
 
   if (selected) {
     return (
@@ -241,7 +264,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
     <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button
-          onClick={() => navigate(basePath)}
+          onClick={() => (selectedClass ? pickClass(null) : navigate(basePath))}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-4 -ml-1 p-1"
           type="button"
         >
@@ -250,27 +273,29 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
         </button>
 
         <h1 className="text-[28px] sm:text-[36px] font-bold text-gray-900 dark:text-white tracking-tight leading-none">
-          Marks & Report Cards
+          {selectedClass ? `Class ${selectedClass.cls} – ${selectedClass.section}` : 'Marks & Report Cards'}
         </h1>
         <p className="text-base text-gray-500 dark:text-white/40 mt-2">
-          Pick a class and subject to enter marks.
+          {selectedClass ? 'Pick a subject to enter marks.' : 'Pick a class to enter marks.'}
         </p>
 
-        <button
-          type="button"
-          onClick={() => navigate('/term-report-cards')}
-          className="w-full text-left flex items-center gap-4 rounded-2xl px-4 py-4 mt-5 shadow-sm hover:shadow-md transition-shadow"
-          style={{ backgroundColor: '#1C2B4A' }}
-        >
-          <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white">Generate Report Cards</p>
-            <p className="text-xs text-white/60 mt-0.5">Term report cards, using the class's approved layout</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-white/50 shrink-0" />
-        </button>
+        {!selectedClass && (
+          <button
+            type="button"
+            onClick={() => navigate('/term-report-cards')}
+            className="w-full text-left flex items-center gap-4 rounded-2xl px-4 py-4 mt-5 shadow-sm hover:shadow-md transition-shadow"
+            style={{ backgroundColor: '#1C2B4A' }}
+          >
+            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">Generate Report Cards</p>
+              <p className="text-xs text-white/60 mt-0.5">Term report cards, using the class's approved layout</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/60 shrink-0" />
+          </button>
+        )}
 
         {!isLoading && !isError && entries.length > 0 && (
           <div className="relative mt-5">
@@ -279,7 +304,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by class or subject — e.g. &quot;6 A Maths&quot; or &quot;VI A Maths&quot;"
+              placeholder={selectedClass ? 'Search subject — e.g. "Maths"' : 'Search class — e.g. "6 A" or "VI A"'}
               className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
             />
             {search && (
@@ -315,14 +340,16 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
                 No class timetable has been set up yet — ask an admin to configure one first.
               </p>
             </div>
-          ) : filteredEntries.length === 0 ? (
+          ) : (selectedClass ? visibleSubjects.length : visibleClasses.length) === 0 ? (
             <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-10 text-center">
               <Search className="w-10 h-10 text-gray-300 dark:text-white/20 mx-auto mb-3" />
               <p className="text-base font-semibold text-gray-700 dark:text-white/80">No matches</p>
-              <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Try a different class or subject name.</p>
+              <p className="text-sm text-gray-400 dark:text-white/30 mt-1">
+                {selectedClass ? 'Try a different subject name.' : 'Try a different class or section.'}
+              </p>
             </div>
-          ) : (
-            filteredEntries.map((entry, i) => {
+          ) : selectedClass ? (
+            visibleSubjects.map((entry, i) => {
               const accent = ACCENTS[i % ACCENTS.length];
               return (
                 <button
@@ -336,9 +363,27 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{entry.subjectName}</p>
-                    <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">
-                      Class {entry.cls} – {entry.section}
-                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
+                </button>
+              );
+            })
+          ) : (
+            visibleClasses.map((t, i) => {
+              const accent = ACCENTS[i % ACCENTS.length];
+              return (
+                <button
+                  key={`${t.cls}||${t.section}`}
+                  type="button"
+                  onClick={() => pickClass({ cls: t.cls, section: t.section })}
+                  className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
+                >
+                  <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0', accent.bg)}>
+                    <GraduationCap className={cn('w-5 h-5', accent.text)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">Class {t.cls} – {t.section}</p>
+                    <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">{t.subjects} subject{t.subjects === 1 ? '' : 's'}</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
                 </button>
