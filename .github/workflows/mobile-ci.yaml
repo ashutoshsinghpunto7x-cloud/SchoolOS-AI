@@ -30,7 +30,7 @@ jobs:
 
       - name: Did mobile or shared code change?
         id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             mobile:
