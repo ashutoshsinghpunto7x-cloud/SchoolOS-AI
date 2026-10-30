@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Matches the node:20-alpine base image in apps/*/Dockerfile.
+  NODE_VERSION: "20"
+
+jobs:
+  main:
+    name: CI Pipeline
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lint workflows (actionlint)
+        uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies (exact lockfile)
+        run: npm ci
+
+      - name: Block committed env files and key material
+        run: |
+          bad="$(git ls-files | grep -E '(^|/)\.env($|\.)|\.pem$|\.p12$|\.jks$|\.keystore$|serviceAccount.*\.json$' | grep -v -E '\.env\.example$' || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::These files must never be committed:"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Block focused or skipped tests
+        run: |
+          if git grep -n -E '\b(test|it|describe)\.only\(' -- 'apps/**/*.test.ts' 'apps/**/*.spec.ts' 'tests/**'; then
+            echo "::error::Remove .only from tests."
+            exit 1
+          fi
+
+      - name: Build shared packages (server reads compiled dist)
+        run: |
+          npm run build -w packages/types
+          npm run build -w packages/utils
+
+      - name: Type-check every workspace
+        run: |
+          npm run type-check -w packages/types
+          npm run type-check -w packages/utils
+          npm run type-check -w packages/ui
+          npm run type-check -w apps/server
+          npm run type-check -w apps/web
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Server unit tests
+        working-directory: apps/server
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/ci-unused
+          JWT_ACCESS_SECRET: ci-access-secret-not-real
+          JWT_REFRESH_SECRET: ci-refresh-secret-not-real
+        run: npm test
+
+      - name: Build the server
+        run: npm run build -w apps/server
+
+      - name: Build the web app
+        env:
+          VITE_API_BASE_URL: http://localhost:5050
+          VITE_APP_ENV: ci
+        run: npm run build -w apps/web
+
+      - name: Check web bundle size budget
+        run: node .github/scripts/check-bundle-size.mjs apps/web/dist 600
+
+      - name: Upload reports on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-reports
+          path: |
+            apps/server/coverage
+            npm-debug.log
+          if-no-files-found: ignore
+          retention-days: 7

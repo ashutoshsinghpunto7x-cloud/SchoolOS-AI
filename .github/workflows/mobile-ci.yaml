@@ -1,0 +1,105 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # The job below always runs and always reports a result, so it can be a required
+  # check even on PRs that never touch the mobile app. The expensive steps are skipped
+  # when no mobile or shared-package file changed.
+  mobile:
+    name: Mobile CI
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Did mobile or shared code change?
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            mobile:
+              - 'apps/mobile/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - '.github/workflows/mobile-ci.yaml'
+
+      - name: Nothing to check
+        if: ${{ steps.filter.outputs.mobile != 'true' }}
+        run: echo "No mobile or shared-package changes; skipping."
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        run: npm ci
+
+      - name: Build shared packages
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        run: |
+          npm run build -w packages/types
+          npm run build -w packages/utils
+
+      - name: Type-check
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        run: npm run type-check -w apps/mobile
+
+      - name: ESLint
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        run: npm run lint -w apps/mobile
+
+      - name: Expo doctor (config and dependency compatibility)
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        working-directory: apps/mobile
+        run: npx --yes expo-doctor@latest
+
+      - name: Set up Java
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Generate the native Android project
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install --clean
+
+      - name: Build the debug APK
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Android Lint
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        working-directory: apps/mobile/android
+        run: ./gradlew lintDebug --no-daemon
+
+      - name: Upload the debug APK
+        if: ${{ steps.filter.outputs.mobile == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

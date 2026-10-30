@@ -307,7 +307,7 @@ function CollectionScheduleTab({ academicYear }: { academicYear: string }) {
   const { data: schedule, isLoading } = useCollectionSchedule(academicYear);
   const { mutateAsync: upsert } = useUpsertCollectionSchedule();
   const { mutateAsync: removeEntry } = useDeleteCollectionScheduleEntry();
-  const { mutateAsync: useDefault, isPending: applyingDefault } = useUseDefaultSchedule();
+  const { mutateAsync: applyDefaultSchedule, isPending: applyingDefault } = useUseDefaultSchedule();
   const [addingFor, setAddingFor] = useState<string | null>(null);
 
   function amountOf(item: CollectionScheduleItem): number {
@@ -360,7 +360,7 @@ function CollectionScheduleTab({ academicYear }: { academicYear: string }) {
           </div>
         </div>
         <button
-          onClick={() => void useDefault(academicYear).then(() => toast.success('Default schedule applied.'))}
+          onClick={() => void applyDefaultSchedule(academicYear).then(() => toast.success('Default schedule applied.'))}
           disabled={applyingDefault}
           className="h-9 px-3.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 shrink-0 disabled:opacity-50"
         >

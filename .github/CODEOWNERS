@@ -1,0 +1,7 @@
+# Every change needs a review from the owner. Add teammates here as the team grows.
+*                          @ashutoshsinghpunto7x-cloud
+
+# Security-sensitive areas: keep an explicit line so they never lose review.
+/.github/                  @ashutoshsinghpunto7x-cloud
+/apps/server/src/middlewares/   @ashutoshsinghpunto7x-cloud
+/apps/server/src/config/        @ashutoshsinghpunto7x-cloud

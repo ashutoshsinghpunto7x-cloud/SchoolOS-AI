@@ -1,0 +1,105 @@
+name: E2E and accessibility
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Playwright + Lighthouse
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      # A throwaway local database. Never point CI at Atlas or production.
+      MONGODB_URI: mongodb://127.0.0.1:27017/schoolos-ci
+      JWT_ACCESS_SECRET: ci-access-secret-not-real
+      JWT_REFRESH_SECRET: ci-refresh-secret-not-real
+      PORT: "5050"
+      FRONTEND_URL: http://127.0.0.1:4173
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build shared packages and apps
+        env:
+          VITE_API_BASE_URL: http://127.0.0.1:5050
+          VITE_APP_ENV: ci
+        run: |
+          npm run build -w packages/types
+          npm run build -w packages/utils
+          npm run build -w apps/server
+          npm run build -w apps/web
+
+      - name: Start the API
+        run: |
+          node apps/server/dist/server.js > server.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:5050/healthz && exit 0
+            sleep 2
+          done
+          echo "::error::API did not become healthy"; cat server.log; exit 1
+
+      - name: Serve the built web app
+        run: |
+          npm run preview -w apps/web -- --host 127.0.0.1 --port 4173 > web.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4173/ > /dev/null && exit 0
+            sleep 2
+          done
+          echo "::error::Web app did not start"; cat web.log; exit 1
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright end-to-end tests
+        env:
+          E2E_BASE_URL: http://127.0.0.1:4173
+          E2E_API_URL: http://127.0.0.1:5050
+        run: npx playwright test
+
+      - name: Lighthouse (accessibility must be 90+)
+        run: npx --yes @lhci/cli@0.14.0 autorun --config=.github/lighthouserc.json
+
+      - name: Upload reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports
+          path: |
+            playwright-report
+            test-results
+            .lighthouseci
+            server.log
+            web.log
+          if-no-files-found: ignore
+          retention-days: 7
