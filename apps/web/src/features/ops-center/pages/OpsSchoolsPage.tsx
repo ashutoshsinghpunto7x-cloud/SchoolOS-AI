@@ -4,6 +4,7 @@ import { useOpsSchools } from '../hooks/useOpsData';
 import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { StatusBadge } from '../components/StatusBadge';
 import type { OpsSchoolRow } from '../api/opsApi';
+import { CreateSchoolPanel } from '../components/CreateSchoolPanel';
 
 const COLUMNS: DataTableColumn<OpsSchoolRow>[] = [
   {
@@ -58,9 +59,12 @@ export function OpsSchoolsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-[#F4F6F8]">Schools</h1>
-        <p className="mt-1 text-sm text-[#98A2B3]">Showing {data.length} school{data.length === 1 ? '' : 's'}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-[#F4F6F8]">Schools</h1>
+          <p className="mt-1 text-sm text-[#98A2B3]">Showing {data.length} school{data.length === 1 ? '' : 's'}</p>
+        </div>
+        <CreateSchoolPanel />
       </div>
       <DataTable columns={COLUMNS} rows={data} rowKey={(r) => r.schoolId} emptyMessage="No schools found." />
     </div>

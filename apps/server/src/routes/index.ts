@@ -48,6 +48,7 @@ import termReportCardRouter from '../features/term-report-cards/term-report-card
 import behaviorRouter from '../features/behavior/behavior.routes';
 import opsRouter from '../features/ops-center/ops.routes';
 import opsContentRouter from '../features/ops-center/ops-content.routes';
+import opsSchoolsRouter from '../features/ops-center/ops-schools.routes';
 import performanceTestRouter from '../features/performance-testing/performance-test.routes';
 import communicationEngineRouter from '../features/communication/communication-engine.routes';
 import questionBankRouter from '../features/question-bank/question-bank.routes';
@@ -139,6 +140,7 @@ router.use('/term-report-cards', termReportCardRouter);
 router.use('/behavior', behaviorRouter);
 router.use('/ops', opsRouter);
 router.use('/ops', opsContentRouter);
+router.use('/ops', opsSchoolsRouter);
 router.use('/performance-tests', performanceTestRouter);
 router.use('/communication', communicationEngineRouter);
 router.use('/question-bank', questionBankRouter);
