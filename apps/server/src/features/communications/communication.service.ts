@@ -69,7 +69,8 @@ export const communicationService = {
   async initiateCall(rawInput: unknown, ctx: AuthContext): Promise<ICommunication> {
     const { studentId } = initiateCallSchema.parse(rawInput);
 
-    const student = await Student.findById(studentId).lean<IStudent>();
+    // Tenant isolation: a student id from another school must look like "not found".
+    const student = await Student.findOne({ _id: studentId, schoolId: ctx.schoolId }).lean<IStudent>();
     if (!student) throw new NotFoundError('Student');
 
     const useDirectVapi = aiService.isVapiActive();
@@ -238,7 +239,8 @@ export const communicationService = {
   async sendWhatsApp(rawInput: unknown, ctx: AuthContext): Promise<ICommunication> {
     const { studentId, message } = sendWhatsAppSchema.parse(rawInput);
 
-    const student = await Student.findById(studentId).lean<IStudent>();
+    // Tenant isolation: a student id from another school must look like "not found".
+    const student = await Student.findOne({ _id: studentId, schoolId: ctx.schoolId }).lean<IStudent>();
     if (!student) throw new NotFoundError('Student');
 
     // Meta WhatsApp Cloud API is the real, current channel — prefer it whenever

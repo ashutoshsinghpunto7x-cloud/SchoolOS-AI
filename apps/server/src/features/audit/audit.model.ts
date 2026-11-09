@@ -17,6 +17,7 @@ export type AuditAction =
   | 'maintenance.enabled'
   | 'maintenance.disabled'
   | 'school_settings.logo_updated'
+  | 'school_settings.name_updated'
   | 'school_settings.attendance_rules_updated'
   | 'school_settings.academic_year_updated'
   | 'school_settings.payroll_config_updated'

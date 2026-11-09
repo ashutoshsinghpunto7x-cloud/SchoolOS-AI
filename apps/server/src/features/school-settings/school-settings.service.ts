@@ -1,5 +1,5 @@
 import { SchoolSettings, ISchoolSettings, IAttendanceRules, IPayrollConfig, IBehaviorWindow, IAttendanceEditPolicy, ICommunicationSettings, DEFAULT_BEHAVIOR_WINDOW, DEFAULT_COMMUNICATION_SETTINGS } from './school-settings.model';
-import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateAttendanceEditPolicySchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema, updateAcademicYearSchema } from './school-settings.validation';
+import { updateAttendanceRulesSchema, updatePayrollConfigSchema, updateBehaviorWindowSchema, updateAttendanceEditPolicySchema, updateReportCardBrandingSchema, updateCommunicationSettingsSchema, updateAcademicYearSchema, updateSchoolNameSchema } from './school-settings.validation';
 import { AuthContext } from '../../lib/auth-context';
 import { auditService } from '../audit/audit.service';
 import { isKnownTestSchoolId } from '../../lib/test-tenant';
@@ -138,6 +138,26 @@ export const schoolSettingsService = {
     });
 
     return updated;
+  },
+
+  /** Lets a school's own admin/principal set its display name. Always scoped to the caller's schoolId. */
+  async updateSchoolName(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {
+    const { schoolName } = updateSchoolNameSchema.parse(rawInput);
+
+    await schoolSettingsService.getSettings(ctx.schoolId); // ensure the settings doc exists
+    const updated = await SchoolSettings.findOneAndUpdate(
+      { schoolId: ctx.schoolId },
+      { $set: { schoolName, updatedBy: ctx.displayName } },
+      { new: true },
+    );
+
+    auditService.log({
+      userId: ctx.userId, userDisplayName: ctx.displayName,
+      action: 'school_settings.name_updated', resource: 'school_settings', resourceId: ctx.schoolId,
+      details: { schoolName }, ip: ctx.ip, schoolId: ctx.schoolId,
+    });
+
+    return updated!;
   },
 
   async updateAcademicYear(rawInput: unknown, ctx: AuthContext): Promise<ISchoolSettings> {

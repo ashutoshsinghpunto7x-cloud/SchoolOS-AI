@@ -75,6 +75,10 @@ export const updateAcademicYearSchema = z
   });
 
 export type UpdateAttendanceRulesInput = z.infer<typeof updateAttendanceRulesSchema>;
+export const updateSchoolNameSchema = z.object({
+  schoolName: z.string().trim().min(2, 'School name is required').max(120),
+});
+
 export type UpdateAcademicYearInput = z.infer<typeof updateAcademicYearSchema>;
 export type UpdatePayrollConfigInput   = z.infer<typeof updatePayrollConfigSchema>;
 export type UpdateBehaviorWindowInput  = z.infer<typeof updateBehaviorWindowSchema>;

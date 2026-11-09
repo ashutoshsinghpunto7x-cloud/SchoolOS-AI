@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Ops "Create School" — onboards a brand-new tenant. Purely additive: it only ever
- * inserts a NEW SchoolSettings + a NEW principal User under a freshly generated schoolId.
+ * inserts a NEW SchoolSettings + a NEW school-admin User under a freshly generated schoolId.
  */
 export const createSchoolSchema = z.object({
   schoolName: z.string().trim().min(2, 'School name is required').max(120),
@@ -13,10 +13,10 @@ export const createSchoolSchema = z.object({
     .toLowerCase()
     .regex(/^[a-z0-9]{2,20}$/, 'School code must be 2-20 letters/digits')
     .optional(),
-  principalFirstName: z.string().trim().min(1).max(60),
-  principalLastName: z.string().trim().min(1).max(60),
-  principalEmail: z.string().trim().toLowerCase().email(),
-  principalPhone: z.string().trim().max(20).optional(),
+  adminFirstName: z.string().trim().min(1).max(60),
+  adminLastName: z.string().trim().min(1).max(60),
+  adminEmail: z.string().trim().toLowerCase().email(),
+  adminPhone: z.string().trim().max(20).optional(),
 });
 
 export type CreateSchoolInput = z.infer<typeof createSchoolSchema>;

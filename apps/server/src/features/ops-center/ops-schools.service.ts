@@ -26,8 +26,8 @@ const deriveCode = (name: string): string => {
 export const opsSchoolsService = {
   /**
    * Creates a new tenant: one SchoolSettings document (which is what makes a school
-   * appear in Ops Center) and one principal login. Never touches any existing school.
-   * The temp password is returned once and the principal must change it at first login.
+   * appear in Ops Center) and one admin login. Never touches any existing school.
+   * The temp password is returned once and the school admin must change it at first login.
    */
   async createSchool(rawInput: unknown, ctx: AuthContext) {
     const data = createSchoolSchema.parse(rawInput);
@@ -45,13 +45,13 @@ export const opsSchoolsService = {
       User.exists({ schoolId }),
       // Query the model directly (not the repository) so soft-deleted users still block,
       // matching the unique index on email.
-      User.exists({ email: data.principalEmail }),
+      User.exists({ email: data.adminEmail }),
     ]);
     if (existingSettings || existingUserInSchool) {
       throw new ValidationError(`A school with code "${schoolId.replace('school_', '')}" already exists. Choose a different school code.`);
     }
     if (existingEmail) {
-      throw new ValidationError('A user with this principal email already exists.');
+      throw new ValidationError('A user with this admin email already exists.');
     }
 
     const tempPassword = generateTempPassword();
@@ -65,13 +65,13 @@ export const opsSchoolsService = {
     });
 
     try {
-      const principal = await User.create({
-        firstName: data.principalFirstName,
-        lastName: data.principalLastName,
-        email: data.principalEmail,
-        phone: data.principalPhone,
+      const admin = await User.create({
+        firstName: data.adminFirstName,
+        lastName: data.adminLastName,
+        email: data.adminEmail,
+        phone: data.adminPhone,
         passwordHash,
-        role: 'principal',
+        role: 'admin',
         schoolId,
         mustResetPassword: true,
         tempPasswordExpiresAt: new Date(Date.now() + TEMP_PASSWORD_TTL_MS),
@@ -84,7 +84,7 @@ export const opsSchoolsService = {
         action: 'user.created',
         resource: 'schools',
         resourceId: schoolId,
-        details: { event: 'school.created', schoolName: data.schoolName, principalEmail: data.principalEmail },
+        details: { event: 'school.created', schoolName: data.schoolName, adminEmail: data.adminEmail },
         ip: ctx.ip,
         schoolId,
       });
@@ -92,18 +92,18 @@ export const opsSchoolsService = {
       return {
         schoolId,
         schoolName: settings.schoolName,
-        principal: {
-          _id: principal._id.toString(),
-          email: principal.email,
-          firstName: principal.firstName,
-          lastName: principal.lastName,
+        admin: {
+          _id: admin._id.toString(),
+          email: admin.email,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
         },
         // Shown exactly once — never stored in plain text, never logged.
         temporaryPassword: tempPassword,
-        temporaryPasswordExpiresAt: principal.tempPasswordExpiresAt,
+        temporaryPasswordExpiresAt: admin.tempPasswordExpiresAt,
       };
     } catch (err) {
-      // Roll back the brand-new settings doc so a failed principal insert can't leave a half-made tenant.
+      // Roll back the brand-new settings doc so a failed admin insert can't leave a half-made tenant.
       await SchoolSettings.deleteOne({ _id: settings._id });
       throw err;
     }

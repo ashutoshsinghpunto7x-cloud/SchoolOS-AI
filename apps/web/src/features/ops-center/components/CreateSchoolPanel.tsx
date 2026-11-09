@@ -6,16 +6,16 @@ import { apiClient } from '@/services/api';
 interface CreateSchoolInput {
   schoolName: string;
   schoolCode?: string;
-  principalFirstName: string;
-  principalLastName: string;
-  principalEmail: string;
-  principalPhone?: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminEmail: string;
+  adminPhone?: string;
 }
 
 interface CreateSchoolResult {
   schoolId: string;
   schoolName: string;
-  principal: { _id: string; email: string; firstName: string; lastName: string };
+  admin: { _id: string; email: string; firstName: string; lastName: string };
   temporaryPassword: string;
   temporaryPasswordExpiresAt?: string;
 }
@@ -25,7 +25,7 @@ const createSchool = async (input: CreateSchoolInput): Promise<CreateSchoolResul
   return res.data.data;
 };
 
-const EMPTY = { schoolName: '', schoolCode: '', principalFirstName: '', principalLastName: '', principalEmail: '', principalPhone: '' };
+const EMPTY = { schoolName: '', schoolCode: '', adminFirstName: '', adminLastName: '', adminEmail: '', adminPhone: '' };
 
 const errorMessage = (err: unknown): string => {
   const e = err as { response?: { status?: number; data?: { error?: { message?: string }; message?: string } } };
@@ -69,17 +69,17 @@ export function CreateSchoolPanel() {
     mutation.mutate({
       schoolName: form.schoolName,
       schoolCode: form.schoolCode || undefined,
-      principalFirstName: form.principalFirstName,
-      principalLastName: form.principalLastName,
-      principalEmail: form.principalEmail,
-      principalPhone: form.principalPhone || undefined,
+      adminFirstName: form.adminFirstName,
+      adminLastName: form.adminLastName,
+      adminEmail: form.adminEmail,
+      adminPhone: form.adminPhone || undefined,
     });
   };
 
   const copyCreds = async () => {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(`Login: ${result.principal.email}\nTemporary password: ${result.temporaryPassword}`);
+      await navigator.clipboard.writeText(`Login: ${result.admin.email}\nTemporary password: ${result.temporaryPassword}`);
       setCopied(true);
     } catch {
       /* clipboard unavailable — password remains visible on screen */
@@ -112,11 +112,11 @@ export function CreateSchoolPanel() {
               <div className="mt-4 space-y-4 text-sm text-[#D0D5DD]">
                 <p>
                   <span className="font-semibold text-[#F4F6F8]">{result.schoolName}</span> is ready (ID{' '}
-                  <code className="rounded bg-[#0F141B] px-1">{result.schoolId}</code>). Share these principal
+                  <code className="rounded bg-[#0F141B] px-1">{result.schoolId}</code>). Share these school admin
                   credentials securely — the password is shown only once and must be changed at first login.
                 </p>
                 <div className="rounded-md bg-[#0F141B] p-3 font-mono text-[13px]">
-                  <div>Login: {result.principal.email}</div>
+                  <div>Login: {result.admin.email}</div>
                   <div>Temporary password: {result.temporaryPassword}</div>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -145,21 +145,21 @@ export function CreateSchoolPanel() {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm text-[#98A2B3]">
-                    Principal first name
-                    <input required className={inputCls} value={form.principalFirstName} onChange={set('principalFirstName')} />
+                    School admin first name
+                    <input required className={inputCls} value={form.adminFirstName} onChange={set('adminFirstName')} />
                   </label>
                   <label className="block text-sm text-[#98A2B3]">
-                    Principal last name
-                    <input required className={inputCls} value={form.principalLastName} onChange={set('principalLastName')} />
+                    School admin last name
+                    <input required className={inputCls} value={form.adminLastName} onChange={set('adminLastName')} />
                   </label>
                 </div>
                 <label className="block text-sm text-[#98A2B3]">
-                  Principal login email
-                  <input required type="email" className={inputCls} value={form.principalEmail} onChange={set('principalEmail')} />
+                  School admin login email
+                  <input required type="email" className={inputCls} value={form.adminEmail} onChange={set('adminEmail')} />
                 </label>
                 <label className="block text-sm text-[#98A2B3]">
-                  Principal phone <span className="text-[#667085]">(optional)</span>
-                  <input className={inputCls} value={form.principalPhone} onChange={set('principalPhone')} />
+                  School admin phone <span className="text-[#667085]">(optional)</span>
+                  <input className={inputCls} value={form.adminPhone} onChange={set('adminPhone')} />
                 </label>
 
                 {mutation.isError && <p className="text-sm text-[#EF4444]">{errorMessage(mutation.error)}</p>}
