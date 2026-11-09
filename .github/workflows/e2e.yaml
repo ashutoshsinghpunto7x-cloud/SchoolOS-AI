@@ -63,7 +63,7 @@ jobs:
       - name: Start the API
         run: |
           node apps/server/dist/server.js > server.log 2>&1 &
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -fsS http://127.0.0.1:5050/healthz && exit 0
             sleep 2
           done
@@ -72,7 +72,7 @@ jobs:
       - name: Serve the built web app
         run: |
           npm run preview -w apps/web -- --host 127.0.0.1 --port 4173 > web.log 2>&1 &
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             curl -fsS http://127.0.0.1:4173/ > /dev/null && exit 0
             sleep 2
           done
