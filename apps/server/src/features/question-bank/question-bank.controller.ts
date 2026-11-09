@@ -166,7 +166,7 @@ export const questionBankController = {
   /** GET /question-bank/board-library?class=12 */
   async listBoardLibrary(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      sendSuccess(res, await boardLibraryService.listAvailable(req.query));
+      sendSuccess(res, await boardLibraryService.listAvailable(req.query, buildAuthContext(req.user!)));
     } catch (err) { next(err); }
   },
 
