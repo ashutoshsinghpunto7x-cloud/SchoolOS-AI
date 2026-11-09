@@ -1,0 +1,293 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Sociology",
+ "year": 2025,
+ "language": "hi",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "निम्न में से कौन समाजशास्त्री नहीं है ?",
+   "options": [
+    "अगस्त कॉम्टे",
+    "मैकाईवर",
+    "जी. एस. घुर्ये",
+    "डार्विन"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "ग्रामीण एवं नगरीय समुदाय को पृथक करने का मुख्य आधार है -",
+   "options": [
+    "व्यवसाय की प्रकृति",
+    "जनसंख्या का आकार",
+    "सामाजिक सम्बन्ध की प्रकृति",
+    "इनमें से सभी"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "‘चिपको आन्दोलन’ सम्बन्धित है-",
+   "options": [
+    "वृक्षों की रक्षा से",
+    "जल की रक्षा से",
+    "खनिजों की रक्षा से",
+    "पशुओं की रक्षा से"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "इनमें से किसको प्रजातन्त्र का चौथा स्तम्भ कहा जाता है ?",
+   "options": [
+    "कार्यपालिका",
+    "विधायिका",
+    "न्यायपालिका",
+    "प्रेस"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "आर्य समाज के संस्थापक कौन हैं ।",
+   "options": [
+    "राजा राममोहन राय",
+    "स्वामी दयानन्द सरस्वती",
+    "विवेकानन्द",
+    "महात्मा गांधी"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "निम्नलिखित में से कौन संस्कृति की विशेषता नहीं है ?",
+   "options": [
+    "अनुकूलनशीलता",
+    "अधि-वैयक्तिक",
+    "सामाजिक गुण",
+    "जैविक उत्तराधिकार"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "उदारीकरण का सम्बन्ध है",
+   "options": [
+    "सामाजिक नीति से",
+    "उपनिवेशवादी नीति से",
+    "शैक्षिक नीति से",
+    "आर्थिक नीति से"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "‘चक्रीय सिद्धांत’ के प्रवर्तक कौन थे ?",
+   "options": [
+    "ओसवाल्ड स्पेंगलर और अर्नोल्ड जे.",
+    "मैकाईवर एवं पेज",
+    "दुर्खीम एवं सोरोकिन",
+    "कॉम्टे और वेबर"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "निम्नांकित में से कौन परियोजना कार्य का चरण हैं ?",
+   "options": [
+    "अध्ययन विषय का चुनाव",
+    "अध्ययन प्रविधियों का चुनाव",
+    "तथ्यों का संकलन",
+    "उपर्युक्त सभी"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "संस्कृति को भौतिक और अभौतिक संस्कृतियों में किसने वर्गीकृत किया है ?",
+   "options": [
+    "मॉर्गन",
+    "वेबर",
+    "सोरोकिन",
+    "ऑगबर्न"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "ग्रामीण समाज की तीन विशेषताओं का उल्लेख कीजिए ।"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘नातेदारी’ को परिभाषित कीजिए ।"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘सामाजिक स्तरीकरण’ क्या है ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘सांप्रदायिकता’ क्या है ?"
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘वर्ग’ से आप क्या समझते हैं ?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘हरित क्रांति’ के किन्हीं तीन प्रमुख प्रभावों का वर्णन कीजिए ।"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "औद्योगिकीकरण से आप क्या समझते हैं ?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "सामाजिक आन्दोलन क्या है ?"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "समाज में ‘कानून’ की क्या भूमिका है ?"
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "‘साप्ताहिक बाज़ार’ से आप क्या समझते हैं ?"
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "आधुनिक जनसंपर्क माध्यम के लाभ-हानि स्पष्ट कीजिए ।"
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "भारत में ‘राष्ट्रीय एकीकरण’ की प्रमुख समस्याएँ क्या हैं ?"
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "उपनिवेशवाद की अवधारणा का वर्णन कीजिये ।"
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "भारत में ग्राम पंचायतों की भूमिका का वर्णन कीजिए ।"
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "भारत में ‘विविधता में एकता’ की अवधारणा क्या है ?"
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "भारत में लैंगिक असमानता के प्रभावों की विवेचना कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "भारत में जन्मदर एवं मृत्युदर के उत्तरदायी कारकों की विवेचना कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "भारतीय समाज में आधुनिकीकरण की भूमिका की विवेचना कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "जाति व्यवस्था की विशेषताओं की व्याख्या कीजिये ।"
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "‘जनजातीय संघर्ष’ को स्पष्ट कीजिए तथा इसके प्रमुख कारणों की व्याख्या कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "भूमण्डलीकरण द्वारा घटित परिवर्तनों की विवेचना कीजिए"
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "लोकतंत्र को परिभाषित कीजिए । लोकतंत्र में दबाव समूहों की भूमिका का वर्णन कीजिए ।"
+  }
+ ]
+}

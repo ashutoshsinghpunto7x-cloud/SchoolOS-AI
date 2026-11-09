@@ -1,0 +1,332 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Economics",
+ "year": 2023,
+ "paperCode": "329(BG)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is an economic activity ?",
+   "options": [
+    "Consumption",
+    "Production",
+    "Exchange",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In the case of normal goods, demand curve shows",
+   "options": [
+    "positive slope",
+    "negative slope",
+    "zero slope",
+    "none of these."
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who propounded indifference curve analysis ?",
+   "options": [
+    "Marshall",
+    "Pigou",
+    "Hicks",
+    "Robbins"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In the present age, how many factors of production are there ?",
+   "options": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following indicates fixed cost ?",
+   "options": [
+    "Electricity bill",
+    "Expenses on raw material",
+    "Wages",
+    "Interest on fixed capital"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who imposes Income Tax ?",
+   "options": [
+    "Central Government",
+    "State Governments",
+    "Local Governments",
+    "All of these."
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "For controlling inflation, Bank Rate is",
+   "options": [
+    "increased",
+    "decreased",
+    "kept constant",
+    "decreased to zero."
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "If MPS = 0·4, then MPC will be",
+   "options": [
+    "40%",
+    "50%",
+    "60%",
+    "70%."
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Where is the headquarters of Reserve Bank of India ?",
+   "options": [
+    "New Delhi",
+    "Mumbai",
+    "Kolkata",
+    "Chennai."
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who is the Finance Minister of India ?",
+   "options": [
+    "Narendra Modi",
+    "Amit Shah",
+    "Rajnath Singh",
+    "Nirmala Sitharaman."
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is Micro-economics ?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you understand by 'Demand' ?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What are complementary goods ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is production function ?"
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you understand by full employment ?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is Money ?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is meant by Government Budget ?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is meant by involuntary unemployment ?"
+  },
+  {
+   "section": "C",
+   "number": "19",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Explain important factors affecting demand."
+  },
+  {
+   "section": "C",
+   "number": "20",
+   "questionType": "numerical",
+   "marks": 6,
+   "questionText": "Calculate marginal production and average production from the following data:\nUnits of Labour | 1 | 2 | 3\nTotal Production | 20 | 36 | 48"
+  },
+  {
+   "section": "C",
+   "number": "21(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What is perfect competition ?"
+  },
+  {
+   "section": "C",
+   "number": "21(b)",
+   "questionType": "short",
+   "marks": 4,
+   "questionText": "Highlight its salient features."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Highlight the important functions of Reserve Bank of India."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Explain the principal components of money supply."
+  },
+  {
+   "section": "C",
+   "number": "24(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Write the meaning of Direct Tax."
+  },
+  {
+   "section": "C",
+   "number": "24(b)",
+   "questionType": "short",
+   "marks": 4,
+   "questionText": "Highlight its important advantages."
+  },
+  {
+   "section": "D",
+   "number": "25(a)",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What do you understand by Indifference curve ?"
+  },
+  {
+   "section": "D",
+   "number": "25(b)",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Explain Consumer's Equilibrium with the help of Indifference curves.",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "25(a) OR",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What is Elasticity of Demand ?"
+  },
+  {
+   "section": "D",
+   "number": "25(b) OR",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Explain percentage method of its measurement."
+  },
+  {
+   "section": "D",
+   "number": "26(a)",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What do you understand by National Income ?"
+  },
+  {
+   "section": "D",
+   "number": "26(b)",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Explain the production method of its estimation."
+  },
+  {
+   "section": "D",
+   "number": "26(a) OR",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What is Excess Demand ?"
+  },
+  {
+   "section": "D",
+   "number": "26(b) OR",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Discuss its important causes."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "How is the price of a commodity determined under Perfect Competition ? Explain with the help of an example and diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "27(a) OR",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What do understand by Average Propensity to Consume and Marginal Propensity to Consume ?"
+  },
+  {
+   "section": "D",
+   "number": "27(b) OR",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Establish the relationship between these two with the help of an example and diagram.",
+   "hasFigure": true
+  }
+ ]
+}

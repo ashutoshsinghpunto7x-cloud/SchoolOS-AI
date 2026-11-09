@@ -1,8 +1,51 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks, Files, Merge } from 'lucide-react';
-import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups, useMergeQuestionGroups } from '../hooks/useQuestionBank';
+import { Library, Upload, Search, FileSpreadsheet, Sparkles, Image as ImageIcon, FileText, ChevronRight, Pencil, Check, BookOpen, Trash2, X, ListChecks, Files, Merge } from 'lucide-react';
+import { useQuestionGroups, useAllQuestionSources, useUpdateSourceChapter, useDeleteSource, useDeleteQuestionGroups, useMergeQuestionGroups, useBoardLibrary, useSyncBoardLibrary } from '../hooks/useQuestionBank';
+
+/** Shared previous-year board papers (e.g. UP Board Class 12) — one click copies a subject's papers into this school's bank. */
+function BoardLibraryCard({ subjectFilter }: { subjectFilter: string }) {
+  const { data: library } = useBoardLibrary('12');
+  const sync = useSyncBoardLibrary();
+  const [busy, setBusy] = useState<string | null>(null);
+  const rows = (library ?? []).filter((r) => !subjectFilter.trim() || r.subject.toLowerCase().includes(subjectFilter.trim().toLowerCase()));
+  if (rows.length === 0) return null;
+
+  async function add(r: { class: string; subject: string }) {
+    setBusy(r.subject);
+    try {
+      const res = await sync.mutateAsync({ class: r.class, subject: r.subject });
+      toast.success(res.questionsAdded > 0 ? `Added ${res.questionsAdded} questions from ${res.chaptersTouched} paper(s)` : 'Already up to date');
+    } catch (err) {
+      toast.error('Could not add board papers', { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2.5 flex items-center gap-1.5">
+        <Library className="w-3.5 h-3.5" /> Class 12 board papers — add to your Question Bank
+      </p>
+      <div className="space-y-1">
+        {rows.map((r) => (
+          <div key={r.subject} className="flex items-center gap-3 h-10 px-1">
+            <span className="flex-1 text-sm text-gray-700 dark:text-white/80 truncate">{r.subject}</span>
+            <span className="text-[11px] text-gray-400 shrink-0">{r.board} · {r.years.join(', ')} · {r.questionCount} questions</span>
+            <button
+              type="button" disabled={busy !== null} onClick={() => add(r)}
+              className="h-8 px-3 rounded-lg bg-[#1C2B4A] text-white text-xs font-semibold disabled:opacity-50 shrink-0"
+            >
+              {busy === r.subject ? 'Adding…' : 'Add'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function PendingUploadRow({ source }: { source: import('@schoolos/types').QuestionSource }) {
   const navigate = useNavigate();
@@ -219,6 +262,8 @@ export function QuestionBankPage() {
               className="h-9 w-full pl-9 pr-3 rounded-lg border border-gray-200 dark:border-white/10 dark:bg-white/5 dark:text-white text-sm" />
           </div>
         </div>
+
+        {(!cls.trim() || ['12', 'xii'].includes(cls.trim().toLowerCase())) && <BoardLibraryCard subjectFilter={subject} />}
 
         {sources && sources.length > 0 && (
           <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">

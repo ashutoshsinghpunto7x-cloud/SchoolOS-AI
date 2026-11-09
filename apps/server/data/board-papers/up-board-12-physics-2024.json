@@ -1,0 +1,292 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Physics",
+ "year": 2024,
+ "paperCode": "346(FS)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The Louis de Broglie wavelength of a particle having kinetic energy E is :",
+   "options": [
+    "λ = h/√(2mE)",
+    "λ = h/√(mE)",
+    "λ = √(2mE)/h",
+    "λ = √(mE)/h"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "If drift velocity of electron be v_d and intensity of electric field E, then which relation among the following obeys Ohm's law ?",
+   "options": [
+    "v_d ∝ E²",
+    "v_d = Constant",
+    "v_d ∝ E",
+    "v_d ∝ √E"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The path of scattered α-particle is :",
+   "options": [
+    "circular",
+    "parabolic",
+    "elliptical",
+    "hyperbolic"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The maximum focal length of convex lens is for :",
+   "options": [
+    "blue light",
+    "green light",
+    "red light",
+    "yellow light"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(e)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The power consumed in alternating current in circuit containing only capacitor will be :",
+   "options": [
+    "P = −1",
+    "P = 0",
+    "P = +1",
+    "None of the above"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(f)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Force of 80 Newton works between two point charges placed at a fixed distance apart in air. When these charges are placed at the same distance apart in a dielectric medium, then force of 8 Newton works on it. The dielectric constant of medium will be :",
+   "options": [
+    "K = −10",
+    "K = 10",
+    "K = 0·01",
+    "K = − 0·01"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "2(a)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Find the ratio of focal length of lens in air and that of lens when it is immersed in liquid."
+  },
+  {
+   "section": "B",
+   "number": "2(b)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "In hydrogen atom what is the ionization potential of electron in the ground state ?"
+  },
+  {
+   "section": "B",
+   "number": "2(c)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Write the definition and dimensional formula of electrical conductivity."
+  },
+  {
+   "section": "B",
+   "number": "2(d)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Which value of current does the ammeter used in A.C. circuit measure ?"
+  },
+  {
+   "section": "B",
+   "number": "2(e)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "How much charge is there on hole ? Draw the circuit symbol of p-n junction diode."
+  },
+  {
+   "section": "B",
+   "number": "2(f)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Between radio waves and micro waves, which one has a higher frequency ?"
+  },
+  {
+   "section": "C",
+   "number": "3(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Define the mass defect and binding energy of nucleus."
+  },
+  {
+   "section": "C",
+   "number": "3(b)",
+   "questionType": "numerical",
+   "marks": 2,
+   "questionText": "A double concave lens has to be made from crown glass. How much should the radii of surfaces of lens be kept to make the power of lens −2·5 D ? Refractive index of crown glass is 1·65."
+  },
+  {
+   "section": "C",
+   "number": "3(c)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Explain the operation of p-n junction diode in forward bias."
+  },
+  {
+   "section": "C",
+   "number": "3(d)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What is the effect on range and sensitivity of an ammeter when the value of its shunt resistance increases ?"
+  },
+  {
+   "section": "D",
+   "number": "4(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "If a thin prism of glass be immersed in water, then prove that the minimum deviation produced by prism becomes one-fourth with respect to air. Given ₐn_g = 3/2; ₐn_w = 4/3."
+  },
+  {
+   "section": "D",
+   "number": "4(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Discuss the significance of displacement current and find the phase difference between it and the conduction current."
+  },
+  {
+   "section": "D",
+   "number": "4(c)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Explain nuclear fission and nuclear fusion with examples."
+  },
+  {
+   "section": "D",
+   "number": "4(d)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "A plastic ball P of mass 3·2 × 10⁻¹⁵ kg is suspended between two horizontal parallel charged plates in balanced state. How many electrons on the ball will be increased or decreased ? (g = 10 m/s²) (Figure: plates 2 cm apart, potential difference 1000 Volt, forces qE upward and mg downward on P.)",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "4(e)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What are electromagnetic waves ? Draw their propagation diagram. Show the electric field amplitude and magnetic field amplitude in propagation diagram."
+  },
+  {
+   "section": "D",
+   "number": "5(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Define interference. Mention the condition for constructive and destructive interference."
+  },
+  {
+   "section": "D",
+   "number": "5(b)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "The atomic mass of ₈O¹⁶ is 16·0000 amu. Calculate its binding energy per nucleon. Mass of electron 0·00055 amu, mass of proton 1·007593 amu and mass of neutron 1·008982 amu and 1 amu = 931 MeV."
+  },
+  {
+   "section": "D",
+   "number": "5(c)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Determine the nature of force acting between two parallel current carrying conductors when : (i) Current is in the same direction in conductors, (ii) Current is in opposite direction in conductors."
+  },
+  {
+   "section": "D",
+   "number": "5(d)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Establish the relation between resistances of arms of Wheatstone bridge in balanced condition."
+  },
+  {
+   "section": "D",
+   "number": "5(d) OR",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "The resistance of a wire is 16 ohms. By melting it, the wire is stretched to half of its original length. What will be the resistance of the new wire ?"
+  },
+  {
+   "section": "D",
+   "number": "5(e)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Obtain the expression for capacity of a parallel plate capacitor. How will the capacity of capacitor be increased ?"
+  },
+  {
+   "section": "E",
+   "number": "6",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is Bohr's quantum condition postulate ? How is it explained by de Broglie ? What are the shortcomings of Bohr's atomic model ?"
+  },
+  {
+   "section": "E",
+   "number": "6 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "Energy of a particle at absolute temperature T is of order of kT. Calculate the wavelength of thermal neutrons at 27°C. Find the energy of photon having same wavelength. Here k is Boltzmann constant."
+  },
+  {
+   "section": "E",
+   "number": "7",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "By drawing a ray diagram, explain the formation of image in a compound microscope. Establish the formula for magnifying power for it."
+  },
+  {
+   "section": "E",
+   "number": "7 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "In a circuit, the equation for alternative voltage V is represented by V = 40 sin (100 πt) volt. Here t is in seconds. Draw the time – voltage (t – V) graph with proper scale for one cycle. Calculate the root mean square value of voltage."
+  },
+  {
+   "section": "E",
+   "number": "8",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is atomic model of magnetism ? Differentiate between paramagnetic, diamagnetic and ferromagnetic substances on this basis. Also give one example of each."
+  },
+  {
+   "section": "E",
+   "number": "8 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "There is minimum deviation of light ray on passing through a prism (n = √3). If angle of incidence is twice the angle of refraction for this ray, then what will be the angle of prism and the angle of refraction ?"
+  },
+  {
+   "section": "E",
+   "number": "9",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Compare features of p-type and n-type semi-conductors. Draw circuit diagram of half-wave rectifier of p-n junction diode and explain it."
+  },
+  {
+   "section": "E",
+   "number": "9 OR",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "State Gauss's Law in electrostatics. Using it (i) find electric field due to a point source charge (q) and (ii) deduce Coulomb's law between source charge (q) and test charge (q₀)."
+  }
+ ]
+}

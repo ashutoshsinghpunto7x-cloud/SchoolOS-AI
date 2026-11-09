@@ -30,6 +30,7 @@
     "migrate:fix-admission-index": "tsx src/scripts/fix-student-admission-index.ts",
     "migrate:fix-fee-structure-index": "tsx src/scripts/fix-fee-structure-index.ts",
     "migrate:backfill-teacher-employees": "tsx src/scripts/backfill-teacher-employees.ts",
+    "import:board-papers": "tsx src/scripts/import-board-papers.ts",
     "cleanup:stuck-perf-tests": "tsx src/scripts/cleanup-stuck-perf-tests.ts"
   },
   "dependencies": {

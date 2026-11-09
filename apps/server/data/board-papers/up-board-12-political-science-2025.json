@@ -1,0 +1,308 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Political Science",
+  "year": 2025,
+  "paperCode": "323(IV)",
+  "language": "en",
+  "questions": [
+    {
+      "section": "A",
+      "number": "1",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When did the Soviet Union disintegrate?",
+      "options": [
+        "1990",
+        "1991",
+        "1992",
+        "1993"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "2",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When did the Chinese Revolution take place?",
+      "options": [
+        "1947",
+        "1949",
+        "1951",
+        "1954"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "3",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When was the Shimla Agreement signed?",
+      "options": [
+        "1970",
+        "1972",
+        "1977",
+        "1978"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "4",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "The International Atomic Energy Agency (I.A.E.A.) was established in",
+      "options": [
+        "1947",
+        "1950",
+        "1955",
+        "1957"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "5",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "'Kyoto Protocol' is related to",
+      "options": [
+        "Disarmament",
+        "Environmental protection",
+        "Refugee problem",
+        "None of these"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "6",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When did Goa become an independent state of the Indian Union?",
+      "options": [
+        "1972",
+        "1977",
+        "1980",
+        "1987"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "7",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "Which article in the Constitution of India deals with the election process?",
+      "options": [
+        "324",
+        "328",
+        "342",
+        "370"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "8",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "Where was the first Non-Aligned Conference held?",
+      "options": [
+        "New Delhi",
+        "Belgrade",
+        "Cuba",
+        "Durban"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "9",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "Who nationalized banks in India?",
+      "options": [
+        "Rajiv Gandhi",
+        "Indira Gandhi",
+        "Manmohan Singh",
+        "Jawaharlal Nehru"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "10",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "Who was the Prime Minister of India when the Mandal Commission report was implemented?",
+      "options": [
+        "Indira Gandhi",
+        "Rajiv Gandhi",
+        "Chandrashekhar",
+        "Vishwanath Pratap Singh"
+      ]
+    },
+    {
+      "section": "B",
+      "number": "11",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Describe any two characteristics of the Soviet Political system."
+    },
+    {
+      "section": "B",
+      "number": "12",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Which currency is run by the European Union?"
+    },
+    {
+      "section": "B",
+      "number": "13",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Mention the number of permanent and temporary members of the Security Council of the United Nations."
+    },
+    {
+      "section": "B",
+      "number": "14",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "What do you understand by common property?"
+    },
+    {
+      "section": "B",
+      "number": "15",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "What is globalization?"
+    },
+    {
+      "section": "B",
+      "number": "16",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Write the names of any two Indian princely states which opposed merging with India after independence?"
+    },
+    {
+      "section": "B",
+      "number": "17",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "When did the first Five-Year Plan start and what was its objective?"
+    },
+    {
+      "section": "B",
+      "number": "18",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Mention any two principles of Panchsheel."
+    },
+    {
+      "section": "B",
+      "number": "19",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Who abolished the 'Privy Purse' in India?"
+    },
+    {
+      "section": "B",
+      "number": "20",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "What do you mean by 'appeasement'?"
+    },
+    {
+      "section": "C",
+      "number": "21",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What were the consequences of the disintegration of the Soviet Union?"
+    },
+    {
+      "section": "C",
+      "number": "22",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What are the highlights of ASEAN Vision 2020?"
+    },
+    {
+      "section": "C",
+      "number": "23",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "Suggest any two important changes to improve the functioning of the Security Council."
+    },
+    {
+      "section": "C",
+      "number": "24",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "In Indian politics, the period from the year 1952 to 1966 is called the period of one party dominance.\" Do you agree with this statement?"
+    },
+    {
+      "section": "C",
+      "number": "25",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What was the impact of defection on Indian politics? Explain."
+    },
+    {
+      "section": "C",
+      "number": "26",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "How can regional imbalances be removed?"
+    },
+    {
+      "section": "D",
+      "number": "27",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Evaluate the causes of tension in the relations between India and China."
+    },
+    {
+      "section": "D",
+      "number": "28",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Describe the challenges faced by the newly independent countries of Asia and Africa after the Second World War."
+    },
+    {
+      "section": "D",
+      "number": "29",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Write a note on Niti Aayog."
+    },
+    {
+      "section": "D",
+      "number": "30",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Write a short note on Indian Nuclear Policy."
+    },
+    {
+      "section": "E",
+      "number": "31",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "Explain the factors responsible for the growth of Chinese Economy."
+    },
+    {
+      "section": "E",
+      "number": "31 OR",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "What is globalization? How has it affected India?"
+    },
+    {
+      "section": "E",
+      "number": "32",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "Explain the process and basis of re-organisation of states in the Indian Union"
+    },
+    {
+      "section": "E",
+      "number": "32 OR",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "Every regional movement does not lead to separatist demands.\" Explain this fact by giving examples."
+    }
+  ]
+}

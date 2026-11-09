@@ -1,0 +1,321 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Economics",
+ "year": 2026,
+ "paperCode": "329(DE)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is an indirect tax ?",
+   "options": [
+    "Income tax",
+    "Corporate tax",
+    "Goods and Services tax",
+    "Personal property tax"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is a direct tax ?",
+   "options": [
+    "Entertainment tax",
+    "Import duty",
+    "Excise duty",
+    "Corporate tax"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Formula for Revenue Deficit is",
+   "options": [
+    "Revenue Deficit = Revenue Expenditure - Revenue Receipts",
+    "Revenue Deficit = Total Expenditure - Total Revenue Receipts",
+    "Revenue Deficit = Total Expenditure - Total Capital Receipts",
+    "Revenue Deficit = Total Expenditure - Total Income"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Formula for Gross Primary Deficit is",
+   "options": [
+    "Gross Primary Deficit = Gross Deficit - Fiscal Deficit",
+    "Gross Primary Deficit = Gross Fiscal Deficit - Net Interest Liabilities",
+    "Gross Primary Deficit = Total Expenditure - Total Receipts",
+    "Gross Primary Deficit = Gross Fiscal Deficit - Gross Interest Liabilities"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The formula for Marginal Propensity to Consume is",
+   "options": [
+    "C/Y",
+    "ΔC/ΔY",
+    "ΔC/Y",
+    "C/ΔY"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The formula for Average Propensity to Save is",
+   "options": [
+    "S/Y",
+    "ΔS/ΔY",
+    "Y/S",
+    "ΔY/ΔS"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is a 'Durable Good' ?",
+   "options": [
+    "Electric bulb",
+    "Shirt of a baby",
+    "Dot-pen of a student",
+    "Domestic refrigerator"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is a 'Final Product' ?",
+   "options": [
+    "Thread",
+    "Cotton",
+    "Piece of cloth",
+    "Shirt"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Open market operations by the central bank refer to",
+   "options": [
+    "purchase and sale of gold",
+    "purchase and sale of foreign share papers",
+    "purchase and sale of government bonds",
+    "purchase and sale of internal share papers"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The formula for 'money multiplier' is",
+   "options": [
+    "1/repo rate",
+    "1/reverse repo rate",
+    "1/cash reserve ratio",
+    "1/time deposit ratio"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 4,
+   "questionText": "Describe the characteristics of a market economy."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 4,
+   "questionText": "'Two indifference curves do not intersect each other.' Explain with diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 4,
+   "questionText": "Show by separate diagrams, the effects of change in income and in price on the Budget set.",
+   "hasFigure": true
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 4,
+   "questionText": "Write a short note on law of diminishing marginal productivity."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 4,
+   "questionText": "Show with diagram the long-run equilibrium condition of a producer in perfectly competitive market.",
+   "hasFigure": true
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "numerical",
+   "marks": 4,
+   "questionText": "On the basis of the given table, calculate profit, at each production level and find profit maximization level of production, when price of the product is Rs. 10 per unit.\nProduction level (in units) | Total Cost (Rupees)\n0 | 10\n1 | 20\n2 | 25\n3 | 30\n4 | 33\n5 | 40\n6 | 51\n7 | 62"
+  },
+  {
+   "section": "C",
+   "number": "17(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Explain the concepts of Revenue Expenditure and Capital Expenditure."
+  },
+  {
+   "section": "C",
+   "number": "17(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Describe main items included in these two."
+  },
+  {
+   "section": "C",
+   "number": "18(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Write the meaning of 'foreign exchange rate'."
+  },
+  {
+   "section": "C",
+   "number": "18(b)",
+   "questionType": "short",
+   "marks": 4,
+   "questionText": "Explain the process of determination of floating exchange rate."
+  },
+  {
+   "section": "C",
+   "number": "19",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Describe the functions of commercial banks."
+  },
+  {
+   "section": "C",
+   "number": "20",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Describe Aggregate Demand and its components."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Describe the determination of Equilibrium income at macro-level, with diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Describe the characteristics of perfectly competitive market."
+  },
+  {
+   "section": "D",
+   "number": "23(a)",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What do you mean by indifference curve ?"
+  },
+  {
+   "section": "D",
+   "number": "23(b)",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Describe the characteristics of indifference curve with diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "23(a) OR",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "What do you mean by market demand ?"
+  },
+  {
+   "section": "D",
+   "number": "23(b) OR",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Describe the factors that affect 'demand'."
+  },
+  {
+   "section": "D",
+   "number": "24(a)",
+   "questionType": "long",
+   "marks": 2,
+   "questionText": "What do you mean by cost ?"
+  },
+  {
+   "section": "D",
+   "number": "24(b)",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Describe the concepts of Total Cost, Total Variable Cost, Total Fixed Cost and Average Fixed Cost, with diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "24(a) OR",
+   "questionType": "long",
+   "marks": 4,
+   "questionText": "Explain the meaning of Production Function."
+  },
+  {
+   "section": "D",
+   "number": "24(b) OR",
+   "questionType": "long",
+   "marks": 6,
+   "questionText": "Describe the Cobb-Douglas production function."
+  },
+  {
+   "section": "D",
+   "number": "25(a)",
+   "questionType": "long",
+   "marks": 2,
+   "questionText": "What do you mean by National Income ?"
+  },
+  {
+   "section": "D",
+   "number": "25(b)",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Describe the main aggregates (concepts) of income of a nation."
+  },
+  {
+   "section": "D",
+   "number": "25 OR",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "On the basis of the given table calculate Gross Domestic Product at market price, Net Domestic Product at market price, Net National Product at market price and Net National Product at factor cost.\nSector | Value Added (In Rupees Crore)\nPrimary Sector | 1,800\nSecondary Sector | 2,500\nTertiary Sector | 3,100\nDepreciation | 800\nNet Indirect Taxes | 450\nNet Factor Income from abroad | (-) 700"
+  }
+ ]
+}

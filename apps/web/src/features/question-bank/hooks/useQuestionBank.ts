@@ -221,3 +221,9 @@ export const usePrincipalMaterialsOverview = () =>
     queryKey: [...questionBankKeys.all, 'principal', 'overview'],
     queryFn:  () => questionBankApi.getPrincipalOverview(),
   });
+
+export const useBoardLibrary = (cls?: string) =>
+  useQuery({ queryKey: [...questionBankKeys.all, 'board-library', cls ?? ''], queryFn: () => questionBankApi.listBoardLibrary(cls), staleTime: 5 * 60_000 });
+
+export const useSyncBoardLibrary = () =>
+  useInvalidatingMutation((payload: { class: string; subject: string }) => questionBankApi.syncBoardLibrary(payload));

@@ -1,0 +1,45 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Biology",
+  "year": 2025,
+  "language": "hi",
+  "questions": [
+    { "section": "A", "number": "1(क)", "questionType": "mcq", "marks": 1, "questionText": "Tt अलील जोड़ा है", "options": ["समयुग्मजी लम्बा", "विषमयुग्मजी लम्बा", "समयुग्मजी बौना", "विषमयुग्मजी बौना"] },
+    { "section": "A", "number": "1(ख)", "questionType": "mcq", "marks": 1, "questionText": "बी टी कपास किससे निर्मित होता है ?", "options": ["विषाणु से", "कवक से", "जीवाणु से", "कीट से"] },
+    { "section": "A", "number": "1(ग)", "questionType": "mcq", "marks": 1, "questionText": "निम्नलिखित में से कौन द्वितीयक उपभोक्ता है ?", "options": ["चूहा", "गिलहरी", "छिपकली", "टिड्डा"] },
+    { "section": "A", "number": "1(घ)", "questionType": "mcq", "marks": 1, "questionText": "निम्नलिखित में से कौन जैव-विविधता की क्षति का कारण नहीं है ?", "options": ["अति दोहन", "सह - विलुप्तता", "आवासीय क्षति", "वनीकरण"] },
+
+    { "section": "B", "number": "2(क)", "questionType": "very_short", "marks": 1, "questionText": "आई.वी.एफ. संकेताक्षर का पूरा रूप लिखिए ।" },
+    { "section": "B", "number": "2(ख)", "questionType": "very_short", "marks": 1, "questionText": "औद्योगिक प्रदूषण के सूचक का नाम लिखिए ।" },
+    { "section": "B", "number": "2(ग)", "questionType": "very_short", "marks": 1, "questionText": "न्यूक्लियोसाइड क्या है ?" },
+    { "section": "B", "number": "2(घ)", "questionType": "very_short", "marks": 1, "questionText": "एक पोषण स्तर से दूसरे पोषण स्तर पर कितने प्रतिशत ऊर्जा प्रवाहित होती है ?" },
+    { "section": "B", "number": "2(ङ)", "questionType": "very_short", "marks": 1, "questionText": "किसी एक लिंग-सहलग्न अप्रभावी विकार का नाम लिखिए ।" },
+
+    { "section": "C", "number": "3(क)", "questionType": "short", "marks": 2, "questionText": "ह्यूमस पर संक्षिप्त टिप्पणी लिखिए ।" },
+    { "section": "C", "number": "3(ख)", "questionType": "short", "marks": 2, "questionText": "चरघातांकी वृद्धि का वर्णन कीजिए ।" },
+    { "section": "C", "number": "3(ग)", "questionType": "short", "marks": 2, "questionText": "एंटीटॉक्सिन क्या है ?" },
+    { "section": "C", "number": "3(घ)", "questionType": "short", "marks": 2, "questionText": "मादा मधुप में गुणसूत्रों की संख्या कितनी होती है ? इनमें लिंग निर्धारण प्रणाली को क्या कहते हैं ?" },
+    { "section": "C", "number": "3(ङ)", "questionType": "short", "marks": 2, "questionText": "आनुवंशिक कूट की दो विशेषताएँ लिखिए ।" },
+
+    { "section": "D", "number": "4(क)", "questionType": "short", "marks": 3, "questionText": "प्राक्केन्द्रकियों में आर. एन. ए. के सभी प्रकारों के नाम लिखिए ।" },
+    { "section": "D", "number": "4(ख)", "questionType": "short", "marks": 3, "questionText": "दोहरा निषेचन किसे कहते हैं ? इसका क्या महत्त्व है ?" },
+    { "section": "D", "number": "4(ग)", "questionType": "short", "marks": 3, "questionText": "कैनाबिनॉइड्स किस पौधे से प्राप्त किया जाता है ? इसके महत्त्व पर प्रकाश डालिए ।" },
+    { "section": "D", "number": "4(घ)", "questionType": "short", "marks": 3, "questionText": "बेकर यीस्ट पर टिप्पणी लिखिए ।" },
+    { "section": "D", "number": "5(क)", "questionType": "short", "marks": 3, "questionText": "ए. आर. टी. का पूर्ण रूप लिखिए। इसका मानव जीवन में क्या महत्त्व है ?" },
+    { "section": "D", "number": "5(ख)", "questionType": "short", "marks": 3, "questionText": "सहप्रभाविता और अपूर्ण प्रभाविता में विभेद कीजिए ।" },
+    { "section": "D", "number": "5(ग)", "questionType": "short", "marks": 3, "questionText": "जी.एम.ओ. का पूर्ण रूप लिखिए। इसके महत्त्व पर प्रकाश डालिए ।" },
+    { "section": "D", "number": "5(घ)", "questionType": "short", "marks": 3, "questionText": "क्लोनिंग संवाहक पर टिप्पणी लिखिए ।" },
+    { "section": "D", "number": "6(क)", "questionType": "short", "marks": 3, "questionText": "किन्हीं दो ड्रग्स का संक्षिप्त परिचय दीजिए ।" },
+    { "section": "D", "number": "6(ख)", "questionType": "short", "marks": 3, "questionText": "पारितन्त्र में जातीय विविधता के महत्त्व को लिखिए ।" },
+    { "section": "D", "number": "6(ग)", "questionType": "short", "marks": 3, "questionText": "ऐल्कोहॉल के प्रभाव पर टिप्पणी लिखिए ।" },
+    { "section": "D", "number": "6(घ)", "questionType": "label_diagram", "marks": 3, "questionText": "स्तन ग्रंथि के आरेखीय काट का नामांकित चित्र बनाइए ।" },
+
+    { "section": "E", "number": "7", "questionType": "long", "marks": 5, "questionText": "परागण किसे कहते हैं ? परागण कितने प्रकार के होते हैं ? उदाहरण सहित वर्णन कीजिए ।" },
+    { "section": "E", "number": "7 OR", "questionType": "long", "marks": 5, "questionText": "आर्तव चक्र किसे कहते हैं ? इसकी प्रमुख घटनाओं का वर्णन कीजिए ।" },
+    { "section": "E", "number": "8", "questionType": "long", "marks": 5, "questionText": "पृथ्वी पर जीवों के विकास के प्रमाण पर एक निबन्ध लिखिए ।" },
+    { "section": "E", "number": "8 OR", "questionType": "long", "marks": 5, "questionText": "लैक प्रचालेक का सचित्र वर्णन कीजिए ।" },
+    { "section": "E", "number": "9", "questionType": "long", "marks": 5, "questionText": "एक जलीय पारितन्त्र के घटकों का विस्तार से वर्णन कीजिए ।" },
+    { "section": "E", "number": "9 OR", "questionType": "long", "marks": 5, "questionText": "जैव-विविधता के संरक्षण पर एक निबन्ध लिखिए" }
+  ]
+}

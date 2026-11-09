@@ -1,0 +1,308 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Political Science",
+  "year": 2026,
+  "paperCode": "323(CT)",
+  "language": "en",
+  "questions": [
+    {
+      "section": "A",
+      "number": "1",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When was the European Union awarded the Nobel Peace Prize?",
+      "options": [
+        "2012",
+        "2010",
+        "2008",
+        "2014"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "2",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "How many original founding members are there in the United Nations?",
+      "options": [
+        "50",
+        "51",
+        "52",
+        "61"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "3",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "The members of the United Nations have agreed to abolish which of its organs?",
+      "options": [
+        "General Assembly",
+        "The Secretariat",
+        "Trusteeship Council",
+        "Security Council"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "4",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When did India conduct its first nuclear test?",
+      "options": [
+        "1971",
+        "1974",
+        "1988",
+        "1999"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "5",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When was the book 'Limits to Growth' published?",
+      "options": [
+        "1972",
+        "1973",
+        "1974",
+        "1975"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "6",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "From which decade did environmental issues gain stress?",
+      "options": [
+        "1950",
+        "1960",
+        "1970",
+        "1980"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "7",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "What is the name given to the agreement signed by the rulers of the princely states for merging into the Indian Union?",
+      "options": [
+        "Instrument of Accession",
+        "Memorandum of Understanding",
+        "Memorandum of Agreement",
+        "Declaration form"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "8",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "In the First Five Year Plan, the greater emphasis was given to which of the following areas?",
+      "options": [
+        "Education",
+        "Agriculture",
+        "Industry",
+        "Services"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "9",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "When was the Panchsheel Agreement signed between India and China?",
+      "options": [
+        "1954",
+        "1955",
+        "1966",
+        "1971"
+      ]
+    },
+    {
+      "section": "A",
+      "number": "10",
+      "questionType": "mcq",
+      "marks": 1,
+      "questionText": "Who among the following politicians gave the call for Total Revolution?",
+      "options": [
+        "Ram Manohar Lohia",
+        "Morarji Desai",
+        "Jayaprakash Narayan",
+        "Lal Bahadur Shastri"
+      ]
+    },
+    {
+      "section": "B",
+      "number": "11",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Write the names of any two major organs of the United Nations."
+    },
+    {
+      "section": "B",
+      "number": "12",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "When and where was the Earth Conference held?"
+    },
+    {
+      "section": "B",
+      "number": "13",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Write the names of any two gases responsible for Global warming."
+    },
+    {
+      "section": "B",
+      "number": "14",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Mention any two economic effects of Globalisation."
+    },
+    {
+      "section": "B",
+      "number": "15",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "What do you understand by 'Sustainable Development'?"
+    },
+    {
+      "section": "B",
+      "number": "16",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "When and who killed Mahatma Gandhi?"
+    },
+    {
+      "section": "B",
+      "number": "17",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "When was the Election Commission of India formed and who became its first Election Commissioner?"
+    },
+    {
+      "section": "B",
+      "number": "18",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "What is Privy Purse? Who abolished it?"
+    },
+    {
+      "section": "B",
+      "number": "19",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "When did Goa get independence and when did it become a state of the Indian Union?"
+    },
+    {
+      "section": "B",
+      "number": "20",
+      "questionType": "very_short",
+      "marks": 2,
+      "questionText": "Mention any two reasons for the Gujarat Movement in 1974."
+    },
+    {
+      "section": "C",
+      "number": "21",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What do you understand by the Soviet system?"
+    },
+    {
+      "section": "C",
+      "number": "22",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "Write a short note on the World Trade Organisation (WTO)."
+    },
+    {
+      "section": "C",
+      "number": "23",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What do you understand by security? Briefly mention the traditional concept of security"
+    },
+    {
+      "section": "C",
+      "number": "24",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "What do you understand by 'shared property'? Explain with examples"
+    },
+    {
+      "section": "C",
+      "number": "25",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "Explain the reasons for the dominance of Congress in the first three general elections."
+    },
+    {
+      "section": "C",
+      "number": "26",
+      "questionType": "short",
+      "marks": 5,
+      "questionText": "Write a short note on the political rise of other backward classes."
+    },
+    {
+      "section": "D",
+      "number": "27",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "How was democracy established in Nepal? Mention its current challenges."
+    },
+    {
+      "section": "D",
+      "number": "28",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "What do you understand by native princely states? How did they merge with India?"
+    },
+    {
+      "section": "D",
+      "number": "29",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Briefly discuss India's nuclear policy."
+    },
+    {
+      "section": "D",
+      "number": "30",
+      "questionType": "short",
+      "marks": 6,
+      "questionText": "Write an essay on the coalition politics in India."
+    },
+    {
+      "section": "E",
+      "number": "31",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "What do you understand by shock therapy? Discuss its results."
+    },
+    {
+      "section": "E",
+      "number": "31 OR",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "Discuss India's relations with China."
+    },
+    {
+      "section": "E",
+      "number": "32",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "What do you understand by planning? Examine the role of five-year plans in the economic development of India."
+    },
+    {
+      "section": "E",
+      "number": "32 OR",
+      "questionType": "long",
+      "marks": 8,
+      "questionText": "Discuss India's relations with Pakistan."
+    }
+  ]
+}

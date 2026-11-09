@@ -1,0 +1,292 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Physics",
+ "year": 2023,
+ "paperCode": "346(BS)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The dielectric constant ( k ) of silver is",
+   "options": [
+    "k = 0",
+    "k = +1",
+    "k = −1",
+    "k = ∞ (infinity)"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "N-P-N transistor is arranged as in the following figure. This circuit is of",
+   "hasFigure": true,
+   "options": [
+    "common-base amplifier",
+    "common-emitter amplifier",
+    "common-collector amplifier",
+    "none of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "What will be the refractive index of a thin prism material if its refracting angle and angle of deviation are the same ?",
+   "options": [
+    "1·5",
+    "2·0",
+    "1·33",
+    "0 (zero)"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The equation 4 ¹₁H → ⁴₂He + 2 ₊₁β⁰ + Q represents",
+   "options": [
+    "nuclear fission",
+    "nuclear fusion",
+    "nuclear disintegration",
+    "none of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(e)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Among the following, which one is not the fundamental particle ?",
+   "options": [
+    "Positron",
+    "Electron",
+    "α-particle",
+    "Neutrino"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(f)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Resistance R, inductance L and capacitor C are connected in series. The frequency of alternative current source is n and resonant frequency is nᵣ. Under which condition does the current lag behind the voltage ?",
+   "options": [
+    "n = 0",
+    "n < nᵣ",
+    "n = nᵣ",
+    "n > nᵣ"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "2(a)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Write any two main features of electromagnetic waves."
+  },
+  {
+   "section": "B",
+   "number": "2(b)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "What is meant by threshold wavelength ?"
+  },
+  {
+   "section": "B",
+   "number": "2(c)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "What will be the effect on focal length and nature of convex lens of glass of refractive index n = 3/2 dipped in a liquid of refractive index n = 3/2 ?"
+  },
+  {
+   "section": "B",
+   "number": "2(d)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "What is meant by the current gain (β) of a transistor ?"
+  },
+  {
+   "section": "B",
+   "number": "2(e)",
+   "questionType": "numerical",
+   "marks": 1,
+   "questionText": "Calculate the charge on nucleus ₇N¹⁴ in coulomb."
+  },
+  {
+   "section": "B",
+   "number": "2(f)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Define 1 henry of self-inductance."
+  },
+  {
+   "section": "C",
+   "number": "3(a)",
+   "questionType": "numerical",
+   "marks": 2,
+   "questionText": "An electron of energy 45 eV is revolving in a circular path in magnetic field of intensity 9 × 10⁻⁵ weber/m². Find the radius of circular path."
+  },
+  {
+   "section": "C",
+   "number": "3(b)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "A particle of mass m and charge q traverses distance d from the rest in a uniform electric field E. Prove that the velocity ( v ) attained by the particle is v = √(2qEd/m)."
+  },
+  {
+   "section": "C",
+   "number": "3(c)",
+   "questionType": "numerical",
+   "marks": 2,
+   "questionText": "The magnifying power of a telescope is 9. When it is adjusted for parallel rays then distance between eye lens and objective is 20 cm. Determine the focal lengths of both the lenses."
+  },
+  {
+   "section": "C",
+   "number": "3(d)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What are meant by ohmic and non-ohmic resistances ? Draw graph between voltage and current for non-ohmic circuit and define dynamic resistance."
+  },
+  {
+   "section": "D",
+   "number": "4(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Classify nucleus on the basis of atomic number and mass number and define them."
+  },
+  {
+   "section": "D",
+   "number": "4(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What is NOR gate ? Draw its logic symbol and obtain truth table."
+  },
+  {
+   "section": "D",
+   "number": "4(c)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "The equations of current and voltage in a circuit are as follows : i = 3·5 sin(628t + π/6) ampere, v = 28 sin(628t − π/6) volt. Find out (i) root mean square value of current, (ii) time period and (iii) phase difference between current and voltage."
+  },
+  {
+   "section": "D",
+   "number": "4(d)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Write four main properties of γ-rays. Whose wavelength is larger among γ-rays and ultraviolet rays ?"
+  },
+  {
+   "section": "D",
+   "number": "4(e)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "On suspending a magnet at 30° with magnetic meridian, it makes an angle of 45° with the horizontal. What will be the actual angle of dip ?"
+  },
+  {
+   "section": "D",
+   "number": "5(a)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "Equiconcave lens of crown glass has to be made. How much radii of the surfaces of the lens be kept so that its power would be − 2·5 D ? The refractive index of crown glass is 1·65."
+  },
+  {
+   "section": "D",
+   "number": "5(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What is a transistor ? By drawing the circuit diagram of common emitter configuration, plot the output characteristics."
+  },
+  {
+   "section": "D",
+   "number": "5(c)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Define the formula for the resonant frequency in series L-C-R alternating current circuit."
+  },
+  {
+   "section": "D",
+   "number": "5(d)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Explain Bohr's model of atom."
+  },
+  {
+   "section": "D",
+   "number": "5(d) OR",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "The energy of an electron of excited hydrogen atom is − 3·4 eV. Determine the angular momentum of the electron."
+  },
+  {
+   "section": "D",
+   "number": "5(e)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Obtain the formula for refractive index of material of prism in terms of angle of minimum deviation and angle of prism."
+  },
+  {
+   "section": "E",
+   "number": "6",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Explain both the laws of Kirchhoff of electrical circuit."
+  },
+  {
+   "section": "E",
+   "number": "6 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "Two wires made of same material and of same masses A and B are taken. The diameter of wire A is half to that of B. If the resistance of A be 24 ohm, then calculate the resistance of B."
+  },
+  {
+   "section": "E",
+   "number": "7",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is the meaning of matter-wave of Louis de Broglie ? Deduce the relation for wavelength of de Broglie in terms of kinetic energy."
+  },
+  {
+   "section": "E",
+   "number": "7 OR",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Derive the formula for the capacitance of a parallel plate capacitor, partially filled with a dielectric."
+  },
+  {
+   "section": "E",
+   "number": "8",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Draw the energy level diagram for hydrogen atom. Show the transitions of Lyman, Balmer, Paschen, Brackett and Pfund series in the diagram. In which region do these spectrum lie ?"
+  },
+  {
+   "section": "E",
+   "number": "8 OR",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What do you understand by electromagnetic induction ? State Faraday's laws regarding electromagnetic induction."
+  },
+  {
+   "section": "E",
+   "number": "9",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is the meaning of wavefront ? Explain the laws of reflection by explaining Huygens' principle of wavefront."
+  },
+  {
+   "section": "E",
+   "number": "9 OR",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is LED ? Explain its principle, construction and working."
+  }
+ ]
+}
