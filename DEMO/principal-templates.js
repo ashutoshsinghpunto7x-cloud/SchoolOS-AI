@@ -2690,13 +2690,28 @@ window.FNIC_PRINCIPAL_SUITE = (function () {
   return {
     renderScreen: function (screenId, theme) {
       const tc = getThemeClasses(theme);
-      if (typeof screenId === 'string' && Object.prototype.hasOwnProperty.call(screens, screenId)) {
-        const fn = screens[screenId];
-        if (typeof fn === 'function') {
-          return fn(theme, tc);
-        }
+      switch (screenId) {
+        case 'dashboard': return screens.dashboard(theme, tc);
+        case 'recruitment': return screens.recruitment(theme, tc);
+        case 'front_office': return screens.front_office(theme, tc);
+        case 'leave_approvals': return screens.leave_approvals(theme, tc);
+        case 'test_approvals': return screens.test_approvals(theme, tc);
+        case 'discount_approvals': return screens.discount_approvals(theme, tc);
+        case 'academic_plan': return screens.academic_plan(theme, tc);
+        case 'marks_hub': return screens.marks_hub(theme, tc);
+        case 'exams_list': return screens.exams_list(theme, tc);
+        case 'question_bank': return screens.question_bank(theme, tc);
+        case 'calendar': return screens.calendar(theme, tc);
+        case 'teachers': return screens.teachers(theme, tc);
+        case 'class_teachers': return screens.class_teachers(theme, tc);
+        case 'teacher_timetable': return screens.teacher_timetable(theme, tc);
+        case 'school_timetable': return screens.school_timetable(theme, tc);
+        case 'attendance_class': return screens.attendance_class(theme, tc);
+        case 'attendance_scanner': return screens.attendance_scanner(theme, tc);
+        case 'transport': return screens.transport(theme, tc);
+        case 'messages': return screens.messages(theme, tc);
+        default: return screens.dashboard(theme, tc);
       }
-      return screens.dashboard(theme, tc);
     },
     getSections: function () {
       return DATA.sections || [];
