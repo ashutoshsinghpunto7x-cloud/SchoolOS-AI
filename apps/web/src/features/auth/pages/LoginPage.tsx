@@ -315,6 +315,7 @@ export const LoginPage = () => {
                 {/* Submit Button - works with any or no credentials */}
                 <button
                   type="submit"
+                  aria-label="Sign In"
                   disabled={isLoading}
                   className="w-full h-12 sm:h-13 rounded-xl bg-[#1B2A4E] hover:bg-[#253966] active:scale-[0.99]
                              text-sm sm:text-base font-bold text-white

@@ -29,7 +29,7 @@ test.describe('smoke', () => {
 
     await page.goto('/login');
     await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByRole('button', { name: /login/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /sign in|login/i })).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -37,7 +37,7 @@ test.describe('smoke', () => {
     await page.goto('/login');
     await page.getByPlaceholder('Email').fill('nobody@example.invalid');
     await page.getByPlaceholder('Password').fill('definitely-wrong-password');
-    await page.getByRole('button', { name: /login/i }).click();
+    await page.getByRole('button', { name: /sign in|login/i }).click();
     await expect(page).toHaveURL(/login/);
   });
 
