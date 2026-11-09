@@ -77,6 +77,17 @@ export const chapterRepository = {
     });
   },
 
+  /** Exact-name (case/space-insensitive) lookup-or-create — no fuzzy matching. For chapters whose names
+   *  differ by a character that matters (e.g. "UP Board 2025 – …" vs "UP Board 2026 – …"), which
+   *  findOrCreate's typo tolerance would wrongly merge into one. */
+  async findOrCreateExact(schoolId: string, cls: string, subject: string, chapterName: string): Promise<ISyllabusChapter> {
+    const classKey = classNameKey(cls);
+    const existing = await SyllabusChapter.find({ schoolId, class: classKey, subject }).lean<ISyllabusChapter[]>();
+    const match = existing.find((c) => normalize(c.chapterName) === normalize(chapterName));
+    if (match) return match;
+    return SyllabusChapter.create({ schoolId, class: classKey, subject, chapterName: chapterName.trim(), topics: [] });
+  },
+
   /** Sets the Academic Planning Engine's sizing fields on a chapter — kept as
    *  a narrow, separate write (rather than folding into findOrCreate) since
    *  it's coordinator-driven syllabus setup, not AI-extraction reconciliation. */

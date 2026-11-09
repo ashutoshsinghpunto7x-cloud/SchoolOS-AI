@@ -5,7 +5,7 @@ import { NotFoundError } from '../../middlewares/errorHandler';
 import { BoardPaper, IBoardPaperQuestion } from './board-library.model';
 import { chapterRepository } from './chapter.repository';
 import { questionRepository, CreateQuestionData } from './question.repository';
-import { assertTeacherCanAccessQuestionBank } from './question-bank.service';
+import { assertTeacherCanAccessQuestionBank, getTeacherAllowedClassSubjects } from './question-bank.service';
 import type { BloomsLevel, QuestionDifficulty } from './question.model';
 
 export const syncBoardLibrarySchema = z.object({
@@ -39,8 +39,11 @@ function estimateMinutes(marks: number): number {
 
 export const boardLibraryService = {
   /** Which board-paper subjects exist for a class, and how many papers/questions each has. */
-  async listAvailable(rawQuery: unknown) {
+  async listAvailable(rawQuery: unknown, ctx: AuthContext) {
     const { class: cls } = listBoardLibrarySchema.parse(rawQuery);
+    // Teachers only see subjects they actually teach in that class (sync enforces the same rule),
+    // so the Question Bank card never offers an "Add" that would be refused.
+    const allowed = ctx.role === 'teacher' ? await getTeacherAllowedClassSubjects(ctx, ctx.schoolId) : null;
     const match: Record<string, unknown> = {};
     if (cls) match.class = classNameKey(cls);
     const papers = await BoardPaper.find(match).select('board class subject year questions').lean();
@@ -53,6 +56,7 @@ export const boardLibraryService = {
       bySubject.set(key, row);
     }
     return [...bySubject.values()]
+      .filter((r) => !allowed || allowed.some((a) => classNameKey(a.class) === r.class && a.subject === r.subject))
       .map((r) => ({ ...r, years: r.years.sort() }))
       .sort((a, b) => a.subject.localeCompare(b.subject));
   },
@@ -77,7 +81,7 @@ export const boardLibraryService = {
     let questionsAdded = 0;
     for (const paper of papers) {
       const chapterName = `${paper.board} ${paper.year} – Previous Year Paper`;
-      const chapter = await chapterRepository.findOrCreate(ctx.schoolId, input.class, input.subject, chapterName);
+      const chapter = await chapterRepository.findOrCreateExact(ctx.schoolId, input.class, input.subject, chapterName);
       const existing = await questionRepository.findExistingTexts(
         ctx.schoolId, String(chapter._id), paper.questions.map((q) => q.questionText),
       );
