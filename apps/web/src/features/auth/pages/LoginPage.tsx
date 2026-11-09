@@ -114,21 +114,6 @@ export const LoginPage = () => {
     }
   };
 
-  const handleQuickSignIn = async (role: UserRole) => {
-    setError('');
-    setIsLoading(true);
-    try {
-      const loggedInUser = await login(`${role}@mycampus.edu.in`, 'demo');
-      goHome(loggedInUser.role);
-    } catch {
-      sessionStorage.setItem('accessToken', 'demo_token');
-      sessionStorage.setItem('sessionId', 'demo_session');
-      goHome(role);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen w-full text-[#1B2A4E] selection:bg-[#D9822B]/20 selection:text-[#1B2A4E] font-sans relative overflow-hidden">
       <h1 className="sr-only">MY CAMPUS — Sign In</h1>
@@ -338,36 +323,6 @@ export const LoginPage = () => {
                   )}
                 </button>
               </form>
-
-              {/* Instant One-Click Local Test Roles (Zero Server / Credentials Required) */}
-              <div className="pt-4 text-center">
-                <p className="text-[11px] font-bold text-[#55607A] uppercase tracking-wider mb-2">
-                  Instant Test Sign-In
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSignIn('principal')}
-                    className="px-3.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-[#D9822B] text-xs font-bold border border-[#D9822B]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
-                  >
-                    Principal Cockpit &rarr;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSignIn('teacher')}
-                    className="px-3.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-[#254A9A] text-xs font-bold border border-[#254A9A]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
-                  >
-                    Teacher Register &rarr;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSignIn('admin')}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-500/10 hover:bg-slate-500/20 text-[#1B2A4E] text-xs font-bold border border-[#1B2A4E]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
-                  >
-                    Admin &rarr;
-                  </button>
-                </div>
-              </div>
 
               {/* Need help footer */}
               <div className="border-t border-[#E8E2D6] my-5" />
