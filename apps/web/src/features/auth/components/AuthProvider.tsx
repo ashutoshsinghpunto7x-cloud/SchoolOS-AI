@@ -86,9 +86,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
       setUser(mergedUser);
       return mergedUser;
-    } catch (err) {
-      // When backend server is unreachable or offline, activate instant local test user seamlessly
-      console.warn('Backend server unavailable or rejected credentials, falling back to local demo mode:', err);
+    } catch (err: unknown) {
+      // If the backend responded with an error (e.g. 401 invalid credentials), propagate it so login fails properly
+      if (err && typeof err === 'object' && 'response' in err && (err as { response?: unknown }).response) {
+        throw err;
+      }
+      // When backend server is completely unreachable or offline (no response), activate instant local test user seamlessly
+      console.warn('Backend server unavailable, falling back to local demo mode:', err);
       const lower = identifier.toLowerCase();
       const demoRole: UserRole = lower.includes('teacher')
         ? 'teacher'
