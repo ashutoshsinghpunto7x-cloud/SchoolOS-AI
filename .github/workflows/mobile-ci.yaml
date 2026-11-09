@@ -44,7 +44,7 @@ jobs:
         if: ${{ steps.filter.outputs.mobile != 'true' }}
         run: echo "No mobile or shared-package changes; skipping."
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: ${{ steps.filter.outputs.mobile == 'true' }}
         with:
           node-version: "20"
