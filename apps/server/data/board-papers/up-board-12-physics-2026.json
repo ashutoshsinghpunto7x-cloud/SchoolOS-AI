@@ -1,0 +1,49 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Physics",
+  "year": 2026,
+  "paperCode": "346(DS)",
+  "language": "en",
+  "questions": [
+    { "section": "A", "number": "1(a)", "questionType": "mcq", "marks": 1, "questionText": "If critical angle in a medium be α, then for total internal reflection, the angle of incidence β should be", "options": ["β < α", "β > α", "β = α", "β ≤ α"] },
+    { "section": "A", "number": "1(b)", "questionType": "mcq", "marks": 1, "questionText": "Number of electrons emitted from a piece of metal for giving 1 × 10⁻⁷ coulomb charge will be", "options": ["10⁷", "1.6 × 10¹⁹", "6.25 × 10¹¹", "9 × 10¹²"] },
+    { "section": "A", "number": "1(c)", "questionType": "mcq", "marks": 1, "questionText": "The path of scattered α-particle is", "options": ["circular", "parabolic", "elliptical", "hyperbolic"] },
+    { "section": "A", "number": "1(d)", "questionType": "mcq", "marks": 1, "questionText": "The unit of √LC is", "options": ["second", "henry", "farad", "ampere"] },
+    { "section": "A", "number": "1(e)", "questionType": "mcq", "marks": 1, "questionText": "In depletion layer of p-n junction diode, there are", "options": ["only electrons", "only holes", "both electrons and holes", "neither electrons nor holes"] },
+    { "section": "A", "number": "1(f)", "questionType": "mcq", "marks": 1, "questionText": "Electromagnetic waves of minimum frequency is", "options": ["ultraviolet rays", "X rays", "γ-rays", "microwaves"] },
+
+    { "section": "B", "number": "2(a)", "questionType": "numerical", "marks": 1, "questionText": "An electron of energy 10 eV is revolving round a circular path in a uniform magnetic field of 10⁻⁵ tesla. Determine the radius of the circular path." },
+    { "section": "B", "number": "2(b)", "questionType": "very_short", "marks": 1, "questionText": "Write the definitions of electrical conductivity and specific conductivity." },
+    { "section": "B", "number": "2(c)", "questionType": "numerical", "marks": 1, "questionText": "The work function of a metal is 3.3 eV. Calculate the minimum frequency of photon that will emit the photoelectron." },
+    { "section": "B", "number": "2(d)", "questionType": "very_short", "marks": 1, "questionText": "By giving the examples, explain the meaning of diamagnetic and paramagnetic materials." },
+    { "section": "B", "number": "2(e)", "questionType": "diagram_based", "marks": 1, "hasFigure": true, "questionText": "The variation between V and I with time (t) in two alternative circuits is shown in the following graphs. Which one of the curves of circuit is capacitive and which one is resistive?" },
+    { "section": "B", "number": "2(f)", "questionType": "very_short", "marks": 1, "questionText": "In which the power of a lens will be large — in air or water?" },
+
+    { "section": "C", "number": "3(a)", "questionType": "short", "marks": 2, "questionText": "Draw a graph between voltage and current of p-n junction diode in forward bias." },
+    { "section": "C", "number": "3(b)", "questionType": "short", "marks": 2, "questionText": "State the working principle of a transformer and mention the energy losses occurring in it." },
+    { "section": "C", "number": "3(c)", "questionType": "short", "marks": 2, "questionText": "Define mass defect and binding energy." },
+    { "section": "C", "number": "3(d)", "questionType": "numerical", "marks": 2, "questionText": "Two point charges + 10 μC and − 10 μC are situated 2 cm apart. This dipole is placed in a uniform electric field of 1 × 10⁵ volt/metre. Calculate the energy required to rotate the dipole from the position of 0° to 180°." },
+
+    { "section": "D", "number": "4(a)", "questionType": "short", "marks": 3, "questionText": "What are electromagnetic waves? Draw their propagation diagram. Show the electric field amplitude and magnetic field amplitude in propagation diagram." },
+    { "section": "D", "number": "4(b)", "questionType": "numerical", "marks": 3, "questionText": "Resistance of a wire is R. If length of the wire is stretched by n times the original length then what will be the new resistance of the wire?" },
+    { "section": "D", "number": "4(c)", "questionType": "short", "marks": 3, "questionText": "Explain nuclear fission and nuclear fusion with examples." },
+    { "section": "D", "number": "4(d)", "questionType": "numerical", "marks": 3, "questionText": "The focal length of a glass (n_g = 3/2) plano-convex lens in air is 10 cm. What will be the focal length and its nature when it is immersed in carbon disulphide (n_c = 5/3)?" },
+    { "section": "D", "number": "4(e)", "questionType": "short", "marks": 3, "questionText": "Deduce the formula of force acting between two parallel current carrying conductors." },
+    { "section": "D", "number": "5(a)", "questionType": "short", "marks": 3, "questionText": "What do you understand by free electron and drift velocity? Deduce Ohm's law on the basis of principle of drift velocity." },
+    { "section": "D", "number": "5(b)", "questionType": "numerical", "marks": 3, "questionText": "The distance between any two sources of light is 24 cm. Determine where a convergent lens of focal length 9 cm be placed so that the image of both sources be formed at one point." },
+    { "section": "D", "number": "5(c)", "questionType": "short", "marks": 3, "questionText": "Prove that the electric potential energy per unit volume of a charged condenser is ½ ε₀E², where symbols have their usual meaning." },
+    { "section": "D", "number": "5(d)", "questionType": "numerical", "marks": 3, "questionText": "The energy of hydrogen atom in ground state (n = 1) is − 13.6 eV. To which highest energy-state the hydrogen atom can be made to reach by the photon of energy 12.09 eV?" },
+    { "section": "D", "number": "5(d) OR", "questionType": "short", "marks": 3, "questionText": "What is meant by interference? Write the conditions for constructive and destructive interference." },
+    { "section": "D", "number": "5(e)", "questionType": "short", "marks": 3, "questionText": "What is meant by mutual inductance? Define coefficient of mutual inductance and write its unit." },
+
+    { "section": "E", "number": "6", "questionType": "long", "marks": 5, "questionText": "Write the Bohr's postulates for hydrogen atom. How did Bohr remove the drawbacks of Rutherford's model of atom?" },
+    { "section": "E", "number": "6 OR", "questionType": "long", "marks": 5, "questionText": "Derive the formula for the electric field outside a charged hollow sphere with the help of Gauss's law." },
+    { "section": "E", "number": "7", "questionType": "long", "marks": 5, "questionText": "What is the meaning of wavefront? Explain the laws of reflection on the basis of Huygens' principle of wavefront." },
+    { "section": "E", "number": "7 OR", "questionType": "numerical", "marks": 5, "hasFigure": true, "questionText": "Determine the following for the given A.C. circuit (R = 500 Ω, L = 10 H, C = 20 μF, V = 200 sin 100t): (i) impedance (ii) power factor, and (iii) phase difference between voltage and current." },
+    { "section": "E", "number": "8", "questionType": "long", "marks": 5, "questionText": "Explain full wave rectifying action of p-n junction diode with the help of circuit diagram." },
+    { "section": "E", "number": "8 OR", "questionType": "long", "marks": 5, "questionText": "Draw the diffraction pattern of light due to single slit and write the expression for position of minima. On what factors does the width of central maxima depend?" },
+    { "section": "E", "number": "9", "questionType": "long", "marks": 5, "questionText": "What do you understand by electromagnetic induction? State the Faraday's laws of electromagnetic induction." },
+    { "section": "E", "number": "9 OR", "questionType": "long", "marks": 5, "questionText": "Obtain the formula for the capacitance of a parallel plate capacitor when a dielectric medium is partially filled between its plates." }
+  ]
+}

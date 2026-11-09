@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Business Organization",
+ "year": 2024,
+ "paperCode": "350",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Henry Fayol was born in",
+   "options": [
+    "England",
+    "America",
+    "Germany",
+    "France"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Planning is",
+   "options": [
+    "Short term",
+    "Middle term",
+    "Long term",
+    "For all terms"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In an enterprise organisation is established by",
+   "options": [
+    "Top management",
+    "Middle management",
+    "Lower management",
+    "Board of directors"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Business environment is not the study of",
+   "options": [
+    "Social environment",
+    "Economic environment",
+    "Legal environment",
+    "Capital output ratio"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following leadership styles is deemed unsuitable for a business enterprise ?",
+   "options": [
+    "Consultative style",
+    "Bureaucratic style",
+    "Participative group style",
+    "Achievement oriented style"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is included in the process of controlling technique ?",
+   "options": [
+    "Break even analysis",
+    "Budget",
+    "Analysing variations",
+    "Managerial audit"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is not a characteristic of training ?",
+   "options": [
+    "Learning process",
+    "Continuous and systematic process",
+    "Goal oriented process",
+    "Natural process"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not the principle of organisation ?",
+   "options": [
+    "Principle of exception",
+    "Principle of flexibility",
+    "Principle of specialisation",
+    "Hierarchy theory of needs"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is not the external source of recruitment ?",
+   "options": [
+    "Advertisement",
+    "Promotion",
+    "Educational institution",
+    "Employment exchange"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is not a method of on-the-job training ?",
+   "options": [
+    "Internship training",
+    "Job rotation",
+    "Role playing method",
+    "Apprenticeship training"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by staffing ?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Why is internal source of recruitment considered more economical ?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Which system of leadership does not trust on the use of power, until it is not very necessary ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Define business environment."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Write two exemptions available to consumers under Consumer Protection Act."
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "List two advantages of packaging of consumer products."
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Discuss two objectives of financial planning."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State two features of staffing."
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is the importance of a leader in modern times ?"
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Differentiate between long-time planning and short-time planning."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Name the sequential steps taken in the planning process."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What are the main elements of organisation ?"
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Point out the features of decentralisation."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is working capital ?"
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain any two steps of control process."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What are the various methods of achieving the objects of Consumer Protection Act ?"
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is centralisation ? Explain its advantages and disadvantages. (2 + 4 + 4)"
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Describe the principles of decentralisation. Differentiate between decentralisation and delegation. (7 + 3)"
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is business environment ? Explain its importance. (4 + 6)"
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the different factors of business environment."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is marketing concept ? How does it help in effective marketing of goods and services ? (4 + 6)"
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Define advertising. What are its main characteristics ? Explain. (4 + 6)"
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is managerial control ? Explain its significance and limitations. (2 + 4 + 4)"
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Discuss the relationship between plan and control."
+  }
+ ]
+}

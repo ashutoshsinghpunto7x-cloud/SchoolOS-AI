@@ -23,6 +23,9 @@ import type {
 
 const BASE = '/question-bank';
 
+export interface BoardLibrarySubject { board: string; class: string; subject: string; years: number[]; questionCount: number }
+export interface BoardLibrarySyncResult { papers: number; chaptersTouched: number; questionsAdded: number }
+
 interface ExtractionJobStatus<T> {
   status: 'processing' | 'completed' | 'failed';
   result?: T;
@@ -168,6 +171,20 @@ export const questionBankApi = {
   confirmExtracted: async (payload: ConfirmExtractedQuestionsPayload): Promise<Question[]> => {
     try {
       const res = await apiClient.post<{ data: Question[] }>(`${BASE}/extract/confirm`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  listBoardLibrary: async (cls?: string): Promise<BoardLibrarySubject[]> => {
+    try {
+      const res = await apiClient.get<{ data: BoardLibrarySubject[] }>(`${BASE}/board-library`, { params: cls ? { class: cls } : undefined });
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  syncBoardLibrary: async (payload: { class: string; subject: string }): Promise<BoardLibrarySyncResult> => {
+    try {
+      const res = await apiClient.post<{ data: BoardLibrarySyncResult }>(`${BASE}/board-library/sync`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
