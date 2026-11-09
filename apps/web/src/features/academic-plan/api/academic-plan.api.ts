@@ -5,6 +5,7 @@ import type {
   AcademicPlanGenerationResult,
   SetPlanDayStatusPayload,
   EditPlanDayPayload,
+  SetMonthlyRowPayload,
   MovePlanDayPayload,
   AcademicPlanPrincipalOverviewEntry,
   SyllabusChapter,
@@ -55,6 +56,13 @@ export const academicPlanApi = {
   editDay: async (planId: string, payload: EditPlanDayPayload): Promise<AcademicPlan> => {
     try {
       const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days/edit`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  setMonthlyRow: async (planId: string, payload: SetMonthlyRowPayload): Promise<AcademicPlan> => {
+    try {
+      const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/monthly`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

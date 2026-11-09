@@ -127,6 +127,21 @@ export const academicPlanRepository = {
     return plan.toObject();
   },
 
+  /** Replaces/inserts the monthly-planner row for (monthKey, chapterName). Not a content edit
+   *  of the engine's schedule, so it neither bumps `version` nor locks any day. */
+  async setMonthlyRow(
+    id: string, schoolId: string,
+    row: { monthKey: string; chapterName: string; teachingMethod?: string; teachingAid?: string; classWork?: string; homeWork?: string },
+  ): Promise<IAcademicPlan | null> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return null;
+    const idx = plan.monthlyRows.findIndex((r) => r.monthKey === row.monthKey && r.chapterName === row.chapterName);
+    if (idx >= 0) Object.assign(plan.monthlyRows[idx], row);
+    else plan.monthlyRows.push(row);
+    await plan.save();
+    return plan.toObject();
+  },
+
   /** Swaps the teaching content (not date/status) between two days — the
    *  drag-and-drop reorder. Both ends are marked manuallyEdited so
    *  Regenerate preserves them. */
@@ -147,10 +162,12 @@ export const academicPlanRepository = {
     const snapshotA = {
       blockType: dayA.blockType, chapterId: dayA.chapterId, chapterName: dayA.chapterName,
       topicTitle: dayA.topicTitle, examId: dayA.examId, examName: dayA.examName,
+      classWork: dayA.classWork, homeWork: dayA.homeWork, teachingAid: dayA.teachingAid, remarks: dayA.remarks,
     };
     const snapshotB = {
       blockType: dayB.blockType, chapterId: dayB.chapterId, chapterName: dayB.chapterName,
       topicTitle: dayB.topicTitle, examId: dayB.examId, examName: dayB.examName,
+      classWork: dayB.classWork, homeWork: dayB.homeWork, teachingAid: dayB.teachingAid, remarks: dayB.remarks,
     };
     Object.assign(dayA, snapshotB, { manuallyEdited: true });
     Object.assign(dayB, snapshotA, { manuallyEdited: true });

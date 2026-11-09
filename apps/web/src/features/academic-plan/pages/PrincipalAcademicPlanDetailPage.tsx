@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, AlertCircle, ChevronLeft, ChevronRight as ChevronRightIcon, AlertTriangle } from 'lucide-react';
 import { usePrincipalPlanDetail } from '../hooks/useAcademicPlan';
 import { PlanDayRow } from '../components/PlanDayRow';
+import { NotebookDailyView, NotebookMonthlyView } from '../components/PlanNotebookView';
 
 const MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' });
 
@@ -15,6 +16,7 @@ export function PrincipalAcademicPlanDetailPage() {
   const navigate = useNavigate();
   const { data: plan, isLoading, isError } = usePrincipalPlanDetail(teacherId, { class: cls, section: section || undefined, subject });
   const [monthOffset, setMonthOffset] = useState(0);
+  const [view, setView] = useState<'list' | 'daily' | 'monthly'>('list');
 
   const viewMonth = useMemo(() => {
     const d = new Date();
@@ -46,7 +48,7 @@ export function PrincipalAcademicPlanDetailPage() {
         <h1 className="text-sm font-bold text-gray-900 dark:text-white flex-1 truncate">Class {cls}{section ? `-${section}` : ''} · {subject}</h1>
       </div>
 
-      <div className="max-w-3xl mx-auto px-5 py-6">
+      <div className="mx-auto px-5 py-6" style={{ maxWidth: view === 'list' ? '48rem' : '72rem' }}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
@@ -79,7 +81,30 @@ export function PrincipalAcademicPlanDetailPage() {
               </button>
             </div>
 
-            {monthDays.length === 0 ? (
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-xl p-1 w-fit mb-4">
+              {([['list', 'List'], ['daily', 'Daily Planner'], ['monthly', 'Monthly Planner']] as const).map(([v, label]) => (
+                <button key={v} type="button" onClick={() => setView(v)}
+                  className={view === v
+                    ? 'h-8 px-4 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white text-xs font-bold shadow-sm'
+                    : 'h-8 px-4 rounded-lg text-gray-500 dark:text-white/40 text-xs font-semibold'}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {view === 'daily' ? (
+              <NotebookDailyView
+                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveDay={() => undefined}
+                days={monthDays.map((d) => ({ date: new Date(d.date), dateKey: d.date.slice(0, 10), planDay: d }))}
+              />
+            ) : view === 'monthly' ? (
+              <NotebookMonthlyView
+                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveRow={() => undefined}
+                monthLabel={MONTH_LABEL.format(viewMonth)}
+                monthKey={`${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`}
+                days={plan.days} monthlyRows={plan.monthlyRows ?? []}
+              />
+            ) : monthDays.length === 0 ? (
               <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent p-8 text-center">
                 <AlertTriangle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm font-semibold text-gray-600 dark:text-white/60">Nothing scheduled this month.</p>
