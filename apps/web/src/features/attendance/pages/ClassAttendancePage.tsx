@@ -24,34 +24,34 @@ export function ClassAttendancePage() {
   const students = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-5 max-w-5xl mx-auto">
         <button
           onClick={() => navigate('/attendance')}
-          className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition-colors"
+          className="p-2 rounded-full hover:bg-white border border-[#E8E2D6] transition-colors bg-white/70 shadow-xs text-[#1B2A4E]"
           aria-label="Back"
         >
-          <ArrowLeft className="w-4 h-4 text-gray-600" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-lg sm:text-xl font-bold text-[#1B2A4E]">
             Attendance — Class {cls} / {section}
           </h1>
-          <p className="text-sm text-gray-500">{date}</p>
+          <p className="text-xs text-[#55607A]">{date}</p>
         </div>
       </div>
 
       {/* Body */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5" style={{ minHeight: '60vh' }}>
+      <div className="max-w-5xl mx-auto">
         {isLoading ? (
-          <div className="space-y-3 animate-pulse">
+          <div className="space-y-3 animate-pulse bg-white p-6 rounded-[20px] border border-[#E8E2D6]">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-12 bg-gray-100 rounded-lg" />
+              <div key={i} className="h-12 bg-gray-100 rounded-xl" />
             ))}
           </div>
         ) : isError ? (
-          <div className="text-center py-10 text-red-600 text-sm">
+          <div className="text-center py-10 text-red-600 text-sm bg-white p-6 rounded-[20px] border border-[#E8E2D6]">
             Failed to load students. Please try again.
           </div>
         ) : (

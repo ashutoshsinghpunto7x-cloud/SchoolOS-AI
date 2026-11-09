@@ -313,7 +313,7 @@ export const Sidebar = ({ isOpen, onClose, overlayOnDesktop }: SidebarProps) => 
               "text-sm font-bold leading-tight tracking-tight",
               useDarkSidebar ? "text-white" : "text-gray-900"
             )}>
-              FNIC
+              MY CAMPUS
             </div>
             <div className={cn(
               "text-[11px] font-medium tracking-wide mt-px",
