@@ -3,9 +3,12 @@ import type { UserRole } from '@schoolos/types';
 export const ROLE_LABELS: Record<UserRole, string> = {
   admin: 'Administrator',
   principal: 'Principal',
+  incharge: 'Incharge',
   reception: 'Reception',
   teacher: 'Teacher',
   accountant: 'Accountant',
+  operations_manager: 'Operations Manager',
+  academic_coordinator: 'Academic Coordinator',
   parent: 'Parent',
   driver: 'Driver',
   // Internal SchoolOS staff — not expected to reach this app's Settings screen,
