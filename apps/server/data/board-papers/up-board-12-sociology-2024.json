@@ -1,0 +1,294 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Sociology",
+ "year": 2024,
+ "paperCode": "340 (FM)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who founded the Arya Samaj ?",
+   "options": [
+    "Swami Vivekanand",
+    "Swami Dayanand Saraswati",
+    "Raja Rammohan Roy",
+    "Jyotiba Phule"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is not a characteristic of an urban society ?",
+   "options": [
+    "Dynamic",
+    "Uniformity",
+    "Primary relation",
+    "Agriculture"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who is the author of the book ‘An Essay on the Principle of Population’ (1798) ?",
+   "options": [
+    "Karl Marx",
+    "Max Weber",
+    "Thomas Robert Malthus",
+    "Andre Beteille"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "What is Caste ?",
+   "options": [
+    "An institution",
+    "A group",
+    "An association",
+    "All of the above"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "What is ‘State’ ?",
+   "options": [
+    "A group",
+    "A community",
+    "An institution",
+    "An association"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "What does social stratification mean ?",
+   "options": [
+    "Social equality",
+    "Social inequality",
+    "Social justice",
+    "Social injustice"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is an example of the ‘Chipko Movement’ ?",
+   "options": [
+    "Ecological Movement",
+    "Farmers’ Movement",
+    "Dalit Movement",
+    "Tribal Movement"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In which year was the ‘Right to Information Act’ passed in India ?",
+   "options": [
+    "2004",
+    "2005",
+    "2006",
+    "2007"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "How many levels are there in the Panchayati Raj System ?",
+   "options": [
+    "Three",
+    "Four",
+    "Five",
+    "Six"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "During which decade did the ‘Green Revolution’ begin ?",
+   "options": [
+    "1950 – 60",
+    "1960 – 70",
+    "1970 – 80",
+    "1980 – 90"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Define rural community."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you understand by population growth rate ?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Define culture."
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Mention the main problems of the disabled (divyangs)."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Elucidate Communalism."
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is meant by civil society ?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Mention three features of industrial society."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you understand by peasant class ?"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Define social change."
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you understand by tribe ?"
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "What is regionalism ? Give suggestions to control regionalism."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Briefly describe the land reforms in India."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Define Social Movement and state its types."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "State the difference between caste and class."
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Write a short note on cultural diversity in India."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Mention the consequences of liberalisation."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Describe the women’s movement in independent India."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "What is dowry system ? Describe its adverse effects on the society."
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "What do you understand by globalization ? Discuss its social consequences."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Describe the effects of the ‘Green Revolution’ on the rural society."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "What do you understand by social survey ? Mention its main objectives."
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Define kinship and discuss its categories."
+  }
+ ]
+}

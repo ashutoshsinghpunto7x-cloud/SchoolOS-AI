@@ -5500,9 +5500,25 @@ export interface AcademicPlanDay {
   status: AcademicPlanDayStatus;
   carriedFromDate?: string;
   note?: string;
+  /** Notebook-format columns (paper Daily Planner). */
+  periodLabel?: string;
+  classWork?: string;
+  homeWork?: string;
+  teachingAid?: string;
+  remarks?: string;
   /** True once a teacher has hand-edited or drag-swapped this day.
    *  Regenerate preserves these days verbatim instead of recomputing them. */
   manuallyEdited?: boolean;
+}
+
+/** One row of the notebook-style Monthly Planner — one per chapter per calendar month. */
+export interface AcademicPlanMonthlyRow {
+  monthKey: string; // 'YYYY-MM'
+  chapterName: string;
+  teachingMethod?: string;
+  teachingAid?: string;
+  classWork?: string;
+  homeWork?: string;
 }
 
 export interface AcademicPlanHistoryEntry {
@@ -5521,6 +5537,7 @@ export interface AcademicPlan extends BaseEntity {
   version: number;
   generatedFrom: 'engine' | 'manual_override';
   days: AcademicPlanDay[];
+  monthlyRows?: AcademicPlanMonthlyRow[];
   history: AcademicPlanHistoryEntry[];
 }
 
@@ -5563,7 +5580,14 @@ export interface EditPlanDayPayload {
   chapterId?: string;
   chapterName?: string;
   topicTitle?: string;
+  periodLabel?: string;
+  classWork?: string;
+  homeWork?: string;
+  teachingAid?: string;
+  remarks?: string;
 }
+
+export type SetMonthlyRowPayload = AcademicPlanMonthlyRow;
 
 export interface MovePlanDayPayload {
   fromDate: string;

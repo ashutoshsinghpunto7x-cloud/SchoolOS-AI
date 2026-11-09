@@ -6,6 +6,7 @@ import { ValidationError } from '../../middlewares/errorHandler';
 import { questionExtractionService } from './question-extraction.service';
 import { questionBankService } from './question-bank.service';
 import { paperGeneratorService } from './paper-generator.service';
+import { boardLibraryService } from './board-library.service';
 import {
   extractionTargetSchema,
   extractChapterTargetSchema,
@@ -159,6 +160,21 @@ export const questionBankController = {
       const ctx = buildAuthContext(req.user!);
       const chapters = await questionBankService.listChapters(query, ctx);
       sendSuccess(res, chapters);
+    } catch (err) { next(err); }
+  },
+
+  /** GET /question-bank/board-library?class=12 */
+  async listBoardLibrary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      sendSuccess(res, await boardLibraryService.listAvailable(req.query, buildAuthContext(req.user!)));
+    } catch (err) { next(err); }
+  },
+
+  /** POST /question-bank/board-library/sync  { class, subject } */
+  async syncBoardLibrary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await boardLibraryService.syncToSchool(req.body, ctx));
     } catch (err) { next(err); }
   },
 

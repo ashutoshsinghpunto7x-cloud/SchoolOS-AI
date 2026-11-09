@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Book Keeping and Accountancy",
+ "year": 2026,
+ "paperCode": "349(MH)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Preparation of partnership agreement in written form is",
+   "options": [
+    "Compulsory",
+    "Voluntary",
+    "Partly compulsory",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "When time of withdrawals is not mentioned, interest on drawing is charged for",
+   "options": [
+    "5½ months",
+    "6 months",
+    "6½ months",
+    "12 months"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Weighted average method of calculating goodwill is used when",
+   "options": [
+    "Profit is equal",
+    "Profit has increasing trend",
+    "Profit has decreasing trend",
+    "Both (A) and (B)"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "On retirement of a partner, goodwill will be credited to Capital Account of",
+   "options": [
+    "Retiring partner",
+    "Remaining partners",
+    "All partners",
+    "None of them"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "On dissolution of a partnership firm, profit or loss on realisation is distributed among the partners.",
+   "options": [
+    "In Capital ratio",
+    "In profit sharing ratio",
+    "In sacrificing ratio",
+    "Equally"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Share Application A/c is",
+   "options": [
+    "Personal A/c",
+    "Real A/c",
+    "Nominal A/c",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Debenture holders are the",
+   "options": [
+    "Customers of the company",
+    "Owners of the company",
+    "Creditors of the company",
+    "All of them"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Current liabilities include",
+   "options": [
+    "Sundry creditors",
+    "Outstanding expenses",
+    "Bills payable",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "\"Higher the ratio, the more favourable it is.\" This does not apply to,",
+   "options": [
+    "Operating ratio",
+    "Net profit ratio",
+    "Stock Turnover ratio",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "'Payment of Dividend' will come under what type of activity while preparing Cash Flow Statement?",
+   "options": [
+    "Operating activity",
+    "Investing activity",
+    "Financing activity",
+    "None of these"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by 'Partnership'?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is the need for valuation of Goodwill?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State two circumstances of a firm reconstitution."
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is 'Realisation Account'?"
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is the difference between sacrifice ratio and profit gaining ratio?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What do you mean by 'Preference Shares'?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Mention two characteristics of Debenture."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is the meaning of Financial Statement?"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is Current Ratio?"
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is Cash Flow Statement?"
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Which Journal Entries are passed in the books of the firm at the time of admission of a new partner?"
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Under what circumstances partnership firm is dissolved?"
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What do you mean by forfeiture of shares?"
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Distinguish between a Bond and a Debenture."
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Describe the nature of Financial Statements."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Clarify any five advantages of ratio analysis."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "Ramesh and Sohan were partners in a firm. Their capital was Rs. 40,000 and Rs. 60,000 respectively. They agreed to admit Aman as a partner for 1/4th share on the term that he brings Rs. 30,000 as capital and Rs. 40,000 as goodwill. Aman paid his capital money but in respect of goodwill he can bring only Rs. 24,000.\nFrom the above information pass necessary journal entries and prepare Partner's Capital A/c and Aman's Current A/c."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you mean by dissolution of a partnership firm? What are the provisions of Indian Partnership Act regarding settlement of accounts at the dissolution of a partnership firm?"
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "Kalyan Company offered 10000 shares of Rs. 10 each payable as Rs. 3 on application, Rs. 2.50 on allotment, Rs. 2.50 on first call and Rs. 2 on the final call. The public applied for 15200 shares. [illegible] shares were allotted on a pro-rata basis to the applicants of 15000 shares. All shareholders paid the allotment money excepting one shareholder who was allotted 20 shares. These shares were forfeited. The first call was made thereafter. The forfeited shares were re-issued @ Rs. 9 per share Rs. 8 paid up. The final call was not made.\nPass necessary Journal entries in the book of Kalyan Company."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you mean by 'Private Company' and 'Public Company'? Distinguish between Private Company and Public Company."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "Following is the Trading and profit & Loss Account of a company for the year ended 31st March, 2025:\nTrading and Profit & Loss Account (As on 31st March, 2025)\nParticulars | Amount (Rs.) | Particulars | Amount (Rs.)\nTo Stock | 63,000 | By Sales | 3,00,000\nTo Purchases | 2,36,000 | By Stock at end | 1,50,000\nTo Wages | 4,000 | |\nTo Gross Profit c/d | 1,47,000 | |\nTotal | 4,50,000 | Total | 4,50,000\nTo Administrative Exp. | 4,000 | By Gross Profit b/d | 1,47,000\nTo Selling & Distribution Exp. | 5,000 | |\nTo Loss on sale of plant | 3,000 | |\nTo Net profit | 1,35,000 | |\nTotal | 1,47,000 | Total | 1,47,000\nCalculate Gross Profit Ratio and Net Profit Ratio."
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is meant by debenture? Distinguish between debenture and share."
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "From the following summary of Cash Account of Kedia Ltd. prepare Cash Flow Statement for the year ended 31st March, 2025 using the direct method:\nSummary of Cash Account (For the year ended 31st March, 2025)\nReceipts | Amount (Rs.) | Payments | Amount (Rs.)\nBalance on 31st March, 2024 | 5,000 | Payments of suppliers | 50,000\nIssue of equity shares | 10,000 | Purchase of fixed Assets | 60,000\nReceipts from Customers | 1,50,000 | Overhead expenses | 3,000\nSale of Fixed Assets | 33,000 | Wages and Salaries | 15,000\n | | Taxation | 10,000\n | | Dividend | 5,000\n | | Payment of Bank Loan | 35,000\n | | Balance on 31st March, 2025 | 20,000\nTotal | 1,98,000 | Total | 1,98,000"
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you understand by Financial Statements? What are the objects of preparing them? Explain."
+  }
+ ]
+}

@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Business Organization",
+ "year": 2026,
+ "paperCode": "350(MI)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Management is",
+   "options": [
+    "A Science",
+    "An Art",
+    "Both Science and Art",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who is known as the father of Scientific management ?",
+   "options": [
+    "Henry Fayol",
+    "Elton Mayo",
+    "F.W. Taylor",
+    "Peter Drucker"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which Management thinker gave the 14 Principles of Management ?",
+   "options": [
+    "Maslow",
+    "Henry Fayol",
+    "McGreger",
+    "Elton Mayo"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not a function of management ?",
+   "options": [
+    "Planning",
+    "Staffing",
+    "Directing",
+    "Profit-making"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Internal and external environment are the parts of",
+   "options": [
+    "Organization",
+    "Control",
+    "Business environment",
+    "Staffing"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which is not a source of recruitment ?",
+   "options": [
+    "Internal source",
+    "External source",
+    "Selection",
+    "Promotion"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Maslow is related to",
+   "options": [
+    "Leadership theory",
+    "Motivation theory",
+    "Communication theory",
+    "Control theory"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The main objective of financial management is",
+   "options": [
+    "Profit maximisation",
+    "Wealth maximisation",
+    "Sales maximisation",
+    "Cost minimisation"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which two functions are closely related ?",
+   "options": [
+    "Planning and control",
+    "Staffing and motivation",
+    "Organisation and supervision",
+    "Communication and packaging"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Labelling is mainly related to",
+   "options": [
+    "Finance",
+    "Marketing",
+    "Staffing",
+    "Planning"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Define management."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Mention any two principles of Scientific Management given by F. W. Taylor."
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by business environment ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Define planning."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by delegation of authority ?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State any two external sources of recruitment."
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is Motivation ?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by Controlling ?"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State any two factors affecting fixed capital requirement."
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Give two functions of labelling."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the importance of Management as both an Art and a Science."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is business environment ? Explain significance of natural environment in business."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the difference between delegation and decentralisation."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Discuss Maslow's hierarchy of needs theory of motivation."
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain any five functions of marketing."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain McCarthy's '4P' Model of Marketing."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Discuss the importance of Business environment in management decision-making."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Write a detailed article on Management in 21st Century."
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the process of staffing."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is meant by centralisation and decentralisation ? Tell the difference between two. (5 + 5)"
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Describe the interrelationship between planning and controlling."
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the meaning and methods of training. (4 + 6)"
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "“Consumer Protection is a social necessity, not merely a legal obligation.” Explain with reference to Consumer Protection Act, 2019."
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is meant by Branding ? State features of a good brand. (4 + 6)"
+  }
+ ]
+}

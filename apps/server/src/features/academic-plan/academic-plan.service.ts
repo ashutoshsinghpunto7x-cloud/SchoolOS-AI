@@ -14,7 +14,7 @@ import {
   buildEligibleDaysContext, listEligibleDays, nextEligibleDay, reserveExamBlocks,
   fillChaptersIntoDays, isoDate,
 } from './academic-plan.util';
-import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput } from './academic-plan.validation';
+import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput, MonthlyRowInput } from './academic-plan.validation';
 
 // ── Teacher scope guard — same shape/reasoning as Teacher Planner v2's
 // assertTeacherCanManagePlanner (Teacher and User link only by email; a
@@ -192,11 +192,26 @@ export const academicPlanService = {
     if (data.chapterId !== undefined) patch.chapterId = data.chapterId;
     if (data.chapterName !== undefined) patch.chapterName = data.chapterName;
     if (data.topicTitle !== undefined) patch.topicTitle = data.topicTitle;
+    if (data.periodLabel !== undefined) patch.periodLabel = data.periodLabel;
+    if (data.classWork !== undefined) patch.classWork = data.classWork;
+    if (data.homeWork !== undefined) patch.homeWork = data.homeWork;
+    if (data.teachingAid !== undefined) patch.teachingAid = data.teachingAid;
+    if (data.remarks !== undefined) patch.remarks = data.remarks;
 
     const updated = await academicPlanRepository.editDay(
       planId, ctx.schoolId, dateKey, patch,
       { version: 0, changedBy: ctx.displayName, changedAt: new Date(), reason: `Edited ${dateKey}` },
     );
+    if (!updated) throw new NotFoundError('Plan');
+    return updated;
+  },
+
+  /** Upserts one notebook-style Monthly Planner row (per chapter per month). */
+  async setMonthlyRow(planId: string, data: MonthlyRowInput, ctx: AuthContext): Promise<IAcademicPlan> {
+    const existing = await academicPlanRepository.findById(planId, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Plan');
+    await assertTeacherCanManagePlan(ctx, existing.class, existing.subject);
+    const updated = await academicPlanRepository.setMonthlyRow(planId, ctx.schoolId, data);
     if (!updated) throw new NotFoundError('Plan');
     return updated;
   },

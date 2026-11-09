@@ -1,0 +1,294 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Sociology",
+ "year": 2026,
+ "paperCode": "340(DM)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who is the father of Green Revolution ?",
+   "options": [
+    "Jawaharlal Nehru",
+    "M. S. Swaminathan",
+    "Sardar Vallabhbhai Patel",
+    "Mahatma Gandhi"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following revolutions firstly started in England ?",
+   "options": [
+    "Green Revolution",
+    "Industrial Revolution",
+    "Ecological Revolution",
+    "Russian Revolution"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not a Tribe ?",
+   "options": [
+    "Bhil",
+    "Gond",
+    "Tharu",
+    "Namboodiri"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not a feature of Indian Rural Society ?",
+   "options": [
+    "Caste system",
+    "Heterogeneous population",
+    "Primary relationship",
+    "Important role of nature"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is an example of material culture ?",
+   "options": [
+    "Language",
+    "Etiquette",
+    "Symbols",
+    "Mobile phone"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is mainly associated with Economic Policy ?",
+   "options": [
+    "Panchayati Raj",
+    "Liberalisation",
+    "National Education Policy",
+    "Biological inheritance"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not an example of social stratification ?",
+   "options": [
+    "Caste",
+    "Height",
+    "Class",
+    "Estate system"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Champaran, famous historical place of Satyagraha movement is situated in the state",
+   "options": [
+    "Gujarat",
+    "West Bengal",
+    "Bihar",
+    "Uttar Pradesh"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "What is the basis of Race ?",
+   "options": [
+    "Birth",
+    "Physical characteristics",
+    "Wealth",
+    "Achievements"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is associated with community ?",
+   "options": [
+    "Primary group",
+    "We feeling",
+    "Family",
+    "Marriage"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is culture ?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you mean by Divyang Jan ?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "When and where did Industrial Revolution begin ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Explain the reasons for the decline in sex ratio in India."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Write down the characteristics of caste."
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is Cultural Diversity ?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Discuss the main benefits of Liberalisation."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Write a short note on Brahmo Samaj."
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you mean by Tribal Community ?"
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Write down the ill effects of regionalism."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Write a short note on Green Revolution."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Write a short note on Arya Samaj."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Write a short note on Regionalism and Indian Democracy."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Discuss the role of women in Panchayati Raj system."
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Discuss the elements of culture."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "What are the differences between Caste & Class ?"
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Define Interview method. Discuss its types."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Write an essay on kinship system and its usages."
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Discuss the causes of globalization."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "How are market and consumerism deeply associated ? Discuss."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Write an essay on Modernization in India."
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Discuss the government efforts made for the welfare of tribes."
+  }
+ ]
+}

@@ -1,0 +1,280 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Business Organization",
+ "year": 2025,
+ "paperCode": "",
+ "language": "hi",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "प्रबन्ध का कर्मचारियों को सर्वाधिक प्रेरणा देने वाला कार्य है",
+   "options": [
+    "स्टाफिंग",
+    "अभिप्रेरणा",
+    "संगठन",
+    "नियंत्रण"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "वैज्ञानिक प्रबन्ध से लाभों में होती है",
+   "options": [
+    "वृद्धि",
+    "कमी",
+    "कोई प्रभाव नहीं",
+    "(अ) एवं (ब) दोनों"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "भारत में आर्थिक उदारीकरण की नीति लागू हुई",
+   "options": [
+    "वर्ष 1991 में",
+    "वर्ष 1995 में",
+    "वर्ष 2001 में",
+    "वर्ष 2005 में"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "बजट है",
+   "options": [
+    "निष्पादन का नियोजित लक्ष्य",
+    "भविष्य के कार्य कलापों का योग",
+    "संसाधनों का क्रमबद्ध वितरण",
+    "आशान्वित परिणाम का अंकों में अभिव्यक्ति की विवरण"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "कर्मचारियों की स्वेच्छा पर निर्भर करता है",
+   "options": [
+    "औपचारिक संगठन",
+    "क्रियात्मक संगठन",
+    "अनौपचारिक संगठन",
+    "विभागीय संगठन"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "नियुक्तिकरण उत्तरदायित्व है",
+   "options": [
+    "निम्न प्रबन्ध का",
+    "मध्य प्रबन्ध का",
+    "उच्च प्रबन्ध का",
+    "इनमें से सभी"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "अभिप्रेरित कर्मचारियों को पारितोषित किया जाता है",
+   "options": [
+    "ऋणात्मक",
+    "धनात्मक",
+    "आंतरिक",
+    "इनमें से कोई नहीं"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "प्रबन्धकीय नियंत्रण किया जाता है",
+   "options": [
+    "निम्न स्तरीय प्रबन्धकों द्वारा",
+    "मध्यम स्तरीय प्रबन्धकों द्वारा",
+    "उच्चतम स्तरीय प्रबन्धकों द्वारा",
+    "सभी स्तरीय प्रबन्धकों द्वारा"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "कार्यशील पूँजी का स्रोत है",
+   "options": [
+    "देनदार",
+    "बैंक अधिविकर्ष",
+    "रोकड़ विक्रय",
+    "इनमें से सभी"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "विपणन पर व्यय किया गया धन है",
+   "options": [
+    "बर्बादी",
+    "अनावश्यक व्यय",
+    "ग्राहकों पर भार",
+    "विनियोजन"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "गति अध्ययन से क्या अभिप्राय है ?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "नियोजन में प्रक्रिया क्या है ?"
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "औपचारिक संगठन की किन्हीं दो विशेषताओं का उल्लेख कीजिये ।"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "कार्य आवर्तन से क्या आशय है ?"
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "एक अच्छे नेतृत्व की दो विशेषतायें लिखिये ।"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "नियंत्रण प्रक्रिया के किन्हीं दो चरणों के नाम बताइये ।"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "पूँजी संरचना के दो प्रमुख उद्देश्य क्या हैं ?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "पैकेजिंग के दो लाभ बताइये ।"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "सन्देशवाहन की प्रक्रिया में सम्मिलित दो तत्व लिखिये ।"
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "उपभोक्ता संरक्षण अधिनियम, 2019 के अनुसार उपभोक्ता को प्राप्त दो उपचार बताइये ।"
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "वैज्ञानिक प्रबन्ध की किन्हीं पाँच सिद्धान्तों को लिखिये ।"
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "कर्मचारियों के भर्ती एवं चयन में अन्तर बताइये ।"
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "संगठन के चरण कौन-कौन हैं ?"
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "भर्ती के आन्तरिक स्रोत क्या हैं ?"
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "'औपचारिक' तथा 'अनौपचारिक' सन्देशवाहन में अन्तर बताइये ।"
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "पूँजी ढाँचा किसे कहते हैं ? इसे निर्धारित करने वाले किन्हीं तीन कारकों का उल्लेख कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "प्रबन्ध के कार्यों की व्याख्या कीजिये ।"
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "चयन प्रक्रिया से सम्बन्धित विभिन्न चरणों की रूपरेखा प्रस्तुत कीजिये ।"
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "नियंत्रण की परिभाषा दीजिये । नियंत्रण प्रक्रिया के विभिन्न चरणों का वर्णन कीजिए ।"
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "\"उत्पाद मिश्रण\" शब्द को समझाइये और इसके अवयवों का वर्णन कीजिए ।"
+  }
+ ]
+}

@@ -26,6 +26,10 @@ router.post('/sources/:id/re-extract', questionBankController.reExtractSource);
 
 router.get('/chapters', questionBankController.listChapters);
 
+// Shared previous-year board-paper library (platform-wide) → copied into the caller's school on demand.
+router.get('/board-library', questionBankController.listBoardLibrary);
+router.post('/board-library/sync', questionBankController.syncBoardLibrary);
+
 // Principal-only materials-by-class dashboard — static route, ahead of nothing that would shadow it.
 router.get('/principal/overview', authorize('admin', 'principal', 'academic_coordinator'), questionBankController.getPrincipalOverview);
 

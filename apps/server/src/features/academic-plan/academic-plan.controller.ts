@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { academicPlanService } from './academic-plan.service';
-import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema } from './academic-plan.validation';
+import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema, monthlyRowSchema } from './academic-plan.validation';
 import { z } from 'zod';
 
 const chapterSizingSchema = z.object({
@@ -50,6 +50,15 @@ export const academicPlanController = {
       const ctx = buildAuthContext(req.user!);
       const plan = await academicPlanService.editDay(req.params.id, data, ctx);
       sendSuccess(res, plan, 'Day edited');
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /academic-plan/:id/monthly */
+  async setMonthlyRow(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = monthlyRowSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await academicPlanService.setMonthlyRow(req.params.id, data, ctx), 'Monthly row saved');
     } catch (err) { next(err); }
   },
 
