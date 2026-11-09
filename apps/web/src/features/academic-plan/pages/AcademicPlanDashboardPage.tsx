@@ -2,16 +2,18 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Sparkles, Loader2, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useMyAcademicPlan, useGenerateAcademicPlan, useSetPlanDayStatus, useEditPlanDay, useMovePlanDay } from '../hooks/useAcademicPlan';
+import { useMyAcademicPlan, useGenerateAcademicPlan, useSetPlanDayStatus, useEditPlanDay, useMovePlanDay, useSetMonthlyRow } from '../hooks/useAcademicPlan';
 import { PlanDayRow } from '../components/PlanDayRow';
 import { PlanWeekView } from '../components/PlanWeekView';
 import { PlanMonthView } from '../components/PlanMonthView';
+import { NotebookDailyView, NotebookMonthlyView } from '../components/PlanNotebookView';
 import { buildMonthCalendar, buildWeekCalendar, mondayOf, weekRangeLabel } from '../lib/monthCalendar';
 import { useAcademicYear } from '@/features/academic-year/hooks/useAcademicYear';
 import { useEvents } from '@/features/events/hooks/useEvents';
-import type { AcademicPlanDay, AcademicPlanDayStatus, SchoolEvent } from '@schoolos/types';
+import type { AcademicPlanDay, AcademicPlanDayStatus, EditPlanDayPayload, SchoolEvent } from '@schoolos/types';
 
-type Tab = 'today' | 'week' | 'month';
+type Tab = 'today' | 'week' | 'month' | 'daily' | 'monthly';
+const TAB_LABELS: Record<Tab, string> = { today: 'Today', week: 'Week', month: 'Month', daily: 'Daily Planner', monthly: 'Monthly Planner' };
 
 function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -32,6 +34,7 @@ export function AcademicPlanDashboardPage() {
   const setDayStatus = useSetPlanDayStatus(plan?._id ?? '');
   const editDay = useEditPlanDay(plan?._id ?? '');
   const moveDay = useMovePlanDay(plan?._id ?? '');
+  const setMonthlyRow = useSetMonthlyRow(plan?._id ?? '');
   const [savingDate, setSavingDate] = useState<string | null>(null);
 
   const { data: academicYear } = useAcademicYear();
@@ -40,8 +43,9 @@ export function AcademicPlanDashboardPage() {
   // straddle two months, so fetch both months touched and merge; when the
   // week/month tab is showing a single month these are the same query and
   // React Query's key-based cache collapses them to one request.
-  const visibleRangeStart = tab === 'week' ? weekAnchor : monthAnchor;
-  const visibleRangeEnd = tab === 'week' ? new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), weekAnchor.getDate() + 6) : new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0);
+  const weekBased = tab === 'week' || tab === 'daily';
+  const visibleRangeStart = weekBased ? weekAnchor : monthAnchor;
+  const visibleRangeEnd = weekBased ? new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), weekAnchor.getDate() + 6) : new Date(monthAnchor.getFullYear(), monthAnchor.getMonth() + 1, 0);
   const { data: holidaysStartPage } = useEvents({
     eventType: 'holiday', month: visibleRangeStart.getMonth() + 1, year: visibleRangeStart.getFullYear(), limit: 100,
   });
@@ -85,6 +89,17 @@ export function AcademicPlanDashboardPage() {
     try {
       await editDay.mutateAsync({ date: day.date, ...patch, blockType: day.blockType === 'buffer' && patch.chapterId ? 'teach' : undefined });
       toast.success('Day updated');
+    } catch (err) {
+      toast.error('Could not save', { description: err instanceof Error ? err.message : undefined });
+    } finally {
+      setSavingDate(null);
+    }
+  }
+
+  async function handleSaveNotebookField(day: AcademicPlanDay, patch: Partial<EditPlanDayPayload>) {
+    setSavingDate(day.date);
+    try {
+      await editDay.mutateAsync({ date: day.date, ...patch });
     } catch (err) {
       toast.error('Could not save', { description: err instanceof Error ? err.message : undefined });
     } finally {
@@ -178,7 +193,7 @@ export function AcademicPlanDashboardPage() {
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto px-5 py-6">
+      <div className="max-w-3xl mx-auto px-5 py-6" style={tab === 'daily' || tab === 'monthly' ? { maxWidth: '72rem' } : undefined}>
         <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-5 mb-5">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-bold text-gray-900 dark:text-white">Syllabus progress</p>
@@ -192,23 +207,23 @@ export function AcademicPlanDashboardPage() {
 
         <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-xl p-1 w-fit">
-            {(['today', 'week', 'month'] as Tab[]).map((t) => (
+            {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTab(t)}
                 className={
                   tab === t
-                    ? 'h-8 px-4 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white text-xs font-bold shadow-sm capitalize'
-                    : 'h-8 px-4 rounded-lg text-gray-500 dark:text-white/40 text-xs font-semibold capitalize'
+                    ? 'h-8 px-4 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white text-xs font-bold shadow-sm '
+                    : 'h-8 px-4 rounded-lg text-gray-500 dark:text-white/40 text-xs font-semibold'
                 }
               >
-                {t}
+                {TAB_LABELS[t]}
               </button>
             ))}
           </div>
 
-          {tab === 'week' && (
+          {weekBased && (
             <div className="flex items-center gap-1">
               <button type="button" onClick={() => setWeekAnchor((w) => new Date(w.getFullYear(), w.getMonth(), w.getDate() - 7))}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-white/50 dark:hover:bg-white/5" aria-label="Previous week">
@@ -222,7 +237,7 @@ export function AcademicPlanDashboardPage() {
             </div>
           )}
 
-          {tab === 'month' && (
+          {(tab === 'month' || tab === 'monthly') && (
             <div className="flex items-center gap-1">
               <button type="button" onClick={() => setMonthAnchor((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-white/50 dark:hover:bg-white/5" aria-label="Previous month">
@@ -239,7 +254,7 @@ export function AcademicPlanDashboardPage() {
           )}
         </div>
 
-        {tab !== 'month' && (
+        {(tab === 'today' || tab === 'week') && (
           <p className="text-xs text-gray-400 dark:text-white/40 mb-4 -mt-2">
             Drag a lesson onto another day to swap them, or tap ✎ to edit it.
           </p>
@@ -273,6 +288,23 @@ export function AcademicPlanDashboardPage() {
             onSetStatus={handleSetStatus}
             onEdit={handleEditDay}
             onMove={handleMoveDay}
+          />
+        ) : tab === 'daily' ? (
+          <NotebookDailyView
+            title={`Class ${cls}-${section}`}
+            subject={subject}
+            days={weekDays}
+            onSaveDay={handleSaveNotebookField}
+          />
+        ) : tab === 'monthly' ? (
+          <NotebookMonthlyView
+            title={`Class ${cls}-${section}`}
+            subject={subject}
+            monthLabel={monthAnchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+            monthKey={`${monthAnchor.getFullYear()}-${String(monthAnchor.getMonth() + 1).padStart(2, '0')}`}
+            days={days}
+            monthlyRows={plan.monthlyRows ?? []}
+            onSaveRow={(row) => setMonthlyRow.mutate(row, { onError: (err) => toast.error('Could not save', { description: err instanceof Error ? err.message : undefined }) })}
           />
         ) : (
           <PlanMonthView

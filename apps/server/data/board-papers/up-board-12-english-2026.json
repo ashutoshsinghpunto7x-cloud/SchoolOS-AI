@@ -1,0 +1,313 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "English",
+ "year": 2026,
+ "paperCode": "316(BV)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionText": "Passage: Gandhi's great aim in life was to improve the condition of poor and suffering people, and to aid people in any way he could, but always without using force. He was against every sort of evil, no matter of what kind. When he tried to find out about the condition among poor farm workers, the people crowded around him by the hundreds. A friend had come among them, someone who wanted to help them and to them this was something new. When the police ordered Gandhi to leave the place, he refused and in the court he explained why he could not obey. Then he asked the court to punish him for breaking the law. The court did not know what verdict to give in such a case, and so let him go free. This was the first step in what came to be an important and common event in many parts of India to refuse to obey a law considered to be unjust and at the same time calmly to accept any punishment that might be given and never to retaliate.\n\nWhat was Gandhi's great aim in life?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionText": "How did Gandhi help the poor and suffering people?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionText": "Why did the farm workers crowd around him?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionText": "Why did the police order Gandhi to leave the place?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(e)(i)",
+   "questionText": "Which word in the passage means 'quietly'?",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(ii)",
+   "questionText": "Write the opposite for 'punishment'.",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(iii)",
+   "questionText": "Rewrite the underlined segment after replacing 'verdict' with another similar meaning word. (Underlined segment: \"The court did not know what verdict to give in such a case, and so let him go free.\")",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "B",
+   "number": "2",
+   "questionText": "Write an article on any one of the following topics in about 100 - 150 words:\na) The Problem of Unemployment\nb) New Education Policy\nc) Digital India.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3",
+   "questionText": "Write a letter to the Principal of your college to complain against the shortage of books in the college library.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3 OR",
+   "questionText": "Write a letter to the Editor of a daily newspaper describing the flood scene in your locality.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "C",
+   "number": "4(a)",
+   "questionText": "Which of the following underlined words is a synonym 'suggestive'?",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "We have sufficient information about the thief.",
+    "My friend has plentiful sum of money.",
+    "The judge found significant changes in his behaviour.",
+    "He looks vibrant."
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(b)",
+   "questionText": "Which of the following is a pair of antonyms?",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Pass - Succeed",
+    "Honest - Truthful",
+    "Intelligent - Brilliant",
+    "Failure - Success"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(c)",
+   "questionText": "'To die in harness' means",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Premeditated murder",
+    "Dying young in an accident",
+    "To die while in service",
+    "To be taken by surprise"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(d)",
+   "questionText": "'A foreigner who settles in another country' is",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Immigrant",
+    "Emigrant",
+    "Alien",
+    "Visitor"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(e)",
+   "questionText": "Which of the following sentences is incorrect?",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "A number of questions has been set",
+    "Heaps of sand are lying on the bank",
+    "Mathematics is a difficult subject",
+    "There are still lot to decide"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "5(a)",
+   "questionText": "Change any one of the following into indirect narration:\ni) My friend said to me, \"Please help me.\"\nii) The guard said to the visitor, \"Who are you and why have you come here?\"",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(b)",
+   "questionText": "Combine any one of the following as directed:\ni) You are very weak. You cannot work hard. (Into Simple sentence)\nii) He is poor. He is not dishonest. (Into Complex sentence)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(c)",
+   "questionText": "Change any one of the following as directed:\ni) Why have you not completed your work? (Into Passive voice)\nii) Iron is the most useful metal. (Into Positive degree)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(d)",
+   "questionText": "Correct any one of the following sentences:\ni) My friend is senior than I.\nii) No sooner the train stopped than I got down.",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(e)",
+   "questionText": "Use any one of the following pairs of words in your own sentences to make the difference in their meanings clear:\ni) Affect - Effect\nii) Pain - Pane",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "6",
+   "questionText": "Translate the following passage into English:\nसही शिक्षा का वास्तविक ध्येय हमारे बौद्धिक स्तर को उठाना है। बौद्धिक स्तर को उठाने का अर्थ विद्यार्थी के मस्तिष्क में दुनिया भर के तथ्य और आँकड़े भरना नहीं है, बल्कि उसे इस योग्य बनाना है कि वह दूसरे के दृष्टिकोण को ठीक प्रकार से समझ सके। साथ ही शिक्षा का ध्येय मौलिक चिन्तन की क्षमता विकसित करना है। सच्ची शिक्षा हमें यह सिखाती है कि हम किस प्रकार दूसरे के दृष्टिकोण से समझौता करें और किस प्रकार अपने विचारों को दूसरों के समक्ष प्रस्तुत करें।",
+   "questionType": "long",
+   "marks": 5
+  },
+  {
+   "section": "D",
+   "number": "7(a)",
+   "questionText": "What was the condition of Franz when his name was called in the class?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(a) OR",
+   "questionText": "Why did Saheb's family migrate to India?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b)",
+   "questionText": "What did the author think when he was drowning in deep water?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b) OR",
+   "questionText": "Why do you think that peddler was a great philosopher?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "8(a)",
+   "questionText": "Why do you think Gandhiji considered the Champaran episode to be a turning-point in his life?",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "8(b) OR",
+   "questionText": "Do you think that the title of the story 'Going Places' by A. R. Barton is appropriate? Explain.",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "9(a)",
+   "questionText": "If we were not so single-minded\nabout keeping our lives moving,\nand for once could do nothing,\nperhaps a huge silence\nmight interrupt this sadness\nof never understanding ourselves\nand of threatening ourselves with death.\n\nWhat do we lose in our single-minded desire?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(b)",
+   "questionText": "If we were not so single-minded\nabout keeping our lives moving,\nand for once could do nothing,\nperhaps a huge silence\nmight interrupt this sadness\nof never understanding ourselves\nand of threatening ourselves with death.\n\nWhat is the 'sadness' that the poet talks about?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(c)",
+   "questionText": "If we were not so single-minded\nabout keeping our lives moving,\nand for once could do nothing,\nperhaps a huge silence\nmight interrupt this sadness\nof never understanding ourselves\nand of threatening ourselves with death.\n\nHow are we threatening ourselves?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "10(a)",
+   "questionText": "Write the central idea of the poem: Keeping Quiet",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(b) OR",
+   "questionText": "Write the central idea of the poem: A Thing of Beauty",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(c) OR",
+   "questionText": "Write the central idea of the poem: Aunt Jennifer's Tigers",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a)",
+   "questionText": "How is the Grand Central Station, a symbol of escape?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a) OR",
+   "questionText": "Why did the Maharaja start hunting tigers?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b)",
+   "questionText": "What surprised the author most about Antarctica?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b) OR",
+   "questionText": "Who was Hana? How was Sadao married with her?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "12(a)",
+   "questionText": "Describe Sadao as a true doctor.",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "12(b) OR",
+   "questionText": "Give a character-sketch of Mr. Lamb on the basis of the play 'On the Face of It'.",
+   "questionType": "long",
+   "marks": 7
+  }
+ ]
+}

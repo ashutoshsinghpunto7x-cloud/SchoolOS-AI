@@ -1,0 +1,313 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "English",
+ "year": 2025,
+ "paperCode": "316(HV)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionText": "Passage: It is clear that language is used for more than one purpose. The man who hits his thumb nails with a hammer and utters a string of curses is using language to relieve his feeling and needs no audience but himself. But when a philosopher uses language to clarify his ideas on a subject, he is using it as an instrument of thought. When two women gossip over the fence or two men exchange greetings as they pass in the street, language is being used to strengthen the bonds between the members of society. Language, it seems, is a multipurpose instrument. One function, however seems to be basic - language enables us to influence people's behaviour and thereby makes human co-operation possible. Some animals co-operate especially the social animals like bees and ants, but human co-operation is more through, more detailed, more effective than that found anywhere in the animal kingdom. The human co-operation would be unthinkable without language.\n\nWhy does the man, who hits his thumb-nails with a hammer, talk to himself?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionText": "For what purpose does a philosopher use language?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionText": "For what purpose do the two women and two men use language?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionText": "\"Is language a multipurpose instrument?\" Answer it on the basis of the given paragraph.",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(e)(i)",
+   "questionText": "Find out the word from the passage which means 'Speaks'.",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(ii)",
+   "questionText": "Which word in the passage means 'Powerful' or 'Successful'?",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(iii)",
+   "questionText": "Which word in the passage is the opposite of 'Aggravate'?",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "B",
+   "number": "2",
+   "questionText": "Write an article on any one of the following topics in about 100-150 words:\n(a) Roles of Women in 'Democracy'\n(b) Live and Let Live Others\n(c) Solutions of Unemployment",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3",
+   "questionText": "Suppose, you are Rohit and you live in the area flooded with water. Essential commodities are not reaching there. Now, write a letter to the D.M. of your district requesting him to initiate relief work in your area.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3 OR",
+   "questionText": "Write an application to the Principal of your college requesting him to give you an opportunity to take part in the 'College Cricket Team'.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "C",
+   "number": "4(a)",
+   "questionText": "A person with narrow religious views is called",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Satirist",
+    "Optimist",
+    "Feminist",
+    "Fanatic"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(b)",
+   "questionText": "The phrase 'in the offing' means",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Likely to go",
+    "Likely to come",
+    "Likely to happen",
+    "About to be finished"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(c)",
+   "questionText": "The synonym for 'Wail' is",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Bear",
+    "Mourn",
+    "Torture",
+    "Reject"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(d)",
+   "questionText": "Which word in this sentence is an error? He is worried in his father's illness.",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "in",
+    "father's",
+    "is",
+    "worried"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(e)",
+   "questionText": "The antonym for 'Mild' is",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "Laugh",
+    "Pure",
+    "Light",
+    "Severe"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "5(a)",
+   "questionText": "Change any one of the following into indirect speech:\n(i) She said, \"Brother, I shall give you my watch.\"\n(ii) Sachin said to his senior, \"What should I do, Sir?\"",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(b)",
+   "questionText": "Combine any one of the following as directed:\n(i) Priya wanted to pass the examination. She worked hard for that. (Into Simple Sentence)\n(ii) Mahesh bought a watch. The watch gives correct time. (Into Complex Sentence)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(c)",
+   "questionText": "Transform any one of the following as directed:\n(i) What makes you happy, my dear? (Into Passive Voice)\n(ii) Don't abuse others. (Into Affirmative Sentence)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(d)",
+   "questionText": "Correct any one of the following sentences:\n(i) India won the match by an inning.\n(ii) Kalidas is greater than any dramatist.",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(e)",
+   "questionText": "Use any one of the following pairs of words in your own sentences to make the difference in their meanings clear:\n(i) Later - Latter\n(ii) Layer - Liar",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "6",
+   "questionText": "Translate the following passage into English:\nसम्राट अशोक, चन्द्रगुप्त का पोता था। अपने पिता की मृत्यु के समय वह उज्जैन का सूबेदार था। चन्द्रगुप्त के मरने के 24 वर्ष बाद वह सिंहासनारूढ़ हुआ। आरम्भ में अशोक को शिकार का बहुत शौक था और उसे युद्ध कला भी पसन्द थी। सिंहासनारोहण के बाद उसने कलिंग पर चढ़ाई की। यद्यपि वह इस युद्ध में विजयी हुआ परन्तु इसने उसके हृदय पर एक गहरा घाव छोड़ा। इस युद्ध में कई लाख आदमी मरे, कई लाख घायल हुए और बहुत से बीमारी से मरे। यह दशा देखकर अशोक का हृदय परिवर्तित हो गया। उसे युद्ध से घृणा हो गयी। उसने पुनः कोई युद्ध नहीं किया और अपना सम्पूर्ण जीवन प्रजा हित में लगा दिया।",
+   "questionType": "long",
+   "marks": 5
+  },
+  {
+   "section": "D",
+   "number": "7(a)",
+   "questionText": "What made the writer to forget all about M. Hamel's ruler?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(a) OR",
+   "questionText": "Why did Lewis Carrol never give his consent to be interviewed?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b)",
+   "questionText": "What did Roosevelt say about fear in the lesson 'Deep Water'?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b) OR",
+   "questionText": "What did Robert Clive do besides fighting some battles in Madras?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "8(a)",
+   "questionText": "How can you say that ordinary people also contributed to the freedom movement?",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "8(b) OR",
+   "questionText": "What for is the city of Firozabad famous?",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "9(a)",
+   "questionText": "Perhaps the Earth can teach us\nas when everything seems dead\nand later proves to be alive.\nNow I'll count up to twelve\nand you keep quiet and I will go.\n\nWhat remains alive when everything seems dead?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(b)",
+   "questionText": "Perhaps the Earth can teach us\nas when everything seems dead\nand later proves to be alive.\nNow I'll count up to twelve\nand you keep quiet and I will go.\n\nWhen should we remain quiet as said by the poet?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(c)",
+   "questionText": "Perhaps the Earth can teach us\nas when everything seems dead\nand later proves to be alive.\nNow I'll count up to twelve\nand you keep quiet and I will go.\n\nName the poet and the poem of the above lines.",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "10(a)",
+   "questionText": "Write the central idea of the poem: My Mother at Sixty-six",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(b) OR",
+   "questionText": "Write the central idea of the poem: A Roadside Stand",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(c) OR",
+   "questionText": "Write the central idea of the poem: Aunt Jennifer's Tigers",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a)",
+   "questionText": "How was the Grand Central growing as told by Charley?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a) OR",
+   "questionText": "What for is Antarctica the perfect place?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b)",
+   "questionText": "What did Annan say to the author about the package which was being carried by its string?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b) OR",
+   "questionText": "How long had Dr. Sadao to wait to fall in love with Hana?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "12(a)",
+   "questionText": "What gift did the Maharaja bring on the third birthday of his son?",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "12(b) OR",
+   "questionText": "What did Zitkala-Sa feel when her long hair was cut?",
+   "questionType": "long",
+   "marks": 7
+  }
+ ]
+}

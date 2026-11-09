@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Business Organization",
+ "year": 2023,
+ "paperCode": "350",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The process of creating an internal environment, where individual works effectively and efficiently for achievement of goal is known as",
+   "options": [
+    "Coordination",
+    "Delegation",
+    "Management",
+    "Planning"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Coordination is",
+   "options": [
+    "Function of Management",
+    "Essence of Management",
+    "Part of Management",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Planning is the",
+   "options": [
+    "Primary function of management",
+    "Last function of management",
+    "Both of (i) and (ii)",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not a part of organising process ?",
+   "options": [
+    "Assigning of duties",
+    "Departmentalisation",
+    "Decentralisation",
+    "Establishing authority-responsibility relationship"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is the least expensive method of recruitment ?",
+   "options": [
+    "Walk-in-interview",
+    "Campus Placement",
+    "Employment Exchange",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following can be defined as process of choosing the right person for the right job ?",
+   "options": [
+    "Selection",
+    "Recruitment",
+    "Induction",
+    "Orientation"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following does not define the role of leader ?",
+   "options": [
+    "Group advisor",
+    "An analyzer",
+    "A listener",
+    "Group advisor as coordinator"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Providing good working conditions and ensuring quality work is the function of",
+   "options": [
+    "Top level",
+    "Middle level",
+    "Supervising level",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not a type of organisation structure ?",
+   "options": [
+    "Line organisation",
+    "Functional organisation",
+    "Line and staff organisation",
+    "Flexible organisation"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The principles of management serve as general guidelines for",
+   "options": [
+    "Decision making",
+    "Managerial actions",
+    "Both (i) and (ii)",
+    "None of these"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "\"Management is both a Science and an art.\" Explain."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain the significance of Management."
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What are the advantages of scientific management to employees ?"
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Write essential elements of Good Planning."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What are standing plans ?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is line organisation ?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain the difference between selection and recruitment."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain promotion."
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain any three principles of decentralisation."
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Write in brief the qualities of a leader."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is the difference between Decentralisation and Delegation ? Write any three points."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Write requisites of effective planning."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is formal organisation ?"
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is meant by 'Noise' in communication process ?"
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the nature of Human Resource."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Write the principles of Direction."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you understand by coordination ? Explain its importance in management."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Write the importance of organisation. Discuss the nature of organisation."
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is the significance of proper selection of employees in an organisation ?"
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the steps followed in selection procedure."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Define motivation. What are the various steps of motivation ? Discuss the importance of motivation as a function of management. (2 + 4 + 4)"
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain briefly the barriers of communication. What are the principles of an effective communication ? (4 + 6)"
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you mean by delegation of authority ? Explain its process. (5 + 5)"
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you understand by leadership style ? Explain the characteristics of leadership style. (3 + 7)"
+  }
+ ]
+}

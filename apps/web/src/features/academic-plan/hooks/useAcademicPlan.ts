@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicPlanApi, PlanTarget, ChapterSizingPayload } from '../api/academic-plan.api';
-import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload } from '@schoolos/types';
+import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload, SetMonthlyRowPayload } from '@schoolos/types';
 
 function targetKey(t: PlanTarget) {
   return [t.class, t.section ?? '', t.subject] as const;
@@ -43,6 +43,14 @@ export const useEditPlanDay = (planId: string) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: EditPlanDayPayload) => academicPlanApi.editDay(planId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+  });
+};
+
+export const useSetMonthlyRow = (planId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SetMonthlyRowPayload) => academicPlanApi.setMonthlyRow(planId, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
   });
 };

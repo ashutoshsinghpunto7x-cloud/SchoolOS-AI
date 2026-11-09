@@ -1,0 +1,46 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Biology",
+  "year": 2024,
+  "paperCode": "348 (GG)",
+  "language": "en",
+  "questions": [
+    { "section": "A", "number": "1(a)", "questionType": "mcq", "marks": 1, "questionText": "The function of tapetum layer is to :", "options": ["Nourish pollen grains", "Form pollen grains", "Form endothelium", "Destroy pollen grains"] },
+    { "section": "A", "number": "1(b)", "questionType": "mcq", "marks": 1, "questionText": "Which one of the following is a detritivore ?", "options": ["Earthworm", "Bird", "Frog", "Elephant"] },
+    { "section": "A", "number": "1(c)", "questionType": "mcq", "marks": 1, "questionText": "The vector of Dengue (Break bone) fever is :", "options": ["Anopheles", "Culex", "Aedes", "None of these"] },
+    { "section": "A", "number": "1(d)", "questionType": "mcq", "marks": 1, "questionText": "Which enzyme cuts the DNA at specific site ?", "options": ["Polymerase", "Endonuclease", "Exonuclease", "Ligase"] },
+
+    { "section": "B", "number": "2(a)", "questionType": "very_short", "marks": 1, "questionText": "Name the cells providing nutrition to the sperms." },
+    { "section": "B", "number": "2(b)", "questionType": "very_short", "marks": 1, "questionText": "Write the full form of MTP and ZIFT. (½ + ½)" },
+    { "section": "B", "number": "2(c)", "questionType": "very_short", "marks": 1, "questionText": "What is the unit of genetics ?" },
+    { "section": "B", "number": "2(d)", "questionType": "very_short", "marks": 1, "questionText": "How many codons are there in genetic codes ?" },
+    { "section": "B", "number": "2(e)", "questionType": "very_short", "marks": 1, "questionText": "What is sewage ?" },
+
+    { "section": "C", "number": "3(a)", "questionType": "short", "marks": 2, "questionText": "What is opium ? Which plant is it obtained from ? (1 + 1)" },
+    { "section": "C", "number": "3(b)", "questionType": "short", "marks": 2, "questionText": "How many chromosomes are found in Klinefelter and Turner Syndromes ? (1 + 1)" },
+    { "section": "C", "number": "3(c)", "questionType": "short", "marks": 2, "questionText": "How many types of immunity occur in humans ? Write their names." },
+    { "section": "C", "number": "3(d)", "questionType": "short", "marks": 2, "questionText": "What are antibiotics ? Name any two microbes which are used in the production of antibiotics. (1 + ½ + ½)" },
+    { "section": "C", "number": "3(e)", "questionType": "short", "marks": 2, "questionText": "What steps have been taken by the Government to conserve wildlife ?" },
+
+    { "section": "D", "number": "4(a)", "questionType": "short", "marks": 3, "questionText": "Write short notes on Physical barrier and Cellular barrier. (1½ + 1½)" },
+    { "section": "D", "number": "4(b)", "questionType": "short", "marks": 3, "questionText": "Comment upon Law of Segregation." },
+    { "section": "D", "number": "4(c)", "questionType": "short", "marks": 3, "questionText": "What is Cancer ? Mention its prevention and cure. (1 + 2)" },
+    { "section": "D", "number": "4(d)", "questionType": "short", "marks": 3, "questionText": "Explain monohybrid and dihybrid test cross." },
+    { "section": "D", "number": "5(a)", "questionType": "short", "marks": 3, "questionText": "Comment upon homology." },
+    { "section": "D", "number": "5(b)", "questionType": "short", "marks": 3, "questionText": "Describe the Hardy-Weinberg principle." },
+    { "section": "D", "number": "5(c)", "questionType": "short", "marks": 3, "questionText": "Write any three differences between anther and ovule." },
+    { "section": "D", "number": "5(d)", "questionType": "short", "marks": 3, "questionText": "Explain any three important characteristics of a population." },
+    { "section": "D", "number": "6(a)", "questionType": "short", "marks": 3, "questionText": "What do you understand by the following : Origin of life" },
+    { "section": "D", "number": "6(b)", "questionType": "short", "marks": 3, "questionText": "What do you understand by the following : Australopithecines" },
+    { "section": "D", "number": "6(c)", "questionType": "short", "marks": 3, "questionText": "What do you understand by the following : Infectious diseases" },
+    { "section": "D", "number": "6(d)", "questionType": "short", "marks": 3, "questionText": "What do you understand by the following : Darwinism" },
+
+    { "section": "E", "number": "7", "questionType": "long", "marks": 5, "questionText": "Describe human male reproductive system and explain the process of sperm formation. (3 + 2)" },
+    { "section": "E", "number": "7 OR", "questionType": "long", "marks": 5, "questionText": "Differentiate between the following : (i) Plasmid DNA and Chromosomal DNA (ii) Exonuclease and Endonuclease enzyme (2½ + 2½)" },
+    { "section": "E", "number": "8", "questionType": "long", "marks": 5, "questionText": "What do you mean by sex-linked characters ? Describe with the help of line sketches, the inheritance of two sex-linked characters in humans. (2 + 3)" },
+    { "section": "E", "number": "8 OR", "questionType": "long", "marks": 5, "questionText": "What do you mean by population ? Describe population interactions. (1 + 4)" },
+    { "section": "E", "number": "9", "questionType": "long", "marks": 5, "questionText": "Explain Mendel's law of dominance. Write a note on incomplete dominance. (2½ + 2½)" },
+    { "section": "E", "number": "9 OR", "questionType": "long", "marks": 5, "questionText": "How does fertilization take place in angiosperms ? Describe the post-fertilization structures. (2½ + 2½)" }
+  ]
+}

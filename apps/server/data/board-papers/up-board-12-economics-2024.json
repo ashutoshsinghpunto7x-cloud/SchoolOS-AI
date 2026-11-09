@@ -1,0 +1,327 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Economics",
+ "year": 2024,
+ "paperCode": "329 (FE)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Choose the correct option, with reference to the following two statements:\nStatement I: With increase in the prices in the country, fees in private school increase.\nStatement II: Increase in school fees is unjust.",
+   "options": [
+    "Statement I and Statement II both are statements of Positive economics",
+    "Statement I and Statement II both are statements of Normative economics",
+    "Statement I is a statement of Positive economics and Statement II is a statement of Normative economics",
+    "Statement I is a statement of Normative economics and Statement II is a statement of Positive economics"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "That amount of utility is called marginal utility, which we get from the consumption of ______.",
+   "options": [
+    "the first unit",
+    "total of all units",
+    "an extra unit",
+    "the middle unit"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "With reference to production, short run is that situation, where",
+   "options": [
+    "All the means of production can be changed",
+    "All the means of production cannot be changed",
+    "Both (a) and (b) are correct",
+    "Both (a) and (b) are incorrect"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The supply curve of a firm in short-run is generally:",
+   "options": [
+    "U-shaped",
+    "Horizontal line",
+    "Vertical line",
+    "∩-shaped"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In a planned economy, decisions related to production and distribution are taken by:",
+   "options": [
+    "Government",
+    "Markets",
+    "Corporate sector",
+    "Price mechanism"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In Government budget, 'transfer payments' are the payments made by the Government:",
+   "options": [
+    "On transfer of employees",
+    "On purchase of goods or services",
+    "Without receiving any goods or services",
+    "On purchase of land-property"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who recommends demonetization of currency notes to the Government of India ?",
+   "options": [
+    "World Bank",
+    "International Monetary Fund",
+    "State Bank of India",
+    "Reserve Bank of India"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Full employment level of income of an economy, is that level of income where:",
+   "options": [
+    "Labour is in full employment",
+    "All means of production are fully employed",
+    "Annual income of the economy is 5 trillion dollars",
+    "All citizens have sufficient income"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The Average Propensity to Consume (APC) is measured by:",
+   "options": [
+    "C/Y",
+    "ΔC/ΔY",
+    "S/Y",
+    "ΔS/ΔY"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which one of the following is a direct tax ?",
+   "options": [
+    "Custom Duty",
+    "Toll Tax",
+    "Goods and Services Tax",
+    "Corporate Tax"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Explain the meaning of Micro-economics."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Draw 'Indifference curve map'.",
+   "hasFigure": true
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Differentiate between normal goods and inferior goods."
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Write the Law of Diminishing Marginal Productivity."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Write the main characteristics of market economy."
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What do you mean by 'Gross Domestic Product at Factor Cost' ?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "What is the meaning of 'Paradox of Thrift' ?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 3,
+   "questionText": "Explain the meaning of devaluation and appreciation of currency in Foreign Exchange market."
+  },
+  {
+   "section": "C",
+   "number": "19",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Show the equilibrium of a consumer with Indifference Curve Technique.",
+   "hasFigure": true
+  },
+  {
+   "section": "C",
+   "number": "20(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Explain the concept of 'total fixed cost'."
+  },
+  {
+   "section": "C",
+   "number": "20(b)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Explain the concept of 'total variable cost'."
+  },
+  {
+   "section": "C",
+   "number": "20(c)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Explain the concept of 'total cost'."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Describe the characteristics of a 'Perfectly Competitive Market'."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Show the 'Circular flow of income' with diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 6,
+   "questionText": "Explain the concepts of 'Revenue deficit', 'Fiscal deficit' and 'Primary deficit'."
+  },
+  {
+   "section": "C",
+   "number": "24(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What do you understand by Balance of Payments ?"
+  },
+  {
+   "section": "C",
+   "number": "24(b)",
+   "questionType": "short",
+   "marks": 4,
+   "questionText": "Write the main items of Current account and Capital account related to it."
+  },
+  {
+   "section": "D",
+   "number": "25(a)",
+   "questionType": "long",
+   "marks": 2,
+   "questionText": "Write the definition of 'central bank'."
+  },
+  {
+   "section": "D",
+   "number": "25(b)",
+   "questionType": "long",
+   "marks": 8,
+   "questionText": "Describe the various functions of a central bank."
+  },
+  {
+   "section": "D",
+   "number": "25 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Show the short-run equilibrium income of an economy with a diagram.",
+   "hasFigure": true
+  },
+  {
+   "section": "D",
+   "number": "26(a)",
+   "questionType": "long",
+   "marks": 3,
+   "questionText": "What do you mean by 'long-run' in production ?"
+  },
+  {
+   "section": "D",
+   "number": "26(b)",
+   "questionType": "long",
+   "marks": 7,
+   "questionText": "Explain the laws of returns to scale."
+  },
+  {
+   "section": "D",
+   "number": "26 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Describe the items of Revenue Budget and Capital Budget of the Government."
+  },
+  {
+   "section": "D",
+   "number": "27(a)",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Describe the types of price elasticity of demand."
+  },
+  {
+   "section": "D",
+   "number": "27(b)",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Describe the factors affecting elasticity of demand."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the process of price determination of a commodity in perfectly competitive market with the help of diagram.",
+   "hasFigure": true
+  }
+ ]
+}

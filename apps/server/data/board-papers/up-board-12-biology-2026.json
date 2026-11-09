@@ -1,0 +1,46 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Biology",
+  "year": 2026,
+  "paperCode": "348(EG)",
+  "language": "en",
+  "questions": [
+    { "section": "A", "number": "1(i)", "questionType": "mcq", "marks": 1, "questionText": "Which organ in flower represents female reproductive organ ?", "options": ["Gynoecium", "Androecium", "Anther", "Tapetum"] },
+    { "section": "A", "number": "1(ii)", "questionType": "mcq", "marks": 1, "questionText": "Which of the following characteristics of flower is suitable for insect pollination ?", "options": ["Light weighted pollen grains", "Coloured attractive corolla", "Multiple ovule", "Small pollen grains"] },
+    { "section": "A", "number": "1(iii)", "questionType": "mcq", "marks": 1, "questionText": "How many years did Gregor Mendel conduct experiment on plants of garden pea ?", "options": ["Five years", "Two years", "Seven years", "Eleven years"] },
+    { "section": "A", "number": "1(iv)", "questionType": "mcq", "marks": 1, "questionText": "Sickle cell Anaemia disease is an example of which type of mutation ?", "options": ["Point mutation", "Euploidy", "Deletion", "Translocation"] },
+
+    { "section": "B", "number": "2(a)", "questionType": "very_short", "marks": 1, "questionText": "Malaria disease is transmitted by which organism ?" },
+    { "section": "B", "number": "2(b)", "questionType": "very_short", "marks": 1, "questionText": "Write the complete form of BOD abbreviation." },
+    { "section": "B", "number": "2(c)", "questionType": "very_short", "marks": 1, "questionText": "Give one example of commensalism." },
+    { "section": "B", "number": "2(d)", "questionType": "very_short", "marks": 1, "questionText": "Who proposed the chromosomal theory of inheritance ?" },
+    { "section": "B", "number": "2(e)", "questionType": "very_short", "marks": 1, "questionText": "Write the name of any one transgenic animal." },
+
+    { "section": "C", "number": "3(a)", "questionType": "short", "marks": 2, "questionText": "What is pest resistant plant ? Give one example. (1 + 1)" },
+    { "section": "C", "number": "3(b)", "questionType": "short", "marks": 2, "questionText": "What is external parasite ? Explain with one example. (1 + 1)" },
+    { "section": "C", "number": "3(c)", "questionType": "short", "marks": 2, "questionText": "Write the names of any two atmospheric nitrogen-fixing micro-organisms. (1 + 1)" },
+    { "section": "C", "number": "3(d)", "questionType": "short", "marks": 2, "questionText": "Write the names of any two projects to save the rivers from pollution. (1 + 1)" },
+    { "section": "C", "number": "3(e)", "questionType": "short", "marks": 2, "questionText": "What is gel electrophoresis ? Explain." },
+
+    { "section": "D", "number": "4(a)", "questionType": "short", "marks": 3, "questionText": "Describe the ecological pyramid in brief." },
+    { "section": "D", "number": "4(b)", "questionType": "diagram_based", "marks": 3, "questionText": "Describe the process of decomposition with diagram. (2 + 1)" },
+    { "section": "D", "number": "4(c)", "questionType": "short", "marks": 3, "questionText": "State the importance of artificial insemination technique." },
+    { "section": "D", "number": "4(d)", "questionType": "short", "marks": 3, "questionText": "Describe Hardy-Weinberg principle." },
+    { "section": "D", "number": "5(a)", "questionType": "short", "marks": 3, "questionText": "Write a short note on transfer RNA." },
+    { "section": "D", "number": "5(b)", "questionType": "short", "marks": 3, "questionText": "Describe the Palaeontological evidence with example." },
+    { "section": "D", "number": "5(c)", "questionType": "short", "marks": 3, "questionText": "Describe the polyembryony with example." },
+    { "section": "D", "number": "5(d)", "questionType": "label_diagram", "marks": 3, "questionText": "Draw the labelled diagrammatic sectional view of seminiferous tubules." },
+    { "section": "D", "number": "6(a)", "questionType": "short", "marks": 3, "questionText": "What is allergy ? Explain with example. (2 + 1)" },
+    { "section": "D", "number": "6(b)", "questionType": "diagram_based", "marks": 3, "questionText": "Describe the false fruit with diagram." },
+    { "section": "D", "number": "6(c)", "questionType": "short", "marks": 3, "questionText": "Describe the symptoms of Down syndrome. (2 + 1)" },
+    { "section": "D", "number": "6(d)", "questionType": "short", "marks": 3, "questionText": "Explain the convergent evolution with example. (2 + 1)" },
+
+    { "section": "E", "number": "7", "questionType": "long", "marks": 5, "questionText": "What is cancer ? Describe its causes and diagnosis in detail. (1 + 2 + 2)" },
+    { "section": "E", "number": "7 OR", "questionType": "long", "marks": 5, "questionText": "Describe the life cycle of plasmodium with diagram." },
+    { "section": "E", "number": "8", "questionType": "long", "marks": 5, "questionText": "What is DNA fingerprinting technique ? Describe in detail with diagram. (2 + 3)" },
+    { "section": "E", "number": "8 OR", "questionType": "long", "marks": 5, "questionText": "Write an essay on the applications of biotechnology in agriculture." },
+    { "section": "E", "number": "9", "questionType": "long", "marks": 5, "questionText": "What is ecosystem ? Describe the components of ecosystem. (1 + 4)" },
+    { "section": "E", "number": "9 OR", "questionType": "long", "marks": 5, "questionText": "Write explanatory notes on the following : (i) Productivity (ii) Consumers. (2½ + 2½)" }
+  ]
+}

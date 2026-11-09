@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Book Keeping and Accountancy",
+ "year": 2023,
+ "paperCode": "349",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Receipts and Payments Account is",
+   "options": [
+    "Real Account",
+    "Nominal Account",
+    "Personal Account",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Income and Expenditure Account is prepared by",
+   "options": [
+    "Sole Trading Organisation",
+    "Company Organisation",
+    "Partnership Organisation",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Revaluation Account is",
+   "options": [
+    "Personal Account",
+    "Real Account",
+    "Nominal Account",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Reduction in liability is",
+   "options": [
+    "Loss",
+    "Profit",
+    "Receipts",
+    "Expenditure"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Partnership Account was enforced in",
+   "options": [
+    "1956",
+    "1948",
+    "1932",
+    "1950"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Loan taken for specific purpose will be shown in",
+   "options": [
+    "Income and Expenditure Account",
+    "Liability side of Balance sheet",
+    "Asset side of Balance sheet",
+    "Both sides of Balance sheet"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Shareholders of a company are",
+   "options": [
+    "Customers of the company",
+    "Creditors of the company",
+    "Employees of the company",
+    "Owners of the company"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which of the following is not current liability?",
+   "options": [
+    "Bills payable",
+    "Bank overdraft",
+    "Share capital",
+    "Outstanding expenses"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Features of a company are",
+   "options": [
+    "Artificial person",
+    "Created by law",
+    "Perpetual succession",
+    "All of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The maximum number of members of a private company is",
+   "options": [
+    "100",
+    "150",
+    "50",
+    "140"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain the objectives of Income and Expenditure Account."
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain Partnership deed."
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Explain any one method of calculation of interest on drawings."
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State the differences between partnership and company."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by Cash Flow Statement?"
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State four items of liabilities shown in the balance sheet of a company."
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Distinguish between P & L Account and P & L Appropriation Account."
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What do you understand by forfeiture of shares?"
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State differences between divisible profit and dividend."
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Describe the items shown in Profit and Loss Appropriation Account."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the difference between Income and Expenditure Account and Cash Account."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the method of calculation of goodwill on the basis of average profit."
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Discuss the types of preference shares."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Describe the significance of analysis of financial statements."
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Explain the characteristics of a company."
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Whom do you consider suitable between company and partnership and why?"
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "On the basis of the following Trial Balance and other information of Mahesh School for the year ended on 31st December, 2022, prepare Income and Expenditure Account and Balance sheet:\nDebit Balance | Amount (Rs.) | Credit Balance | Amount (Rs.)\nBuilding | 6,25,000 | Entrance fees | 12,500\nFurniture | 1,00,000 | Tuition fees received | 5,00,000\nLibrary books | 1,50,000 | Creditors for supplies | 15,000\nInvestment @ 12% | 5,00,000 | Rent for the school hall | 10,000\nSalaries | 5,00,000 | Miscellaneous receipts | 30,000\nStationery | 40,000 | Government grants | 3,50,000\nGeneral expenses | 18,000 | General fund | 10,00,000\nSports expenses | 15,000 | Donation for library books | 62,500\nCash at bank | 50,000 | Sale of old furniture | 20,000\nCash in hand | 2,000 | |\nTotal | 20,00,000 | Total | 20,00,000\nAdditional Information:\ni) Outstanding fees of this year Rs. 25,000\nii) Outstanding salaries Rs. 30,000\niii) Furniture purchased of Rs. 40,000 on 1st October, 2021\niv) Furniture of book value Rs. 50,000 was sold on 1st April 2021\nv) Charge depreciation on furniture @ 10% per year, 15% per year on library books, 5% per year on building."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you understand by non-profitable organisations? For what purposes is income and expenditure account prepared?"
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "Rohit Company Limited was registered with the capital of Rs. 5,00,000 which was divisible @ Rs. 10 in 50000 shares. The company issued 40000 shares out of them, on which Rs. 2 per share on application, Rs. 2 per share on allotment, Rs. 4 per share on 1st call and Rs. 2 per share on final call were payable. The public purchased all shares and the amounts were received. However one shareholder who held 500 shares did not pay the amount of final calls. The directors forfeited these shares and reissued them @ Rs. 6 per share.\nPass necessary journal entries in the books of the company."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain the differences between equity and preference shares and explain different types of preference shares."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "A and B are partners sharing profits and losses in the ratio of 3 : 2. They decided to admit C as a new partner on 1st April, 2021 from effective date. On 1st April, 2021 the Balance sheet and terms of entries of A and B are as follows:\nCapital and Liabilities | Amount (Rs.) | Assets | Amount (Rs.)\nCapital A/c.: A 3,00,000; B 3,00,000 | 6,00,000 | Plant | 4,53,000\nCreditors | 60,000 | Furniture | 62,000\nOutstanding expenses | 15,000 | Stock | 84,000\n | | Debtors | 36,000\n | | Cash | 40,000\nTotal | 6,75,000 | Total | 6,75,000\nThe following are conditions of entries:\ni) The profit in future will be distributed equally.\nii) The capital of the firm was determined Rs. 6,00,000 which will be given in the profit ratio by the partners.\niii) C will give the share of capital and goodwill in cash.\niv) The valuation of goodwill will be done on the basis of over-value of purchases of two years. The average net profit of the firm is Rs. 90,000 per year. The nominal profit on capital is 10% in nominal business.\nCalculate goodwill and prepare capital account of partners, cash A/c and balance sheet of the new firm."
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "Explain different methods of valuation of goodwill."
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "The following balances were received from the Books of Prayag Electronics on 31st March, 2021:\nStock Rs. 60,000, Sales Rs. 4,25,000, Wages Rs. 50,000, Purchases Rs. 2,10,000, Salaries Rs. 25,000, Sundry Creditors Rs. 35,000, Bad Debts Rs. 3,000, Cash Rs. 2,000, Insurance and General Expenses Rs. 7,500, Profit and Loss Account (Credit) Rs. 13,500, Debtors Rs. 50,000, Share Capital Rs. 1,00,000, Machine and Plant Rs. 1,00,000, Reserve Rs. 30,000, Building Rs. 50,000, Rent Rs. 6,000, Investment Rs. 30,000, Interim dividend Rs. 10,000.\nAdjustments:\ni) Prepare provisions for Bad Debts on debtors @ 5%\nii) Charge depreciation on machinery @ 10%\niii) The value of stock on 31st March, 2021 was Rs. 75,000\niv) Make provision of Rs. 10,000 for reserve and Rs. 15,000 for dividend.\nOn the basis of the above particulars and adjustments, prepare Profit and Loss Account and Profit and Loss Appropriation Account."
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is analysis of financial statement? Describe its objectives and limitations."
+  }
+ ]
+}

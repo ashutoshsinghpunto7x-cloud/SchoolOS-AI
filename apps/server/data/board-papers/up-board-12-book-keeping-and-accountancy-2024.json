@@ -1,0 +1,308 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Book Keeping and Accountancy",
+ "year": 2024,
+ "paperCode": "349",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which is not essential element of a partnership firm?",
+   "options": [
+    "At least two partners",
+    "There is an agreement between all partners",
+    "Equal share of profit and loss",
+    "Partnership agreement is for some business"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "2",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Sacrifice ratio means",
+   "options": [
+    "New Ratio - Old Ratio",
+    "Old Ratio - New Ratio",
+    "Old Ratio - Gaining Ratio",
+    "Gaining Ratio - Old Ratio"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "3",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "A new partner can be admitted in partnership",
+   "options": [
+    "with the consent of any one partner",
+    "with the consent of majority partners",
+    "with the consent of all old partners",
+    "with the consent of 2/3rd of old partners"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "4",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "On retirement of a partner, goodwill will be credited to the capital account of",
+   "options": [
+    "Retiring partner",
+    "Remaining partners",
+    "All partners",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "5",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In the case of dissolution of a firm, profit or loss on realisation is distributed among partners",
+   "options": [
+    "In capital ratio",
+    "In profit sharing ratio",
+    "Equally",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "6",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who are the real owners of a company?",
+   "options": [
+    "Government",
+    "Board of Directors",
+    "Equity shareholders",
+    "Debenture holders"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "7",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "A debenture holder is entitled to",
+   "options": [
+    "Fixed dividend",
+    "Share in profit",
+    "Voting rights in the company",
+    "Interest at the fixed rate"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "8",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which statement provides information about the profitability of the company?",
+   "options": [
+    "Income statement",
+    "Statement of Retained earnings",
+    "Financial position statement",
+    "Statement of cost"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "9",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Current ratio is used to find",
+   "options": [
+    "Long term solvency",
+    "Short term solvency",
+    "Profitability",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "10",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which accounting standard is related to cash flow statement?",
+   "options": [
+    "Accounting standard - 03",
+    "Accounting standard-13",
+    "Accounting standard-23",
+    "Accounting standard-33"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "11",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by \"Unlimited liability of a partner\"?"
+  },
+  {
+   "section": "B",
+   "number": "12",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State any two occasions when reconstitution of a partnership firm takes place."
+  },
+  {
+   "section": "B",
+   "number": "13",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Write two main rights acquired by the new partner."
+  },
+  {
+   "section": "B",
+   "number": "14",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State any two items of deduction that may have to be made from the amount payable to a retiring partner."
+  },
+  {
+   "section": "B",
+   "number": "15",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Write two circumstances under which a partnership firm is dissolved."
+  },
+  {
+   "section": "B",
+   "number": "16",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What is meant by listed company?"
+  },
+  {
+   "section": "B",
+   "number": "17",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "What do you mean by participating preference shares?"
+  },
+  {
+   "section": "B",
+   "number": "18",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Classify debentures from the point of view of security."
+  },
+  {
+   "section": "B",
+   "number": "19",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "Give any two examples of non-current assets."
+  },
+  {
+   "section": "B",
+   "number": "20",
+   "questionType": "very_short",
+   "marks": 2,
+   "questionText": "State any two objectives of cash flow statement."
+  },
+  {
+   "section": "C",
+   "number": "21",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "State any five important points which must be incorporated in a partnership deed."
+  },
+  {
+   "section": "C",
+   "number": "22",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is hidden goodwill? How is it adjusted on the admission of a partner?"
+  },
+  {
+   "section": "C",
+   "number": "23",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "Clarify the difference between dissolution of a firm and dissolution of partnership."
+  },
+  {
+   "section": "C",
+   "number": "24",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is Reserve capital? Does it differ from 'capital reserve'?"
+  },
+  {
+   "section": "C",
+   "number": "25",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is meant by issue of Debentures for consideration other than cash?"
+  },
+  {
+   "section": "C",
+   "number": "26",
+   "questionType": "short",
+   "marks": 5,
+   "questionText": "What is Comparative Balance sheet? Mention any three objectives of it."
+  },
+  {
+   "section": "D",
+   "number": "27",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "P, Q and R are partners in a firm sharing profits in the ratio of 2 : 2 : 1. R retires and the Balance sheet of the firm as on that date was as under:\nBalance Sheet\nLiabilities | Amount (Rs.) | Assets | Amount (Rs.)\nCreditors | 30,000 | Cash | 8,000\nGeneral Reserve | 60,000 | Debtors | 75,000\nP & L Account | 15,000 | Stock | 90,000\nWorkmen's Compensation Reserve | 10,000 | Plant | 1,40,000\nCapital Accounts: P 1,00,000; Q 80,000; R 40,000 | 2,20,000 | Patents | 22,000\nTotal | 3,35,000 | Total | 3,35,000\nIt was agreed that stock is to be brought down to Rs. 82,000 and plant is reduced by Rs. 20,000. Patents were found valueless. There was no liability on account of workmen's compensation reserve.\nRecord necessary entries at the time of retirement."
+  },
+  {
+   "section": "D",
+   "number": "27 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you mean by revaluation account? Write reasons for the preparation of 'Revaluation Account' on the admission of a partner."
+  },
+  {
+   "section": "D",
+   "number": "28",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "R Ltd. invited applications for 20,000 shares of Rs. 10 each payable as follows:\nRs. 3 on application, Rs. 2 on allotment, Rs. 2.50 on first call and Rs. 2.50 on second call.\nPublic applied for 30,000 shares and the allotments were made as under:\nTo applicants for 8,000 shares - full\nTo applicants for 16,000 shares - 12,000 shares\nTo applicants for 6,000 shares - Nil\nAll money were duly received. Pass journal entries."
+  },
+  {
+   "section": "D",
+   "number": "28 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is meant by company? Explain its characteristics."
+  },
+  {
+   "section": "D",
+   "number": "29",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "Calculate gross profit ratio and net profit ratio from the following:\nParticulars | Amount (Rs.) | Particulars | Amount (Rs.)\nOpening stock | 50,000 | Sales | 2,75,000\nPurchase | 1,50,000 | Sales Return | 25,000\nPurchase Return | 20,000 | Closing stock | 40,000\nWages | 10,000 | |\nSalary | 25,000 | |"
+  },
+  {
+   "section": "D",
+   "number": "29 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What do you mean by debenture and share? Explain the difference between debenture and share."
+  },
+  {
+   "section": "D",
+   "number": "30",
+   "questionType": "numerical",
+   "marks": 10,
+   "questionText": "The following is the position of current assets and current liabilities of Z Ltd.\nItems | March, 2022 (Rs.) | March, 2023 (Rs.)\nProvision for doubtful debts | 1,000 | -\nShort-term loans | 10,000 | 19,000\nCreditors | 15,000 | 10,000\nBills payable | 20,000 | 40,000\nThe company incurred a loss of Rs. 45,000 during the year. Calculate cash from operating activities."
+  },
+  {
+   "section": "D",
+   "number": "30 OR",
+   "questionType": "long",
+   "marks": 10,
+   "questionText": "What is comparative income statement? Give a specimen of comparative income statement with the help of imaginary figures."
+  }
+ ]
+}

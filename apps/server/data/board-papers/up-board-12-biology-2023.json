@@ -1,0 +1,46 @@
+{
+  "board": "UP Board",
+  "class": "12",
+  "subject": "Biology",
+  "year": 2023,
+  "paperCode": "348(CG)",
+  "language": "en",
+  "questions": [
+    { "section": "A", "number": "1(a)", "questionType": "mcq", "marks": 1, "questionText": "In Vallisneria, the pollination occurs by means of", "options": ["Water", "Air", "Insects", "Human beings"] },
+    { "section": "A", "number": "1(b)", "questionType": "mcq", "marks": 1, "questionText": "Menstrual cycle in women typically occurs in", "options": ["10-11 days", "28-29 days", "25-26 days", "17 days"] },
+    { "section": "A", "number": "1(c)", "questionType": "mcq", "marks": 1, "questionText": "The process of protein synthesis with the help of m-RNA is called", "options": ["Translation", "Transcription", "Reverse transcription", "Replication"] },
+    { "section": "A", "number": "1(d)", "questionType": "mcq", "marks": 1, "questionText": "Widal test is used for the diagnosis of which disease ?", "options": ["Pneumonia", "Typhoid", "Malaria", "Cholera"] },
+
+    { "section": "B", "number": "2(a)", "questionType": "very_short", "marks": 1, "questionText": "Define the biodiversity hotspot." },
+    { "section": "B", "number": "2(b)", "questionType": "one_word", "marks": 1, "questionText": "Which vitamin is abundantly found in Golden rice ?" },
+    { "section": "B", "number": "2(c)", "questionType": "very_short", "marks": 1, "questionText": "What is the function of Sertoli cells in human testis ?" },
+    { "section": "B", "number": "2(d)", "questionType": "one_word", "marks": 1, "questionText": "How many pairs of chromosomes are found in human beings ?" },
+    { "section": "B", "number": "2(e)", "questionType": "one_word", "marks": 1, "questionText": "Who discovered Penicillin ?" },
+
+    { "section": "C", "number": "3(a)", "questionType": "very_short", "marks": 2, "questionText": "What do you mean by medical termination of pregnancy (MTP) ?" },
+    { "section": "C", "number": "3(b)", "questionType": "very_short", "marks": 2, "questionText": "If the sequence of Nitrogenous bases in one strand of DNA-helix is 5′-ATGCATGCATGCATGCATGC-3′ then what will be the sequence of nitrogenous bases in complementary strand of that DNA helix in 3′ → 5′ direction ?" },
+    { "section": "C", "number": "3(c)", "questionType": "label_diagram", "marks": 2, "questionText": "Draw only labelled diagram of a single antibody molecule." },
+    { "section": "C", "number": "3(d)", "questionType": "very_short", "marks": 2, "questionText": "What is Heroin (Morphine) ? This is obtained from which plant ? (1 + 1)" },
+    { "section": "C", "number": "3(e)", "questionType": "very_short", "marks": 2, "questionText": "What do you mean by central dogma of Molecular Biology ?" },
+
+    { "section": "D", "number": "4(a)", "questionType": "short", "marks": 3, "questionText": "Write short notes on Lichen and Mycorrhiza. (1½ + 1½)" },
+    { "section": "D", "number": "4(b)", "questionType": "short", "marks": 3, "questionText": "What is codominance ? Explain with example." },
+    { "section": "D", "number": "4(c)", "questionType": "label_diagram", "marks": 3, "questionText": "Draw only labelled diagram of a DNA double helix structure." },
+    { "section": "D", "number": "4(d)", "questionType": "short", "marks": 3, "questionText": "What do you understand by transcription ? Describe it." },
+    { "section": "D", "number": "5(a)", "questionType": "short", "marks": 3, "questionText": "What is endosperm ? Describe the process of its development and functions. (1 + 2)" },
+    { "section": "D", "number": "5(b)", "questionType": "label_diagram", "marks": 3, "questionText": "Draw a labelled line diagram of women's reproductive system." },
+    { "section": "D", "number": "5(c)", "questionType": "short", "marks": 3, "questionText": "Define sex linked inheritance. Explain it with haemophilia and colourblindness. (1 + 1 + 1)" },
+    { "section": "D", "number": "5(d)", "questionType": "short", "marks": 3, "questionText": "Comment upon PCR." },
+    { "section": "D", "number": "6(a)", "questionType": "short", "marks": 3, "questionText": "Describe the Mendel's law of dominance." },
+    { "section": "D", "number": "6(b)", "questionType": "short", "marks": 3, "questionText": "What do you mean by polygenic inheritance ? Describe with suitable example. (1 + 2)" },
+    { "section": "D", "number": "6(c)", "questionType": "short", "marks": 3, "questionText": "Describe the main characteristic features of Genetic Code." },
+    { "section": "D", "number": "6(d)", "questionType": "short", "marks": 3, "questionText": "What are the causal organisms of typhoid and pneumonia ? Give their symptoms. (1½ + 1½)" },
+
+    { "section": "E", "number": "7", "questionType": "long", "marks": 5, "questionText": "Write an essay on Biotechnology." },
+    { "section": "E", "number": "7 OR", "questionType": "long", "marks": 5, "questionText": "Describe the process of microsporogenesis in Angiosperms with diagrams." },
+    { "section": "E", "number": "8", "questionType": "long", "marks": 5, "questionText": "What do you mean by Biodiversity ? Describe its different methods of conservation in detail." },
+    { "section": "E", "number": "8 OR", "questionType": "long", "marks": 5, "questionText": "Describe the structure of human sperm and ovum with diagrams." },
+    { "section": "E", "number": "9", "questionType": "long", "marks": 5, "questionText": "Describe the dihybrid cross with the help of checker board." },
+    { "section": "E", "number": "9 OR", "questionType": "long", "marks": 5, "questionText": "What do you mean by adaptations ? Describe various adaptations in living organisms, with suitable examples." }
+  ]
+}

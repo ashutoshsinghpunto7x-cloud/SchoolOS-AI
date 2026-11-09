@@ -1,0 +1,291 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Physics",
+ "year": 2025,
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In the propagation of electromagnetic waves, the angle between the direction of propagation and the plane of polarisation is :",
+   "options": [
+    "0°",
+    "45°",
+    "90°",
+    "180°"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "When two nuclei of masses m₁ and m₂ fuse together to form a nucleus of mass m, energy is released. In this process :",
+   "options": [
+    "(m₁ + m₂) < m",
+    "(m₁ + m₂) > m",
+    "(m₁ + m₂) = m",
+    "m₁m₁ > m²"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In an alternating current circuit, a resistance of 8 ohm and an inductive reactance of 6 ohm are connected in series. The impedance of the circuit will be :",
+   "options": [
+    "2 ohm",
+    "14 ohm",
+    "14√2 ohm",
+    "10 ohm"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The unit of permittivity of vacuum is :",
+   "options": [
+    "Newton m²/Coulomb²",
+    "Coulomb²/Newton m²",
+    "Newton/Coulomb",
+    "Newton volt/m²"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(e)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "The electromagnetic wave of minimum frequency is :",
+   "options": [
+    "ultraviolet rays",
+    "X-rays",
+    "gamma (γ-) rays",
+    "micro waves"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(f)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "How does the magnetic susceptibility (χ) of a paramagnetic substance vary with absolute temperature (T) ?",
+   "options": [
+    "χ ∝ T",
+    "χ ∝ T⁻¹",
+    "χ = constant",
+    "χ ∝ eᵀ"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "2(a)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "What is meant by total internal reflection ? Show with a ray diagram."
+  },
+  {
+   "section": "B",
+   "number": "2(b)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Explain the difference between isotopes and isobars."
+  },
+  {
+   "section": "B",
+   "number": "2(c)",
+   "questionType": "very_short",
+   "marks": 1,
+   "questionText": "Draw the graph between voltage (V) and current (I) for ohmic and non-ohmic resistances."
+  },
+  {
+   "section": "B",
+   "number": "2(d)",
+   "questionType": "numerical",
+   "marks": 1,
+   "questionText": "A conductor has a positive charge of 2.4 × 10⁻¹⁸ coulomb. Tell how many electrons are deficient or in excess on the conductor."
+  },
+  {
+   "section": "B",
+   "number": "2(e)",
+   "questionType": "numerical",
+   "marks": 1,
+   "questionText": "In an alternating current circuit a voltage (V) is represented by the equation V = 40 sin (100 πt) volt. Here t is in seconds. Draw the time-voltage graph for the complete cycle on a proper scale."
+  },
+  {
+   "section": "B",
+   "number": "2(f)",
+   "questionType": "numerical",
+   "marks": 1,
+   "questionText": "In a hydrogen atom the electron revolves around the nucleus 6.0 × 10¹⁵ times per second. What will be the value of current at any point of the circular path ?"
+  },
+  {
+   "section": "C",
+   "number": "3(a)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What are the main drawbacks of Rutherford's model of the atom ?"
+  },
+  {
+   "section": "C",
+   "number": "3(b)",
+   "questionType": "numerical",
+   "marks": 2,
+   "questionText": "Rays of light are falling on a convex lens as shown in the figure. If the focal length of the lens is 20 cm, find the position of the image. Also show the path of the ray. (Figure: converging rays meeting at point O on the far side of the lens; distance of O from the lens marked as 10 cm.)",
+   "hasFigure": true
+  },
+  {
+   "section": "C",
+   "number": "3(c)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "What are electromagnetic waves ? Draw their propagation diagram and show the electric field and magnetic field components."
+  },
+  {
+   "section": "C",
+   "number": "3(d)",
+   "questionType": "short",
+   "marks": 2,
+   "questionText": "Establish the formula of magnetic dipole moment."
+  },
+  {
+   "section": "D",
+   "number": "4(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Using Gauss's law, derive the formula for the electric field produced by a uniformly charged straight wire of infinite length."
+  },
+  {
+   "section": "D",
+   "number": "4(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Draw the ray diagram of a refracting telescope. Explain its working."
+  },
+  {
+   "section": "D",
+   "number": "4(c)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Differentiate between paramagnetic, diamagnetic and ferromagnetic substances and give one example of each."
+  },
+  {
+   "section": "D",
+   "number": "4(d)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Explain the classification of conductors, insulators and semiconductors on the basis of energy bands."
+  },
+  {
+   "section": "D",
+   "number": "4(e)",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "What is meant by self-inductance ? The self-inductance of a coil is 0.4 milli henry. The value of current flowing in it changes from 1 ampere in 0.1 second. Calculate the induced electromotive force."
+  },
+  {
+   "section": "D",
+   "number": "5(a)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What is the principle of a transformer ? Explain the working of a step-up transformer by drawing its circuit diagram."
+  },
+  {
+   "section": "D",
+   "number": "5(b)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What is the effect on the capacitance of a parallel plate capacitor when (i) the distance between the plates is doubled, (ii) the area of the plates is made half, (iii) a dielectric medium is filled between the plates ?"
+  },
+  {
+   "section": "D",
+   "number": "5(c)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "What is meant by interference and diffraction of light ? Write the necessary conditions for interference."
+  },
+  {
+   "section": "D",
+   "number": "5(d)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Establish the relation between the resistances of the arms of a Wheatstone bridge in the balanced condition."
+  },
+  {
+   "section": "D",
+   "number": "5(d) OR",
+   "questionType": "numerical",
+   "marks": 3,
+   "questionText": "The ratio of lengths of three wires of the same metal is 3 : 2 : 1 and the ratio of masses is 1 : 2 : 3. Find the ratio of the resistances of those wires."
+  },
+  {
+   "section": "D",
+   "number": "5(e)",
+   "questionType": "short",
+   "marks": 3,
+   "questionText": "Establish the formula for the focal length of the combination of two thin lenses placed in contact with each other."
+  },
+  {
+   "section": "E",
+   "number": "6",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "How is a p-n junction diode used as a full wave rectifier ? Explain its working by drawing a simple circuit."
+  },
+  {
+   "section": "E",
+   "number": "6 OR",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "Describe briefly the α-scattering experiment. Write about the structure of the atom from the observations obtained from this experiment."
+  },
+  {
+   "section": "E",
+   "number": "7",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is a solenoid ? Obtain the expression for the value of the magnetic field inside a long current carrying solenoid."
+  },
+  {
+   "section": "E",
+   "number": "7 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "The work function of a photoelectric surface is 4.0 eV. Radiation of frequency 3 × 10¹⁵ hertz is incident on it. Find the maximum velocity of the emitted photoelectrons."
+  },
+  {
+   "section": "E",
+   "number": "8",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What do you understand by polarised light ? Discuss the change in the intensity of transmitted light when a third polaroid is rotated between two crossed polaroids."
+  },
+  {
+   "section": "E",
+   "number": "8 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "A \"50 watt 100 volt\" lamp is to be connected to 200 volt 50 hertz alternating current electric mains. Find the capacitance of the capacitor required in series with the lamp."
+  },
+  {
+   "section": "E",
+   "number": "9",
+   "questionType": "long",
+   "marks": 5,
+   "questionText": "What is meant by the matter-wave concept of de Broglie ? Establish the formula for the relation between de Broglie wavelength and kinetic energy."
+  },
+  {
+   "section": "E",
+   "number": "9 OR",
+   "questionType": "numerical",
+   "marks": 5,
+   "questionText": "Explain binding energy. If the mass defect in a nuclear fusion reaction is 0.3%, how much energy will be released in the fusion of 1 kg mass ?"
+  }
+ ]
+}

@@ -1,0 +1,313 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "English",
+ "year": 2023,
+ "paperCode": "316 (AA)",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(a)",
+   "questionText": "Passage: The first thing that a scholar should bear in mind is that a book ought not to be read for mere amusement. Half-educated persons read for amusement, and are not to be blamed for it; they are incapable of appreciating the deeper qualities that belong to a really great literature. But a young man who has passed through a course of university training should discipline himself at an early day never to read for mere amusement. And once the habit of this discipline has been formed, he will find it impossible to read for mere amusement. He will then impatiently throw down any book from which he cannot obtain intellectual food, any book that does not make an appeal to the higher emotions and his intellect. But on the other hand, the habit of reading for amusement becomes with thousands of people exactly the same kind of habit as wine-drinking or opium-smoking; it is like a narcotic; something that helps to pass the time, something that keeps up a perpetual condition of dreaming, something that eventually results in destroying all capacity for thought, giving exercise only to the surface parts of the mind, and leaving the deeper springs of feeling and the higher faculties of perception unemployed.\n\nWhat sort of people read for amusement?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(b)",
+   "questionText": "What does the truly educated person read?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(c)",
+   "questionText": "What are the ill effects of reading for mere amusement?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(d)",
+   "questionText": "When should one train oneself for reading the right kind of books?",
+   "questionType": "passage_based",
+   "marks": 3
+  },
+  {
+   "section": "A",
+   "number": "1(e)(i)",
+   "questionText": "Explain the phrase 'intellectual food'.",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(ii)",
+   "questionText": "Write the opposite word of 'discipline'.",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "A",
+   "number": "1(e)(iii)",
+   "questionText": "Which word in the passage is nearest in meaning to 'entertainment'?",
+   "questionType": "passage_based",
+   "marks": 1
+  },
+  {
+   "section": "B",
+   "number": "2",
+   "questionText": "Write an article on any one of the following topics in about 100 - 150 words:\n(a) How can we revive the dried rivers?\n(b) Developing the Cottage Industries in the Villages\n(c) Renovation of Heritage Sites",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3",
+   "questionText": "Write a letter to the Editor of a national daily emphasizing the need to take effective measures after the recent floods that have created havoc in the low lying areas of the city.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "B",
+   "number": "3 OR",
+   "questionText": "Write a letter of complaint to the Chairman of the Municipal Corporation, urging him to demolish dilapidated structures posing a threat to the citizens.",
+   "questionType": "long",
+   "marks": 10
+  },
+  {
+   "section": "C",
+   "number": "4(a)",
+   "questionText": "Dislike of or aversion to marriage is:",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "monogamy",
+    "misogamy",
+    "polygamy",
+    "bigamy"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(b)",
+   "questionText": "The phrase 'pull a fast one' means:",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "to pull forcefully",
+    "to pull someone who is fast",
+    "to deceive",
+    "to lift a heavy load"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(c)",
+   "questionText": "The synonym for 'astonishment' is:",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "punishment",
+    "sentiment",
+    "betterment",
+    "surprise"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(d)",
+   "questionText": "\"The poem has many obscure illusions.\" Which word in this sentence is an error?",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "has",
+    "many",
+    "obscure",
+    "illusions"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "4(e)",
+   "questionText": "The antonym of 'arrival' is:",
+   "questionType": "mcq",
+   "marks": 2,
+   "options": [
+    "rival",
+    "survival",
+    "departure",
+    "rupture"
+   ]
+  },
+  {
+   "section": "C",
+   "number": "5(a)",
+   "questionText": "Change any one of the following into indirect speech:\n(i) He said, \"We cannot be quite happy in this life.\"\n(ii) My friend said to me, \"I came today and I will leave for Agra tomorrow.\"",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(b)",
+   "questionText": "Combine any one of the following as directed:\n(i) He gave them advice. He helped them liberally. (Simple sentence)\n(ii) The king was ill. The people heard the news and went to the palace. (Simple sentence)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(c)",
+   "questionText": "Change any one of the following as directed:\n(i) His death shocked me. (Passive voice)\n(ii) No one will deny that Girish tried his best to please the officer. (Affirmative sentence)",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(d)",
+   "questionText": "Correct any one of the following sentences:\n(i) The boy told a lie lest he should not be punished.\n(ii) Whole India is suffering from Corona.",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "5(e)",
+   "questionText": "Use any one of the following pairs of words in your own sentences to make the difference in their meanings clear:\n(i) altar - alter\n(ii) respectful - respectable",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "C",
+   "number": "6",
+   "questionText": "Translate the following passage into English:\nखुशहाल जीवन के लिए मानसिक रूप से स्वस्थ होना बहुत ज़रूरी है और इसी से होता है एक अच्छे और सफल व्यक्तित्व का निर्माण। बदले दौर में नशे की लत, गैजेट्स (gadgets) का अधिक प्रयोग और जीवन-शैली का प्रभाव, युवाओं का मानसिक स्वास्थ्य ख़राब कर रहा है। इसके कारण फसाद, हताशा और आत्महत्या के मामले, तेज़ी से बढ़ रहे हैं।",
+   "questionType": "long",
+   "marks": 5
+  },
+  {
+   "section": "D",
+   "number": "7(a)",
+   "questionText": "In The Last Lesson, name the countries who were fighting, and, describe the content of the bulletin board.",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(a) OR",
+   "questionText": "In what way, according to M. Hamel, does the mother tongue serve even the enslaved people?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b)",
+   "questionText": "What was the childhood incident that made Douglas afraid of water?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "7(b) OR",
+   "questionText": "Describe the life of ragpickers at Seemapuri.",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "8(a)",
+   "questionText": "Describe the events that follow when the rattrap peddler's real identity is revealed, leading to his reformation.",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "8(b) OR",
+   "questionText": "What was the plight of the indigo peasants before Gandhi arrived and what changes did Gandhi bring about in the life of the indigo peasants?",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "9(a)",
+   "questionText": "They do not fear the men beneath the tree;\nThey pace in sleek chivalric certainty.\nAunt Jennifer's fingers fluttering through her wool\nFind even the ivory needle hard to pull.\nThe massive weight of Uncle's wedding band\nSits heavily upon Aunt Jennifer's hand.\n\nWhat is suggested by the line, 'The massive weight of Uncle's wedding band'?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(b)",
+   "questionText": "They do not fear the men beneath the tree;\nThey pace in sleek chivalric certainty.\nAunt Jennifer's fingers fluttering through her wool\nFind even the ivory needle hard to pull.\nThe massive weight of Uncle's wedding band\nSits heavily upon Aunt Jennifer's hand.\n\nExplain the phrase 'chivalric certainty'.",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "9(c)",
+   "questionText": "They do not fear the men beneath the tree;\nThey pace in sleek chivalric certainty.\nAunt Jennifer's fingers fluttering through her wool\nFind even the ivory needle hard to pull.\nThe massive weight of Uncle's wedding band\nSits heavily upon Aunt Jennifer's hand.\n\nWhat image presents before the eye when the poet describes the movement of Jennifer's fingers as 'fluttering through her wool'?",
+   "questionType": "short",
+   "marks": 2
+  },
+  {
+   "section": "D",
+   "number": "10(a)",
+   "questionText": "Write the central idea of the poem: Keeping Quiet",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(b) OR",
+   "questionText": "Write the central idea of the poem: My Mother at Sixty-six",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "10(c) OR",
+   "questionText": "Write the central idea of the poem: An Elementary School Classroom in a Slum",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a)",
+   "questionText": "What did Dr. Sadao do to ensure the safe exit of the American soldier?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(a) OR",
+   "questionText": "Why does Jack insist that it was the wizard that was hit and not the mother?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b)",
+   "questionText": "What is it that draws Derry towards Mr. Lamb in spite of himself?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "11(b) OR",
+   "questionText": "What was the forecast made by the chief astrologer regarding the Tiger King?",
+   "questionType": "short",
+   "marks": 4
+  },
+  {
+   "section": "D",
+   "number": "12(a)",
+   "questionText": "Assess the human impact on Antarctica.",
+   "questionType": "long",
+   "marks": 7
+  },
+  {
+   "section": "D",
+   "number": "12(b) OR",
+   "questionText": "What do you infer from Sam's letter to Charley in the story, The Third Level?",
+   "questionType": "long",
+   "marks": 7
+  }
+ ]
+}

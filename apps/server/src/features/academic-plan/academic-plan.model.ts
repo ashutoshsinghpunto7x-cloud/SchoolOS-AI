@@ -23,9 +23,25 @@ export interface IAcademicPlanDay {
   status: AcademicPlanDayStatus;
   carriedFromDate?: Date;
   note?: string;
+  // Notebook-format fields — mirror the columns of the paper Daily Planner teachers keep today.
+  periodLabel?: string;
+  classWork?: string;
+  homeWork?: string;
+  teachingAid?: string;
+  remarks?: string;
   /** True once a teacher has hand-edited or drag-swapped this day.
    *  Regenerate preserves these days verbatim instead of recomputing them. */
   manuallyEdited?: boolean;
+}
+
+/** One row of the notebook-style Monthly Planner: one per chapter per calendar month. */
+export interface IAcademicPlanMonthlyRow {
+  monthKey: string; // 'YYYY-MM'
+  chapterName: string;
+  teachingMethod?: string;
+  teachingAid?: string;
+  classWork?: string;
+  homeWork?: string;
 }
 
 export interface IAcademicPlanHistoryEntry {
@@ -45,6 +61,7 @@ export interface IAcademicPlan extends Document {
   version: number;
   generatedFrom: 'engine' | 'manual_override';
   days: IAcademicPlanDay[];
+  monthlyRows: IAcademicPlanMonthlyRow[];
   history: IAcademicPlanHistoryEntry[];
   createdAt: Date;
   updatedAt: Date;
@@ -65,7 +82,24 @@ const planDaySchema = new Schema<IAcademicPlanDay>(
     status:          { type: String, enum: DAY_STATUSES, default: 'pending' },
     carriedFromDate: { type: Date },
     note:            { type: String, trim: true },
+    periodLabel:     { type: String, trim: true },
+    classWork:       { type: String, trim: true },
+    homeWork:        { type: String, trim: true },
+    teachingAid:     { type: String, trim: true },
+    remarks:         { type: String, trim: true },
     manuallyEdited:  { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+const monthlyRowSchema = new Schema<IAcademicPlanMonthlyRow>(
+  {
+    monthKey:       { type: String, required: true },
+    chapterName:    { type: String, required: true, trim: true },
+    teachingMethod: { type: String, trim: true },
+    teachingAid:    { type: String, trim: true },
+    classWork:      { type: String, trim: true },
+    homeWork:       { type: String, trim: true },
   },
   { _id: false },
 );
@@ -91,6 +125,7 @@ const academicPlanSchema = new Schema<IAcademicPlan>(
     version:        { type: Number, required: true, default: 1 },
     generatedFrom:  { type: String, enum: ['engine', 'manual_override'], default: 'engine' },
     days:           { type: [planDaySchema], default: [] },
+    monthlyRows:    { type: [monthlyRowSchema], default: [] },
     history:        { type: [historyEntrySchema], default: [] },
   },
   { timestamps: true, versionKey: false },

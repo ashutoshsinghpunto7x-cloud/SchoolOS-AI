@@ -1,0 +1,182 @@
+{
+ "board": "UP Board",
+ "class": "12",
+ "subject": "Drawing",
+ "year": 2025,
+ "paperCode": "334",
+ "language": "en",
+ "questions": [
+  {
+   "section": "A",
+   "number": "1(i)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which pencil will draw the darkest line ?",
+   "options": [
+    "2B",
+    "HB",
+    "6B",
+    "2H"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(ii)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who was the prime patron of Kangra painting style ?",
+   "options": [
+    "Ranjeet Singh",
+    "Prithvi Chand",
+    "Maharaja Sansar Chand",
+    "None of them"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(iii)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Where are Badami caves found ?",
+   "options": [
+    "Aihole",
+    "Mirzapur",
+    "Raigarh",
+    "Aurangabad"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(iv)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which paper is proper for Oil painting ?",
+   "options": [
+    "Whatman paper",
+    "Oil sketching paper",
+    "Cartridge paper",
+    "Pastel paper"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(v)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Who is considered to be the first artist of Modern Indian Painting ?",
+   "options": [
+    "Rabindra Nath Tagore",
+    "Abanindra Nath Tagore",
+    "Raja Ravi Varma",
+    "M. F. Hussain"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(vi)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "'Portraiture' was on its high rank in the regime of",
+   "options": [
+    "Humayun",
+    "Jahangir",
+    "Shah Jahan",
+    "Akbar"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(vii)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In which cave of Ajanta there is the wall painting - 'Maar Vijaya' ?",
+   "options": [
+    "Cave no. 9",
+    "Cave no. 16",
+    "Cave no. 2",
+    "Cave no. 1"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(viii)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Which is the secondary colour in the following ?",
+   "options": [
+    "Red",
+    "Violet",
+    "Blue",
+    "Yellow"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(ix)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "Perspective gives you what type of feeling ?",
+   "options": [
+    "Distance and nearness",
+    "Light-shadow",
+    "Distance",
+    "None of these"
+   ]
+  },
+  {
+   "section": "A",
+   "number": "1(x)",
+   "questionType": "mcq",
+   "marks": 1,
+   "questionText": "In India the main centre of Company style of painting was",
+   "options": [
+    "Agra",
+    "Lucknow",
+    "Patna",
+    "None of these"
+   ]
+  },
+  {
+   "section": "B",
+   "number": "2",
+   "questionType": "activity_based",
+   "marks": 60,
+   "questionText": "Make a design for a decorative curtain border in 8 cm × 24 cm size. The design should be based on Sunflower, leaves and buds. Add any animal or bird at appropriate place in the same. Use at least three colours. Pay special attention to the following points : a) Originality and repeats of the units. (12) b) Rhythmic lining. (12) c) Good harmony and colour scheme. (24) d) General effect and attraction. (12)"
+  },
+  {
+   "section": "B",
+   "number": "2 OR",
+   "questionType": "activity_based",
+   "marks": 60,
+   "questionText": "Prepare a design for the centre of a table cloth in a circle of 22 cm diameter based on Lotus flower, leaves and buds. Add any butterfly or deer at appropriate place in the same. Use at least three colours. Pay special attention to the following points : a) Originality and repeats of the units. (12) b) Rhythmic lining. (12) c) Good harmony and colour scheme. (24) d) General effect and attraction. (12)"
+  },
+  {
+   "section": "C",
+   "number": "3",
+   "questionType": "activity_based",
+   "marks": 30,
+   "questionText": "(Object Drawing) Draw and paint the group of objects placed before you on Whatman (Handmade) paper, Cartridge paper, Pastel paper or Oil sketching paper. The drawing may be painted either in Pastel colours, Oil colours (on oil sketching paper), Oil pastels, Poster colours or Watercolours. Your drawing should not be less than 20 cm. Paint the drapery of the background and proper foreground along with the group of objects. Keep in view the following points while painting the group of objects : a) Correct drawing of the objects as well as correct form and proportions. (10) b) Colour scheme that is keeping in view the nearness of the true colours of the objects showing proper light, shade and shadow. (15) c) Composition of objects. (5)"
+  },
+  {
+   "section": "C",
+   "number": "3 OR",
+   "questionType": "activity_based",
+   "marks": 30,
+   "questionText": "(Nature Study) Draw and paint at least one flower, one bud, three-four leaves and the stem of the flower plant placed before you in such a natural way that the joint angles of the stem, colour, limbs and views of the plant are properly shown on drawing paper obtained from the centre. Prepare your painting with watercolours. Do not draw the Nature study from your memory. The drawing should not be less than 20 cm in size. Try to show the freshness of the flowers and the colours of the leaves and buds in its natural form. Keep in view the following points : a) Correct size & the drawing as well as natural form of the plant. (10) b) Transparent and attractive colour scheme. (15) c) Natural beauty and joint angles. (5)"
+  },
+  {
+   "section": "C",
+   "number": "3 OR",
+   "questionType": "activity_based",
+   "marks": 30,
+   "questionText": "(Memory Drawing) Make a drawing from your memory on any one of the following with either pencil (HB, 1B, 2B, 3B) or charcoal, showing light, shade and shadow on the drawing sheet given to you. The measurement of the drawing should be about 15 cm. a) Lantern b) Bucket c) Cock d) Shoe brush."
+  },
+  {
+   "section": "C",
+   "number": "3 OR",
+   "questionType": "activity_based",
+   "marks": 30,
+   "questionText": "(Landscape Painting) Prepare a landscape painting of any one of the following subjects on the given drawing sheet in a rectangle of 20 cm × 15 cm. The medium of the painting should be watercolour, poster colour or any other medium. Selection of the medium and the composition of the landscape should be beautiful and attractive : i) Any village scene. ii) Scene of a temple close to some huts near a pond. iii) Some huts with some trees. Keep in view the following points in the painting : a) Correct drawing and perspective. (10) b) Suitable composition. (5) c) Selection and use of appropriate and amiable colours. (10) d) Suitable drawing & depiction of atmosphere. (5)"
+  }
+ ]
+}
