@@ -69,6 +69,15 @@ export const schoolSettingsApi = {
     }
   },
 
+  async updateSchoolName(schoolName: string): Promise<SchoolSettings> {
+    try {
+      const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/name', { schoolName });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
   async updateAcademicYear(payload: UpdateAcademicYearPayload): Promise<SchoolSettings> {
     try {
       const res = await apiClient.patch<ApiResponse<SchoolSettings>>('/school-settings/academic-year', payload);

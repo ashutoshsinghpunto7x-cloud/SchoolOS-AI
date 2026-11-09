@@ -61,6 +61,14 @@ export const useUpdateAttendanceEditPolicy = () => {
   });
 };
 
+export const useUpdateSchoolName = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (schoolName: string) => schoolSettingsApi.updateSchoolName(schoolName),
+    onSuccess: (data) => qc.setQueryData(schoolSettingsKeys.all, data),
+  });
+};
+
 export const useUpdateAcademicYear = () => {
   const qc = useQueryClient();
   return useMutation({

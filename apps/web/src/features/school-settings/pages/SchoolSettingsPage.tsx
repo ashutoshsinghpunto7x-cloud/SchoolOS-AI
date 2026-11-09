@@ -10,6 +10,7 @@ import { AttendanceRulesPanel } from '../components/AttendanceRulesPanel';
 import { BehaviorSettingsPanel } from '../components/BehaviorSettingsPanel';
 import { AttendanceEditCutoffPanel } from '../components/AttendanceEditCutoffPanel';
 import { AcademicYearPanel } from '../components/AcademicYearPanel';
+import { SchoolNamePanel } from '../components/SchoolNamePanel';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
 import { NotificationSoundToggle } from '@/features/notifications/components/NotificationSoundToggle';
@@ -139,6 +140,8 @@ export function SchoolSettingsPage() {
           </div>
         </div>
       )}
+
+      {(user?.role === 'admin' || isPrincipalRole(user?.role)) && <SchoolNamePanel />}
 
       {user?.role === 'admin' && <AttendanceRulesPanel />}
 

@@ -9,6 +9,7 @@ import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSea
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/gradient';
 import { SUPPORT_PHONE } from '@/lib/support';
+import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -21,9 +22,10 @@ const WORKSPACE_LABELS: Record<string, string> = {
   '/principal': 'Principal Dashboard',
 };
 
-const getLabel = (pathname: string): string => {
+const getLabel = (pathname: string, schoolName?: string): string => {
   const key = Object.keys(WORKSPACE_LABELS).find((k) => pathname.startsWith(k));
-  return key ? WORKSPACE_LABELS[key] : 'FNIC';
+  // Fallback is the school's own name (multi-tenant); 'FNIC' only until settings load.
+  return key ? WORKSPACE_LABELS[key] : schoolName || 'FNIC';
 };
 
 const getSubLabel = (pathname: string): string | null => {
@@ -297,7 +299,8 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   // skipped the same way (previously it duplicated "Good morning, Name" here
   // AND in the hero below it).
   const isPrincipalDashboard = isPrincipal && location.pathname === '/principal';
-  const section = getLabel(location.pathname);
+  const { data: schoolSettings } = useSchoolSettings();
+  const section = getLabel(location.pathname, schoolSettings?.schoolName);
   const subLabel = isAccountantDashboard ? null : getSubLabel(location.pathname);
   // The attendance-marking page has its own dense header row (date, undo,
   // edit) directly below this bar — its own back arrow was competing with
