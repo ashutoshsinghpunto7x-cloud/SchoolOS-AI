@@ -7,7 +7,7 @@ import { webauthnApi } from '../api/webauthn.api';
 import { resetAuthRefreshState, scheduleProactiveRefresh } from '@/services/api';
 import { queryClient } from '@/lib/queryClient';
 import { AuthContext } from '../context/AuthContext';
-import type { AuthUser, UserRole } from '@schoolos/types';
+import type { AuthUser } from '@schoolos/types';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -73,49 +73,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = useCallback(async (identifier: string, password: string): Promise<AuthUser> => {
-    try {
-      const data = await authApi.login({ identifier, password });
-      queryClient.clear();
-      sessionStorage.setItem('accessToken', data.accessToken);
-      sessionStorage.setItem('sessionId', data.sessionId);
-      scheduleProactiveRefresh(data.accessToken);
-      const mergedUser: AuthUser = {
-        ...data.user,
-        mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
-        mustResetPin: data.mustResetPin ?? data.user.mustResetPin,
-      };
-      setUser(mergedUser);
-      return mergedUser;
-    } catch (err: unknown) {
-      // If the backend responded with an error (e.g. 401 invalid credentials), propagate it so login fails properly
-      if (err && typeof err === 'object' && 'response' in err && (err as { response?: unknown }).response) {
-        throw err;
-      }
-      // When backend server is completely unreachable or offline (no response), activate instant local test user seamlessly
-      console.warn('Backend server unavailable, falling back to local demo mode:', err);
-      const lower = identifier.toLowerCase();
-      const demoRole: UserRole = lower.includes('teacher')
-        ? 'teacher'
-        : lower.includes('admin')
-        ? 'admin'
-        : 'principal';
-
-      const fallbackUser: AuthUser = {
-        userId: `demo-${demoRole}-id`,
-        schoolId: 'demo-school-id',
-        email: identifier.trim() || `${demoRole}@mycampus.edu.in`,
-        firstName: demoRole === 'principal' ? 'Beauty' : demoRole === 'teacher' ? 'Ramesh' : 'Admin',
-        lastName: demoRole === 'principal' ? 'Sharma' : demoRole === 'teacher' ? 'Sharma' : 'User',
-        role: demoRole,
-        mustResetPassword: false,
-        mustResetPin: false,
-      };
-      sessionStorage.setItem('accessToken', 'demo_token');
-      sessionStorage.setItem('sessionId', 'demo_session');
-      sessionStorage.setItem('demo_user', JSON.stringify(fallbackUser));
-      setUser(fallbackUser);
-      return fallbackUser;
-    }
+    const data = await authApi.login({ identifier, password });
+    queryClient.clear();
+    sessionStorage.setItem('accessToken', data.accessToken);
+    sessionStorage.setItem('sessionId', data.sessionId);
+    scheduleProactiveRefresh(data.accessToken);
+    const mergedUser: AuthUser = {
+      ...data.user,
+      mustResetPassword: data.mustResetPassword ?? data.user.mustResetPassword,
+      mustResetPin: data.mustResetPin ?? data.user.mustResetPin,
+    };
+    setUser(mergedUser);
+    return mergedUser;
   }, []);
 
   const refreshUser = useCallback(async (): Promise<void> => {

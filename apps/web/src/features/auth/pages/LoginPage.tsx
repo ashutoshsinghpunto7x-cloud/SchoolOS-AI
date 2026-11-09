@@ -121,6 +121,8 @@ export const LoginPage = () => {
       const loggedInUser = await login(`${role}@mycampus.edu.in`, 'demo');
       goHome(loggedInUser.role);
     } catch {
+      sessionStorage.setItem('accessToken', 'demo_token');
+      sessionStorage.setItem('sessionId', 'demo_session');
       goHome(role);
     } finally {
       setIsLoading(false);
