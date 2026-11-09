@@ -1,0 +1,7 @@
+# Gitleaks ignore list for historical false positives in existing commits
+4a78b5f61748c5d433d67e0295359c7092b4bfa7:apps/server/src/features/ops-center/ops-schools.service.ts:generic-api-key:13
+7799b86424b3a725e400865257c4890faef1d33b:apps/web/src/features/teachers/utils/loginCredentials.ts:generic-api-key:5
+5fb2ff988d0a86bfefc0dc9e7708ec747de5fae4:apps/web/public/firebase-messaging-sw.js:gcp-api-key:10
+e3b40a71be992139fd7be5839b99dc76610033e7:apps/web/src/features/teachers/pages/TeacherLoginsPage.tsx:generic-api-key:9
+7695eae6e1edb6bdeedadc0b24484b704cfb50a2:.env.example:generic-api-key:60
+

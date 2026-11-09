@@ -2690,9 +2690,11 @@ window.FNIC_PRINCIPAL_SUITE = (function () {
   return {
     renderScreen: function (screenId, theme) {
       const tc = getThemeClasses(theme);
-      const fn = screens[screenId];
-      if (typeof fn === 'function') {
-        return fn(theme, tc);
+      if (typeof screenId === 'string' && Object.prototype.hasOwnProperty.call(screens, screenId)) {
+        const fn = screens[screenId];
+        if (typeof fn === 'function') {
+          return fn(theme, tc);
+        }
       }
       return screens.dashboard(theme, tc);
     },

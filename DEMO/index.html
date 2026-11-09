@@ -820,11 +820,10 @@
       // User bubble
       const userBubble = document.createElement('div');
       userBubble.className = 'flex justify-end';
-      userBubble.innerHTML = `
-        <div class="max-w-[80%] rounded-2xl rounded-br-xs bg-[#1B2A4E] text-white px-4 py-2.5 text-[13px] shadow-xs">
-          ${text}
-        </div>
-      `;
+      const userInner = document.createElement('div');
+      userInner.className = 'max-w-[80%] rounded-2xl rounded-br-xs bg-[#1B2A4E] text-white px-4 py-2.5 text-[13px] shadow-xs';
+      userInner.textContent = text;
+      userBubble.appendChild(userInner);
       history.appendChild(userBubble);
 
       // Typing indicator
@@ -859,11 +858,10 @@
 
         const botBubble = document.createElement('div');
         botBubble.className = 'flex justify-start';
-        botBubble.innerHTML = `
-          <div class="max-w-[85%] rounded-2xl rounded-bl-xs bg-[#F3EEE3] text-[#1B2A4E] px-4 py-3 text-[13px] leading-relaxed shadow-xs">
-            ${reply}
-          </div>
-        `;
+        const botInner = document.createElement('div');
+        botInner.className = 'max-w-[85%] rounded-2xl rounded-bl-xs bg-[#F3EEE3] text-[#1B2A4E] px-4 py-3 text-[13px] leading-relaxed shadow-xs whitespace-pre-wrap';
+        botInner.textContent = reply.replace(/\*\*/g, '');
+        botBubble.appendChild(botInner);
         history.appendChild(botBubble);
         history.scrollTop = history.scrollHeight;
       }, 600);
@@ -904,7 +902,8 @@
 
     // Listen to parent iframe messages (from index.html comparison studio)
     window.addEventListener('message', (e) => {
-      if (e.data && e.data.type === 'NAVIGATE' && e.data.page) {
+      if (e.origin && e.origin !== window.location.origin) return;
+      if (e.data && e.data.type === 'NAVIGATE' && typeof e.data.page === 'string') {
         navigateTo(e.data.page);
       }
     });
