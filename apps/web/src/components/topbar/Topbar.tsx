@@ -6,10 +6,12 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 import { ReminderPanel } from '@/features/reminders/components/ReminderPanel';
 import { PrincipalSearchBar } from '@/features/principal/components/PrincipalSearchBar';
+import { AppLauncherModal } from './AppLauncherModal';
 import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/gradient';
 import { SUPPORT_PHONE } from '@/lib/support';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
+import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const WORKSPACE_LABELS: Record<string, string> = {
   '/reception': 'Reception',
@@ -24,7 +26,6 @@ const WORKSPACE_LABELS: Record<string, string> = {
 
 const getLabel = (pathname: string, schoolName?: string): string => {
   const key = Object.keys(WORKSPACE_LABELS).find((k) => pathname.startsWith(k));
-  // Fallback is the school's own name (multi-tenant); 'FNIC' only until settings load.
   return key ? WORKSPACE_LABELS[key] : schoolName || 'FNIC';
 };
 
@@ -314,14 +315,135 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [appLauncherOpen, setAppLauncherOpen] = useState(false);
+  const launcherBtnRef = useRef<HTMLButtonElement>(null);
   const { theme } = useTeacherTheme();
+
+  useEffect(() => {
+    const handleToggleGrid = () => setAppLauncherOpen((v) => !v);
+    window.addEventListener('fnic:toggle-app-grid', handleToggleGrid);
+    return () => window.removeEventListener('fnic:toggle-app-grid', handleToggleGrid);
+  }, []);
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
-    : '?';
-  const displayName = user ? `${user.firstName} ${user.lastName}` : '';
+    : 'BS';
+  const displayName = user ? `${user.firstName} ${user.lastName}` : 'Beauty Sharma';
 
   const isTeacherDark = isTeacher && theme === 'dark';
+
+  // Exact Principal Topbar & Mobile Header matching DEMO/main-demo.html and DEMO/main-mobile-demo.html
+  if (isPrincipal) {
+    return (
+      <>
+        {/* Desktop Top App Bar (Exact 76px Spec Match) */}
+        <header className="hidden md:flex h-[76px] shrink-0 bg-white border-b border-[#E8E2D6] px-7 items-center justify-between sticky top-0 z-40 shadow-[0_1px_3px_rgba(27,42,78,0.03)] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+          {/* Logo + Title (Width: 230px) */}
+          <div
+            className="flex items-center gap-3 w-[230px] shrink-0 cursor-pointer"
+            onClick={() => navigate('/principal')}
+          >
+            <img
+              src={fnicLogo}
+              alt="FNIC logo"
+              className="w-[42px] h-[42px] rounded-full object-contain block shadow-xs bg-white"
+            />
+            <div className="flex flex-col">
+              <b className="text-[17px] font-bold text-[#1B2A4E] tracking-tight leading-tight">FNIC</b>
+              <span className="text-[10px] font-semibold text-[#55607A] tracking-wider uppercase">
+                SchoolOS
+              </span>
+            </div>
+          </div>
+
+          {/* Centered Search Bar (Max Width: 640px, Height: 48px, Radius: 24px) */}
+          <PrincipalSearchBar />
+
+          {/* Right Controls: 9-Dot Launcher Button + Avatar (Width: 230px) */}
+          <div className="w-[230px] flex justify-end items-center gap-2.5 shrink-0 relative">
+            <button
+              ref={launcherBtnRef}
+              type="button"
+              id="app-grid-btn"
+              onClick={() => setAppLauncherOpen((v) => !v)}
+              aria-label="All sections"
+              className="w-[46px] h-[46px] rounded-full bg-[#E8EDF8] hover:bg-[#DCE4F5] active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-xs"
+              title="Open Application Launcher Grid"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="#1B2A4E">
+                <circle cx="5" cy="5" r="2" />
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="19" cy="5" r="2" />
+                <circle cx="5" cy="12" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="19" cy="12" r="2" />
+                <circle cx="5" cy="19" r="2" />
+                <circle cx="12" cy="19" r="2" />
+                <circle cx="19" cy="19" r="2" />
+              </svg>
+            </button>
+
+            <div className="relative">
+              <div
+                onClick={() => setProfileMenuOpen((v) => !v)}
+                className="w-[42px] h-[42px] rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-[13px] flex items-center justify-center shadow-xs cursor-pointer hover:ring-2 hover:ring-[#D9822B]/40 transition-all select-none"
+                title={`${displayName} · Principal & Director`}
+              >
+                {initials}
+              </div>
+              {profileMenuOpen && (
+                <ProfileMenu
+                  displayName={displayName}
+                  roleLabel="Principal & Director"
+                  showSettings={true}
+                  onClose={() => setProfileMenuOpen(false)}
+                />
+              )}
+            </div>
+          </div>
+
+          <AppLauncherModal
+            isOpen={appLauncherOpen}
+            onClose={() => setAppLauncherOpen(false)}
+            buttonRef={launcherBtnRef}
+          />
+        </header>
+
+        {/* Mobile Top Header (Compact Height: 52px, Exact Match to main-mobile-demo.html) */}
+        <header className="flex md:hidden h-[52px] shrink-0 bg-[#FBF8F3] px-3.5 items-center justify-between border-b border-[#E8E2D6]/60 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+          <div
+            className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
+            onClick={() => navigate('/principal')}
+          >
+            <img
+              src={fnicLogo}
+              alt="FNIC logo"
+              className="w-7 h-7 rounded-full object-contain block shadow-xs shrink-0 bg-white"
+            />
+            <h1 className="text-[17px] font-medium text-[#1B2A4E] tracking-tight truncate m-0">
+              Good evening, {user?.firstName || 'Beauty'}
+            </h1>
+          </div>
+          <div className="relative shrink-0">
+            <div
+              onClick={() => setProfileMenuOpen((v) => !v)}
+              className="w-8 h-8 rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-[11px] flex items-center justify-center shadow-xs cursor-pointer shrink-0 select-none"
+            >
+              {initials}
+            </div>
+            {profileMenuOpen && (
+              <ProfileMenu
+                displayName={displayName}
+                roleLabel="Principal & Director"
+                showSettings={true}
+                onClose={() => setProfileMenuOpen(false)}
+              />
+            )}
+          </div>
+        </header>
+      </>
+    );
+  }
 
   return (
     <header
@@ -514,6 +636,32 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
           {/* Notifications */}
           <NotificationBell />
 
+          {/* 9-Dot All Sections Menu Launcher Button — Principal only */}
+          {isPrincipal && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setAppLauncherOpen((v) => !v)}
+                aria-label="All sections launcher"
+                className="w-9 h-9 rounded-full bg-[#E8EDF8] hover:bg-[#DCE4F5] active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-xs text-[#1B2A4E]"
+                title="Open Application Launcher Grid"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="#1B2A4E">
+                  <circle cx="5" cy="5" r="2" />
+                  <circle cx="12" cy="5" r="2" />
+                  <circle cx="19" cy="5" r="2" />
+                  <circle cx="5" cy="12" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="19" cy="12" r="2" />
+                  <circle cx="5" cy="19" r="2" />
+                  <circle cx="12" cy="19" r="2" />
+                  <circle cx="19" cy="19" r="2" />
+                </svg>
+              </button>
+              <AppLauncherModal isOpen={appLauncherOpen} onClose={() => setAppLauncherOpen(false)} />
+            </div>
+          )}
+
           {/* Avatar — teacher taps through straight to their profile; principal opens a dropdown (Settings, Change Password, Log Out) */}
           <div className="relative">
             <button
@@ -526,13 +674,19 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               }
               className={cn(
                 "ml-0.5 flex items-center gap-1.5 p-1 rounded-full transition-all duration-200",
-                usePillTopbar
+                isPrincipal
+                  ? "hover:ring-2 hover:ring-[#D9822B]/40"
+                  : usePillTopbar
                   ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
                   : "hover:bg-gray-100"
               )}
               aria-label="Profile"
             >
-              {usePillTopbar ? (
+              {isPrincipal ? (
+                <span className="w-8 h-8 rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-xs flex items-center justify-center shadow-xs">
+                  {initials}
+                </span>
+              ) : usePillTopbar ? (
                 <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-amber-400/10 border border-[#A855F7]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-amber-300">
                   {initials}
                 </span>

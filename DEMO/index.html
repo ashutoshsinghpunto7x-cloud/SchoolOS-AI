@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNIC SchoolOS — Executive Dashboard & Launcher (Laptop UI)</title>
+  <script src="https://cdn.tailwindcss.com">
+    // Attendance Register Interactive Engine
+    window.fnicAttendanceStudents = [
+      { id: 's1', roll: '01', name: 'Aarav Verma', status: 'present', parent: 'Sunita Verma', phone: '+91 98112 40101' },
+      { id: 's2', roll: '02', name: 'Ananya Sharma', status: 'present', parent: 'Ramesh Sharma', phone: '+91 98234 11223' },
+      { id: 's3', roll: '03', name: 'Devansh Mishra', status: 'absent', reason: 'High fever reported by mother', parent: 'Kavita Mishra', phone: '+91 94551 22334' },
+      { id: 's4', roll: '04', name: 'Ishita Nair', status: 'present', parent: 'S. K. Nair', phone: '+91 99100 88221' },
+      { id: 's5', roll: '05', name: 'Kabir Khan', status: 'late', reason: 'School bus #4 delayed in traffic', parent: 'Farhan Khan', phone: '+91 98711 33445' },
+      { id: 's6', roll: '06', name: 'Meera Joshi', status: 'leave', reason: 'Pre-approved family function', parent: 'Sunita Joshi', phone: '+91 98102 55667' },
+      { id: 's7', roll: '07', name: 'Pranav Gupta', status: 'present', parent: 'Alok Gupta', phone: '+91 97112 66778' },
+      { id: 's8', roll: '08', name: 'Riya Tiwari', status: 'absent', reason: 'Attending elder sister wedding', parent: 'Manish Tiwari', phone: '+91 98188 77889' },
+      { id: 's9', roll: '09', name: 'Samarth Singh', status: 'present', parent: 'Harpreet Singh', phone: '+91 98991 88990' },
+      { id: 's10', roll: '10', name: 'Tanvi Dubey', status: 'present', parent: 'Pooja Dubey', phone: '+91 98733 99001' },
+      { id: 's11', roll: '11', name: 'Aditya Rao', status: 'present', parent: 'V. Rao', phone: '+91 98114 10203' },
+      { id: 's12', roll: '12', name: 'Bhavya Patel', status: 'present', parent: 'C. M. Patel', phone: '+91 98221 21314' }
+    ];
+
+    window.fnicSetStudentStatus = function(studentId, newStatus) {
+      const student = window.fnicAttendanceStudents.find(s => s.id === studentId);
+      if (student && student.status !== 'leave') {
+        student.status = newStatus;
+        if (newStatus === 'present') student.reason = '';
+        window.fnicRenderAttendanceRows();
+      }
+    };
+
+    window.fnicMarkAllPresent = function() {
+      window.fnicAttendanceStudents.forEach(s => {
+        if (s.status !== 'leave') {
+          s.status = 'present';
+          s.reason = '';
+        }
+      });
+      window.fnicRenderAttendanceRows();
+    };
+
+    window.fnicSaveAttendance = function() {
+      const absentCount = window.fnicAttendanceStudents.filter(s => s.status === 'absent').length;
+      alert('✓ Attendance record saved successfully!\n\n' + absentCount + ' automated WhatsApp alerts dispatched to parents.');
+    };
+
+    window.fnicRenderAttendanceRows = function() {
+      const container = document.getElementById('roster-rows-container');
+      if (!container) return;
+
+      const counts = { present: 0, absent: 0, late: 0, leave: 0 };
+      window.fnicAttendanceStudents.forEach(s => counts[s.status]++);
+
+      // Update counters
+      const counterEl = document.getElementById('live-roster-counts');
+      if (counterEl) {
+        counterEl.innerHTML = `
+          <span class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full font-bold">${counts.present} Present</span>
+          <span class="text-red-700 bg-red-50 px-2.5 py-1 rounded-full font-bold">${counts.absent} Absent</span>
+          <span class="text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full font-bold">${counts.late} Late</span>
+        `;
+      }
+
+      const pSum = document.getElementById('summary-count-present');
+      const aSum = document.getElementById('summary-count-absent');
+      const lSum = document.getElementById('summary-count-late');
+      if (pSum) pSum.textContent = counts.present + ' (' + Math.round((counts.present/12)*100) + '%)';
+      if (aSum) aSum.textContent = counts.absent + ' (' + Math.round((counts.absent/12)*100) + '%)';
+      if (lSum) lSum.textContent = counts.late + ' (' + Math.round((counts.late/12)*100) + '%)';
+
+      container.innerHTML = window.fnicAttendanceStudents.map(s => {
+        const isPresent = s.status === 'present';
+        const isAbsent = s.status === 'absent';
+        const isLate = s.status === 'late';
+        const isLeave = s.status === 'leave';
+
+        return `
+          <div class="py-2.5 flex items-center justify-between gap-2 sm:gap-4">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#EBF1F8] text-[#1B2A4E] font-bold text-[11px] sm:text-[12px] flex items-center justify-center shrink-0">${s.roll}</span>
+              <div class="min-w-0">
+                <p class="text-[13px] sm:text-[14px] font-bold text-[#1B2A4E] truncate">${s.name}</p>
+                ${s.reason ? `<p class="text-[10px] sm:text-[11px] text-red-600 font-medium truncate">${s.reason}</p>` : ''}
+              </div>
+            </div>
+
+            <!-- Present / Absent / Late directly BESIDE the name -->
+            <div class="shrink-0 flex items-center">
+              ${isLeave ? `
+                <span class="h-7 px-3 rounded-full bg-blue-50 text-blue-800 text-[11px] font-bold inline-flex items-center">On Leave</span>
+              ` : `
+                <div class="inline-flex items-center bg-[#F3EEE3] rounded-full p-0.5 sm:p-1 border border-[#E8E2D6]/80 gap-1 shadow-inner">
+                  <button 
+                    type="button" 
+                    onclick="window.fnicSetStudentStatus('${s.id}', 'present')" 
+                    title="Present (P)"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-[12px] sm:text-[13px] font-bold flex items-center justify-center transition-all cursor-pointer ${isPresent ? 'bg-emerald-600 text-white shadow-xs scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}"
+                  >
+                    P
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick="window.fnicSetStudentStatus('${s.id}', 'absent')" 
+                    title="Absent (A)"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-[12px] sm:text-[13px] font-bold flex items-center justify-center transition-all cursor-pointer ${isAbsent ? 'bg-red-600 text-white shadow-xs scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}"
+                  >
+                    A
+                  </button>
+                  <button 
+                    type="button" 
+                    onclick="window.fnicSetStudentStatus('${s.id}', 'late')" 
+                    title="Late (L)"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full text-[12px] sm:text-[13px] font-bold flex items-center justify-center transition-all cursor-pointer ${isLate ? 'bg-amber-500 text-white shadow-xs scale-105' : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'}"
+                  >
+                    L
+                  </button>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fnic: {
+              canvas: '#FBF8F3',     // Warm calm paper canvas
+              surface: '#FFFFFF',    // Crisp card surface
+              border: '#E8E2D6',     // Subtle sand border
+              searchBg: '#F3EEE3',   // Sunken search pill background
+              ink: '#1B2A4E',        // Deep navy ink
+              secondary: '#55607A',  // Muted slate ink
+              saffron: '#D9822B',    // School saffron highlight
+              barTrack: '#F0EBDF',   // Progress bar track
+              navySoft: '#EEF1F8',   // Icon circle soft blue
+              navyIcon: '#254A9A',   // Icon stroke blue
+            }
+          },
+          fontFamily: {
+            sans: ['"DM Sans"', '"Plus Jakarta Sans"', '-apple-system', 'sans-serif'],
+          },
+          borderRadius: {
+            card: '18px',
+            modal: '26px',
+            pill: '9999px',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background-color: #FBF8F3;
+      color: #1B2A4E;
+      font-family: 'DM Sans', 'Plus Jakarta Sans', -apple-system, sans-serif;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* Custom smooth scrolling */
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(27, 42, 78, 0.12); border-radius: 999px; }
+
+    /* Floating App Launcher Menu with Spring Fade Animation */
+    .app-grid-modal {
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease;
+      transform-origin: top right;
+    }
+    .app-grid-modal.closed {
+      opacity: 0;
+      transform: scale(0.92) translateY(-10px);
+      pointer-events: none;
+    }
+    .app-grid-modal.open {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Submenu drawer inside modal */
+    .submenu-drawer {
+      transition: max-height 0.25s ease, opacity 0.2s ease;
+    }
+
+    /* Quick Launch icon bounce */
+    .quick-launch-item:hover .quick-icon-bubble {
+      transform: translateY(-3px) scale(1.05);
+      background-color: #E2E8F5;
+      box-shadow: 0 6px 16px rgba(37, 74, 154, 0.16);
+    }
+    .quick-icon-bubble {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Grid app card bounce */
+    .app-grid-btn:hover {
+      transform: translateY(-2px);
+      background-color: #F4F6FA;
+    }
+    .app-grid-btn {
+      transition: all 0.18s ease;
+    }
+  </style>
+
+  <!-- Load production data & 18-screen templating suite -->
+  <script src="./principal-data.js"></script>
+  <script src="./principal-templates.js"></script>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-fnic-saffron/20">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       1. TOP APP BAR (EXACT SPEC MATCH)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <header class="h-[76px] bg-white border-b border-fnic-border px-7 flex items-center justify-between sticky top-0 z-40 shadow-[0_1px_3px_rgba(27,42,78,0.03)]">
+    
+    <!-- Logo + Title (Width: 230px) -->
+    <div class="flex items-center gap-3 w-[230px] shrink-0 cursor-pointer" onclick="navigateTo('home')">
+      <img src="./fnic-logo.png" alt="FNIC logo" class="w-[42px] h-[42px] rounded-full object-contain block shadow-xs" />
+      <div class="flex flex-col">
+        <b class="text-[17px] font-bold text-fnic-ink tracking-tight leading-tight">FNIC</b>
+        <span class="text-[10px] font-semibold text-fnic-secondary tracking-wider uppercase">SchoolOS</span>
+      </div>
+    </div>
+
+    <!-- Centered Search Bar (Max Width: 640px, Height: 48px, Radius: 24px) -->
+    <div class="flex-1 max-w-[640px] mx-auto px-2">
+      <div class="h-[48px] rounded-full bg-fnic-searchBg flex items-center px-5 gap-3 border border-transparent focus-within:border-fnic-border/80 focus-within:bg-white transition-all shadow-inner">
+        <svg class="w-[18px] h-[18px] text-fnic-secondary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          id="global-search-input"
+          oninput="handleSearch(this.value)"
+          placeholder="Search students, teachers, classes, exams..." 
+          class="w-full bg-transparent border-0 outline-none text-[15px] text-fnic-ink placeholder:text-fnic-secondary/80 font-normal"
+        />
+        <kbd class="hidden sm:inline-block px-2 py-0.5 rounded-md bg-white/70 text-[10px] font-bold text-fnic-secondary border border-fnic-border">⌘K</kbd>
+      </div>
+    </div>
+
+    <!-- Right Controls: 9-Dot Launcher Button + Avatar (Width: 230px) -->
+    <div class="w-[230px] flex justify-end items-center gap-2.5 shrink-0 relative">
+      <!-- 9-Dot All Sections Menu Launcher Button -->
+      <button 
+        type="button"
+        id="app-grid-btn"
+        onclick="toggleAppGrid()" 
+        aria-label="All sections" 
+        class="w-[46px] h-[46px] rounded-full bg-[#E8EDF8] hover:bg-[#DCE4F5] active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-xs"
+        title="Open Application Launcher Grid"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" fill="#1B2A4E">
+          <circle cx="5" cy="5" r="2"></circle>
+          <circle cx="12" cy="5" r="2"></circle>
+          <circle cx="19" cy="5" r="2"></circle>
+          <circle cx="5" cy="12" r="2"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+          <circle cx="19" cy="12" r="2"></circle>
+          <circle cx="5" cy="19" r="2"></circle>
+          <circle cx="12" cy="19" r="2"></circle>
+          <circle cx="19" cy="19" r="2"></circle>
+        </svg>
+      </button>
+
+      <!-- Profile Avatar (Initials "BS" for Beauty Sharma / Principal) -->
+      <div 
+        onclick="navigateTo('home')"
+        class="w-[42px] h-[42px] rounded-full bg-fnic-ink text-[#F5B332] font-bold text-[13px] flex items-center justify-center shadow-xs cursor-pointer hover:ring-2 hover:ring-fnic-saffron/40 transition-all"
+        title="Beauty Sharma · Principal & Director"
+      >
+        BS
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       2. FLOATING APP GRID LAUNCHER MODAL (EXACT 3x3 FLOATING CARD)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div 
+    id="app-grid-menu"
+    class="app-grid-modal closed fixed top-[86px] right-7 z-50 w-[360px] bg-white rounded-modal shadow-[0_12px_44px_rgba(27,42,78,0.20)] border border-fnic-border p-4 box-border"
+  >
+    <div class="flex items-center justify-between pb-3 px-2 border-b border-fnic-border/50">
+      <div>
+        <h4 class="text-[14px] font-bold text-fnic-ink">SchoolOS Directory</h4>
+        <p class="text-[11px] text-fnic-secondary">All institutional modules</p>
+      </div>
+      <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-fnic-navySoft text-fnic-navyIcon">5 Groups</span>
+    </div>
+
+    <!-- The 7 Primary Functional Categories -->
+    <div class="grid grid-cols-3 gap-2 mt-3" id="app-grid-container">
+      
+      <!-- 1. Home -->
+      <a href="javascript:void(0)" onclick="navigateTo('home')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#254A9A] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11l8-7 8 7v9H4zM10 20v-5h4v5"></path>
+          </svg>
+        </span>
+        <span class="truncate">Home</span>
+      </a>
+
+      <!-- 2. Approvals -->
+      <a href="javascript:void(0)" onclick="openSubmenuGroup('approvals')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium relative">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#1F7A7A] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM9 12l2 2 4-4"></path>
+          </svg>
+        </span>
+        <span class="truncate">Approvals</span>
+        <span class="absolute top-1 right-2 w-4 h-4 rounded-full bg-[#D9822B] text-white text-[9px] font-bold flex items-center justify-center">7</span>
+      </a>
+
+      <!-- 3. Academics -->
+      <a href="javascript:void(0)" onclick="openSubmenuGroup('academics')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#B4540A] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v13"></path>
+          </svg>
+        </span>
+        <span class="truncate">Academics</span>
+      </a>
+
+      <!-- 4. Results -->
+      <a href="javascript:void(0)" onclick="navigateTo('marks_hub')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#7A3E8E] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a5 5 0 100 10 5 5 0 000-10zM9 12l-2 9 5-3 5 3-2-9"></path>
+          </svg>
+        </span>
+        <span class="truncate">Results</span>
+      </a>
+
+      <!-- 5. Timetables -->
+      <a href="javascript:void(0)" onclick="openSubmenuGroup('operations')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#2F6F8F] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2"></path>
+          </svg>
+        </span>
+        <span class="truncate">Timetables</span>
+      </a>
+
+      <!-- 6. People -->
+      <a href="javascript:void(0)" onclick="openSubmenuGroup('staff')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#A33E5A] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11a3 3 0 100-6 3 3 0 000 6zM3 19c0-3 2.5-5 6-5s6 2 6 5M16 8a2.5 2.5 0 010 5M17 14c2 .5 4 2 4 5"></path>
+          </svg>
+        </span>
+        <span class="truncate">People</span>
+      </a>
+
+      <!-- 7. Overview -->
+      <a href="javascript:void(0)" onclick="navigateTo('dashboard')" class="app-grid-btn flex flex-col items-center gap-2 p-2.5 rounded-2xl text-[12px] text-fnic-ink font-medium">
+        <span class="w-[56px] h-[56px] rounded-full bg-[#555B6B] flex items-center justify-center shadow-sm">
+          <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20h16M7 20v-6M12 20V6M17 20v-9"></path>
+          </svg>
+        </span>
+        <span class="truncate">Overview</span>
+      </a>
+    </div>
+
+    <!-- Collapsible Sub-Items Drawer (When a group is selected) -->
+    <div id="grid-sub-drawer" class="hidden mt-3 pt-3 border-t border-fnic-border/50 max-h-48 overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span id="sub-drawer-title" class="text-[11px] font-bold uppercase tracking-wider text-fnic-secondary">Subpages</span>
+        <button type="button" onclick="closeSubmenuGroup()" class="text-[10px] text-fnic-secondary hover:text-fnic-ink font-bold">← Back</button>
+      </div>
+      <div id="sub-drawer-items" class="space-y-1"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       3. MAIN STAGE WRAPPER
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <main class="flex-1 w-full max-w-[1240px] mx-auto px-4 py-8">
+    
+    <!-- ── VIEW A: HOME DASHBOARD (EXACT REPLICA OF USER SCREENSHOT) ── -->
+    <div id="view-home" class="space-y-8">
+      
+      <!-- Greeting Header -->
+      <div class="text-center pt-2">
+        <h1 class="text-[34px] font-medium text-fnic-ink tracking-tight m-0">Good evening, Beauty</h1>
+        <p class="text-[16px] text-fnic-secondary mt-2">Pick up where you left off.</p>
+      </div>
+
+      <!-- Quick Launch Strip (8 Soft Blue Circle Icons) -->
+      <div class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-4xl mx-auto py-2">
+        
+        <!-- 1. Attendance Register -->
+        <a href="javascript:void(0)" onclick="navigateTo('attendance_class')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </span>
+          <span>Attendance</span>
+        </a>
+
+        <!-- 2. Leave -->
+        <a href="javascript:void(0)" onclick="navigateTo('leave_approvals')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center relative">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 6h14v13H5zM5 10h14M9 4v3M15 4v3M9 15l2 2 4-4"></path>
+            </svg>
+            <span class="absolute top-1 right-2 w-3.5 h-3.5 rounded-full bg-fnic-saffron text-white text-[8px] font-bold flex items-center justify-center">4</span>
+          </span>
+          <span>Leave</span>
+        </a>
+
+        <!-- 3. Messages -->
+        <a href="javascript:void(0)" onclick="navigateTo('messages')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18v12H3zM3 7l9 7 9-7"></path>
+            </svg>
+          </span>
+          <span>Messages</span>
+        </a>
+
+        <!-- 4. Calendar -->
+        <a href="javascript:void(0)" onclick="navigateTo('calendar')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h1M12 14h1M16 14h1M8 17h1M12 17h1"></path>
+            </svg>
+          </span>
+          <span>Calendar</span>
+        </a>
+
+        <!-- 5. Exams -->
+        <a href="javascript:void(0)" onclick="navigateTo('exams_list')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 4h11v16H5zM8 9h5M8 13h5M17 20l4-9-2-1-4 9z"></path>
+            </svg>
+          </span>
+          <span>Exams</span>
+        </a>
+
+        <!-- 6. Report Cards -->
+        <a href="javascript:void(0)" onclick="navigateTo('marks_hub')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a5 5 0 100 10 5 5 0 000-10zM9 12l-2 9 5-3 5 3-2-9"></path>
+            </svg>
+          </span>
+          <span>Report Cards</span>
+        </a>
+
+        <!-- 7. Transport -->
+        <a href="javascript:void(0)" onclick="navigateTo('transport')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 4h14v13H5zM5 11h14M8 17v3M16 17v3M8 14h1M16 14h1"></path>
+            </svg>
+          </span>
+          <span>Transport</span>
+        </a>
+
+        <!-- 8. Teachers -->
+        <a href="javascript:void(0)" onclick="navigateTo('teachers')" class="quick-launch-item flex flex-col items-center gap-2 w-[92px] text-[13px] text-fnic-ink font-medium">
+          <span class="quick-icon-bubble w-[64px] h-[64px] rounded-full bg-[#EEF1F8] flex items-center justify-center">
+            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 4h18v11H3zM8 20l4-5 4 5M9 9h6"></path>
+            </svg>
+          </span>
+          <span>Teachers</span>
+        </a>
+      </div>
+
+      <!-- 3 Key Metric Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+        
+        <!-- Attendance today -->
+        <div onclick="navigateTo('attendance_class')" class="bg-white border border-fnic-border rounded-card p-[22px] shadow-xs cursor-pointer hover:shadow-md transition-shadow">
+          <div class="flex items-center justify-between">
+            <span class="text-[13px] text-fnic-secondary">Attendance today</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Class 10-A</span>
+          </div>
+          <div class="text-[34px] font-medium text-fnic-ink mt-2">83%</div>
+          <span class="text-[11px] font-semibold text-emerald-600 mt-1 block">Open Class Roll Call Register →</span>
+        </div>
+
+        <!-- Leave requests -->
+        <div onclick="navigateTo('leave_approvals')" class="bg-white border border-fnic-border rounded-card p-[22px] shadow-xs cursor-pointer hover:shadow-md transition-shadow">
+          <div class="text-[13px] text-fnic-secondary">Leave requests</div>
+          <div class="text-[34px] font-medium text-fnic-ink mt-2">4</div>
+          <span class="text-[11px] font-semibold text-amber-600 mt-1 block">4 staff pending review</span>
+        </div>
+
+        <!-- New enquiries -->
+        <div onclick="navigateTo('front_office')" class="bg-white border border-fnic-border rounded-card p-[22px] shadow-xs cursor-pointer hover:shadow-md transition-shadow">
+          <div class="text-[13px] text-fnic-secondary">New enquiries</div>
+          <div class="text-[34px] font-medium text-fnic-ink mt-2">12</div>
+          <span class="text-[11px] font-semibold text-fnic-navyIcon mt-1 block">Front office log active</span>
+        </div>
+      </div>
+
+      <!-- Needs Attention Section -->
+      <div class="bg-white border border-fnic-border rounded-card p-[22px] max-w-4xl mx-auto shadow-xs">
+        <div class="flex items-center justify-between pb-1">
+          <div class="text-[17px] font-bold text-fnic-ink">Needs attention</div>
+          <button type="button" onclick="navigateTo('academic_plan')" class="text-[12px] font-semibold text-fnic-saffron hover:underline">
+            View Syllabus Progress →
+          </button>
+        </div>
+
+        <!-- Class IV-A (55%) -->
+        <div class="flex items-center gap-3.5 mt-4">
+          <span class="w-[84px] text-[14px] font-medium text-fnic-ink shrink-0">Class IV–A</span>
+          <div class="flex-1 h-[10px] rounded-full bg-fnic-barTrack overflow-hidden">
+            <div class="w-[55%] h-full rounded-full bg-fnic-saffron"></div>
+          </div>
+          <b class="w-[42px] text-right text-[14px] font-bold text-fnic-ink shrink-0">55%</b>
+        </div>
+
+        <!-- Prep-B (68%) -->
+        <div class="flex items-center gap-3.5 mt-3.5">
+          <span class="w-[84px] text-[14px] font-medium text-fnic-ink shrink-0">Prep–B</span>
+          <div class="flex-1 h-[10px] rounded-full bg-fnic-barTrack overflow-hidden">
+            <div class="w-[68%] h-full rounded-full bg-fnic-saffron"></div>
+          </div>
+          <b class="w-[42px] text-right text-[14px] font-bold text-fnic-ink shrink-0">68%</b>
+        </div>
+
+        <!-- Class II-A (70%) -->
+        <div class="flex items-center gap-3.5 mt-3.5">
+          <span class="w-[84px] text-[14px] font-medium text-fnic-ink shrink-0">Class II–A</span>
+          <div class="flex-1 h-[10px] rounded-full bg-fnic-barTrack overflow-hidden">
+            <div class="w-[70%] h-full rounded-full bg-fnic-saffron"></div>
+          </div>
+          <b class="w-[42px] text-right text-[14px] font-bold text-fnic-ink shrink-0">70%</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VIEW B: SUBPAGES STAGE (Rendered dynamically for all 18 pages) ── -->
+    <div id="view-subpage" class="hidden space-y-6">
+      
+      <!-- Back to Home Banner & Breadcrumb -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-fnic-border">
+        <div class="flex items-center gap-2 text-[13px]">
+          <button type="button" onclick="navigateTo('home')" class="font-bold text-fnic-navyIcon hover:underline flex items-center gap-1">
+            <span>← Home</span>
+          </button>
+          <span class="text-fnic-secondary">/</span>
+          <span id="subpage-group-name" class="font-semibold text-fnic-secondary">Academics</span>
+          <span class="text-fnic-secondary">/</span>
+          <span id="subpage-active-title" class="font-bold text-fnic-ink">Academic Plan</span>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="navigateTo('home')" class="h-8 px-3.5 rounded-full bg-white border border-fnic-border text-[12px] font-semibold text-fnic-ink hover:bg-fnic-searchBg transition-colors">
+            Return to Dashboard
+          </button>
+          <button type="button" onclick="toggleAppGrid()" class="h-8 px-3.5 rounded-full bg-fnic-navySoft text-fnic-navyIcon text-[12px] font-bold flex items-center gap-1.5 hover:bg-fnic-navySoft/80 transition-colors">
+            <span>All Sections</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Container injected by FNIC_PRINCIPAL_SUITE -->
+      <div id="subpage-content-target" class="space-y-6"></div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       4. SCRIPTS & NAVIGATION ENGINE
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       CORNER-ANCHORED AI ASSISTANT CHAT POPOVER (BOTTOM RIGHT)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="ai-assistant-modal" class="hidden fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-32px)] h-[520px] max-h-[calc(100vh-120px)] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(27,42,78,0.28)] border border-fnic-border flex flex-col overflow-hidden origin-bottom-right transition-all">
+    <!-- Header -->
+    <div class="px-5 py-3.5 bg-gradient-to-r from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5B332" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h3 class="text-[15px] font-bold text-white leading-tight">SchoolOS AI</h3>
+            <span class="text-[9px] font-bold uppercase tracking-wider bg-[#F5B332] text-[#1B2A4E] px-1.5 py-0.5 rounded-full">Sage</span>
+          </div>
+          <p class="text-[10px] text-white/70">Principal Copilot</p>
+        </div>
+      </div>
+      <button type="button" onclick="toggleAiModal()" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer text-sm font-bold">✕</button>
+    </div>
+
+    <!-- Chat History -->
+    <div id="ai-chat-history" class="p-4 flex-1 overflow-y-auto space-y-3 custom-scrollbar min-h-0 bg-[#FAF8F5]">
+      <!-- Welcome Bot Bubble -->
+      <div class="flex justify-start">
+        <div class="max-w-[85%] rounded-2xl rounded-bl-xs bg-[#F3EEE3] text-[#1B2A4E] px-3.5 py-2.5 text-[12.5px] leading-relaxed shadow-xs">
+          Hello Principal Sharma! I'm your SchoolOS assistant. You can ask for real-time attendance stats, teacher leaves, pending test approvals, fee collection numbers, or run administrative tasks.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Prompt Chips -->
+    <div class="px-3.5 py-2 bg-white border-t border-fnic-border/60 flex items-center gap-1.5 overflow-x-auto shrink-0 custom-scrollbar">
+      <button type="button" onclick="sendAiMessage('How is today\'s attendance?')" class="text-[10px] font-semibold text-[#254A9A] bg-[#EEF1F8] hover:bg-[#E2E8F5] px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer">
+        📊 Attendance
+      </button>
+      <button type="button" onclick="sendAiMessage('Show pending leave and test approvals')" class="text-[10px] font-semibold text-[#D9822B] bg-[#FDF3E7] hover:bg-[#FAEAD2] px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer">
+        ⚠️ Approvals
+      </button>
+      <button type="button" onclick="sendAiMessage('What is today\'s fee collection?')" class="text-[10px] font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer">
+        💰 Fees
+      </button>
+      <button type="button" onclick="sendAiMessage('Which teachers are absent today?')" class="text-[10px] font-semibold text-purple-800 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer">
+        👩‍🏫 Staff Leaves
+      </button>
+    </div>
+
+    <!-- Input Form -->
+    <div class="p-3 bg-white border-t border-fnic-border flex items-center gap-2 shrink-0">
+      <input 
+        type="text" 
+        id="ai-chat-input"
+        onkeydown="if(event.key==='Enter') sendAiMessage()"
+        placeholder="Ask AI anything..."
+        class="flex-1 bg-[#F3EEE3] rounded-full px-3.5 py-2 text-[12px] text-fnic-ink outline-none border border-transparent focus:border-[#254A9A]/40"
+      />
+      <button 
+        type="button" 
+        onclick="sendAiMessage()"
+        class="w-8 h-8 rounded-full bg-[#1B2A4E] hover:bg-[#121D38] text-white flex items-center justify-center shrink-0 cursor-pointer shadow-xs active:scale-95 transition-all"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let isAppGridOpen = false;
+    let activeSubpage = 'home';
+
+    const ALL_GROUPS = window.FNIC_PRINCIPAL_DATA ? window.FNIC_PRINCIPAL_DATA.sections : [];
+
+    // Toggle 9-Dot Launcher Grid
+    function toggleAppGrid() {
+      if (isAppGridOpen) {
+        closeAppGrid();
+      } else {
+        openAppGrid();
+      }
+    }
+
+    function openAppGrid() {
+      isAppGridOpen = true;
+      const modal = document.getElementById('app-grid-menu');
+      modal.classList.remove('closed');
+      modal.classList.add('open');
+    }
+
+    function closeAppGrid() {
+      isAppGridOpen = false;
+      const modal = document.getElementById('app-grid-menu');
+      modal.classList.remove('open');
+      modal.classList.add('closed');
+      closeSubmenuGroup();
+    }
+
+    // Open category submenu inside the 9-dot modal
+    function openSubmenuGroup(groupId) {
+      const group = ALL_GROUPS.find(g => g.id === groupId);
+      if (!group) return;
+
+      const subDrawer = document.getElementById('grid-sub-drawer');
+      const title = document.getElementById('sub-drawer-title');
+      const itemsList = document.getElementById('sub-drawer-items');
+
+      title.textContent = group.title;
+      itemsList.innerHTML = group.items.map(it => `
+        <button 
+          type="button" 
+          onclick="navigateTo('${it.id}'); closeAppGrid();" 
+          class="w-full px-3 py-2 rounded-xl text-left text-[12px] font-semibold text-fnic-ink hover:bg-fnic-searchBg flex items-center justify-between transition-colors"
+        >
+          <span class="truncate">${it.label}</span>
+          ${it.badge ? `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-fnic-saffron text-white">${it.badge}</span>` : ''}
+        </button>
+      `).join('');
+
+      subDrawer.classList.remove('hidden');
+    }
+
+    function closeSubmenuGroup() {
+      const subDrawer = document.getElementById('grid-sub-drawer');
+      subDrawer.classList.add('hidden');
+    }
+
+    // Universal Navigation Handler across all 18 pages + Home
+    function navigateTo(pageId) {
+      activeSubpage = pageId;
+      closeAppGrid();
+
+      const homeView = document.getElementById('view-home');
+      const subpageView = document.getElementById('view-subpage');
+      const subpageTarget = document.getElementById('subpage-content-target');
+
+      if (pageId === 'attendance') pageId = 'attendance_class';
+      if (pageId === 'home') {
+        homeView.classList.remove('hidden');
+        subpageView.classList.add('hidden');
+        window.location.hash = 'home';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // Hide Home, show subpage container
+      homeView.classList.add('hidden');
+      subpageView.classList.remove('hidden');
+
+      // Update breadcrumbs
+      let groupName = 'Overview';
+      let pageTitle = 'Executive Cockpit';
+
+      ALL_GROUPS.forEach(g => {
+        g.items.forEach(it => {
+          if (it.id === pageId) {
+            groupName = g.title;
+            pageTitle = it.label;
+          }
+        });
+      });
+
+      document.getElementById('subpage-group-name').textContent = groupName;
+      document.getElementById('subpage-active-title').textContent = pageTitle;
+
+      // Render via Principal Suite
+      if (window.FNIC_PRINCIPAL_SUITE) {
+        subpageTarget.innerHTML = window.FNIC_PRINCIPAL_SUITE.renderScreen(pageId, 'emblem');
+      }
+
+      window.location.hash = pageId;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (pageId === 'attendance_class') { setTimeout(window.fnicRenderAttendanceRows, 10); }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // Instant search handler
+    function handleSearch(val) {
+      const q = (val || '').toLowerCase().trim();
+      if (!q) return;
+
+      // Find matching page
+      let matchedId = null;
+      ALL_GROUPS.forEach(g => {
+        g.items.forEach(it => {
+          if (!matchedId && (it.label.toLowerCase().includes(q) || it.id.toLowerCase().includes(q))) {
+            matchedId = it.id;
+          }
+        });
+      });
+
+      if (matchedId && event.key === 'Enter') {
+        navigateTo(matchedId);
+        document.getElementById('global-search-input').blur();
+      }
+    }
+
+    // AI Assistant Modal Engine
+    let isAiModalOpen = false;
+    window.toggleAiModal = function() {
+      const modal = document.getElementById('ai-assistant-modal');
+      isAiModalOpen = !isAiModalOpen;
+      if (isAiModalOpen) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => document.getElementById('ai-chat-input')?.focus(), 50);
+      } else {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    };
+
+    window.sendAiMessage = function(promptText) {
+      const input = document.getElementById('ai-chat-input');
+      const text = promptText || input.value.trim();
+      if (!text) return;
+      if (!promptText) input.value = '';
+
+      const history = document.getElementById('ai-chat-history');
+      
+      // User bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'flex justify-end';
+      const userInner = document.createElement('div');
+      userInner.className = 'max-w-[80%] rounded-2xl rounded-br-xs bg-[#1B2A4E] text-white px-4 py-2.5 text-[13px] shadow-xs';
+      userInner.textContent = text;
+      userBubble.appendChild(userInner);
+      history.appendChild(userBubble);
+
+      // Typing indicator
+      const typingEl = document.createElement('div');
+      typingEl.className = 'flex justify-start';
+      typingEl.id = 'ai-typing-indicator';
+      typingEl.innerHTML = `
+        <div class="max-w-[80%] rounded-2xl rounded-bl-xs bg-[#F3EEE3] text-[#1B2A4E] px-4 py-2.5 text-[12px] flex items-center gap-1.5 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-[#1B2A4E] animate-bounce"></span>
+          <span class="w-2 h-2 rounded-full bg-[#1B2A4E] animate-bounce [animation-delay:0.2s]"></span>
+          <span class="w-2 h-2 rounded-full bg-[#1B2A4E] animate-bounce [animation-delay:0.4s]"></span>
+        </div>
+      `;
+      history.appendChild(typingEl);
+      history.scrollTop = history.scrollHeight;
+
+      setTimeout(() => {
+        typingEl.remove();
+        let reply = "I've checked the SchoolOS systems for you.";
+        const lower = text.toLowerCase();
+        if (lower.includes('attendance')) {
+          reply = "📊 **Attendance Today is 83%** across 18 classes. Class 10-A is currently at 83% (24 present, 2 absent, 1 late, 1 on pre-approved leave). 4 classes are below 72% (Class IV-A 55%, Prep-B 68%, Class II-A 70%).";
+        } else if (lower.includes('leave') || lower.includes('approval')) {
+          reply = "⚠️ **Pending Approvals**: You have **4 staff leave requests** (Ramesh Kumar, Pooja Sharma, Anand Swaminathan, Shalini Gupta) and **2 unit test question papers** awaiting your review.";
+        } else if (lower.includes('fee')) {
+          reply = "💰 **Fee Collection Update**: ₹1,42,500 collected today across counter & UPI. 42 student accounts have dues pending for Term 2.";
+        } else if (lower.includes('teacher') || lower.includes('absent')) {
+          reply = "👩‍🏫 **Staff Status**: 2 faculty members on leave today: Deepak Rawat (Math) and Sunita Nair (Science). Substitute teachers have been mapped.";
+        } else {
+          reply = `Here is the current status regarding "${text}": School operations are fully synchronized, live gate scanners are online, and timetables are active.`;
+        }
+
+        const botBubble = document.createElement('div');
+        botBubble.className = 'flex justify-start';
+        const botInner = document.createElement('div');
+        botInner.className = 'max-w-[85%] rounded-2xl rounded-bl-xs bg-[#F3EEE3] text-[#1B2A4E] px-4 py-3 text-[13px] leading-relaxed shadow-xs whitespace-pre-wrap';
+        botInner.textContent = reply.replace(/\*\*/g, '');
+        botBubble.appendChild(botInner);
+        history.appendChild(botBubble);
+        history.scrollTop = history.scrollHeight;
+      }, 600);
+    };
+
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('app-grid-menu');
+      const btn = document.getElementById('app-grid-btn');
+      if (isAppGridOpen && !modal.contains(e.target) && !btn.contains(e.target)) {
+        closeAppGrid();
+      }
+    });
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        document.getElementById('global-search-input').focus();
+      }
+      if (e.key === 'Escape') {
+        closeAppGrid();
+      }
+    });
+
+    // Initial load
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== 'home') {
+        navigateTo(hash);
+      } else {
+        navigateTo('home');
+      }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    });
+
+    // Listen to parent iframe messages (from index.html comparison studio)
+    window.addEventListener('message', (e) => {
+      if (e.origin && e.origin !== window.location.origin) return;
+      if (e.data && e.data.type === 'NAVIGATE' && typeof e.data.page === 'string') {
+        navigateTo(e.data.page);
+      }
+    });
+  </script>
+  <!-- Floating AI Assistant Single Circular Button (Bottom Right) -->
+  <button 
+    type="button" 
+    onclick="toggleAiModal()" 
+    aria-label="Ask AI Assistant" 
+    title="Ask AI Assistant"
+    class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(27,42,78,0.28)] hover:shadow-[0_12px_32px_rgba(37,74,154,0.38)] hover:scale-108 active:scale-95 transition-all duration-200 cursor-pointer border border-white/20 group"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F5B332" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:rotate-12 transition-transform duration-300">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+    </svg>
+  </button>
+</body>
+</html>
