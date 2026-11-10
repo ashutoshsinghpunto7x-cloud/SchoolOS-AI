@@ -65,6 +65,13 @@ const formatTime12h = (d: Date): string =>
     timeZone: 'Asia/Kolkata',
   });
 
+const timeGreeting = (d: Date): string => {
+  const h = d.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
 const formatDateLong = (d: Date): string =>
   d.toLocaleDateString('en-IN', {
     day: 'numeric',
@@ -327,8 +334,8 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
   const initials = user
     ? `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
-    : 'BS';
-  const displayName = user ? `${user.firstName} ${user.lastName}` : 'Beauty Sharma';
+    : '?';
+  const displayName = user ? `${user.firstName} ${user.lastName}` : '';
 
   const isTeacherDark = isTeacher && theme === 'dark';
 
@@ -344,12 +351,17 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
             onClick={() => navigate('/principal')}
           >
             <img
-              src={fnicLogo}
-              alt="FNIC logo"
-              className="w-[42px] h-[42px] rounded-full object-contain block shadow-xs bg-white"
+              src={schoolSettings?.logoUrl || fnicLogo}
+              alt="School logo"
+              className="w-[42px] h-[42px] rounded-full object-contain block shadow-xs bg-white shrink-0"
             />
-            <div className="flex flex-col">
-              <b className="text-[17px] font-bold text-[#1B2A4E] tracking-tight leading-tight">FNIC</b>
+            <div className="flex flex-col min-w-0">
+              <b
+                className="text-[17px] font-bold text-[#1B2A4E] tracking-tight leading-tight truncate"
+                title={schoolSettings?.schoolName}
+              >
+                {schoolSettings?.schoolName || 'SchoolOS'}
+              </b>
               <span className="text-[10px] font-semibold text-[#55607A] tracking-wider uppercase">
                 SchoolOS
               </span>
@@ -416,12 +428,12 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
             onClick={() => navigate('/principal')}
           >
             <img
-              src={fnicLogo}
-              alt="FNIC logo"
+              src={schoolSettings?.logoUrl || fnicLogo}
+              alt="School logo"
               className="w-7 h-7 rounded-full object-contain block shadow-xs shrink-0 bg-white"
             />
             <h1 className="text-[17px] font-medium text-[#1B2A4E] tracking-tight truncate m-0">
-              Good evening, {user?.firstName || 'Beauty'}
+              {timeGreeting(now)}{user?.firstName ? `, ${user.firstName}` : ''}
             </h1>
           </div>
           <div className="relative shrink-0">

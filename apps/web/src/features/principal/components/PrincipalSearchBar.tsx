@@ -4,7 +4,7 @@ import { GraduationCap, Users, LayoutGrid } from 'lucide-react';
 import { useStudentList } from '@/features/students/hooks/useStudents';
 import { useTeacherList } from '@/features/teachers/hooks/useTeachers';
 import { useSchoolClasses } from '@/features/school-classes/hooks/useSchoolClasses';
-import { FNIC_SECTIONS } from '@/components/topbar/AppLauncherModal';
+import { PRINCIPAL_SECTIONS } from '@/components/topbar/AppLauncherModal';
 
 function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -52,7 +52,7 @@ export function PrincipalSearchBar() {
   const qLower = debounced.trim().toLowerCase();
 
   const matchedPages = active
-    ? FNIC_SECTIONS.flatMap((group) =>
+    ? PRINCIPAL_SECTIONS.flatMap((group) =>
         group.items
           .filter(
             (it) =>
@@ -82,7 +82,7 @@ export function PrincipalSearchBar() {
 
   const handleKeyDownInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && matchedPages.length > 0) {
-      navigate(`/principal?page=${matchedPages[0].id}`);
+      navigate(matchedPages[0].path);
       setOpen(false);
       setQuery('');
       inputRef.current?.blur();
@@ -139,7 +139,7 @@ export function PrincipalSearchBar() {
                       key={p.id}
                       type="button"
                       onClick={() => {
-                        navigate(`/principal?page=${p.id}`);
+                        navigate(p.path);
                         setOpen(false);
                         setQuery('');
                       }}
@@ -149,11 +149,6 @@ export function PrincipalSearchBar() {
                         <p className="text-[13px] font-semibold text-[#1B2A4E] truncate">{p.label}</p>
                         <p className="text-[11px] text-[#55607A]">{p.groupTitle}</p>
                       </div>
-                      {p.badge && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#D9822B] text-white shrink-0">
-                          {p.badge}
-                        </span>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -227,7 +222,7 @@ export function PrincipalSearchBar() {
                       key={c.id}
                       type="button"
                       onClick={() => {
-                        navigate('/principal?page=attendance_class');
+                        navigate(`/attendance/class/${encodeURIComponent(c.name)}/${encodeURIComponent(c.section)}`);
                         setOpen(false);
                         setQuery('');
                       }}

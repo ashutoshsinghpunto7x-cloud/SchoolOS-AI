@@ -98,10 +98,7 @@ export const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const loggedInUser = await login(
-        email.trim() || 'principal@mycampus.edu.in',
-        password || 'demo'
-      );
+      const loggedInUser = await login(email.trim(), password);
       goHome(loggedInUser.role);
     } catch (err) {
       if (isMaintenanceModeError(err)) {

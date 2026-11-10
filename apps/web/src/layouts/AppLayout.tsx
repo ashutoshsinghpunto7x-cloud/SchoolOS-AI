@@ -146,7 +146,7 @@ function AppLayoutInner() {
               {/* 2. Approvals */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=leave_approvals')}
+                onClick={() => navigate('/principal/leave-approvals')}
                 aria-label="Approvals"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
@@ -163,7 +163,7 @@ function AppLayoutInner() {
               {/* 3. Academics */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=academic_plan')}
+                onClick={() => navigate('/principal/academic-plan')}
                 aria-label="Academics"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
@@ -180,7 +180,7 @@ function AppLayoutInner() {
               {/* 4. Results */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=marks_hub')}
+                onClick={() => navigate('/principal/marks')}
                 aria-label="Results"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
@@ -197,7 +197,7 @@ function AppLayoutInner() {
               {/* 5. Timetables */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=school_timetable')}
+                onClick={() => navigate('/timetable/school')}
                 aria-label="Timetables"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
@@ -214,11 +214,11 @@ function AppLayoutInner() {
               {/* 6. People */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=teachers')}
+                onClick={() => navigate('/principal/teachers')}
                 aria-label="People"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
-                  activePage.includes('teacher')
+                  activePage.includes('teacher') || activePage.includes('employee')
                     ? 'bg-[#2C4177]'
                     : 'text-white/80 hover:text-white'
                 )}
@@ -231,11 +231,11 @@ function AppLayoutInner() {
               {/* 7. Overview */}
               <button
                 type="button"
-                onClick={() => navigate('/principal?page=dashboard')}
+                onClick={() => navigate('/principal/insights')}
                 aria-label="Overview"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',
-                  activePage.includes('dashboard') || activePage.includes('front') || activePage.includes('recruit')
+                  activePage.includes('insights') || activePage.includes('reception') || activePage.includes('recruit')
                     ? 'bg-[#2C4177]'
                     : 'text-white/80 hover:text-white'
                 )}

@@ -27,35 +27,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   // Validate existing session on mount. Session lives in sessionStorage so each
-  // browser tab has its own isolated token. Supports seamless local/demo testing.
+  // browser tab has its own isolated token — on shared front-office computers,
+  // logging in on one tab must not silently swap the session of another tab
+  // that's already open.
   useEffect(() => {
-    const demoSaved = sessionStorage.getItem('demo_user');
-    if (demoSaved) {
-      try {
-        const parsed = JSON.parse(demoSaved);
-        setUser(parsed);
-        setIsLoading(false);
-        return;
-      } catch {}
-    }
-
     const token = sessionStorage.getItem('accessToken');
     if (!token) {
-      setIsLoading(false);
-      return;
-    }
-
-    if (token === 'demo_token') {
-      setUser({
-        userId: 'demo-principal-id',
-        schoolId: 'demo-school-id',
-        email: 'principal@mycampus.edu.in',
-        firstName: 'Beauty',
-        lastName: 'Sharma',
-        role: 'principal',
-        mustResetPassword: false,
-        mustResetPin: false,
-      });
       setIsLoading(false);
       return;
     }
@@ -152,7 +129,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch {}
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('sessionId');
-    sessionStorage.removeItem('demo_user');
     resetAuthRefreshState();
     queryClient.clear();
     setUser(null);

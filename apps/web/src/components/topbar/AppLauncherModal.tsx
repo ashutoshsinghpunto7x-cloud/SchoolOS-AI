@@ -52,162 +52,132 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react';
+import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
+import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
+import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
 
 export interface SubMenuItem {
   id: string;
   label: string;
-  badge?: string;
-  path?: string;
+  /** Real application route this entry opens. */
+  path: string;
 }
 
 export interface SubMenuGroup {
   id: string;
   title: string;
-  iconName?: string;
-  color?: string;
-  badge?: string;
   items: SubMenuItem[];
 }
 
-export const FNIC_SECTIONS: SubMenuGroup[] = [
+// Every entry opens a real, live screen the principal role can already reach
+// (see routes/index.tsx). Nothing here is a mock page, and no counts are
+// hardcoded — badges are computed from live pending-approval queries below.
+export const PRINCIPAL_SECTIONS: SubMenuGroup[] = [
   {
     id: 'students',
     title: 'Students & Admissions',
-    color: '#1F7A7A',
-    badge: '12 New',
     items: [
       { id: 'students_directory', label: 'Student Directory & Profiles', path: '/students' },
       { id: 'new_admission', label: 'New Student Admission Form', path: '/students/new' },
-      { id: 'enquiries', label: 'Admission Enquiries & Leads', badge: '12 New', path: '/enquiries' },
-      { id: 'id_cards', label: 'Student ID Cards & RFID Badges', path: '/admin/id-cards' },
-      { id: 'student_change_requests', label: 'Student Record Edit Requests', badge: '3', path: '/students' },
+      { id: 'enquiries', label: 'Admission Enquiries & Leads', path: '/enquiries' },
+      { id: 'student_change_requests', label: 'Student Record Edit Requests', path: '/principal/approvals' },
       { id: 'student_communications', label: 'Parent & Student Messaging', path: '/communication' },
     ],
   },
   {
     id: 'attendance',
     title: 'Attendance & Roll Call',
-    color: '#254A9A',
-    badge: 'Live',
     items: [
-      { id: 'attendance_class', label: 'Class 10-A Roll Call Register', badge: 'Live', path: '/attendance' },
-      { id: 'all_attendance', label: 'All Classes Attendance Grid', path: '/attendance' },
-      { id: 'attendance_scanner', label: 'Gate QR & Biometric Scanner', badge: 'Active', path: '/principal' },
-      { id: 'teacher_attendance', label: 'Faculty & Staff Daily Attendance', path: '/operations/attendance' },
-      { id: 'attendance_reports', label: 'Attendance Reports & Defaulters', path: '/reception/attendance' },
+      { id: 'attendance_class', label: 'Class Attendance Registers', path: '/attendance' },
+      { id: 'attendance_scanner', label: 'Staff QR Attendance Scanner', path: '/principal/attendance-scanner' },
+      { id: 'teacher_attendance', label: 'Teachers Today (Summary)', path: '/principal/teachers-summary' },
+      { id: 'attendance_reports', label: 'School Insights', path: '/principal/insights' },
     ],
   },
   {
     id: 'academics',
     title: 'Academics & Timetables',
-    color: '#B4540A',
-    badge: '91%',
     items: [
-      { id: 'academic_plan', label: 'Academic Master Plan (Syllabus Tracker)', badge: '91% On Track', path: '/principal' },
+      { id: 'academic_plan', label: 'Academic Plan (Syllabus Tracker)', path: '/principal/academic-plan' },
+      { id: 'lesson_planner', label: 'Teacher Planner', path: '/principal/planner' },
       { id: 'school_timetable', label: 'Master School Timetable', path: '/timetable/school' },
       { id: 'class_timetable', label: 'Class Period Timetable', path: '/timetable' },
       { id: 'calendar', label: 'School Calendar & Events', path: '/calendar' },
-      { id: 'syllabus_setup', label: 'Curriculum & Subject Setup', path: '/coordinator/syllabus' },
     ],
   },
   {
     id: 'results',
     title: 'Exams, Marks & Report Cards',
-    color: '#7A3E8E',
-    badge: 'Term 2',
     items: [
       { id: 'exams_list', label: 'Exams & Unit Tests Schedule', path: '/exams' },
-      { id: 'question_bank', label: 'Question Bank & Paper Generator', path: '/principal' },
-      { id: 'marks_hub', label: 'Marks Entry & Grade Validation', path: '/principal' },
-      { id: 'term_report_cards', label: 'Term Report Cards Generation', path: '/term-report-cards' },
-      { id: 'report_card_templates', label: 'Report Card Template Designer', path: '/report-card-templates' },
+      { id: 'question_bank', label: 'Question Bank Overview', path: '/principal/question-bank-overview' },
+      { id: 'marks_hub', label: 'Marks Entry & Report Cards', path: '/principal/marks' },
+      { id: 'term_report_cards', label: 'Term Report Cards', path: '/term-report-cards' },
+      { id: 'report_card_templates', label: 'Report Card Templates', path: '/report-card-templates' },
     ],
   },
   {
     id: 'fees',
     title: 'Fees & Finance',
-    color: '#166534',
-    badge: '₹1.4L Today',
     items: [
-      { id: 'fee_collection', label: 'Fee Collection Counter', path: '/fees' },
-      { id: 'pending_fees', label: 'Pending Dues & Defaulters List', badge: '42 Pending', path: '/fees/pending' },
-      { id: 'fee_receipts', label: 'Fee Receipts History', path: '/fees' },
-      { id: 'discount_approvals', label: 'Fee Concession & Scholarship Approvals', badge: '1', path: '/principal' },
-      { id: 'staff_payroll', label: 'Staff Salaries & Payroll', path: '/admin/payroll' },
+      { id: 'fee_collection', label: 'Fee Records', path: '/fees' },
+      { id: 'discount_approvals', label: 'Fee Discount Approvals', path: '/principal/discount-approvals' },
     ],
   },
   {
     id: 'staff',
     title: 'Faculty & Staff (HR)',
-    color: '#A33E5A',
-    badge: '6 Active',
     items: [
-      { id: 'teachers', label: 'Faculty & Teacher Directory', path: '/principal' },
-      { id: 'class_teachers', label: 'Class Teacher In-Charge Allocation', path: '/principal' },
+      { id: 'teachers', label: 'Teacher Directory', path: '/principal/teachers' },
+      { id: 'class_teachers', label: 'Class Teacher Allocation', path: '/principal/class-teachers' },
       { id: 'teacher_timetable', label: 'Teacher Timetables & Workload', path: '/timetable/teacher-builder' },
-      { id: 'recruitment', label: 'Staff Recruitment & Hiring', badge: '6 Active', path: '/principal' },
-      { id: 'employees_hr', label: 'All Employees Directory (HR)', path: '/admin/employees' },
-      { id: 'teacher_logins', label: 'Teacher Logins & Security', path: '/teacher-logins' },
+      { id: 'recruitment', label: 'Staff Recruitment & Hiring', path: '/principal/recruitment' },
+      { id: 'employees_hr', label: 'All Employees Directory', path: '/principal/employees' },
     ],
   },
   {
     id: 'approvals',
     title: 'Approvals Hub',
-    color: '#D97706',
-    badge: '10',
     items: [
-      { id: 'leave_approvals', label: 'Staff Leave Requests', badge: '4', path: '/principal' },
-      { id: 'test_approvals', label: 'Exam Paper Sign-Offs', badge: '2', path: '/principal' },
-      { id: 'discount_approvals', label: 'Fee Discount Approvals', badge: '1', path: '/principal' },
-      { id: 'student_change_requests', label: 'Student Profile Edit Requests', badge: '3', path: '/students' },
+      { id: 'leave_approvals', label: 'Staff Leave Requests', path: '/principal/leave-approvals' },
+      { id: 'test_approvals', label: 'Test Approvals', path: '/principal/test-approvals' },
+      { id: 'discount_approvals', label: 'Fee Discount Approvals', path: '/principal/discount-approvals' },
+      { id: 'student_change_requests', label: 'Student Profile Edit Requests', path: '/principal/approvals' },
     ],
   },
   {
     id: 'operations',
     title: 'Campus & Transport',
-    color: '#2F6F8F',
     items: [
-      { id: 'transport', label: 'Bus Fleet & Live GPS Tracking', path: '/principal' },
-      { id: 'campus_inventory', label: 'Campus Inventory & Stock Levels', path: '/operations/inventory' },
-      { id: 'assets_equipment', label: 'Asset Management & Maintenance', path: '/operations/assets' },
-      { id: 'purchase_orders', label: 'Purchase Orders & Requisitions', path: '/operations/purchase-orders' },
-      { id: 'facility_requests', label: 'Classroom Repair & Facility Requests', path: '/operations/facility-requests' },
+      { id: 'transport', label: 'Transport Management', path: '/principal/transport' },
+      { id: 'school_settings', label: 'School Profile & Settings', path: '/settings' },
     ],
   },
   {
     id: 'reception',
     title: 'Front Desk & Visitors',
-    color: '#0284C7',
     items: [
       { id: 'visitor_log', label: 'Visitor Log & Gate Passes', path: '/reception/visitors' },
-      { id: 'enquiries', label: 'Walk-in Admission Inquiries', badge: '12', path: '/enquiries' },
-      { id: 'front_office', label: 'Daily Front Office Summary Reports', path: '/reception/reports' },
-      { id: 'candidate_interviews', label: 'Job Candidate Check-in', path: '/reception/candidates' },
-    ],
-  },
-  {
-    id: 'communication',
-    title: 'Communications & Notices',
-    color: '#4F46E5',
-    items: [
-      { id: 'messages', label: 'Staff Notices & Internal Messages', path: '/messages' },
-      { id: 'announcements', label: 'School-wide Broadcast Announcements', path: '/communication' },
-      { id: 'push_preview', label: 'Mobile Push Notification Studio', path: '/notifications/preview' },
-    ],
-  },
-  {
-    id: 'admin',
-    title: 'System & Administration',
-    color: '#475569',
-    items: [
-      { id: 'dashboard', label: 'Executive Cockpit Overview', badge: 'Live', path: '/principal' },
-      { id: 'school_settings', label: 'School Profile & Session Settings', path: '/settings' },
-      { id: 'user_management', label: 'User Roles & Access Permissions', path: '/users' },
-      { id: 'data_import', label: 'Data Import & Excel Migration', path: '/import' },
-      { id: 'automation_jobs', label: 'Automated Reminders & Sync Jobs', path: '/automation' },
+      { id: 'enquiries', label: 'Admission Enquiries', path: '/enquiries' },
+      { id: 'front_office', label: 'Front Office Reports', path: '/reception/reports' },
+      { id: 'candidate_interviews', label: 'Job Candidates', path: '/reception/candidates' },
+      { id: 'messages', label: 'Staff Messages', path: '/messages' },
     ],
   },
 ];
+
+/** Resolves a launcher page id (also accepted as a legacy `/principal?page=<id>`
+ *  deep link) to the real route it opens. */
+export function getPrincipalPagePath(id: string): string | undefined {
+  if (id === 'home' || id === 'dashboard') return '/principal';
+  if (id === 'attendance') return '/attendance';
+  for (const group of PRINCIPAL_SECTIONS) {
+    const hit = group.items.find((it) => it.id === id);
+    if (hit) return hit.path;
+  }
+  return undefined;
+}
 
 type IconComp = LucideIcon;
 
@@ -228,6 +198,7 @@ const ITEM_ICONS: Record<string, IconComp> = {
   attendance_reports: FileBarChart,
   // Academics
   academic_plan: Target,
+  lesson_planner: CalendarDays,
   school_timetable: CalendarRange,
   class_timetable: Clock,
   calendar: CalendarDays,
@@ -281,8 +252,6 @@ interface CategoryTile {
   label: string;
   color: string;
   soft: string;
-  count?: string;
-  countColor?: string;
   paths: string[];
   circles?: { cx: number; cy: number; r: number }[];
 }
@@ -293,8 +262,6 @@ const TILES: CategoryTile[] = [
     label: 'Students',
     color: '#1F7A7A',
     soft: '#E8F3F3',
-    count: '12',
-    countColor: '#D9822B',
     paths: ['M22 10v6M2 10l10-5 10 5-10 5z', 'M6 12v5c3 3 9 3 12 0v-5'],
   },
   {
@@ -342,8 +309,6 @@ const TILES: CategoryTile[] = [
     label: 'Approvals',
     color: '#D97706',
     soft: '#FEF5E7',
-    count: '10',
-    countColor: '#DC2626',
     paths: ['M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM9 12l2 2 4-4'],
   },
   {
@@ -396,6 +361,26 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
   const modalRef = useRef<HTMLDivElement>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
+  // Live pending-approval counts — the same four queries the principal
+  // sidebar used for its badges. Nothing is shown when a count is zero.
+  const { data: leave } = usePendingLeaveRequests();
+  const { data: changeRequests } = usePendingChangeRequests();
+  const { data: discounts } = usePendingDiscounts();
+  const { data: testApprovals } = usePendingTestApprovals();
+  const itemCounts: Record<string, number> = {
+    leave_approvals: leave?.length ?? 0,
+    student_change_requests: changeRequests?.length ?? 0,
+    discount_approvals: discounts?.length ?? 0,
+    test_approvals: testApprovals?.length ?? 0,
+  };
+  const tileCounts: Record<string, number> = {
+    approvals:
+      itemCounts.leave_approvals +
+      itemCounts.student_change_requests +
+      itemCounts.discount_approvals +
+      itemCounts.test_approvals,
+  };
+
   useEffect(() => {
     if (!isOpen) {
       setActiveGroupId(null);
@@ -431,16 +416,11 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
 
   if (!isOpen) return null;
 
-  const activeGroup = FNIC_SECTIONS.find((g) => g.id === activeGroupId) || null;
+  const activeGroup = PRINCIPAL_SECTIONS.find((g) => g.id === activeGroupId) || null;
   const activeTile = TILES.find((t) => t.id === activeGroupId) || null;
 
   const navigateToPage = (item: SubMenuItem) => {
-    if (item.id === 'home' || item.id === 'dashboard') {
-      navigate('/principal');
-    } else {
-      // Navigate to the in-page demo subpage view
-      navigate(`/principal?page=${item.id}`);
-    }
+    navigate(item.path);
     onClose();
   };
 
@@ -505,12 +485,12 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
                   <span className="flex-1 text-[13px] font-medium text-[#1B2A4E] leading-snug">
                     {item.label}
                   </span>
-                  {item.badge && (
+                  {itemCounts[item.id] > 0 && (
                     <span
                       className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shrink-0"
                       style={{ backgroundColor: activeTile.color }}
                     >
-                      {item.badge}
+                      {itemCounts[item.id]}
                     </span>
                   )}
                 </button>
@@ -543,12 +523,12 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
                     style={{ backgroundColor: tile.color }}
                   >
                     <TileIcon tile={tile} size={24} />
-                    {tile.count && (
+                    {tileCounts[tile.id] > 0 && (
                       <span
                         className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full text-white text-[8px] font-bold flex items-center justify-center ring-2 ring-white"
-                        style={{ backgroundColor: tile.countColor }}
+                        style={{ backgroundColor: '#DC2626' }}
                       >
-                        {tile.count}
+                        {tileCounts[tile.id]}
                       </span>
                     )}
                   </span>
