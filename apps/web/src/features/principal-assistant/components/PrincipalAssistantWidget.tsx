@@ -5,6 +5,10 @@ import { extractErrorMessage } from '@/services/api';
 import { usePrincipalAssistant } from '../hooks/usePrincipalAssistant';
 import { useVoice, type VoiceLang } from '../hooks/useVoice';
 import { ChatMessage } from './ChatMessage';
+import { CompanionBuddy } from '@/features/companion/CompanionBuddy';
+import { companionConfigFor } from '@/features/companion/companionConfigs';
+
+const BUDDY_CONFIG = companionConfigFor('principal')!;
 
 // Floating AI assistant for the Principal. Mounted once in AppLayout so it
 // survives page changes — which is what lets a spoken "open leave requests"
@@ -255,15 +259,7 @@ export const PrincipalAssistantWidget = () => {
           </form>
         </div>
       )}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Ask AI Assistant"
-        title="Ask AI Assistant"
-        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(27,42,78,0.28)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-      >
-        <Sparkles className="w-6 h-6 text-[#F5B332]" />
-      </button>
+      <CompanionBuddy config={BUDDY_CONFIG} open={open} thinking={isLoading} onActivate={() => setOpen((v) => !v)} />
     </>
   );
 };

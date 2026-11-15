@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -25,6 +26,18 @@ export function ParentDashboardPage() {
   const { data, activeChild, isLoading, isError, setActiveChildId } = useParentWorkspace();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // The companion buddy (RoleCompanion) opens the assistant by navigating
+  // here with { openAssistant: true }; consume the flag so a refresh/back
+  // doesn't reopen it.
+  useEffect(() => {
+    if ((location.state as { openAssistant?: boolean } | null)?.openAssistant) {
+      setAiOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const handleAttentionAction = (item: AttentionItem) => {
     // Wired for real navigation/actions once the backing endpoints exist

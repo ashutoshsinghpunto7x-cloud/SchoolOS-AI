@@ -5,6 +5,7 @@ import {
   Store, FileBarChart2, GraduationCap, Users, Upload, Settings2, Mail,
   ChevronDown, Menu, X, Settings, LogOut, Headphones, Wrench,
 } from 'lucide-react';
+import { useBuddyTip } from '@/features/companion/useBuddyTip';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
@@ -86,6 +87,7 @@ const formatDate = (d: Date): string =>
 // ── One dropdown ("Fees ▾", "Expenses ▾", "Other ▾") ────────────────────────
 
 function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string }) {
+  const buddyTip = useBuddyTip();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const active = isGroupActive(group, pathname);
@@ -112,6 +114,7 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
               key={item.path}
               to={item.path}
               onClick={() => setOpen(false)}
+              {...buddyTip(item.path, 'row', item.label)}
               className={({ isActive }) => cn(
                 'flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition-colors',
                 isActive ? 'text-[#5B21B6] bg-[#A855F7]/5' : 'text-gray-700 hover:bg-gray-50',
@@ -195,6 +198,7 @@ function ProfileMenu({ displayName, onClose, onNavigateSettings, onContactSuppor
 }
 
 export function AccountantTopNav() {
+  const buddyTip = useBuddyTip();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -221,7 +225,7 @@ export function AccountantTopNav() {
 
         {/* Desktop nav row — every entry its own bordered box */}
         <nav className="hidden lg:flex items-center gap-2">
-          <NavLink to="/accountant" end className={({ isActive }) => navBoxCls(isActive)}>
+          <NavLink to="/accountant" end {...buddyTip('/accountant', 'below', 'Dashboard')} className={({ isActive }) => navBoxCls(isActive)}>
             <LayoutDashboard className="w-4 h-4" /> Dashboard
           </NavLink>
 
@@ -229,11 +233,11 @@ export function AccountantTopNav() {
             <NavDropdown key={group.label} group={group} pathname={location.pathname} />
           ))}
 
-          <NavLink to="/accountant/vendors" className={({ isActive }) => navBoxCls(isActive)}>
+          <NavLink to="/accountant/vendors" {...buddyTip('/accountant/vendors', 'below')} className={({ isActive }) => navBoxCls(isActive)}>
             <Store className="w-4 h-4" /> Vendors
           </NavLink>
 
-          <NavLink to="/accountant/reports" className={({ isActive }) => navBoxCls(isActive)}>
+          <NavLink to="/accountant/reports" {...buddyTip('/accountant/reports', 'below')} className={({ isActive }) => navBoxCls(isActive)}>
             <FileBarChart2 className="w-4 h-4" /> Reports
           </NavLink>
         </nav>

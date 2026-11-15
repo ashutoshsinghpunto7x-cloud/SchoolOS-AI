@@ -79,6 +79,36 @@ export const PrincipalWorkspace = () => {
 
   const card = 'bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs';
 
+  // Speech-bubble text for the assistant companion (CompanionBuddy) — "Title|Text",
+  // built from the same live numbers shown on this page. Purely data attributes.
+  const absentToday = attendance && attendance.total > 0 ? attendance.absent : null;
+  const lowestClass = lowest[0] ? `${lowest[0].class}–${lowest[0].section}` : null;
+  const followUps = data?.admissions.pendingFollowUp ?? 0;
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const attendanceTip =
+    attendanceRate === null
+      ? "Attendance|Attendance hasn't been marked yet today."
+      : `Attendance|${attendanceRate}% present today — ${plural(absentToday ?? 0, 'student', 'students')} absent.${lowestClass ? ` Lowest is ${lowestClass}.` : ''}`;
+  const leaveTip =
+    pendingLeaves > 0
+      ? `Leave requests|${plural(pendingLeaves, 'request is', 'requests are')} waiting for your decision.`
+      : 'Leave requests|Nothing waiting for you right now.';
+  const enquiryTip = `Admission enquiries|${plural(newEnquiries, 'new enquiry', 'new enquiries')} this month${followUps > 0 ? `, ${followUps} need a follow-up call` : ''}.`;
+  const QUICK_TIPS: Record<string, string> = {
+    Attendance: attendanceTip,
+    Leave: leaveTip,
+    Messages: 'Messages|Notices and messages to staff and parents.',
+    Calendar: 'Calendar|School events, holidays and exam dates.',
+    Exams: 'Exams|Exam and unit test schedules.',
+    Marks: 'Marks|Marks entry and report cards for every class.',
+    Transport: 'Transport|Buses, routes and drivers.',
+    Teachers: 'Teachers|Every teacher, their classes and subjects.',
+    'Academic Plan': 'Academic Plan|How far each class has got through the syllabus.',
+    Timetable: "Timetable|The whole school's timetable on one page.",
+    Enquiries: enquiryTip,
+    Hiring: 'Hiring|Candidates, interviews and hiring approvals.',
+  };
+
   return (
     <div className="flex-1 w-full font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
       <div className="w-full max-w-[1100px] mx-auto px-4 py-6 md:py-8 space-y-6">
@@ -110,6 +140,8 @@ export const PrincipalWorkspace = () => {
               key={q.label}
               type="button"
               onClick={() => navigate(q.path)}
+              data-buddy-tip={QUICK_TIPS[q.label]}
+              data-buddy-kind="icon"
               className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
             >
               <span className="relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
@@ -129,7 +161,7 @@ export const PrincipalWorkspace = () => {
 
         {/* Key metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button type="button" onClick={() => navigate('/attendance')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/attendance')} data-buddy-tip={attendanceTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">Attendance today</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">
               {isLoading ? '…' : attendanceRate === null ? '—' : `${attendanceRate}%`}
@@ -142,14 +174,14 @@ export const PrincipalWorkspace = () => {
                   : 'Not marked yet today'}
             </span>
           </button>
-          <button type="button" onClick={() => navigate('/principal/leave-approvals')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/principal/leave-approvals')} data-buddy-tip={leaveTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">Leave requests</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{leaves ? pendingLeaves : '…'}</div>
             <span className="text-[11px] font-semibold text-amber-600">
               {pendingLeaves > 0 ? `${pendingLeaves} awaiting your decision` : 'Nothing pending'}
             </span>
           </button>
-          <button type="button" onClick={() => navigate('/enquiries')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/enquiries')} data-buddy-tip={enquiryTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">New enquiries this month</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{isLoading ? '…' : newEnquiries}</div>
             <span className="text-[11px] font-semibold text-[#254A9A]">
@@ -197,6 +229,8 @@ export const PrincipalWorkspace = () => {
                 key={r.label}
                 type="button"
                 onClick={() => navigate(r.path)}
+                data-buddy-tip={`${r.label}|${r.count > 0 ? `${r.count} waiting for you — click to review.` : 'Nothing waiting here.'}`}
+                data-buddy-kind="row"
                 className="w-full flex items-center justify-between py-2.5 border-b last:border-b-0 border-[#E8E2D6]/60 text-left cursor-pointer hover:bg-[#FBF8F3] rounded-lg px-1"
               >
                 <span className="text-[14px] text-[#1B2A4E]">{r.label}</span>

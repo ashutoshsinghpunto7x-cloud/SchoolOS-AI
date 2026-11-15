@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
+import { useBuddyTip } from '@/features/companion/useBuddyTip';
 import { LayoutDashboard, Wallet, IndianRupee, Receipt, MoreHorizontal } from 'lucide-react';
 
 const NAV = [
@@ -10,6 +11,7 @@ const NAV = [
 ];
 
 export function AccountantLayout() {
+  const buddyTip = useBuddyTip();
   return (
     <>
       <div className="pb-20 lg:pb-0">
@@ -24,7 +26,7 @@ export function AccountantLayout() {
       >
         <div className="flex items-center h-16">
           {NAV.map(({ to, icon: Icon, label, end }) => (
-            <NavLink key={to} to={to} end={end} className="flex-1">
+            <NavLink key={to} to={to} end={end} className="flex-1" {...buddyTip(to, 'icon', label)}>
               {({ isActive }) => (
                 <div
                   className={`flex flex-col items-center gap-0.5 py-1.5 transition-all duration-200 ${

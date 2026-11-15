@@ -1,4 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
+import { useBuddyTip } from '@/features/companion/useBuddyTip';
 import homeIcon from '@/assets/illustrations/teacher/Home-icon.png';
 import classesIcon from '@/assets/illustrations/teacher/Classes-icon.png';
 import historyIcon from '@/assets/illustrations/teacher/History-icon.png';
@@ -37,6 +38,7 @@ const NAV: NavEntry[] = [
 ];
 
 export function TeacherLayout() {
+  const buddyTip = useBuddyTip();
   return (
     <>
       {/* On phones the teacher portal fills the viewport edge-to-edge; from
@@ -56,7 +58,7 @@ export function TeacherLayout() {
       >
         <div className="flex items-center h-16 px-2 rounded-full bg-white/90 dark:bg-[#0F0821]/90 backdrop-blur-xl border border-gray-100 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
           {NAV.map(({ to, image, crop, label, end }) => (
-            <NavLink key={to} to={to} end={end} className="flex-1">
+            <NavLink key={to} to={to} end={end} className="flex-1" {...buddyTip(to, 'icon', label)}>
               {({ isActive }) => (
                 <div className="flex flex-col items-center gap-0.5 py-1.5">
                   <div
