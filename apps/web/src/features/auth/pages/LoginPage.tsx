@@ -5,57 +5,15 @@ import { useAuthContext } from '../context/AuthContext';
 import { getHomePathForRole } from '../utils/roleHome';
 import type { UserRole } from '@schoolos/types';
 import { pingServerAwake, ApiError } from '../../../services/api';
-import fnicLogo from '../../../assets/illustrations/fnic-logo.webp';
 import { PixelWaveBackground } from '../components/PixelWaveBackground';
 
 const isMaintenanceModeError = (err: unknown): boolean =>
   err instanceof ApiError && err.code === 'MAINTENANCE_MODE';
 
-const chromaKeyCache = new Map<string, string>();
-
-function useChromaKeyedLogo(src: string) {
-  const [dataUrl, setDataUrl] = useState<string | null>(() => chromaKeyCache.get(src) ?? null);
-
-  useEffect(() => {
-    if (chromaKeyCache.has(src)) return;
-    let cancelled = false;
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      if (cancelled) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
-      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const d = frame.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const brightness = (d[i] + d[i + 1] + d[i + 2]) / 3;
-        if (brightness > 248) d[i + 3] = 0;
-        else if (brightness > 222) d[i + 3] = Math.round(255 * (248 - brightness) / (248 - 222));
-      }
-      ctx.putImageData(frame, 0, 0);
-      if (!cancelled) {
-        const result = canvas.toDataURL('image/png');
-        chromaKeyCache.set(src, result);
-        setDataUrl(result);
-      }
-    };
-    return () => {
-      cancelled = true;
-    };
-  }, [src]);
-
-  return dataUrl;
-}
-
 export const LoginPage = () => {
   const { login, isAuthenticated, user } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const transparentLogo = useChromaKeyedLogo(fnicLogo);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -143,7 +101,7 @@ export const LoginPage = () => {
         <PixelWaveBackground variant="light" direction="forward" className="opacity-70" />
       </div>
 
-      {/* Main 3-stage layout: Left (MY CAMPUS) -> Center (Logo) -> Right (Text boxes) with doubled breathing room */}
+      {/* Main 3-stage layout: Left (MY CAMPUS) -> Right (Text boxes) */}
       <div className="min-h-screen w-full relative z-10 flex flex-col lg:flex-row items-center justify-between p-6 sm:p-10 lg:p-14 xl:p-20 gap-12 lg:gap-16 xl:gap-24 2xl:gap-32 max-w-[1600px] mx-auto">
 
         {/* ── Left Brand Stage: MY CAMPUS text ──────────────────────────────── */}
@@ -163,19 +121,6 @@ export const LoginPage = () => {
           <p className="text-base sm:text-lg text-white/90 font-medium leading-relaxed max-w-sm">
             Empowering Education. Building Futures.
           </p>
-        </div>
-
-        {/* ── Center Emblem: in between MY CAMPUS text and the text boxes ───── */}
-        <div className="shrink-0 flex items-center justify-center my-4 lg:my-0 px-2 lg:px-6">
-          <div className="flex h-36 w-36 sm:h-44 sm:w-44 lg:h-52 lg:w-52 items-center justify-center rounded-full bg-white overflow-hidden ring-4 ring-[#D9822B]/70 shadow-[0_20px_50px_rgba(0,0,0,0.35)] transition-transform hover:scale-105 duration-300 p-3 sm:p-4">
-            <img
-              src={transparentLogo ?? fnicLogo}
-              alt="My Campus Logo"
-              width={160}
-              height={160}
-              className="h-28 w-28 sm:h-34 sm:w-34 lg:h-40 lg:w-40 object-contain"
-            />
-          </div>
         </div>
 
         {/* ── Right Login Stage: Text Boxes & Actions ────────────────────────── */}

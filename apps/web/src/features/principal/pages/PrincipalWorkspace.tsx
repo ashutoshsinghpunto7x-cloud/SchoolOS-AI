@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Send, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { usePrincipalDashboard } from '../hooks/usePrincipal';
 import { useAnalytics } from '@/features/reports/hooks/useReports';
@@ -8,10 +7,7 @@ import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeav
 import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
-import { usePrincipalAssistant } from '@/features/principal-assistant/hooks/usePrincipalAssistant';
-import { ChatMessage } from '@/features/principal-assistant/components/ChatMessage';
 import { getPrincipalPagePath } from '@/components/topbar/AppLauncherModal';
-import { extractErrorMessage } from '@/services/api';
 
 // Principal home — every number on this page comes from the live API
 // (/principal/dashboard, attendance analytics, and the four pending-approval
@@ -51,23 +47,6 @@ export const PrincipalWorkspace = () => {
   const { data: tests } = usePendingTestApprovals();
   const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
-
-  // AI assistant (real backend, same as the previous dashboard)
-  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading: aiBusy, error: aiError } =
-    usePrincipalAssistant();
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiInput, setAiInput] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (aiOpen) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [aiOpen, messages, aiBusy]);
-
-  const send = (text?: string) => {
-    const value = (text ?? aiInput).trim();
-    if (!value || aiBusy) return;
-    sendMessage(value);
-    setAiInput('');
-  };
 
   const lowest = useMemo(() => {
     const rows = analytics?.category === 'attendance' ? analytics.data.byClass : [];
@@ -247,60 +226,6 @@ export const PrincipalWorkspace = () => {
         )}
       </div>
 
-      {/* AI assistant — real backend */}
-      {aiOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[380px] max-w-[calc(100vw-24px)] h-[520px] max-h-[calc(100vh-130px)] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(27,42,78,0.28)] border border-[#E8E2D6] flex flex-col overflow-hidden">
-          <div className="px-5 py-3.5 bg-gradient-to-r from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-[#F5B332]" />
-              <h3 className="text-[15px] font-bold m-0">SchoolOS AI</h3>
-            </div>
-            <button type="button" onClick={() => setAiOpen(false)} aria-label="Close assistant" className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div ref={scrollRef} className="p-4 flex-1 overflow-y-auto space-y-3 min-h-0 bg-[#FAF8F5]">
-            {messages.length === 0 && (
-              <p className="text-[13px] text-[#55607A]">
-                Ask about today&apos;s attendance, pending approvals, fee collection, teachers on leave or admissions.
-              </p>
-            )}
-            {messages.map((m) => (
-              <ChatMessage key={m.id} message={m} onEditField={onEditField} onApprove={onApprove} onCancel={onCancel} onQuickReply={send} />
-            ))}
-            {aiBusy && <p className="text-[12px] text-[#55607A]">Thinking…</p>}
-            {aiError && <p className="text-[12px] text-red-600">{extractErrorMessage(aiError)}</p>}
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-            className="p-3 bg-white border-t border-[#E8E2D6] flex items-center gap-2 shrink-0"
-          >
-            <input
-              type="text"
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder="Ask AI anything..."
-              disabled={aiBusy}
-              className="flex-1 bg-[#F3EEE3] rounded-full px-3.5 py-2 text-[13px] text-[#1B2A4E] outline-none"
-            />
-            <button type="submit" disabled={!aiInput.trim() || aiBusy} aria-label="Send" className="w-8 h-8 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40">
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
-        </div>
-      )}
-      <button
-        type="button"
-        onClick={() => setAiOpen((v) => !v)}
-        aria-label="Ask AI Assistant"
-        title="Ask AI Assistant"
-        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(27,42,78,0.28)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-      >
-        <Sparkles className="w-6 h-6 text-[#F5B332]" />
-      </button>
     </div>
   );
 };

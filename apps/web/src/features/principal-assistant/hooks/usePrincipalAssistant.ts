@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { principalAssistantApi, ActionPreview } from '../api/principal-assistant.api';
 
@@ -18,7 +19,9 @@ export type AssistantMessage =
     }
   | { id: string; role: 'assistant'; type: 'action_result'; actionId: string; summary: string; notifiedCount?: number };
 
-export const usePrincipalAssistant = () => {
+export const usePrincipalAssistant = (options?: { onAssistantText?: (text: string) => void }) => {
+  const navigate = useNavigate();
+  const onAssistantText = options?.onAssistantText;
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
   const mutation = useMutation({
@@ -35,13 +38,25 @@ export const usePrincipalAssistant = () => {
 
       mutation.mutate(trimmed, {
         onSuccess: (result) => {
+          if (result.type === 'navigate') {
+            setMessages((prev) => [
+              ...prev,
+              { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: result.reply },
+            ]);
+            onAssistantText?.(result.reply);
+            // Brief pause so the confirmation is visible/audible before the page changes.
+            window.setTimeout(() => navigate(result.path), 450);
+            return;
+          }
           if (result.type === 'text') {
+            onAssistantText?.(result.reply);
             setMessages((prev) => [
               ...prev,
               { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: result.reply, quickReplies: result.quickReplies },
             ]);
             return;
           }
+          onAssistantText?.(`${result.preview.title} is ready. Please review the details and approve.`);
           setMessages((prev) => [
             ...prev,
             {
@@ -57,7 +72,7 @@ export const usePrincipalAssistant = () => {
         },
       });
     },
-    [mutation]
+    [mutation, navigate, onAssistantText]
   );
 
   /** Updates one field locally, then re-previews server-side to refresh conflict warnings. Never mutates. */

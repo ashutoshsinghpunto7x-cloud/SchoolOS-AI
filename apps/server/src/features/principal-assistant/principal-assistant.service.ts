@@ -1,6 +1,8 @@
 import { openaiProvider } from '../ai/providers/llm/openai.provider';
 import { chatSchema } from './principal-assistant.validation';
-import { classifyIntent, recordUsage, UNSUPPORTED_INTENT, IntentDefinition } from './intent-router';
+import { recordUsage, UNSUPPORTED_INTENT, IntentDefinition } from './intent-router';
+import { routeMessage } from './unified-router';
+import { NAVIGATION_TARGETS, findNavigationTarget } from './navigation.targets';
 import { attendanceIntents } from './principal-assistant.intents';
 import { principalAssistantData } from './principal-assistant.data';
 import { feeIntents } from './fees.intents';
@@ -8,21 +10,29 @@ import { admissionsIntents } from './admissions.intents';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
 import { principalAssistantActionService, ActionPreviewResult } from './principal-assistant.action.service';
 import { AuthContext } from '../../lib/auth-context';
-import { AppError, ForbiddenError } from '../../middlewares/errorHandler';
+import { AppError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 import type { ClassAttendanceList } from './principal-assistant.data';
 
 const UNSUPPORTED_REPLY =
-  "I'm currently able to help with attendance, fees, and admissions questions only — things like today's " +
-  'attendance summary, present/absent counts, fee collection totals, outstanding dues, admission enquiries, ' +
-  "pending follow-ups, or the highest/lowest performing class on attendance/fees. Could you rephrase your " +
-  'question around attendance, fees, or admissions?';
+  "I can open any screen (try \"open leave requests\"), schedule staff meetings, move timetable periods, and answer " +
+  "questions about attendance, fees and admissions — e.g. \"how many students are absent today?\" or " +
+  "\"outstanding fees\". You can also speak to me with the mic button. What would you like to do?";
+
+const HAS_DEVANAGARI = /[ऀ-ॿ]/;
+
+const UNSUPPORTED_REPLY_HI =
+  'मैं कोई भी स्क्रीन खोल सकता हूँ (जैसे "छुट्टी के अनुरोध खोलो"), स्टाफ मीटिंग शेड्यूल कर सकता हूँ, टाइमटेबल बदल सकता हूँ, ' +
+  'और उपस्थिति, फीस व एडमिशन के सवालों के जवाब दे सकता हूँ। बताइए, क्या करना है?';
 
 const ATTENDANCE_SCOPE_QUESTION = "Would you like to see today's attendance for students, teachers, or both?";
 const ATTENDANCE_SCOPE_REPLIES: Record<string, 'students' | 'teachers' | 'both'> = {
   students: 'students', student: 'students', class: 'students', classes: 'students', 'class-wise': 'students',
   teachers: 'teachers', teacher: 'teachers',
   both: 'both',
+  'छात्र': 'students', 'विद्यार्थी': 'students', 'बच्चे': 'students', 'कक्षा': 'students',
+  'शिक्षक': 'teachers', 'टीचर': 'teachers', 'अध्यापक': 'teachers',
+  'दोनों': 'both', 'दोनो': 'both',
 };
 
 /** Plain, deterministic formatting — no LLM pass — so the reply is always
@@ -55,6 +65,7 @@ const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceInten
 
 export type ChatResult =
   | { type: 'text'; reply: string; quickReplies?: string[] }
+  | { type: 'navigate'; reply: string; path: string; label: string }
   | { type: 'action_preview'; actionId: string; params: Record<string, unknown>; preview: ActionPreviewResult['preview'] };
 
 export const principalAssistantService = {
@@ -73,44 +84,56 @@ export const principalAssistantService = {
       return { type: 'text', reply: await buildAttendanceScopeReply(scope, ctx) };
     }
 
-    // Step 0 — check whether this is an action request (e.g. "schedule a staff
-    // meeting") before falling into the read-only Q&A flow below. Kept as a
-    // separate classification call for now since there's only one action
-    // registered; once more actions exist this should merge into a single
-    // combined classification call the way allIntents already merges domains.
+    // Step 0 — ONE routing call decides: open a screen, perform an action
+    // (preview/approve), answer a data question, or unsupported. (Previously two
+    // sequential classification calls, which made every reply slow.)
+    let routing;
     try {
-      const actionResult = await principalAssistantActionService.previewFromMessage(message, ctx);
-      if (actionResult) {
-        return {
-          type: 'action_preview',
-          actionId: actionResult.actionId,
-          params: actionResult.params,
-          preview: actionResult.preview,
-        };
-      }
-    } catch (err) {
-      if (err instanceof ForbiddenError) throw err;
-      // AI_UNAVAILABLE or other action-path errors shouldn't block the Q&A
-      // fallback below — log and continue.
-      logger.warn('[PrincipalAssistant] Action classification failed, falling back to Q&A', {
-        schoolId: ctx.schoolId,
-        err: (err as Error).message,
+      routing = await routeMessage(message, {
+        navigation: NAVIGATION_TARGETS.map((t) => ({ id: t.id, description: `${t.label} — ${t.description}` })),
+        actions: principalAssistantActionService.listActions(),
+        intents: allIntents.map((i) => ({ id: i.id, description: i.description })),
       });
+    } catch (err) {
+      logger.error('[PrincipalAssistant] Routing call failed', { schoolId: ctx.schoolId, err: (err as Error).message });
+      throw new AppError(
+        'The AI service is busy or unreachable right now. Please try again in a moment.',
+        503,
+        'AI_UNAVAILABLE',
+      );
+    }
+    recordUsage(routing.usage, ctx.schoolId);
+    const { kind, id: routedId } = routing.decision;
+
+    if (kind === 'navigate' && routedId) {
+      const target = findNavigationTarget(routedId);
+      if (target) {
+        const reply = HAS_DEVANAGARI.test(message) ? `${target.label} खोल रहा हूँ…` : `Opening ${target.label}…`;
+        return { type: 'navigate', reply, path: target.path, label: target.label };
+      }
     }
 
-    // Step 1 — route the question to an attendance/fees intent (or UNSUPPORTED).
-    const { intentId, usage: routerUsage } = await classifyIntent(message, 'Attendance, Fees and Admissions', allIntents);
-    recordUsage(routerUsage, ctx.schoolId);
+    if (kind === 'action' && routedId) {
+      const actionResult = await principalAssistantActionService.previewForAction(routedId, message, ctx);
+      return {
+        type: 'action_preview',
+        actionId: actionResult.actionId,
+        params: actionResult.params,
+        preview: actionResult.preview,
+      };
+    }
+
+    const intentId = kind === 'intent' && routedId ? routedId : UNSUPPORTED_INTENT;
+    const routerUsage = routing.usage;
 
     if (intentId === UNSUPPORTED_INTENT) {
       logger.info('[PrincipalAssistant] Unsupported intent', { schoolId: ctx.schoolId, message });
-      return { type: 'text', reply: UNSUPPORTED_REPLY };
+      return { type: 'text', reply: HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY };
     }
 
     const intent = allIntents.find((i) => i.id === intentId);
     if (!intent) {
-      // Defensive: classifyIntent only returns ids from allIntents or UNSUPPORTED.
-      return { type: 'text', reply: UNSUPPORTED_REPLY };
+      return { type: 'text', reply: HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY };
     }
 
     // A generic "today's attendance" ask is answered with a short scope
