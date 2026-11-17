@@ -11,7 +11,7 @@ export function AIInsightCard({ insight, childName, onAsk }: AIInsightCardProps)
   return (
     <section
       aria-labelledby="ai-heading"
-      className="rounded-2xl px-5 py-5 sm:px-7 sm:py-7 bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] shadow-sm"
+      className="rounded-2xl px-5 py-5 sm:px-7 sm:py-7 bg-gradient-to-br from-[#1B2A4E] to-[#254A9A] shadow-sm"
     >
       <div className="flex items-center gap-2">
         <Sparkle className="w-4 h-4 text-white" strokeWidth={1.75} />

@@ -19,7 +19,7 @@ export function ScheduleTimeline({ schedule }: ScheduleTimelineProps) {
           <span
             className={`absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full ${
               entry.isCurrent
-                ? 'bg-purple-600'
+                ? 'bg-[#1B2A4E]'
                 : entry.isDone
                   ? 'bg-gray-200'
                   : 'bg-gray-900'
@@ -36,7 +36,7 @@ export function ScheduleTimeline({ schedule }: ScheduleTimelineProps) {
               </p>
             </div>
             {entry.isCurrent && (
-              <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-full shrink-0">
+              <span className="text-xs font-semibold text-[#1B2A4E] bg-[#EEF1F8] px-2 py-1 rounded-full shrink-0">
                 Now
               </span>
             )}

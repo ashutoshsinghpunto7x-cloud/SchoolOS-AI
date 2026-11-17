@@ -16,7 +16,7 @@ import type { CSSProperties } from 'react';
  * down, rather than hitting the saturated pink end-stop right at the boundary.
  */
 export const ACCOUNTANT_HERO_GRADIENT_STYLE: CSSProperties = {
-  background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)',
+  background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)',
   backgroundAttachment: 'fixed',
   backgroundSize: '100% 320px',
   backgroundPosition: 'top',

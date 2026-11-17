@@ -127,15 +127,15 @@ export const CalendarGrid = ({
               className={cn(
                 'min-h-[72px] p-1.5 flex flex-col items-start border-b border-r border-gray-50 dark:border-white/5 last:border-r-0',
                 'hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-left',
-                isSelected && 'bg-blue-50 dark:bg-violet-500/10',
+                isSelected && 'bg-blue-50 dark:bg-[#254A9A]/10',
                 isWeekend && !isSelected && 'bg-gray-50/50 dark:bg-white/[0.02]',
               )}
             >
               <span
                 className={cn(
                   'w-6 h-6 text-xs font-semibold flex items-center justify-center rounded-full mb-1',
-                  isToday    && 'bg-[#5B21B6] text-white',
-                  isSelected && !isToday && 'bg-blue-100 dark:bg-violet-500/20 text-blue-700 dark:text-violet-300',
+                  isToday    && 'bg-[#1B2A4E] text-white',
+                  isSelected && !isToday && 'bg-blue-100 dark:bg-[#254A9A]/20 text-blue-700 dark:text-violet-300',
                   !isToday && !isSelected && (isWeekend ? 'text-gray-400 dark:text-white/30' : 'text-gray-700 dark:text-white/70'),
                 )}
               >

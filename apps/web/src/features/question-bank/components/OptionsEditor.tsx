@@ -26,7 +26,7 @@ export function OptionsEditor({ options, correctAnswer, onChange }: {
     <div>
       <div className="flex items-center justify-between">
         <label className="text-[11px] font-semibold text-gray-400">Options — tap one to mark it correct</label>
-        <button type="button" onClick={() => onChange([...options, ''], correctAnswer)} className="text-[11px] font-semibold text-[#6D4AFF] flex items-center gap-0.5">
+        <button type="button" onClick={() => onChange([...options, ''], correctAnswer)} className="text-[11px] font-semibold text-[#254A9A] flex items-center gap-0.5">
           <Plus className="w-3 h-3" /> Add option
         </button>
       </div>

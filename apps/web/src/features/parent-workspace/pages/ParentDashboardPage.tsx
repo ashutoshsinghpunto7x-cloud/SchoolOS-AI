@@ -38,8 +38,8 @@ export function ParentDashboardPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
-        <p className="text-base text-gray-500 text-center max-w-sm">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center px-4 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+        <p className="text-base text-[#55607A] text-center max-w-sm">
           Something went wrong loading your dashboard. Please try again shortly.
         </p>
       </div>
@@ -48,7 +48,7 @@ export function ParentDashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <DashboardSkeleton />
       </div>
     );
@@ -56,12 +56,12 @@ export function ParentDashboardPage() {
 
   if (!activeChild) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-          <Users className="w-6 h-6 text-purple-600" strokeWidth={1.75} />
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center px-6 text-center font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+        <div className="w-14 h-14 rounded-full bg-[#EEF1F8] flex items-center justify-center mb-4">
+          <Users className="w-6 h-6 text-[#254A9A]" strokeWidth={1.75} />
         </div>
-        <h1 className="text-lg font-bold text-gray-900">No children linked yet</h1>
-        <p className="text-sm text-gray-500 mt-1.5 max-w-xs">
+        <h1 className="text-lg font-bold text-[#1B2A4E]">No children linked yet</h1>
+        <p className="text-sm text-[#55607A] mt-1.5 max-w-xs">
           Ask the school office to link your child's profile to this account.
         </p>
       </div>

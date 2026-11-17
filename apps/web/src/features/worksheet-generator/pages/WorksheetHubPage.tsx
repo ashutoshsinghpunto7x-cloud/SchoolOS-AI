@@ -11,7 +11,7 @@ interface SubjectEntry {
 
 const ACCENTS = [
   { bg: 'bg-[#ECFEFF]', text: 'text-[#0891B2]' },
-  { bg: 'bg-[#F3EEFF]', text: 'text-[#6D4AFF]' },
+  { bg: 'bg-[#EEF1F8]', text: 'text-[#254A9A]' },
   { bg: 'bg-emerald-50', text: 'text-[#20C997]' },
   { bg: 'bg-amber-50', text: 'text-[#FFB547]' },
 ];
@@ -37,7 +37,7 @@ export function WorksheetHubPage() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate('/teacher')} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back

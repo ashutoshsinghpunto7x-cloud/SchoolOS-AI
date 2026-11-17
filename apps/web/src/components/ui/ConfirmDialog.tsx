@@ -93,8 +93,8 @@ export const ConfirmDialog = ({
           <button
             onClick={onExtraAction}
             disabled={isLoading}
-            className="mb-3 h-11 w-full rounded-xl bg-violet-600 hover:bg-violet-700 active:bg-violet-800
-                       dark:bg-violet-500 dark:hover:bg-violet-600 dark:active:bg-violet-700
+            className="mb-3 h-11 w-full rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] active:bg-[#15223E]
+                       dark:bg-[#254A9A] dark:hover:bg-[#1B2A4E] dark:active:bg-[#2C4177]
                        text-sm font-bold text-white transition-colors disabled:opacity-50"
             type="button"
           >

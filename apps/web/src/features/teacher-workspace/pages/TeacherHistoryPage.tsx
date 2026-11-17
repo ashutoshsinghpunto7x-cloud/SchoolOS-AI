@@ -87,7 +87,7 @@ function groupBySession(records: Attendance[]): SessionGroup[] {
 // same colorful-left-bar language as the dark theme reference design.
 const DAY_ACCENTS = [
   { bar: 'bg-[#DB2777]', tint: 'bg-[#DB2777]/10 dark:bg-[#DB2777]/15' }, // Sun
-  { bar: 'bg-[#6D4AFF]', tint: 'bg-[#6D4AFF]/10 dark:bg-[#6D4AFF]/15' }, // Mon
+  { bar: 'bg-[#254A9A]', tint: 'bg-[#254A9A]/10 dark:bg-[#254A9A]/15' }, // Mon
   { bar: 'bg-[#4A90FF]', tint: 'bg-[#4A90FF]/10 dark:bg-[#4A90FF]/15' }, // Tue
   { bar: 'bg-[#20C997]', tint: 'bg-[#20C997]/10 dark:bg-[#20C997]/15' }, // Wed
   { bar: 'bg-[#4A90FF]', tint: 'bg-[#4A90FF]/10 dark:bg-[#4A90FF]/15' }, // Thu
@@ -323,7 +323,7 @@ export function TeacherHistoryPage() {
           type="button"
           onClick={() => setFilterOpen((v) => !v)}
           aria-label="Filter by date"
-          className="flex items-center justify-center w-9 h-9 rounded-xl text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-xl text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8] dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 transition-colors"
         >
           <Filter className="w-4 h-4" />
         </button>
@@ -339,7 +339,7 @@ export function TeacherHistoryPage() {
               placeholder="Search by class or date…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-11 pl-10 pr-4 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="w-full h-11 pl-10 pr-4 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#1B2A4E] transition-colors"
             />
           </div>
 
@@ -349,7 +349,7 @@ export function TeacherHistoryPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="w-full h-11 pl-9 pr-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] appearance-none transition-colors"
+              className="w-full h-11 pl-9 pr-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#1B2A4E] appearance-none transition-colors"
             >
               <option value="" className="dark:bg-[#181B26]">All My Classes</option>
               {classPairs.map((p) => (
@@ -367,7 +367,7 @@ export function TeacherHistoryPage() {
               value={dateFrom}
               max={dateTo}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#1B2A4E] transition-colors"
             />
             <span className="text-gray-400 dark:text-white/30 text-sm shrink-0">to</span>
             <input
@@ -376,7 +376,7 @@ export function TeacherHistoryPage() {
               min={dateFrom}
               max={todayStr()}
               onChange={(e) => setDateTo(e.target.value)}
-              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#5B21B6] transition-colors"
+              className="flex-1 h-11 px-3 bg-white dark:bg-white/[0.04] border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-white [color-scheme:light] dark:[color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#1B2A4E] transition-colors"
             />
           </div>
         </div>

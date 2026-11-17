@@ -15,7 +15,7 @@ interface ClassEntry {
 }
 
 const ACCENTS = [
-  { bar: 'bg-[#6D4AFF]', icon: 'bg-[#F3EEFF] text-[#6D4AFF]', badge: 'bg-[#F3EEFF] text-[#6D4AFF]' },
+  { bar: 'bg-[#254A9A]', icon: 'bg-[#EEF1F8] text-[#254A9A]', badge: 'bg-[#EEF1F8] text-[#254A9A]' },
   { bar: 'bg-[#4A90FF]', icon: 'bg-blue-50 text-[#4A90FF]', badge: 'bg-blue-50 text-[#4A90FF]' },
   { bar: 'bg-[#20C997]', icon: 'bg-emerald-50 text-[#20C997]', badge: 'bg-emerald-50 text-[#20C997]' },
   { bar: 'bg-[#FFB547]', icon: 'bg-amber-50 text-[#FFB547]', badge: 'bg-amber-50 text-[#FFB547]' },
@@ -38,7 +38,7 @@ function ClassCard({ entry, accent, index, onPress }: {
       transition={{ duration: 0.4, delay: index * 0.06, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ scale: 1.02, y: -2 }}
       whileTap={{ scale: 0.98 }}
-      className="w-full text-left relative flex items-center gap-4 bg-white dark:bg-[#150C29] rounded-[24px] shadow-[0_8px_24px_rgba(17,12,46,0.06)] dark:shadow-none dark:border dark:border-white/10 hover:shadow-[0_16px_36px_rgba(17,12,46,0.1)] dark:hover:border-[#A855F7]/30 transition-shadow duration-300 overflow-hidden pl-5 pr-4 py-5"
+      className="w-full text-left relative flex items-center gap-4 bg-white dark:bg-[#150C29] rounded-[24px] shadow-[0_8px_24px_rgba(17,12,46,0.06)] dark:shadow-none dark:border dark:border-white/10 hover:shadow-[0_16px_36px_rgba(17,12,46,0.1)] dark:hover:border-[#1B2A4E]/20 transition-shadow duration-300 overflow-hidden pl-5 pr-4 py-5"
     >
       {/* Left accent strip */}
       <span className={cn('absolute left-0 top-0 bottom-0 w-1.5 rounded-l-[24px]', accent.bar)} />
@@ -114,7 +114,7 @@ export function TeacherClassesPage() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-[#0B0518]">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-[#0B0518]">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         {/* Back + title */}
         <button
@@ -129,7 +129,7 @@ export function TeacherClassesPage() {
         {/* Hero */}
         <div className="relative mb-6 overflow-visible">
           {/* Decorative floating blur circles */}
-          <div className="absolute -top-6 right-6 w-28 h-28 rounded-full bg-[#6D4AFF]/10 blur-2xl pointer-events-none" />
+          <div className="absolute -top-6 right-6 w-28 h-28 rounded-full bg-[#254A9A]/10 blur-2xl pointer-events-none" />
           <div className="absolute top-10 right-24 w-14 h-14 rounded-full bg-[#20C997]/10 blur-xl pointer-events-none" />
 
           <div className="flex items-start justify-between gap-4">
@@ -212,10 +212,10 @@ export function TeacherClassesPage() {
           }}
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/40 dark:bg-white/5 blur-xl pointer-events-none" />
-          <div className="absolute right-10 bottom-0 w-16 h-16 rounded-full bg-[#6D4AFF]/10 blur-lg pointer-events-none" />
+          <div className="absolute right-10 bottom-0 w-16 h-16 rounded-full bg-[#254A9A]/10 blur-lg pointer-events-none" />
           <div className="relative flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center shrink-0 shadow-sm dark:shadow-none">
-              <CalendarCheck2 className="w-6 h-6 text-[#6D4AFF] dark:text-violet-300" />
+              <CalendarCheck2 className="w-6 h-6 text-[#254A9A] dark:text-violet-300" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Stay organized</h3>

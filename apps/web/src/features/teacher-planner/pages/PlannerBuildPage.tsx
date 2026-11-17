@@ -125,7 +125,7 @@ export function PlannerBuildPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -207,7 +207,7 @@ export function PlannerBuildPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Review &amp; edit — {weeks.length} week(s)</p>
-              <button type="button" onClick={addChapterBlock} className="text-xs font-semibold text-[#6D4AFF] flex items-center gap-1">
+              <button type="button" onClick={addChapterBlock} className="text-xs font-semibold text-[#254A9A] flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Add chapter block
               </button>
             </div>
@@ -239,7 +239,7 @@ export function PlannerBuildPage() {
                       </button>
                     </div>
                   ))}
-                  <button type="button" onClick={() => addTask(wi)} className="text-[11px] font-semibold text-[#6D4AFF] flex items-center gap-1">
+                  <button type="button" onClick={() => addTask(wi)} className="text-[11px] font-semibold text-[#254A9A] flex items-center gap-1">
                     <Plus className="w-3 h-3" /> Add task
                   </button>
                 </div>

@@ -40,7 +40,7 @@ export function PrincipalAcademicPlanDetailPage() {
   const percentComplete = teachDays.length > 0 ? Math.round((completedCount / teachDays.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -51,7 +51,7 @@ export function PrincipalAcademicPlanDetailPage() {
       <div className="mx-auto px-5 py-6" style={{ maxWidth: view === 'list' ? '48rem' : '72rem' }}>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
           </div>
         ) : isError || !plan ? (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
@@ -63,10 +63,10 @@ export function PrincipalAcademicPlanDetailPage() {
             <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-5 mb-5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm font-bold text-gray-900 dark:text-white">Syllabus progress</p>
-                <p className="text-sm font-bold text-[#6D4AFF]">{percentComplete}%</p>
+                <p className="text-sm font-bold text-[#254A9A]">{percentComplete}%</p>
               </div>
               <div className="h-2 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-[#6D4AFF] transition-all" style={{ width: `${percentComplete}%` }} />
+                <div className="h-full rounded-full bg-[#254A9A] transition-all" style={{ width: `${percentComplete}%` }} />
               </div>
               <p className="text-xs text-gray-400 dark:text-white/40 mt-2">{completedCount} of {teachDays.length} teaching periods completed · v{plan.version}</p>
             </div>

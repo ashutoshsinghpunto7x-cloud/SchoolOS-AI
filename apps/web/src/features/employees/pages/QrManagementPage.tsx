@@ -22,7 +22,7 @@ function EmployeeQrRow({ employee }: { employee: Employee }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
+      <div className="w-10 h-10 rounded-full bg-[#EEF1F8] flex items-center justify-center text-[#1B2A4E] font-bold text-xs shrink-0 overflow-hidden">
         {employee.photoUrl ? (
           <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
@@ -40,7 +40,7 @@ function EmployeeQrRow({ employee }: { employee: Employee }) {
         <button
           onClick={() => regenerate()}
           disabled={regenerating}
-          className="h-8 px-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1"
+          className="h-8 px-2.5 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white rounded-lg text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
           title={employee.qr ? 'Regenerate QR' : 'Generate QR'}
         >
           {regenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
@@ -70,7 +70,7 @@ export function QrManagementPage() {
   const rows = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -90,7 +90,7 @@ export function QrManagementPage() {
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && setSearch(searchInput.trim())}
             placeholder="Search by name, employee ID, or phone"
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+            className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E2D6] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
           />
         </div>
 

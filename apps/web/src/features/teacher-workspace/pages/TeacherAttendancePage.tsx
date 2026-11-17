@@ -685,7 +685,7 @@ function SubmittedScreen({
       <div className="flex flex-col gap-3 mt-8 w-full max-w-sm">
         <button
           onClick={onViewStudents}
-          className="h-12 bg-[#5B21B6] text-white font-semibold rounded-xl text-sm hover:bg-[#4C1D95] transition-colors"
+          className="h-12 bg-[#1B2A4E] text-white font-semibold rounded-xl text-sm hover:bg-[#2C4177] transition-colors"
         >
           View Students
         </button>
@@ -698,7 +698,7 @@ function SubmittedScreen({
         </button>
         <button
           onClick={onDashboard}
-          className="text-sm text-[#5B21B6] dark:text-violet-300 font-semibold py-1 hover:underline transition-colors"
+          className="text-sm text-[#1B2A4E] dark:text-violet-300 font-semibold py-1 hover:underline transition-colors"
         >
           Back to Dashboard
         </button>
@@ -1071,7 +1071,7 @@ export function TeacherAttendancePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search student…"
-                  className="w-full h-9 pl-9 pr-9 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                  className="w-full h-9 pl-9 pr-9 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                 />
                 {searchQuery && (
                   <button
@@ -1090,7 +1090,7 @@ export function TeacherAttendancePage() {
                 className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors shrink-0"
                 title="Back to date"
               >
-                <CalendarDays className="w-5 h-5 text-[#5B21B6] dark:text-violet-300" />
+                <CalendarDays className="w-5 h-5 text-[#1B2A4E] dark:text-violet-300" />
               </button>
             </>
           ) : (
@@ -1104,7 +1104,7 @@ export function TeacherAttendancePage() {
                   <ChevronLeft className="w-4 h-4 text-gray-400 dark:text-white/40" />
                 </button>
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <CalendarDays className="w-4 h-4 text-[#5B21B6] dark:text-violet-300 shrink-0" />
+                  <CalendarDays className="w-4 h-4 text-[#1B2A4E] dark:text-violet-300 shrink-0" />
                   <span className="text-sm font-semibold text-gray-800 dark:text-white/80 truncate">
                     {formatDisplayDate(date)}
                   </span>
@@ -1224,7 +1224,7 @@ export function TeacherAttendancePage() {
                 className={cn(
                   'flex-1 h-11 font-bold rounded-xl text-sm transition-all',
                   isAllPresent
-                    ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 text-[#5B21B6] dark:text-violet-300'
+                    ? 'bg-[#EEF1F8] dark:bg-[#A855F7]/15 hover:bg-[#A855F7]/20 dark:hover:bg-[#A855F7]/25 text-[#1B2A4E] dark:text-violet-300'
                     : 'text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 shadow-md shadow-violet-500/20',
                 )}
               >
@@ -1265,7 +1265,7 @@ export function TeacherAttendancePage() {
                   className={cn(
                     'w-11 h-11 flex items-center justify-center border rounded-xl transition-colors',
                     sortMode !== 'name'
-                      ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 border-[#A855F7]/30 text-[#5B21B6] dark:text-violet-300'
+                      ? 'bg-[#EEF1F8] dark:bg-[#A855F7]/15 border-[#1B2A4E]/20 text-[#1B2A4E] dark:text-violet-300'
                       : 'bg-white dark:bg-[#150C29] border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/50 hover:bg-gray-50 dark:hover:bg-white/5',
                   )}
                   title="Filter / sort students"
@@ -1285,7 +1285,7 @@ export function TeacherAttendancePage() {
                         className={cn(
                           'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
                           sortMode === 'present'
-                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            ? 'text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8]/60 dark:bg-white/5'
                             : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
                         )}
                       >
@@ -1297,7 +1297,7 @@ export function TeacherAttendancePage() {
                         className={cn(
                           'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
                           sortMode === 'absent'
-                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            ? 'text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8]/60 dark:bg-white/5'
                             : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
                         )}
                       >
@@ -1311,7 +1311,7 @@ export function TeacherAttendancePage() {
                         className={cn(
                           'w-full h-10 px-3 flex items-center gap-2 text-xs font-semibold text-left transition-colors',
                           sortMode === 'roll'
-                            ? 'text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/5 dark:bg-white/5'
+                            ? 'text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8]/60 dark:bg-white/5'
                             : 'text-gray-600 dark:text-white/60 hover:bg-gray-50 dark:hover:bg-white/5',
                         )}
                       >
@@ -1353,7 +1353,7 @@ export function TeacherAttendancePage() {
                 <p className="text-sm font-medium text-gray-500 dark:text-white/50">No students in this class</p>
                 <button
                   onClick={() => navigate(isTeacherRole ? `/teacher/classes/${cls}/${section}/add-student` : '/students/new')}
-                  className="mt-4 h-10 px-5 bg-[#5B21B6] text-white rounded-xl text-sm font-semibold hover:bg-[#4C1D95] transition-colors"
+                  className="mt-4 h-10 px-5 bg-[#1B2A4E] text-white rounded-xl text-sm font-semibold hover:bg-[#2C4177] transition-colors"
                 >
                   Add Students
                 </button>

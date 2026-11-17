@@ -20,7 +20,7 @@ const SOURCE_OPTIONS: { value: CandidateSource; label: string }[] = [
 const STATUS_STYLES: Record<CandidateStatus, string> = {
   new:                     'bg-amber-50 text-amber-700 border-amber-200',
   forwarded_to_hr:         'bg-blue-50 text-blue-700 border-blue-200',
-  forwarded_to_principal:  'bg-purple-50 text-purple-700 border-purple-200',
+  forwarded_to_principal:  'bg-[#EEF1F8] text-[#1B2A4E] border-[#E8E2D6]',
   under_review:            'bg-indigo-50 text-indigo-700 border-indigo-200',
   interview_scheduled:     'bg-teal-50 text-teal-700 border-teal-200',
   interview_completed:     'bg-cyan-50 text-cyan-700 border-cyan-200',
@@ -88,7 +88,7 @@ export function CandidatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/reception')}
@@ -289,7 +289,7 @@ export function CandidatesPage() {
                               <button
                                 type="button" onClick={() => forwardCandidate.mutate({ id: c._id, payload: { to: 'principal' } })}
                                 disabled={forwardCandidate.isPending}
-                                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold disabled:opacity-50"
+                                className="inline-flex items-center gap-1 h-7 px-2.5 rounded-md bg-[#1B2A4E] hover:bg-[#254A9A] text-white text-xs font-semibold disabled:opacity-50"
                               >
                                 <Send className="w-3 h-3" /> To Principal
                               </button>

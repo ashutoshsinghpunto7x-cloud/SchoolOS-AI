@@ -140,7 +140,7 @@ export function NewFeeRecordPage() {
 
             {studentId && selectedStudent && (
               <div className="flex items-center gap-3 bg-blue-50 rounded-xl px-4 py-3">
-                <div className="w-8 h-8 rounded-lg bg-[#5B21B6] flex items-center justify-center text-white text-xs font-bold">
+                <div className="w-8 h-8 rounded-lg bg-[#1B2A4E] flex items-center justify-center text-white text-xs font-bold">
                   {selectedStudent.fullName[0]}
                 </div>
                 <div>
@@ -269,7 +269,7 @@ export function NewFeeRecordPage() {
             Cancel
           </button>
           <button type="submit" disabled={isPending}
-            className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold transition-colors">
+            className="flex-1 h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white text-sm font-bold transition-colors">
             {isPending ? 'Creating…' : 'Create Fee Record'}
           </button>
         </div>

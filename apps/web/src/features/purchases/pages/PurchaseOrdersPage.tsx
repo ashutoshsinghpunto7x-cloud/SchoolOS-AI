@@ -30,7 +30,7 @@ export function PurchaseOrdersPage() {
   const orders = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-3 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-3 sm:p-6">
       <div className="w-full max-w-[1600px] mx-auto space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

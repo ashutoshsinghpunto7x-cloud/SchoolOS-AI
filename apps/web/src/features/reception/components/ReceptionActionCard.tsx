@@ -7,20 +7,20 @@ type CardAccent = 'blue' | 'purple' | 'amber' | 'green' | 'emerald';
 // Tailwind's JIT scanner needs these as literal arbitrary-value strings.
 const ACCENT: Record<CardAccent, { btn: string; ring: string }> = {
   blue: {
-    btn: 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
-    ring: 'focus-visible:ring-blue-500/50',
+    btn: 'bg-[#254A9A] hover:bg-[#1B2A4E] active:bg-[#15223E]',
+    ring: 'focus-visible:ring-[#254A9A]/50',
   },
   purple: {
-    btn: 'bg-[var(--brand-purple-dark)] hover:bg-[var(--brand-purple-hover)] active:bg-[var(--brand-purple-active)]',
-    ring: 'focus-visible:ring-[var(--brand-purple-light)]/50',
+    btn: 'bg-[#1B2A4E] hover:bg-[#2C4177] active:bg-[#15223E]',
+    ring: 'focus-visible:ring-[#1B2A4E]/50',
   },
   amber: {
-    btn: 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700',
-    ring: 'focus-visible:ring-amber-500/50',
+    btn: 'bg-[#D9822B] hover:bg-[#B86B1F] active:bg-[#9C5817]',
+    ring: 'focus-visible:ring-[#D9822B]/50',
   },
   green: {
-    btn: 'bg-green-600 hover:bg-green-700 active:bg-green-800',
-    ring: 'focus-visible:ring-green-500/50',
+    btn: 'bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900',
+    ring: 'focus-visible:ring-emerald-600/50',
   },
   emerald: {
     btn: 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800',
@@ -50,23 +50,23 @@ export const ReceptionActionCard = ({
   return (
     <div
       className={cn(
-        'group flex flex-col bg-white rounded-2xl p-6',
-        'border border-gray-100',
-        'shadow-sm hover:shadow-md',
+        "group flex flex-col bg-white rounded-[18px] p-6 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]",
+        'border border-[#E8E2D6]',
+        'shadow-xs hover:shadow-md',
         'transition-all duration-200 ease-out',
         'hover:-translate-y-0.5',
       )}
     >
       {badge && (
-        <span className="self-start text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+        <span className="self-start text-xs font-semibold px-2.5 py-1 rounded-full bg-[#F3EEE3] text-[#1B2A4E]">
           {badge}
         </span>
       )}
 
       {/* Text content */}
       <div className={cn('flex-1', badge ? 'mt-3' : '')}>
-        <h3 className="text-lg font-bold text-gray-900 leading-snug">{title}</h3>
-        <p className="mt-2 text-sm text-gray-500 leading-relaxed">{description}</p>
+        <h3 className="text-lg font-bold text-[#1B2A4E] leading-snug">{title}</h3>
+        <p className="mt-2 text-sm text-[#55607A] leading-relaxed">{description}</p>
       </div>
 
       {/* CTA button */}

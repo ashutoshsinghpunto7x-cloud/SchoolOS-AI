@@ -21,9 +21,9 @@ const STATUS_LABELS: Record<AdmissionStatus, { label: string; classes: string }>
   transferred:        { label: 'Transferred',  classes: 'bg-amber-100 text-amber-800' },
   inactive:           { label: 'Inactive',     classes: 'bg-gray-100 text-gray-600' },
   withdrawn:          { label: 'Inactive',     classes: 'bg-gray-100 text-gray-600' },
-  enquiry:            { label: 'Enquiry',      classes: 'bg-purple-100 text-purple-800' },
-  inquiry:            { label: 'Enquiry',      classes: 'bg-purple-100 text-purple-800' },
-  application:        { label: 'Application',  classes: 'bg-purple-100 text-purple-800' },
+  enquiry:            { label: 'Enquiry',      classes: 'bg-[#EEF1F8] text-[#1B2A4E]' },
+  inquiry:            { label: 'Enquiry',      classes: 'bg-[#EEF1F8] text-[#1B2A4E]' },
+  application:        { label: 'Application',  classes: 'bg-[#EEF1F8] text-[#1B2A4E]' },
   admission_pending:  { label: 'Adm. Pending', classes: 'bg-amber-100 text-amber-800' },
 };
 
@@ -173,7 +173,7 @@ const STATUS_BADGES: Record<InstallmentStatus, { label: string; classes: string 
 // disabled — pure click-and-type, no accidental value changes.
 const cellInputCls =
   'w-20 h-8 px-2 rounded-md border border-gray-200 text-[13px] text-right ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6] ' +
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E] ' +
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
 function preventWheelChange(e: React.WheelEvent<HTMLInputElement>) {
@@ -210,13 +210,13 @@ function InstallmentRow({
   const badge = STATUS_BADGES[status];
 
   return (
-    <tr className={cn('border-b border-gray-100 hover:bg-gray-50/60 transition-colors', selected && 'bg-violet-50/40')}>
+    <tr className={cn('border-b border-gray-100 hover:bg-gray-50/60 transition-colors', selected && 'bg-[#EEF1F8]/40')}>
       <td className="py-2 pl-3 pr-1 align-top">
         <input
           type="checkbox"
           checked={selected}
           onChange={(e) => onToggle(e.target.checked)}
-          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#5B21B6] focus:ring-2 focus:ring-[#A855F7]/30 cursor-pointer"
+          className="mt-1 w-4 h-4 rounded border-gray-300 text-[#1B2A4E] focus:ring-2 focus:ring-[#1B2A4E]/20 cursor-pointer"
         />
       </td>
       <td className="py-2 pr-2">
@@ -483,7 +483,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-2">
         <button onClick={onBack} className="text-gray-500 hover:text-gray-700 flex items-center justify-center rounded-md hover:bg-gray-100 p-1 -ml-1 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -496,7 +496,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
         <div className="space-y-3">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-[#5B21B6] flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-11 h-11 rounded-full bg-[#1B2A4E] flex items-center justify-center overflow-hidden shrink-0">
                 {student.photoUrl ? (
                   <img src={student.photoUrl} alt={student.fullName} className="w-full h-full object-cover" />
                 ) : (
@@ -585,7 +585,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                 <label className="block text-[11px] font-semibold text-gray-500 mb-1">Receipt Date</label>
                 <input
                   type="date" value={receiptDate} onChange={(e) => setReceiptDate(e.target.value)}
-                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
                 />
               </div>
             </div>
@@ -594,7 +594,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
               <label className="block text-[11px] font-semibold text-gray-500 mb-1">Payment Mode</label>
               <select
                 value={mode} onChange={(e) => setMode(e.target.value as PaymentMode)}
-                className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
               >
                 {MODES.map((m) => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -610,7 +610,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                 <input
                   type="text" value={refNumber} onChange={(e) => setRefNumber(e.target.value)}
                   placeholder="e.g. 123456789012" maxLength={30}
-                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
                 />
               </div>
               <div>
@@ -618,7 +618,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                 <input
                   type="text" value={bankBranch} onChange={(e) => setBankBranch(e.target.value)}
                   placeholder="Optional"
-                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                  className="w-full h-9 px-2.5 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
                 />
               </div>
             </div>
@@ -628,7 +628,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
               <textarea
                 rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter transaction details or notes…"
-                className="w-full px-2.5 py-2 rounded-md border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                className="w-full px-2.5 py-2 rounded-md border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
               />
             </div>
 
@@ -687,7 +687,7 @@ export function ProcessFeePaymentView({ student, feeRecords, lastPaymentDate, in
                 type="button"
                 onClick={handleSubmit}
                 disabled={isPending || !activeLines.length}
-                className="flex-1 h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
+                className="flex-1 h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {isPending ? 'Saving…' : 'Save'}

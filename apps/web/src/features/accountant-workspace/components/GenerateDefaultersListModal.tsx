@@ -96,7 +96,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
             <select
               value={selectedClass}
               onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection(''); setResults(null); }}
-              className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+              className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
             >
               <option value="">Select class</option>
               {classes?.map((c) => <option key={c._id} value={c.name}>Class {c.name}</option>)}
@@ -108,7 +108,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
               value={selectedSection}
               onChange={(e) => { setSelectedSection(e.target.value); setResults(null); }}
               disabled={!selectedClass}
-              className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 disabled:opacity-50"
+              className="w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 disabled:opacity-50"
             >
               <option value="">Select section</option>
               {sections.map((s) => <option key={s} value={s}>Section {s}</option>)}
@@ -126,7 +126,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
                 onClick={() => { toggleMonth(m); setResults(null); }}
                 className={`h-8 px-2.5 rounded-lg text-xs font-semibold border transition-colors ${
                   selectedMonths.includes(m)
-                    ? 'bg-[#5B21B6] border-[#5B21B6] text-white'
+                    ? 'bg-[#1B2A4E] border-[#1B2A4E] text-white'
                     : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               >
@@ -146,7 +146,7 @@ export function GenerateDefaultersListModal({ onClose }: Props) {
           type="button"
           disabled={!canGenerate || isGenerating}
           onClick={handleGenerate}
-          className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 mb-4"
+          className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 mb-4"
         >
           {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileWarning className="w-4 h-4" />}
           {isGenerating ? 'Generating…' : 'Generate Defaulters List'}

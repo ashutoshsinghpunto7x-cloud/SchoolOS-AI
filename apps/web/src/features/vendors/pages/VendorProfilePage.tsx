@@ -42,7 +42,7 @@ export function VendorProfilePage() {
 
   if (profileLoading || !profile) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
       </div>
     );
@@ -51,7 +51,7 @@ export function VendorProfilePage() {
   const { vendor, summary } = profile;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant/vendors')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -96,7 +96,7 @@ export function VendorProfilePage() {
         <div className="flex gap-2">
           <button
             onClick={() => setShowBillModal(true)}
-            className="flex-1 h-10 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
+            className="flex-1 h-10 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" /> Record Purchase / Bill
           </button>

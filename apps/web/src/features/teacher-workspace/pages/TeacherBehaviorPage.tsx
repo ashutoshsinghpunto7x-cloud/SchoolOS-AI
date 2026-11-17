@@ -89,7 +89,7 @@ function AddCustomOptionForm({ onClose, onCreated }: { onClose: () => void; onCr
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Great teamwork"
-          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+          className="flex-1 h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
         />
         <button
           type="button"
@@ -120,7 +120,7 @@ function AddCustomOptionForm({ onClose, onCreated }: { onClose: () => void; onCr
         <button
           type="submit"
           disabled={isPending || !label.trim()}
-          className="ml-auto h-8 px-3 rounded-lg text-xs font-bold text-white bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 flex items-center gap-1.5"
+          className="ml-auto h-8 px-3 rounded-lg text-xs font-bold text-white bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 flex items-center gap-1.5"
         >
           {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Add
         </button>
@@ -242,13 +242,13 @@ function StudentRow({
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Optional note…"
                 maxLength={300}
-                className="w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                className="w-full h-9 px-3 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
               />
               <button
                 type="button"
                 onClick={() => void handleSave()}
                 disabled={isPending}
-                className="h-9 px-4 rounded-lg text-xs font-bold text-white bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 flex items-center gap-2"
+                className="h-9 px-4 rounded-lg text-xs font-bold text-white bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 flex items-center gap-2"
               >
                 {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                 Save Mark

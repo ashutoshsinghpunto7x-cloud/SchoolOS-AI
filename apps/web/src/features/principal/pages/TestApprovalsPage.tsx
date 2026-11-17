@@ -42,7 +42,7 @@ function TestCard({ test }: { test: MockTest }) {
             Class {test.class} · {test.subject} · {test.questions.length} questions · {totalMarks} marks
           </p>
         </div>
-        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-purple-50 text-purple-700 shrink-0">
+        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-[#EEF1F8] text-[#1B2A4E] shrink-0">
           {test.mode === 'ranked' ? 'Ranked' : 'Anonymous'}
         </span>
       </div>

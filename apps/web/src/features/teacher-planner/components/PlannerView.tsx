@@ -10,7 +10,7 @@ function ProgressBar({ label, percent }: { label: string; percent: number }) {
         <span className="text-xs font-bold text-gray-700 dark:text-white/70">{percent}%</span>
       </div>
       <div className="h-2 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
-        <div className="h-full rounded-full bg-[#6D4AFF]" style={{ width: `${percent}%` }} />
+        <div className="h-full rounded-full bg-[#254A9A]" style={{ width: `${percent}%` }} />
       </div>
     </div>
   );

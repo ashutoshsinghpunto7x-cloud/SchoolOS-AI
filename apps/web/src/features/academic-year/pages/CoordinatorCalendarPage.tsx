@@ -85,7 +85,7 @@ export function CoordinatorCalendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="px-6 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate('/coordinator')} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 -ml-1 p-1">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -97,7 +97,7 @@ export function CoordinatorCalendarPage() {
         </p>
 
         {isLoading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" /></div>
+          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" /></div>
         ) : (
           <div className="mt-6 flex flex-col gap-5">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

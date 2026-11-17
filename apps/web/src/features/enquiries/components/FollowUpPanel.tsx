@@ -118,7 +118,7 @@ export const FollowUpPanel = ({ enquiryId }: FollowUpPanelProps) => {
             </button>
             <button
               type="button" onClick={handleSchedule} disabled={createFollowUp.isPending}
-              className="h-8 px-3 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-1.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="h-8 px-3 rounded-lg bg-[#1B2A4E] hover:bg-[#2C4177] flex items-center gap-1.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {createFollowUp.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarClock className="w-3.5 h-3.5" />}
               Schedule

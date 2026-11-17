@@ -33,7 +33,7 @@ function EditableCell({
       placeholder={placeholder}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => { if (draft.trim() !== (value ?? '').trim()) onSave(draft.trim()); }}
-      className="w-full min-w-[110px] text-xs rounded-md border border-transparent hover:border-gray-200 focus:border-[#6D4AFF] focus:outline-none bg-transparent px-1.5 py-1 resize-y text-gray-800 dark:text-white/80"
+      className="w-full min-w-[110px] text-xs rounded-md border border-transparent hover:border-gray-200 focus:border-[#254A9A] focus:outline-none bg-transparent px-1.5 py-1 resize-y text-gray-800 dark:text-white/80"
     />
   );
 }

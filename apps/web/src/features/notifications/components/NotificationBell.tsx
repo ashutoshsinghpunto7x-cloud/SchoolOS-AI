@@ -23,7 +23,7 @@ const NotificationIcon = ({ type }: { type: AppNotification['type'] }) =>
   type === 'defaulters_list' ? (
     <Receipt className="w-4 h-4 text-amber-600" strokeWidth={2} />
   ) : type === 'leave_request' ? (
-    <CalendarClock className="w-4 h-4 text-purple-600" strokeWidth={2} />
+    <CalendarClock className="w-4 h-4 text-[#254A9A]" strokeWidth={2} />
   ) : type === 'substitution' ? (
     <Repeat className="w-4 h-4 text-red-600" strokeWidth={2} />
   ) : (
@@ -76,7 +76,7 @@ export const NotificationBell = () => {
         className={cn(
           "relative p-2 rounded-xl transition-all duration-200",
           usePillStyle
-            ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-gray-500 dark:text-white/60 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 hover:text-[#5B21B6] shadow-sm"
+            ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-gray-500 dark:text-white/60 hover:bg-[#EEF1F8]/60 hover:border-[#1B2A4E]/20 hover:text-[#1B2A4E] shadow-sm"
             : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
         )}
         aria-label="Notifications"

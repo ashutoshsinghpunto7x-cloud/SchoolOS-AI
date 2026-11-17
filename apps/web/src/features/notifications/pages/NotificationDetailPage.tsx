@@ -34,11 +34,11 @@ function DefaulterCard({
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-xl bg-[#5B21B6]/10 flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-[#1B2A4E]/10 flex items-center justify-center overflow-hidden shrink-0">
           {student?.photoUrl ? (
             <img src={student.photoUrl} alt={defaulter.studentName} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-sm font-bold text-[#5B21B6]">{initials}</span>
+            <span className="text-sm font-bold text-[#1B2A4E]">{initials}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">

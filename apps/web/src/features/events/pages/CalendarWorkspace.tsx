@@ -98,7 +98,7 @@ export const CalendarWorkspace = () => {
         {canCreate && (
           <button
             onClick={() => navigate('/calendar/new')}
-            className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
+            className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177]
                        text-sm font-bold text-white transition-colors flex-shrink-0"
             type="button"
           >
@@ -131,7 +131,7 @@ export const CalendarWorkspace = () => {
       {/* Loading / Error */}
       {isLoading && (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#1B2A4E] animate-spin" />
         </div>
       )}
 

@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import {Clock,ChevronRight,AlertCircle,CalendarCheck,ClipboardList,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,SmilePlus,CalendarClock,FileEdit,BarChart3,Sparkles,} from 'lucide-react';
+import {Clock,ChevronRight,AlertCircle,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
-import { useTeacherTheme } from '../context/TeacherThemeContext';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
@@ -34,7 +33,7 @@ const SUBJECT_STYLES: Record<string, { icon: React.ElementType; bg: string; text
   maths:       { icon: Calculator,   bg: 'bg-indigo-100', text: 'text-indigo-600' },
   mathematics: { icon: Calculator,   bg: 'bg-indigo-100', text: 'text-indigo-600' },
   science:     { icon: FlaskConical, bg: 'bg-rose-100',   text: 'text-rose-600'   },
-  hindi:       { icon: BookOpen,     bg: 'bg-purple-100', text: 'text-purple-600' },
+  hindi:       { icon: BookOpen,     bg: 'bg-purple-100', text: 'text-[#254A9A]' },
   english:     { icon: BookOpen,     bg: 'bg-blue-100',   text: 'text-blue-600'   },
   'social science': { icon: Globe2,  bg: 'bg-teal-100',   text: 'text-teal-600'   },
   art:         { icon: Palette,      bg: 'bg-amber-100',  text: 'text-amber-600'  },
@@ -44,7 +43,7 @@ const SUBJECT_STYLES: Record<string, { icon: React.ElementType; bg: string; text
 
 const FALLBACK_STYLES = [
   { bg: 'bg-indigo-100', text: 'text-indigo-600' },
-  { bg: 'bg-purple-100', text: 'text-purple-600' },
+  { bg: 'bg-purple-100', text: 'text-[#254A9A]' },
   { bg: 'bg-rose-100',   text: 'text-rose-600'   },
   { bg: 'bg-teal-100',   text: 'text-teal-600'   },
 ];
@@ -144,7 +143,7 @@ function ClassInfoModal({
             <button
               type="button"
               onClick={onMarkAttendance}
-              className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-bold transition-colors"
+              className="flex-1 h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-white text-sm font-bold transition-colors"
             >
               Mark Attendance
             </button>
@@ -175,7 +174,7 @@ function TodayClassCard({
     <button
       type="button"
       onClick={onPress}
-      className="w-full text-left bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#A855F7]/20 dark:hover:border-[#A855F7]/30 transition-all duration-200 group"
+      className="w-full text-left bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 flex items-center gap-4 hover:shadow-md hover:border-[#1B2A4E]/20 dark:hover:border-[#1B2A4E]/20 transition-all duration-200 group"
     >
       {/* Time / subject / class badge */}
       <div className="min-w-0 shrink-0 w-40">
@@ -192,7 +191,7 @@ function TodayClassCard({
         <p className="text-sm font-bold text-gray-900 dark:text-white truncate leading-tight mt-0.5">
           {cls.subjectName}
         </p>
-        <span className="inline-block text-xs font-semibold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2 py-0.5 rounded-full mt-1">
+        <span className="inline-block text-xs font-semibold text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8] dark:bg-[#A855F7]/15 px-2 py-0.5 rounded-full mt-1">
           {cls.class} - {cls.section}
         </span>
       </div>
@@ -240,7 +239,7 @@ function TodayClassCard({
             Pending
           </span>
         ) : (
-          <span className="flex items-center gap-1 text-xs font-bold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1 text-xs font-bold text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8] dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">
             <Clock className="w-3 h-3" />
             Starts {cls.startTime}
           </span>
@@ -308,7 +307,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
         </h2>
         <button
           onClick={onApply}
-          className="text-xs font-semibold text-[#5B21B6] dark:text-violet-400 flex items-center gap-0.5 hover:underline"
+          className="text-xs font-semibold text-[#1B2A4E] dark:text-violet-400 flex items-center gap-0.5 hover:underline"
         >
           Apply for leave
         </button>
@@ -351,7 +350,7 @@ function MyLeaveSection({ onApply }: { onApply: () => void }) {
               type="button"
               onClick={goNext}
               aria-label="Next leave request"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#1B2A4E] dark:hover:text-violet-300 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -429,7 +428,7 @@ function TodaysClassesCarousel({
           type="button"
           onClick={goNext}
           aria-label="Next class"
-          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
+          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white dark:bg-white/10 shadow-md border border-gray-100 dark:border-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-[#1B2A4E] dark:hover:text-violet-300 transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -443,11 +442,11 @@ function TodaysClassesCarousel({
 export function TeacherDashboard() {
   const navigate = useNavigate();
   const { user }  = useAuth();
-  const { theme } = useTeacherTheme();
-  const isDark = theme === 'dark';
   const { data, isLoading, isError, error, refetch } = useTeacherWorkspace();
+  const { data: myLeaves } = useMyLeaveRequests();
   const [showApplyLeave, setShowApplyLeave] = useState(false);
   const [infoClass, setInfoClass] = useState<TodayClass | null>(null);
+  const card = 'bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs';
 
   const firstName = user?.firstName ?? data?.teacher.fullName.split(' ')[0] ?? 'Teacher';
 
@@ -489,265 +488,150 @@ export function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F7FF] dark:bg-transparent relative overflow-x-hidden">
-      {/* ── Page-level decorative background — light mode only (dark uses aurora) ── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden dark:hidden">
-        {/* Large soft blobs */}
-        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-200/40 blur-3xl" />
-        <div className="absolute top-1/3 -left-16 w-56 h-56 rounded-full bg-fuchsia-200/35 blur-3xl" />
-        <div className="absolute bottom-40 -right-10 w-48 h-48 rounded-full bg-pink-200/30 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-indigo-200/30 blur-3xl" />
-        {/* Small accent circles */}
-        <div className="absolute top-[12%] left-[8%] w-4 h-4 rounded-full bg-violet-400/30" />
-        <div className="absolute top-[28%] right-[12%] w-3 h-3 rounded-full bg-pink-400/40" />
-        <div className="absolute top-[55%] left-[5%] w-2.5 h-2.5 rounded-full bg-fuchsia-400/35" />
-        <div className="absolute top-[70%] right-[18%] w-2 h-2 rounded-full bg-indigo-400/40" />
-        {/* Sparkle/star shapes */}
-        <svg className="absolute top-[15%] right-[18%] w-6 h-6 text-violet-300/60" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
-        </svg>
-        <svg className="absolute top-[42%] left-[12%] w-4 h-4 text-pink-300/60" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
-        </svg>
-        <svg className="absolute bottom-[25%] right-[8%] w-5 h-5 text-fuchsia-300/50" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
-        </svg>
-        <svg className="absolute bottom-[45%] left-[20%] w-3 h-3 text-indigo-300/60" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5z" />
-        </svg>
-      </div>
+    <div className="flex-1 w-full bg-[#FBF8F3] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+      <div className="w-full max-w-[1100px] mx-auto px-4 py-6 md:py-8 space-y-6">
+        {/* Greeting */}
+        <div className="text-center">
+          <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1">{todayDateStr()}</p>
+        </div>
 
-      {/* ── Hero header ────────────────────────────────────────────────────── */}
-      {/* Dark mode swaps the solid gradient for a frosted glass panel — translucent
-          gradient fill + backdrop blur + hairline border — so the aurora page
-          background shows through instead of a flat, saturated block. */}
-      <div
-        className={cn(
-          'mx-4 mt-4 px-5 pt-8 pb-8 relative overflow-hidden rounded-[28px]',
-          isDark && 'backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]',
-        )}
-        style={{
-          background: isDark
-            ? 'linear-gradient(160deg, rgba(5,5,9,0.98) 0%, rgba(30,14,54,0.55) 55%, rgba(90,20,60,0.22) 100%)'
-            : 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)',
-        }}
-      >
-        {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-8 translate-x-8" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
-
-        {/* Liquid-glass sheen — diagonal highlight, dark mode only */}
-        {isDark && (
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 22%, transparent 45%)' }}
-          />
-        )}
-
-        {/* School calendar shortcut */}
-        <button
-          type="button"
-          onClick={() => navigate('/calendar')}
-          aria-label="School calendar"
-          className="absolute top-5 right-5 w-9 h-9 rounded-xl bg-white/15 dark:bg-white/10 dark:border dark:border-white/10 hover:bg-white/25 dark:hover:bg-white/15 flex items-center justify-center transition-colors backdrop-blur-md"
-        >
-          <Calendar className="w-[18px] h-[18px] text-white" />
-        </button>
-
-        <p className="text-white/70 text-sm font-medium">{greeting()},</p>
-        <h1 className="text-3xl font-bold mt-0.5 tracking-tight text-white dark:bg-gradient-to-r dark:from-white dark:via-violet-200 dark:to-violet-400 dark:bg-clip-text dark:text-transparent">
-          {firstName}
-        </h1>
-        <p className="text-white/60 text-sm mt-0.5">{todayDateStr()}</p>
-
-        {/* Mark Attendance CTA */}
-        <button
-          type="button"
-          onClick={handleMarkAttendance}
-          className="mt-5 w-full h-12 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.99] transition-all
-                     bg-white text-[#5B21B6] shadow-lg shadow-black/10 hover:bg-white/90
-                     dark:bg-white/10 dark:text-violet-200 dark:border dark:border-white/10 dark:backdrop-blur-md dark:shadow-none dark:hover:bg-white/15"
-        >
-          <CalendarCheck className="w-[18px] h-[18px]" />
-          Mark Attendance
-        </button>
-      </div>
-
-      {/* ── Section labels & section links ──────────────────────────────────── */}
-      <div className="px-4 py-5 space-y-6">
-
-        {/* ── Today's Classes ─────────────────────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-widest">
-              Today's Classes
-            </h2>
+        {isError && (
+          <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-red-600">{(error as Error)?.message || 'Failed to load workspace'}</p>
             <button
-              onClick={() => navigate('/teacher/timetable')}
-              className="text-xs font-semibold text-[#5B21B6] dark:text-violet-400 flex items-center gap-0.5 hover:underline"
+              type="button"
+              onClick={() => void refetch()}
+              className="h-8 px-3 shrink-0 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer"
             >
-              View timetable
-              <ChevronRight className="w-3 h-3" />
+              Retry
             </button>
           </div>
+        )}
 
-          {isLoading ? (
-            <div className="space-y-3">
-              <SkeletonCard />
-              <SkeletonCard />
+        {/* Quick launch */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 sm:gap-3">
+          {[
+            { label: 'Attendance', onClick: handleMarkAttendance, d: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+            { label: 'Classes', onClick: () => navigate('/teacher/classes'), d: 'M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5' },
+            { label: 'Timetable', onClick: () => navigate('/teacher/timetable'), d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2' },
+            { label: 'Marks', onClick: () => navigate('/teacher/marks'), d: 'M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM9 12l-2 9 5-3 5 3-2-9' },
+            { label: 'Academic Plan', onClick: () => navigate('/teacher/academic-plan'), d: 'M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v13' },
+            { label: 'Planner', onClick: () => navigate('/teacher/planner'), d: 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3' },
+            { label: 'Syllabus', onClick: () => navigate('/teacher/syllabus-tracker'), d: 'M18 20V10M12 20V4M6 20v-6' },
+            { label: 'Worksheets', onClick: () => navigate('/teacher/worksheet-generator'), d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
+            { label: 'Question Bank', onClick: () => navigate('/teacher/question-bank'), d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
+            { label: 'Messages', onClick: () => navigate('/messages'), d: 'M3 6h18v12H3zM3 7l9 7 9-7' },
+            { label: 'Calendar', onClick: () => navigate('/calendar'), d: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5' },
+            { label: 'Apply Leave', onClick: () => setShowApplyLeave(true), d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z' },
+          ].map((q) => (
+            <button
+              key={q.label}
+              type="button"
+              onClick={q.onClick}
+              className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
+            >
+              <span className="relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={q.d} />
+                </svg>
+              </span>
+              <span className="text-center leading-tight">{q.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* 3 Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <button type="button" onClick={handleMarkAttendance} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">Classes today</div>
+            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">
+              {isLoading ? '…' : (data?.todayClasses.length ?? 0)}
             </div>
-          ) : isError ? (
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-red-700">Failed to load workspace</p>
-                <p className="text-xs text-red-500 mt-0.5">{(error as Error)?.message}</p>
-                <button
-                  type="button"
-                  onClick={() => void refetch()}
-                  className="mt-2 h-8 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
-                >
-                  Retry
-                </button>
-              </div>
+            <span className="text-[11px] font-semibold text-emerald-600">
+              Tap to mark attendance →
+            </span>
+          </button>
+
+          <button type="button" onClick={() => navigate('/teacher/timetable')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">{currentPeriod?.isNow ? 'Current period' : 'Next period'}</div>
+            <div className="text-[24px] font-medium text-[#1B2A4E] mt-2 truncate">
+              {isLoading ? '…' : currentPeriod ? currentPeriod.cls.subjectName : 'None'}
             </div>
-          ) : !currentPeriod ? (
-            <div className="bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm p-8 text-center">
-              <div className="w-14 h-14 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <CalendarCheck className="w-7 h-7 text-[#5B21B6] dark:text-violet-300" />
+            <span className="text-[11px] font-semibold text-[#254A9A]">
+              {currentPeriod ? `Class ${currentPeriod.cls.class}–${currentPeriod.cls.section} · ${currentPeriod.cls.startTime}` : 'No remaining periods today'}
+            </span>
+          </button>
+
+          <button type="button" onClick={() => setShowApplyLeave(true)} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">My leave requests</div>
+            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{myLeaves ? myLeaves.length : '…'}</div>
+            <span className="text-[11px] font-semibold text-amber-600">
+              Tap to apply for leave →
+            </span>
+          </button>
+        </div>
+
+        {/* 2-Column Detail Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={`${card} p-5`}>
+            <div className="flex items-center justify-between pb-2">
+              <div className="text-[16px] font-bold text-[#1B2A4E]">Today&apos;s classes</div>
+              <button
+                type="button"
+                onClick={() => navigate('/teacher/timetable')}
+                className="text-[12px] font-semibold text-[#D9822B] hover:underline cursor-pointer"
+              >
+                View timetable →
+              </button>
+            </div>
+            {isLoading ? (
+              <div className="space-y-3">
+                <SkeletonCard />
               </div>
-              <p className="text-base font-semibold text-gray-700 dark:text-white/80">
-                {data?.todayClasses.length ? 'No more classes today' : 'No classes today'}
+            ) : !currentPeriod ? (
+              <p className="text-sm text-[#55607A] py-4">
+                {data?.todayClasses.length ? 'No more classes today.' : 'No classes scheduled today.'}
               </p>
-              <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Enjoy your free day!</p>
-            </div>
-          ) : (
-            <TodaysClassesCarousel
-              classes={data?.todayClasses ?? []}
-              currentPeriod={currentPeriod}
-              onPress={setInfoClass}
-            />
-          )}
-        </section>
-
-        {/* ── Marks & Report Cards ─────────────────────────────────────────── */}
-        <button
-          type="button"
-          onClick={() => navigate('/teacher/marks')}
-          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-        >
-          <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
-            <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
+            ) : (
+              <TodaysClassesCarousel
+                classes={data?.todayClasses ?? []}
+                currentPeriod={currentPeriod}
+                onPress={setInfoClass}
+              />
+            )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 dark:text-white">Marks & Report Cards</p>
-            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Enter marks for your classes</p>
+
+          <div className={`${card} p-5`}>
+            <div className="text-[16px] font-bold text-[#1B2A4E] pb-1">Teaching tools</div>
+            {[
+              { label: 'Marks & Report Cards', tag: 'Marks', path: '/teacher/marks' },
+              { label: 'Academic Plan', tag: 'Daily', path: '/teacher/academic-plan' },
+              ...(SHOW_WIP_TEACHER_TOOLS
+                ? [
+                    { label: 'Syllabus Tracker', tag: 'Progress', path: '/teacher/syllabus-tracker' },
+                    { label: 'Question Bank & Papers', tag: 'Papers', path: '/teacher/question-bank' },
+                    { label: 'Worksheet Generator', tag: 'Practice', path: '/teacher/worksheet-generator' },
+                  ]
+                : []),
+            ].map((r) => (
+              <button
+                key={r.label}
+                type="button"
+                onClick={() => navigate(r.path)}
+                className="w-full flex items-center justify-between py-2.5 border-b last:border-b-0 border-[#E8E2D6]/60 text-left cursor-pointer hover:bg-[#FBF8F3] rounded-lg px-1"
+              >
+                <span className="text-[14px] text-[#1B2A4E]">{r.label}</span>
+                <span className="px-2.5 h-6 rounded-full text-[11px] font-semibold bg-[#F3EEE3] text-[#55607A] flex items-center justify-center">
+                  {r.tag}
+                </span>
+              </button>
+            ))}
           </div>
-          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-        </button>
-
-        {/* ── Academic Plan (auto-generated) ────────────────────────────── */}
-        <button
-          type="button"
-          onClick={() => navigate('/teacher/academic-plan')}
-          className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-        >
-          <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-gray-900 dark:text-white">Academic Plan</p>
-            <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Your day-by-day teaching plan, generated automatically</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-        </button>
-
-        {SHOW_WIP_TEACHER_TOOLS && (
-          <>
-            {/* ── Teacher Planner ──────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={() => navigate('/teacher/planner')}
-              className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#ECFDF5] dark:bg-[#34D399]/15 flex items-center justify-center shrink-0">
-                <CalendarClock className="w-5 h-5 text-[#059669] dark:text-emerald-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">Teacher Planner</p>
-                  <span className="inline-flex items-center h-4 px-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/50 text-[9px] font-bold tracking-wide">LEGACY</span>
-                </div>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Superseded by Academic Plan above — kept read/write for existing weekly plans</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-            </button>
-
-            {/* ── Syllabus Tracker ─────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={() => navigate('/teacher/syllabus-tracker')}
-              className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#F0FDF4] dark:bg-[#4ADE80]/15 flex items-center justify-center shrink-0">
-                <BarChart3 className="w-5 h-5 text-[#16A34A] dark:text-green-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Syllabus Tracker</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Chapter coverage and teaching activity</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-            </button>
-
-            {/* ── Worksheet Generator ──────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={() => navigate('/teacher/worksheet-generator')}
-              className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#ECFEFF] dark:bg-[#22D3EE]/15 flex items-center justify-center shrink-0">
-                <FileEdit className="w-5 h-5 text-[#0891B2] dark:text-cyan-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Worksheet Generator</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">One-click practice, homework, HOTS & more</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-            </button>
-
-            {/* ── Question Bank & Paper Generator ───────────────────────────── */}
-            <button
-              type="button"
-              onClick={() => navigate('/teacher/question-bank')}
-              className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#EAF6FF] dark:bg-[#38BDF8]/15 flex items-center justify-center shrink-0">
-                <BookOpen className="w-5 h-5 text-[#0284C7] dark:text-sky-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Question Bank & Papers</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Upload sources, browse questions, generate a paper</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-            </button>
-
-            {/* ── Behaviour Marking ────────────────────────────────────────── */}
-            <button
-              type="button"
-              onClick={() => navigate('/teacher/classes')}
-              className="w-full text-left flex items-center gap-3 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#FFF1F2] dark:bg-[#F472B6]/15 flex items-center justify-center shrink-0">
-                <SmilePlus className="w-5 h-5 text-[#DB2777] dark:text-pink-300" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-900 dark:text-white">Behaviour Marking</p>
-                <p className="text-xs text-gray-400 dark:text-white/40 mt-0.5">Log day-to-day behaviour for your classes</p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 dark:text-white/30 shrink-0" />
-            </button>
-          </>
-        )}
+        </div>
 
         <UpcomingEventsWidget />
 

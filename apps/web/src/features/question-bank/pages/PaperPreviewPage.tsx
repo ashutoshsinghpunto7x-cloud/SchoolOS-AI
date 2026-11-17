@@ -38,8 +38,8 @@ export function PaperPreviewPage() {
 
   if (isLoading || !paper) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFBFF]">
-        <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF8F3]">
+        <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
         <p className="text-sm text-gray-500">Loading paper…</p>
       </div>
     );

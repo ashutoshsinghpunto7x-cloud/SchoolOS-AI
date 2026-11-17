@@ -17,7 +17,7 @@ export function ParentTransportPage() {
 
   if (workspaceLoading || (liveLoading && !live)) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-busy="true">
           <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-80 bg-gray-100 rounded-2xl animate-pulse" />
@@ -28,7 +28,7 @@ export function ParentTransportPage() {
 
   if (!activeChild) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <EmptyState
           icon={Bus}
           title="No children linked yet"
@@ -41,7 +41,7 @@ export function ParentTransportPage() {
   const isActive = live?.available && live.routeStatus === 'active';
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader
         title="Live Bus Tracking"
         subtitle={`${activeChild.name}'s van`}
@@ -73,8 +73,8 @@ export function ParentTransportPage() {
             >
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-                    <Bus className="w-5 h-5 text-purple-700" />
+                  <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+                    <Bus className="w-5 h-5 text-[#1B2A4E]" />
                   </div>
                   <div>
                     <p className="text-lg font-bold text-gray-900">{live.vehicleNumber}</p>

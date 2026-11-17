@@ -31,7 +31,7 @@ const STATUSES: { value: ExamStatus; label: string }[] = [
 
 const selectClass =
   'h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 font-medium ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7] ' +
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7] ' +
   'hover:border-gray-300 transition-colors cursor-pointer appearance-none';
 
 export const ExamListPage = () => {

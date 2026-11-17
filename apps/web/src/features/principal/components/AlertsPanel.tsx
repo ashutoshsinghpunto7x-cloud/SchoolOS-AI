@@ -5,7 +5,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalAlert } from '@schoolos/types';
 
 const SEVERITY_CONFIG = {
-  info:     { icon: Info,          bg: 'bg-[#A855F7]/10',   border: 'border-[#A855F7]/20',   text: 'text-[#4C1D95]',   icon_color: 'text-[#7C3AED]' },
+  info:     { icon: Info,          bg: 'bg-[#EEF1F8]',   border: 'border-[#1B2A4E]/20',   text: 'text-[#2C4177]',   icon_color: 'text-[#254A9A]' },
   warning:  { icon: AlertTriangle, bg: 'bg-amber-50',  border: 'border-amber-100',  text: 'text-amber-700',  icon_color: 'text-amber-500' },
   critical: { icon: XCircle,       bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-700',    icon_color: 'text-red-500' },
 } as const;

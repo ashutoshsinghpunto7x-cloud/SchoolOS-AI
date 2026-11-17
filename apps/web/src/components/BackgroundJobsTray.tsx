@@ -16,7 +16,7 @@ export function BackgroundJobsTray() {
           key={j.id}
           className="pointer-events-auto flex items-center gap-2.5 rounded-xl bg-white dark:bg-[#1A1230] shadow-lg border border-gray-100 dark:border-white/10 px-3 py-2.5"
         >
-          {j.status === 'running' && <Loader2 className="w-4 h-4 shrink-0 animate-spin text-violet-600" />}
+          {j.status === 'running' && <Loader2 className="w-4 h-4 shrink-0 animate-spin text-[#254A9A]" />}
           {j.status === 'done' && <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />}
           {j.status === 'failed' && <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />}
           <div className="min-w-0 flex-1">
@@ -29,7 +29,7 @@ export function BackgroundJobsTray() {
             <button
               type="button"
               onClick={() => backgroundJobs.open(j.id)}
-              className="h-8 px-3 rounded-lg bg-violet-600 text-white text-xs font-bold shrink-0"
+              className="h-8 px-3 rounded-lg bg-[#1B2A4E] text-white text-xs font-bold shrink-0"
             >
               {j.openLabel}
             </button>

@@ -64,7 +64,7 @@ function AdmissionsTab({ dateFrom, dateTo }: { dateFrom?: string; dateTo?: strin
               <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
               <Tooltip />
               <Bar dataKey="total" fill="#93C5FD" name="Total" />
-              <Bar dataKey="converted" fill="#5B21B6" name="Converted" />
+              <Bar dataKey="converted" fill="#1B2A4E" name="Converted" />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -223,7 +223,7 @@ export function FrontOfficeReportsPage() {
   const [dateTo, setDateTo] = useState('');
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <button onClick={() => navigate('/reception')} className="p-2 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 transition-colors" aria-label="Back">
           <ArrowLeft className="w-4 h-4 text-gray-600" />

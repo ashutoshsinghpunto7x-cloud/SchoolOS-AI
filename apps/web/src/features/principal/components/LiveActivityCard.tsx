@@ -15,7 +15,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   fee: '#10B981',
   salary: '#10B981',
   payroll: '#10B981',
-  enquiry: '#6D4AFF',
+  enquiry: '#254A9A',
   student: '#3B82F6',
   attendance: '#3B82F6',
   staff_attendance: '#3B82F6',

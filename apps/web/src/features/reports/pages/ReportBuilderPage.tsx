@@ -54,12 +54,12 @@ const StatCard = ({
 const StudentsView = ({ data }: { data: StudentAnalytics }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     <Section title="Enrollment by Class">
-      <MiniBarList items={data.byClass} color="bg-[#5B21B6]" />
+      <MiniBarList items={data.byClass} color="bg-[#1B2A4E]" />
     </Section>
     <Section title="Gender Breakdown">
       <div className="space-y-2.5">
         {data.byGender.map((g) => (
-          <MiniBar key={g.label} label={g.label} value={g.count} max={data.summary.total || 1} color="bg-[#5B21B6]" />
+          <MiniBar key={g.label} label={g.label} value={g.count} max={data.summary.total || 1} color="bg-[#1B2A4E]" />
         ))}
       </div>
     </Section>
@@ -71,7 +71,7 @@ const StudentsView = ({ data }: { data: StudentAnalytics }) => (
             label={s.label}
             value={s.count}
             max={data.summary.total || 1}
-            color={s.label === 'active' ? 'bg-[#5B21B6]' : 'bg-gray-400'}
+            color={s.label === 'active' ? 'bg-[#1B2A4E]' : 'bg-gray-400'}
           />
         ))}
       </div>
@@ -80,7 +80,7 @@ const StudentsView = ({ data }: { data: StudentAnalytics }) => (
       <TrendSparkline
         data={data.monthlyTrend.map((m) => ({ month: m.month, count: m.count }))}
         valueKey="count"
-        color="#5B21B6"
+        color="#1B2A4E"
         showLabels
       />
     </Section>
@@ -109,7 +109,7 @@ const AttendanceView = ({ data }: { data: AttendanceAnalytics }) => {
         <TrendSparkline
           data={data.dailyTrend.map((d) => ({ date: d.date, rate: d.rate }))}
           valueKey="rate"
-          color="#5B21B6"
+          color="#1B2A4E"
           showLabels
         />
       </Section>
@@ -148,7 +148,7 @@ const FeesView = ({ data }: { data: FeeAnalytics }) => {
         <TrendSparkline
           data={data.monthlyTrend.map((m) => ({ month: m.month, collected: m.collected }))}
           valueKey="collected"
-          color="#5B21B6"
+          color="#1B2A4E"
           showLabels
         />
       </Section>
@@ -160,7 +160,7 @@ const FeesView = ({ data }: { data: FeeAnalytics }) => {
               label={fh.label}
               value={fh.collected}
               max={s.totalCollected || 1}
-              color="bg-[#5B21B6]"
+              color="bg-[#1B2A4E]"
               formatted={fmt(fh.collected)}
             />
           ))}
@@ -183,7 +183,7 @@ const AdmissionsView = ({ data }: { data: AdmissionsAnalytics }) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Section title="By Stage">
-          <MiniBarList items={data.byStage} color="bg-[#5B21B6]" />
+          <MiniBarList items={data.byStage} color="bg-[#1B2A4E]" />
         </Section>
         <Section title="By Source">
           <MiniBarList items={data.bySource} color="bg-gray-500" />
@@ -193,7 +193,7 @@ const AdmissionsView = ({ data }: { data: AdmissionsAnalytics }) => {
         <TrendSparkline
           data={data.monthlyTrend.map((m) => ({ month: m.month, count: m.count }))}
           valueKey="count"
-          color="#5B21B6"
+          color="#1B2A4E"
           showLabels
         />
       </Section>
@@ -222,7 +222,7 @@ const TimetableView = ({ data }: { data: TimetableAnalytics }) => {
           />
         </Section>
         <Section title="Subject Distribution">
-          <MiniBarList items={data.subjectDistribution} color="bg-[#5B21B6]" />
+          <MiniBarList items={data.subjectDistribution} color="bg-[#1B2A4E]" />
         </Section>
       </div>
     </div>
@@ -239,7 +239,7 @@ const CalendarView = ({ data }: { data: CalendarAnalytics }) => {
         <StatCard label="Total Published" value={s.totalPublished} />
       </div>
       <Section title="By Event Type">
-        <MiniBarList items={data.byType} color="bg-[#5B21B6]" />
+        <MiniBarList items={data.byType} color="bg-[#1B2A4E]" />
       </Section>
       {data.upcoming.length > 0 && (
         <Section title="Upcoming Events">
@@ -333,7 +333,7 @@ export const ReportBuilderPage = () => {
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{CATEGORY_LABELS[category]} Report</h1>
           {savedReport && (
-            <p className="text-xs text-[#5B21B6] mt-0.5">Running: {savedReport.name}</p>
+            <p className="text-xs text-[#1B2A4E] mt-0.5">Running: {savedReport.name}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -349,7 +349,7 @@ export const ReportBuilderPage = () => {
           <button
             onClick={() => setShowSaveModal(true)}
             disabled={!data}
-            className="flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 h-9 px-3 text-sm font-medium text-white bg-[#1B2A4E] rounded-xl hover:bg-[#2C4177] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Bookmark size={14} />
             Save
@@ -374,7 +374,7 @@ export const ReportBuilderPage = () => {
         <div className="py-12 text-center">
           <p className="text-sm text-red-600 font-medium">Failed to load data</p>
           <p className="text-xs text-gray-400 mt-1">{error.message}</p>
-          <button onClick={() => void refetch()} className="mt-3 text-xs text-[#5B21B6] hover:underline">
+          <button onClick={() => void refetch()} className="mt-3 text-xs text-[#1B2A4E] hover:underline">
             Retry
           </button>
         </div>

@@ -3,7 +3,7 @@ import type { EnquirySource } from '@schoolos/types';
 const CONFIG: Record<EnquirySource, { label: string; className: string }> = {
   walk_in:      { label: 'Walk-in',      className: 'bg-green-100 text-green-700' },
   website:      { label: 'Website',      className: 'bg-blue-100 text-blue-700' },
-  referral:     { label: 'Referral',     className: 'bg-purple-100 text-purple-700' },
+  referral:     { label: 'Referral',     className: 'bg-[#EEF1F8] text-[#1B2A4E]' },
   social_media: { label: 'Social Media', className: 'bg-pink-100 text-pink-700' },
   phone:        { label: 'Phone',        className: 'bg-amber-100 text-amber-700' },
   email:        { label: 'Email',        className: 'bg-indigo-100 text-indigo-700' },

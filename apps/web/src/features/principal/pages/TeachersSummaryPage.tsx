@@ -78,7 +78,7 @@ export function TeachersSummaryPage() {
             <ChevronRight className="w-4 h-4 text-gray-500" />
           </button>
           {!isToday && (
-            <button type="button" onClick={() => setDate(today)} className="text-xs font-semibold text-[#5B21B6] hover:underline px-2">
+            <button type="button" onClick={() => setDate(today)} className="text-xs font-semibold text-[#1B2A4E] hover:underline px-2">
               {t('teachersSummary.today')}
             </button>
           )}
@@ -87,7 +87,7 @@ export function TeachersSummaryPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-7 h-7 text-[#7C3AED] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#254A9A] animate-spin" />
         </div>
       ) : isError || !data ? (
         <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-2xl p-5">
@@ -97,7 +97,7 @@ export function TeachersSummaryPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <StatCard icon={Users} label={t('teachersSummary.total')} value={data.total} tone="bg-[#A855F7]/10 text-[#5B21B6]" />
+            <StatCard icon={Users} label={t('teachersSummary.total')} value={data.total} tone="bg-[#EEF1F8] text-[#1B2A4E]" />
             <StatCard icon={UserCheck} label={t('teachersSummary.present')} value={data.presentCount} tone="bg-emerald-50 text-emerald-600" />
             <StatCard icon={CalendarOff} label={t('teachersSummary.onLeave')} value={data.onLeave.length} tone="bg-amber-50 text-amber-600" />
           </div>

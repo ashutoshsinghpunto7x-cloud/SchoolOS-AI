@@ -103,7 +103,7 @@ export function QuestionSourceDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -220,7 +220,7 @@ export function QuestionSourceDetailPage() {
                       key={opt.value} type="button" onClick={() => setDifficulty(opt.value)}
                       className={`flex-1 h-8 rounded-lg text-xs font-semibold transition-colors ${
                         difficulty === opt.value
-                          ? 'bg-[#6D4AFF] text-white'
+                          ? 'bg-[#254A9A] text-white'
                           : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-white/60'
                       }`}
                     >
@@ -246,7 +246,7 @@ export function QuestionSourceDetailPage() {
 
               <button
                 type="button" onClick={handleGenerate} disabled={generate.isPending}
-                className="w-full h-11 rounded-xl bg-[#6D4AFF] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full h-11 rounded-xl bg-[#254A9A] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {generate.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 {drafts ? 'Regenerate Questions' : 'Generate Questions'}

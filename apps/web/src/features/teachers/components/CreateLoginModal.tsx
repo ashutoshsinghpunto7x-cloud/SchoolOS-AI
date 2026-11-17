@@ -5,7 +5,7 @@ import { LOGIN_EMAIL_DOMAIN, generateLoginEmail, generatePassword } from '../uti
 
 const inputCls =
   'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 
 interface Props {
   teacherId: string;
@@ -55,7 +55,7 @@ export function CreateLoginModal({ teacherId, fullName, email, existingLoginEmai
             </p>
             <button
               onClick={onClose}
-              className="w-full mt-5 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white"
+              className="w-full mt-5 h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white"
             >
               Done
             </button>
@@ -94,7 +94,7 @@ export function CreateLoginModal({ teacherId, fullName, email, existingLoginEmai
                   <button
                     type="button"
                     onClick={() => { setPassword(generatePassword()); setShowPassword(true); }}
-                    className="text-[11px] font-semibold text-[#5B21B6] hover:text-[#4C1D95]"
+                    className="text-[11px] font-semibold text-[#1B2A4E] hover:text-[#2C4177]"
                   >
                     Generate
                   </button>
@@ -128,7 +128,7 @@ export function CreateLoginModal({ teacherId, fullName, email, existingLoginEmai
               <button
                 type="submit"
                 disabled={isPending}
-                className="w-full h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isPending ? 'Creating…' : 'Create Login'}

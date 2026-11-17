@@ -5,7 +5,7 @@ export const Forbidden = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center px-4">
       <div className="text-center max-w-sm">
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-5">
           <ShieldX className="w-8 h-8 text-red-500" />

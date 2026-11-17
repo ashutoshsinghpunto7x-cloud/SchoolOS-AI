@@ -67,7 +67,7 @@ export const SubjectSkillsEditor = ({ subjects, value, onChange }: SubjectSkills
               {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />}
               <span className="text-sm font-semibold text-gray-800 flex-1">{subject}</span>
               {skills.length > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-2 py-0.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1B2A4E] bg-[#EEF1F8] border border-violet-200 rounded-full px-2 py-0.5">
                   <ListTree className="w-3 h-3" /> {skills.length} skills
                 </span>
               )}
@@ -98,7 +98,7 @@ export const SubjectSkillsEditor = ({ subjects, value, onChange }: SubjectSkills
                     value={extras.timetableSubjectName ?? ''}
                     onChange={(e) => patch(subject, { timetableSubjectName: e.target.value || undefined })}
                     placeholder={`Leave empty if the timetable also says "${subject}"`}
-                    className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]"
+                    className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]"
                   />
                   <p className="text-[11px] text-gray-400 mt-1">
                     e.g. this subject is called “{subject}” for grading, but scheduled on the timetable as “Maths” —

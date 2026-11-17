@@ -85,7 +85,7 @@ export function ChildSwitcher({ children, activeChild, onSelect }: ChildSwitcher
                       Grade {child.grade} · Section {child.section}
                     </span>
                   </span>
-                  {isActive && <Check className="w-4 h-4 text-purple-600 shrink-0 ml-2" strokeWidth={2.5} />}
+                  {isActive && <Check className="w-4 h-4 text-[#254A9A] shrink-0 ml-2" strokeWidth={2.5} />}
                 </button>
               );
             })}

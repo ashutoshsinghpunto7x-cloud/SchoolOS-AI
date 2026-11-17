@@ -11,6 +11,7 @@ import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThe
 import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/gradient';
 import { SUPPORT_PHONE } from '@/lib/support';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
+import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const WORKSPACE_LABELS: Record<string, string> = {
@@ -181,7 +182,7 @@ function MiniCalendar({ today, onClose }: { today: Date; onClose: () => void }) 
                 <span
                   className={cn(
                     'w-7 h-7 flex items-center justify-center text-[12px] rounded-full transition-colors',
-                    isToday ? 'bg-[#5B21B6] text-white font-bold' : 'text-gray-700 hover:bg-gray-100',
+                    isToday ? 'bg-[#1B2A4E] text-white font-bold' : 'text-gray-700 hover:bg-gray-100',
                   )}
                 >
                   {d}
@@ -293,9 +294,12 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
   const hasProfileMenu = isPrincipal || (!isTeacher && !isAccountant && !!user);
   const ROLE_LABELS: Record<string, string> = {
     incharge: 'Incharge',
-    principal: 'Principal',
+    principal: 'Principal & Director',
     reception: 'Reception',
     admin: 'Administrator',
+    teacher: 'Teacher',
+    accountant: 'Accountant',
+    academic_coordinator: 'Academic Coordinator',
   };
   // Accountant, Teacher, and Principal all share the same pill/chip topbar
   // treatment, rendered in the same purple accent.
@@ -339,8 +343,11 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
   const isTeacherDark = isTeacher && theme === 'dark';
 
-  // Exact Principal Topbar & Mobile Header matching DEMO/main-demo.html and DEMO/main-mobile-demo.html
-  if (isPrincipal) {
+  const useChromeTopbar = true;
+  const homePath = user?.role ? getHomePathForRole(user.role) : '/';
+
+  // Chrome-like Topbar & Mobile Header (used by Principal, Admin, Reception, Coordinator, etc.)
+  if (useChromeTopbar) {
     return (
       <>
         {/* Desktop Top App Bar (Exact 76px Spec Match) */}
@@ -348,7 +355,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
           {/* Logo + Title (Width: 230px) */}
           <div
             className="flex items-center gap-3 w-[230px] shrink-0 cursor-pointer"
-            onClick={() => navigate('/principal')}
+            onClick={() => navigate(homePath)}
           >
             <img
               src={schoolSettings?.logoUrl || fnicLogo}
@@ -399,15 +406,15 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               <div
                 onClick={() => setProfileMenuOpen((v) => !v)}
                 className="w-[42px] h-[42px] rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-[13px] flex items-center justify-center shadow-xs cursor-pointer hover:ring-2 hover:ring-[#D9822B]/40 transition-all select-none"
-                title={`${displayName} · Principal & Director`}
+                title={`${displayName} · ${ROLE_LABELS[user?.role ?? ''] ?? 'Staff'}`}
               >
                 {initials}
               </div>
               {profileMenuOpen && (
                 <ProfileMenu
                   displayName={displayName}
-                  roleLabel="Principal & Director"
-                  showSettings={true}
+                  roleLabel={ROLE_LABELS[user?.role ?? ''] ?? 'Staff'}
+                  showSettings={isPrincipal || user?.role === 'admin'}
                   onClose={() => setProfileMenuOpen(false)}
                 />
               )}
@@ -425,7 +432,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
         <header className="flex md:hidden h-[52px] shrink-0 bg-[#FBF8F3] px-3.5 items-center justify-between border-b border-[#E8E2D6]/60 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
           <div
             className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
-            onClick={() => navigate('/principal')}
+            onClick={() => navigate(homePath)}
           >
             <img
               src={schoolSettings?.logoUrl || fnicLogo}
@@ -470,12 +477,12 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
           ? 'px-8'
           : usePillTopbar
           ? cn(
-              'border-b px-8',
+              'border-b px-8 font-[\'DM_Sans\',\'Plus_Jakarta_Sans\',sans-serif]',
               isTeacherDark
                 ? 'teacher-glass-topbar border-white/5'
-                : 'bg-white dark:bg-[#0F0821] border-[#E8E8E8] dark:border-white/5'
+                : 'bg-white dark:bg-[#0F0821] border-[#E8E2D6] dark:border-white/5 shadow-[0_1px_3px_rgba(27,42,78,0.03)]'
             )
-          : 'bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] px-6',
+          : 'bg-white border-b border-[#E8E2D6] shadow-[0_1px_3px_rgba(27,42,78,0.03)] px-6 font-[\'DM_Sans\',\'Plus_Jakarta_Sans\',sans-serif]',
       )}
       style={isAccountantDashboard ? ACCOUNTANT_HERO_GRADIENT_STYLE : undefined}
     >
@@ -497,8 +504,8 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               "p-2 -ml-1 rounded-xl transition-colors",
               !isPrincipal && "lg:hidden",
               usePillTopbar
-                ? "text-gray-500 hover:bg-[#A855F7]/5 hover:text-[#5B21B6]"
-                : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                ? "text-[#55607A] hover:bg-[#EEF1F8] hover:text-[#1B2A4E]"
+                : "text-[#55607A] hover:bg-[#FBF8F3] hover:text-[#1B2A4E]"
             )}
             aria-label="Toggle navigation"
           >
@@ -516,7 +523,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
                 type="button"
                 onClick={() => navigate(-1)}
                 aria-label="Back"
-                className="w-7 h-7 -ml-1.5 flex items-center justify-center rounded-lg hover:bg-[#A855F7]/5 text-gray-400 dark:text-white/40 hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors shrink-0"
+                className="w-7 h-7 -ml-1.5 flex items-center justify-center rounded-lg hover:bg-[#EEF1F8] text-[#55607A] dark:text-white/40 hover:text-[#1B2A4E] dark:hover:text-violet-300 transition-colors shrink-0"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -525,13 +532,13 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               <button
                 type="button"
                 onClick={() => navigate('/teacher')}
-                className="text-sm font-semibold text-gray-900 dark:text-white hover:text-[#5B21B6] dark:hover:text-violet-300 transition-colors"
+                className="text-sm font-semibold text-[#1B2A4E] dark:text-white hover:text-[#254A9A] dark:hover:text-violet-300 transition-colors"
                 title="Go to dashboard"
               >
                 {section}
               </button>
             ) : (
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">{section}</span>
+              <span className="text-sm font-semibold text-[#1B2A4E] dark:text-white">{section}</span>
             )}
             {subLabel && (
               <>
@@ -553,7 +560,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               <button
                 type="button"
                 onClick={() => setReminderOpen((v) => !v)}
-                className="hidden sm:flex flex-col items-start justify-center h-11 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#A855F7]/30 hover:bg-[#A855F7]/5 transition-colors select-none tabular-nums"
+                className="hidden sm:flex flex-col items-start justify-center h-11 px-4 rounded-xl bg-white border border-gray-200 hover:border-[#1B2A4E]/20 hover:bg-[#EEF1F8]/60 transition-colors select-none tabular-nums"
               >
                 <span className="text-[13px] font-bold text-gray-900 leading-none">{time}</span>
                 <span className="text-[10px] text-gray-400 mt-1 leading-none">{date}</span>
@@ -603,7 +610,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               <button
                 type="button"
                 onClick={() => setReminderOpen((v) => !v)}
-                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-semibold text-gray-600 dark:text-white/70 select-none tabular-nums transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
+                className="hidden lg:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-semibold text-gray-600 dark:text-white/70 select-none tabular-nums transition-colors hover:bg-[#EEF1F8]/60 hover:border-[#1B2A4E]/20"
               >
                 <Clock className="w-3.5 h-3.5 text-gray-400 dark:text-white/40" strokeWidth={1.5} />
                 {time} IST
@@ -619,7 +626,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               <button
                 type="button"
                 onClick={() => setCalendarOpen((v) => !v)}
-                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-medium text-gray-500 dark:text-white/60 select-none transition-colors hover:bg-[#A855F7]/5 hover:border-[#A855F7]/25"
+                className="hidden md:flex items-center gap-1.5 h-8.5 px-3.5 rounded-full bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 text-[12px] font-medium text-gray-500 dark:text-white/60 select-none transition-colors hover:bg-[#EEF1F8]/60 hover:border-[#1B2A4E]/20"
               >
                 <svg className="w-3.5 h-3.5 text-gray-400 dark:text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -689,7 +696,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
                 isPrincipal
                   ? "hover:ring-2 hover:ring-[#D9822B]/40"
                   : usePillTopbar
-                  ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#A855F7]/5 hover:border-[#A855F7]/20 shadow-sm"
+                  ? "bg-white dark:bg-white/5 border border-[#E8E8E8] dark:border-white/10 hover:bg-[#EEF1F8]/60 hover:border-[#1B2A4E]/20 shadow-sm"
                   : "hover:bg-gray-100"
               )}
               aria-label="Profile"
@@ -699,7 +706,7 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
                   {initials}
                 </span>
               ) : usePillTopbar ? (
-                <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 dark:bg-amber-400/10 border border-[#A855F7]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#5B21B6] dark:text-amber-300">
+                <span className="w-7 h-7 rounded-full bg-[#EEF1F8] dark:bg-amber-400/10 border border-[#1B2A4E]/20 dark:border-amber-400/60 flex items-center justify-center text-[11px] font-bold text-[#1B2A4E] dark:text-amber-300">
                   {initials}
                 </span>
               ) : (

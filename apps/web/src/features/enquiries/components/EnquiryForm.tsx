@@ -5,7 +5,7 @@ import type { CreateEnquiryPayload, EnquiryStage, EnquirySource, Enquiry } from 
 const FormSection = ({ number, title, children }: { number: number; title: string; children: React.ReactNode }) => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-3">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5B21B6] text-white text-xs font-bold flex items-center justify-center">{number}</span>
+      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#1B2A4E] text-white text-xs font-bold flex items-center justify-center">{number}</span>
       <h3 className="text-sm font-bold text-gray-700">{title}</h3>
     </div>
     {children}
@@ -269,7 +269,7 @@ export const EnquiryForm = ({
         <button
           type="submit"
           disabled={isPending}
-          className="h-11 px-8 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
+          className="h-11 px-8 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177]
                      flex items-center gap-2 text-sm font-bold text-white
                      transition-colors disabled:opacity-50"
         >

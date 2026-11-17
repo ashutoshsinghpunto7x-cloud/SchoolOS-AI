@@ -188,7 +188,7 @@ export const TeacherEntryEditDrawer = ({
               disabled={saving || !form.subjectName.trim()}
               className="flex-1 h-11 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-50
                          flex items-center justify-center gap-2 hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               Save

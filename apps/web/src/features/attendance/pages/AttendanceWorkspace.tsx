@@ -30,7 +30,7 @@ function formatDisplayDate(dateStr: string) {
 
 function StatCard({ icon: Icon, label, value, tone }: { icon: typeof Users; label: string; value: number; tone: 'neutral' | 'green' | 'red' }) {
   const toneClasses = {
-    neutral: 'bg-[#EDE9FE] text-[#5B21B6]',
+    neutral: 'bg-[#EDE9FE] text-[#1B2A4E]',
     green: 'bg-green-50 text-green-600',
     red: 'bg-red-50 text-red-600',
   }[tone];
@@ -85,7 +85,7 @@ export function AttendanceWorkspace() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       {/* Page header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
@@ -122,7 +122,7 @@ export function AttendanceWorkspace() {
             <button
               type="button"
               onClick={() => setDate(today)}
-              className="text-xs font-semibold text-[#5B21B6] hover:underline px-2"
+              className="text-xs font-semibold text-[#1B2A4E] hover:underline px-2"
             >
               Today
             </button>
@@ -138,7 +138,7 @@ export function AttendanceWorkspace() {
             onClick={() => setTab(t)}
             className={`pb-3 text-sm font-semibold capitalize border-b-2 transition-colors ${
               tab === t
-                ? 'border-[#5B21B6] text-[#5B21B6]'
+                ? 'border-[#1B2A4E] text-[#1B2A4E]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -191,7 +191,7 @@ export function AttendanceWorkspace() {
                       <td className="px-5 py-3 text-right">
                         <button
                           onClick={() => goTakeAttendance(row.class, row.section)}
-                          className="text-xs font-semibold text-[#5B21B6] hover:underline"
+                          className="text-xs font-semibold text-[#1B2A4E] hover:underline"
                         >
                           {isToday ? 'Take Attendance' : 'View'}
                         </button>

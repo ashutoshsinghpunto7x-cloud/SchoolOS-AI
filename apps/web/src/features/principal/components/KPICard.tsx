@@ -28,7 +28,7 @@ export const KPICard = ({ title, value, subtitle, icon: Icon, onClick, delay = 0
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
       className={cn(
         'bg-white rounded-[18px] border border-[#D8D8DC] shadow-[0_4px_24px_rgba(0,0,0,0.015)] text-left',
-        'hover:border-[#A855F7]/25 hover:shadow-[0_8px_30px_rgba(168,85,247,0.06)] transition-all duration-300',
+        'hover:border-[#1B2A4E]/20 hover:shadow-[0_8px_30px_rgba(168,85,247,0.06)] transition-all duration-300',
         'flex flex-col justify-between',
         // Grows to fill whatever width the row has (laptop/monitor/TV) but never
         // shrinks below a usable size — the row scrolls horizontally instead.

@@ -37,7 +37,7 @@ function FieldInput({ field, onChange }: { field: PreviewField; onChange: (value
               className={cn(
                 'px-2.5 py-1 rounded-full text-xs font-medium border transition-colors',
                 active
-                  ? 'bg-violet-600 border-violet-600 text-white'
+                  ? 'bg-[#1B2A4E] border-violet-600 text-white'
                   : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
               )}
             >
@@ -77,12 +77,12 @@ export const ActionPreviewCard = ({ message, onEditField, onApprove, onCancel }:
 
   return (
     <div className="max-w-[92%] rounded-2xl border border-violet-100 bg-white shadow-sm overflow-hidden">
-      <div className="px-4 py-2.5 bg-violet-50/70 border-b border-violet-100 flex items-center justify-between">
+      <div className="px-4 py-2.5 bg-[#EEF1F8]/70 border-b border-violet-100 flex items-center justify-between">
         <span className="text-sm font-semibold text-violet-900">{message.preview.title}</span>
         <button
           type="button"
           onClick={() => setEditing((v) => !v)}
-          className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800"
+          className="flex items-center gap-1 text-xs font-medium text-[#254A9A] hover:text-violet-800"
         >
           <Pencil className="w-3 h-3" /> {editing ? 'Done editing' : 'Edit'}
         </button>

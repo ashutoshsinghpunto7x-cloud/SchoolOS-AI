@@ -71,7 +71,7 @@ export const UserManagementPage = () => {
           </button>
           <button
             onClick={() => navigate('/administration/users/new')}
-            className="h-12 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
+            className="h-12 px-5 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] active:bg-[#15223E]
                        flex items-center gap-2 text-sm font-bold text-white transition-colors"
             type="button"
           >
@@ -131,7 +131,7 @@ export const UserManagementPage = () => {
           {!(search || role || status) && (
             <button
               onClick={() => navigate('/administration/users/new')}
-              className="h-12 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white transition-colors"
+              className="h-12 px-6 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white transition-colors"
               type="button"
             >
               Add First User

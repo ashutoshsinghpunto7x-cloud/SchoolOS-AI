@@ -18,7 +18,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 const selectCls =
   'h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 appearance-none pr-8';
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 appearance-none pr-8';
 
 function initialsOf(name: string): string {
   return name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase();
@@ -63,7 +63,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -75,7 +75,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
         {!readOnly && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+            className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> Add Employee
           </button>
@@ -94,7 +94,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && applySearch()}
                 placeholder="Name, employee ID, or phone"
-                className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                className="w-full h-10 pl-9 pr-3 rounded-xl border border-[#E8E2D6] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
               />
             </div>
 
@@ -123,7 +123,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
               <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
             </div>
 
-            <button onClick={applySearch} className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-semibold">
+            <button onClick={applySearch} className="h-10 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-sm font-semibold cursor-pointer">
               Search
             </button>
           </div>
@@ -154,7 +154,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
                   onClick={() => navigate(`${basePath}/${e._id}`)}
                   className="flex items-center gap-3 flex-1 min-w-0 text-left"
                 >
-                  <div className="w-11 h-11 rounded-full bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] font-bold text-xs shrink-0 overflow-hidden">
+                  <div className="w-11 h-11 rounded-full bg-[#EEF1F8] flex items-center justify-center text-[#1B2A4E] font-bold text-xs shrink-0 overflow-hidden">
                     {e.photoUrl ? (
                       <img src={e.photoUrl} alt={e.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                     ) : (
@@ -183,7 +183,7 @@ export function EmployeesPage({ basePath = '/admin/employees', readOnly = false 
                   <>
                     <button
                       onClick={() => navigate(`${basePath}/${e._id}`)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#5B21B6] hover:bg-[#A855F7]/10 shrink-0"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-[#55607A] hover:text-[#1B2A4E] hover:bg-[#EEF1F8] shrink-0"
                       title="Edit"
                     >
                       <Pencil className="w-3.5 h-3.5" />

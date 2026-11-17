@@ -30,7 +30,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F5F5F7]">
+      <div className="flex h-screen items-center justify-center bg-[#FBF8F3]">
         <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
       </div>
     );

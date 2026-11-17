@@ -52,7 +52,7 @@ export function PayrollPage() {
   }, [now]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/admin/employees')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -62,7 +62,7 @@ export function PayrollPage() {
         </div>
         <button
           onClick={() => setGenerateAllOpen(true)}
-          className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
         >
           <Zap className="w-3.5 h-3.5" /> Generate for All
         </button>
@@ -71,10 +71,10 @@ export function PayrollPage() {
       <div className="px-4 py-4 max-w-4xl mx-auto space-y-4">
         {/* Month/Year picker */}
         <div className="flex items-center gap-2">
-          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30">
+          <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="h-10 px-3 rounded-xl border border-[#E8E2D6] bg-white text-sm font-semibold text-[#1B2A4E] focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20">
             {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
           </select>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30">
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="h-10 px-3 rounded-xl border border-[#E8E2D6] bg-white text-sm font-semibold text-[#1B2A4E] focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20">
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -107,7 +107,7 @@ export function PayrollPage() {
               onClick={() => setStatus(s)}
               className={cn(
                 'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors capitalize',
-                status === s ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
+                status === s ? 'bg-[#1B2A4E] text-white' : 'bg-white border border-[#E8E2D6] text-[#55607A] hover:bg-[#FBF8F3]',
               )}
             >
               {s}

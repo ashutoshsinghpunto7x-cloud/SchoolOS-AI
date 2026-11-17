@@ -25,12 +25,12 @@ export function NotificationSoundToggle() {
       <span
         className={cn(
           'flex items-center h-7 w-12 rounded-full px-1 transition-colors duration-200',
-          enabled ? 'bg-[#5B21B6] justify-end' : 'bg-gray-200 justify-start'
+          enabled ? 'bg-[#1B2A4E] justify-end' : 'bg-gray-200 justify-start'
         )}
       >
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200">
           {enabled ? (
-            <Volume2 className="w-3 h-3 text-[#5B21B6]" strokeWidth={2} />
+            <Volume2 className="w-3 h-3 text-[#1B2A4E]" strokeWidth={2} />
           ) : (
             <VolumeX className="w-3 h-3 text-gray-400" strokeWidth={2} />
           )}

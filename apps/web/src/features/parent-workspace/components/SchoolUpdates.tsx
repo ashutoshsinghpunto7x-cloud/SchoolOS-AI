@@ -18,8 +18,8 @@ export function SchoolUpdates({ updates }: SchoolUpdatesProps) {
         <ul className="mt-5 divide-y divide-gray-100">
           {updates.map((u) => (
             <li key={u._id} className="flex items-start gap-3.5 py-3.5 first:pt-0 last:pb-0">
-              <span className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                <CalendarDays className="w-4 h-4 text-purple-600" strokeWidth={1.75} />
+              <span className="w-9 h-9 rounded-full bg-[#EEF1F8] flex items-center justify-center shrink-0">
+                <CalendarDays className="w-4 h-4 text-[#254A9A]" strokeWidth={1.75} />
               </span>
               <span className="min-w-0">
                 <span className="block text-base text-gray-900">{u.title}</span>

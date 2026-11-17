@@ -77,7 +77,7 @@ function FeeTable({ fees, onRecordPayment }: { fees: FeeRecord[]; onRecordPaymen
                 >
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-8 h-8 rounded-full bg-[#A855F7]/10 text-[#5B21B6] text-xs font-bold flex items-center justify-center shrink-0">
+                      <span className="w-8 h-8 rounded-full bg-[#EEF1F8] text-[#1B2A4E] text-xs font-bold flex items-center justify-center shrink-0">
                         {fee.studentName?.[0]?.toUpperCase() ?? '?'}
                       </span>
                       <div className="min-w-0">
@@ -173,7 +173,7 @@ export function FeeWorkspace() {
         action={
           <button
             onClick={() => navigate('/fees/new')}
-            className="h-12 px-6 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]
+            className="h-12 px-6 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] active:bg-[#15223E]
                        flex items-center gap-2 text-sm font-bold text-white transition-colors"
             type="button"
           >
@@ -298,7 +298,7 @@ export function FeeWorkspace() {
                       ? <span key={`e-${idx}`} className="h-10 w-10 flex items-center justify-center text-gray-400 text-sm">…</span>
                       : <button key={item} type="button" onClick={() => setPage(item as number)}
                           disabled={isFetching}
-                          className={`h-10 w-10 rounded-xl text-sm font-semibold transition-colors ${currentPage === item ? 'bg-[#5B21B6] text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+                          className={`h-10 w-10 rounded-xl text-sm font-semibold transition-colors ${currentPage === item ? 'bg-[#1B2A4E] text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
                           {item}
                         </button>
                   )}

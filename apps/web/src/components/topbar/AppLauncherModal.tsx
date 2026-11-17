@@ -56,6 +56,7 @@ import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeav
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export interface SubMenuItem {
   id: string;
@@ -163,6 +164,229 @@ export const PRINCIPAL_SECTIONS: SubMenuGroup[] = [
       { id: 'front_office', label: 'Front Office Reports', path: '/reception/reports' },
       { id: 'candidate_interviews', label: 'Job Candidates', path: '/reception/candidates' },
       { id: 'messages', label: 'Staff Messages', path: '/messages' },
+    ],
+  },
+];
+
+export const ADMIN_SECTIONS: SubMenuGroup[] = [
+  {
+    id: 'students',
+    title: 'Students & Admissions',
+    items: [
+      { id: 'students_directory', label: 'Students Directory', path: '/students' },
+      { id: 'new_admission', label: 'New Admission', path: '/students/new' },
+      { id: 'enquiries', label: 'Admissions & Enquiries', path: '/enquiries' },
+      { id: 'student_communications', label: 'Communication', path: '/communication' },
+    ],
+  },
+  {
+    id: 'attendance',
+    title: 'Attendance & HR Scan',
+    items: [
+      { id: 'attendance_class', label: 'Class Attendance', path: '/attendance' },
+      { id: 'attendance_scanner', label: 'HR Attendance (QR)', path: '/admin/attendance-qr' },
+      { id: 'attendance_reports', label: 'Reports & Analytics', path: '/reports' },
+    ],
+  },
+  {
+    id: 'academics',
+    title: 'Academics & Timetable',
+    items: [
+      { id: 'class_timetable', label: 'Timetable', path: '/timetable' },
+      { id: 'school_timetable', label: 'Master School Timetable', path: '/timetable/school' },
+      { id: 'syllabus_setup', label: 'Classes & Sections', path: '/classes' },
+      { id: 'calendar', label: 'Calendar & Events', path: '/calendar' },
+    ],
+  },
+  {
+    id: 'results',
+    title: 'Exams & Report Cards',
+    items: [
+      { id: 'exams_list', label: 'Exams', path: '/exams' },
+      { id: 'term_report_cards', label: 'Report Cards', path: '/term-report-cards' },
+      { id: 'report_card_templates', label: 'Report Card Templates', path: '/report-card-templates' },
+    ],
+  },
+  {
+    id: 'fees',
+    title: 'Fees & Payroll',
+    items: [
+      { id: 'fee_collection', label: 'Fees', path: '/fees' },
+      { id: 'staff_payroll', label: 'Payroll (HR)', path: '/admin/payroll' },
+    ],
+  },
+  {
+    id: 'staff',
+    title: 'HR Management & Staff',
+    items: [
+      { id: 'employees_hr', label: 'Employees', path: '/admin/employees' },
+      { id: 'teachers', label: 'Teachers', path: '/teachers' },
+      { id: 'teacher_logins', label: 'Teacher Logins', path: '/teacher-logins' },
+      { id: 'id_cards', label: 'ID Cards', path: '/admin/id-cards' },
+      { id: 'all_attendance', label: 'QR Management', path: '/admin/qr-management' },
+    ],
+  },
+  {
+    id: 'approvals',
+    title: 'Administration & System',
+    items: [
+      { id: 'dashboard', label: 'Administration Hub', path: '/administration' },
+      { id: 'user_management', label: 'Users & Roles', path: '/administration/users' },
+      { id: 'automation_jobs', label: 'Automation', path: '/automation' },
+      { id: 'data_import', label: 'Data Import', path: '/import' },
+      { id: 'facility_requests', label: 'Integrations', path: '/integrations' },
+    ],
+  },
+  {
+    id: 'operations',
+    title: 'Transport & Settings',
+    items: [
+      { id: 'transport', label: 'Transport', path: '/transport' },
+      { id: 'school_settings', label: 'Settings', path: '/settings' },
+    ],
+  },
+  {
+    id: 'reception',
+    title: 'Front Desk & AI',
+    items: [
+      { id: 'visitor_log', label: 'Reception Workspace', path: '/reception' },
+      { id: 'front_office', label: 'Visitor Log', path: '/reception/visitors' },
+      { id: 'messages', label: 'Messages', path: '/messages' },
+      { id: 'announcements', label: 'AI Assistant', path: '/ai-assistant' },
+    ],
+  },
+];
+
+export const RECEPTION_SECTIONS: SubMenuGroup[] = [
+  {
+    id: 'reception',
+    title: 'Front Desk & Visitors',
+    items: [
+      { id: 'visitor_log', label: 'Visitor Log', path: '/reception/visitors' },
+      { id: 'front_office', label: 'Reception Dashboard', path: '/reception' },
+      { id: 'candidate_interviews', label: 'CVs / Resumes', path: '/reception/candidates' },
+      { id: 'messages', label: 'My Tasks', path: '/reception/tasks' },
+    ],
+  },
+  {
+    id: 'students',
+    title: 'Students & Follow-ups',
+    items: [
+      { id: 'enquiries', label: "Today's Follow-ups", path: '/reception/follow-ups' },
+      { id: 'student_communications', label: 'Communication', path: '/communication' },
+    ],
+  },
+  {
+    id: 'attendance',
+    title: 'Attendance & Reports',
+    items: [
+      { id: 'attendance_class', label: 'Attendance Records', path: '/reception/attendance' },
+      { id: 'attendance_reports', label: 'Front Office Reports', path: '/reception/reports' },
+    ],
+  },
+];
+
+export const COORDINATOR_SECTIONS: SubMenuGroup[] = [
+  {
+    id: 'academics',
+    title: 'Academic Planning',
+    items: [
+      { id: 'academic_plan', label: 'Coordinator Dashboard', path: '/coordinator' },
+      { id: 'calendar', label: 'Academic Calendar', path: '/coordinator/calendar' },
+      { id: 'syllabus_setup', label: 'Syllabus Setup', path: '/coordinator/syllabus' },
+      { id: 'lesson_planner', label: 'Academic Plan', path: '/coordinator/academic-plan' },
+    ],
+  },
+  {
+    id: 'results',
+    title: 'Exams & Assessments',
+    items: [
+      { id: 'exams_list', label: 'Exams', path: '/exams' },
+    ],
+  },
+];
+
+export const TEACHER_SECTIONS: SubMenuGroup[] = [
+  {
+    id: 'attendance',
+    title: 'Classes & Attendance',
+    items: [
+      { id: 'dashboard', label: 'Teacher Dashboard', path: '/teacher' },
+      { id: 'attendance_class', label: 'My Classes & Attendance', path: '/teacher/classes' },
+      { id: 'all_attendance', label: 'Attendance History', path: '/teacher/history' },
+      { id: 'new_admission', label: 'Add Students', path: '/teacher/add-student' },
+    ],
+  },
+  {
+    id: 'academics',
+    title: 'Planning & Timetable',
+    items: [
+      { id: 'class_timetable', label: 'My Timetable', path: '/teacher/timetable' },
+      { id: 'academic_plan', label: 'Academic Plan', path: '/teacher/academic-plan' },
+      { id: 'lesson_planner', label: 'Teacher Planner', path: '/teacher/planner' },
+      { id: 'syllabus_setup', label: 'Syllabus Tracker', path: '/teacher/syllabus-tracker' },
+      { id: 'calendar', label: 'School Calendar', path: '/calendar' },
+    ],
+  },
+  {
+    id: 'results',
+    title: 'Marks, Papers & Worksheets',
+    items: [
+      { id: 'marks_hub', label: 'Marks & Report Cards', path: '/teacher/marks' },
+      { id: 'question_bank', label: 'Question Bank & Papers', path: '/teacher/question-bank' },
+      { id: 'exams_list', label: 'Worksheet Generator', path: '/teacher/worksheet-generator' },
+    ],
+  },
+  {
+    id: 'reception',
+    title: 'Messages & Profile',
+    items: [
+      { id: 'messages', label: 'Staff Messages', path: '/messages' },
+      { id: 'teachers', label: 'My Profile', path: '/teacher/profile' },
+    ],
+  },
+];
+
+export const ACCOUNTANT_SECTIONS: SubMenuGroup[] = [
+  {
+    id: 'fees',
+    title: 'Fees & Collections',
+    items: [
+      { id: 'dashboard', label: 'Accountant Dashboard', path: '/accountant' },
+      { id: 'fee_collection', label: 'Collect Fee', path: '/accountant/collect-fee' },
+      { id: 'fee_receipts', label: 'Fee Records', path: '/accountant/fee-records' },
+      { id: 'pending_fees', label: 'Pending Fees', path: '/accountant/pending-fees' },
+      { id: 'discount_approvals', label: 'Fee Structure', path: '/accountant/fee-structure' },
+    ],
+  },
+  {
+    id: 'approvals',
+    title: 'Expenses, Salary & Vendors',
+    items: [
+      { id: 'staff_payroll', label: 'Expenses', path: '/accountant/expenses' },
+      { id: 'employees_hr', label: 'Salary', path: '/accountant/salary' },
+      { id: 'purchase_orders', label: 'Vendors & Purchases', path: '/accountant/vendors' },
+      { id: 'facility_requests', label: 'Facility Requests', path: '/accountant/facility-requests' },
+    ],
+  },
+  {
+    id: 'staff',
+    title: 'Directories & Reports',
+    items: [
+      { id: 'students_directory', label: 'Students Directory', path: '/accountant/student-directory' },
+      { id: 'teachers', label: 'Teachers Directory', path: '/accountant/teachers' },
+      { id: 'class_teachers', label: 'Employees Directory', path: '/accountant/employees' },
+      { id: 'attendance_reports', label: 'Financial Reports', path: '/accountant/reports' },
+    ],
+  },
+  {
+    id: 'operations',
+    title: 'Tools & Settings',
+    items: [
+      { id: 'data_import', label: 'Data Import', path: '/import' },
+      { id: 'syllabus_setup', label: 'Classes', path: '/classes' },
+      { id: 'messages', label: 'Messages', path: '/messages' },
+      { id: 'school_settings', label: 'Settings', path: '/settings' },
     ],
   },
 ];
@@ -358,28 +582,50 @@ interface AppLauncherModalProps {
 
 export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModalProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isPrincipal = user?.role === 'principal' || user?.role === 'incharge';
+  const sections =
+    user?.role === 'admin'
+      ? ADMIN_SECTIONS
+      : user?.role === 'reception'
+      ? RECEPTION_SECTIONS
+      : user?.role === 'academic_coordinator'
+      ? COORDINATOR_SECTIONS
+      : user?.role === 'teacher'
+      ? TEACHER_SECTIONS
+      : user?.role === 'accountant'
+      ? ACCOUNTANT_SECTIONS
+      : PRINCIPAL_SECTIONS;
+
+  const visibleTiles = TILES.filter((t) => sections.some((s) => s.id === t.id)).map((t) =>
+    user?.role === 'admin' && t.id === 'approvals' ? { ...t, label: 'Admin' } :
+    user?.role === 'admin' && t.id === 'staff' ? { ...t, label: 'HR & Staff' } :
+    user?.role === 'accountant' && t.id === 'approvals' ? { ...t, label: 'Expenses' } :
+    user?.role === 'accountant' && t.id === 'staff' ? { ...t, label: 'Directories' } :
+    t
+  );
+
   const modalRef = useRef<HTMLDivElement>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
-  // Live pending-approval counts — the same four queries the principal
-  // sidebar used for its badges. Nothing is shown when a count is zero.
+  // Live pending-approval counts — shown for Principal/Incharge.
   const { data: leave } = usePendingLeaveRequests();
   const { data: changeRequests } = usePendingChangeRequests();
   const { data: discounts } = usePendingDiscounts();
   const { data: testApprovals } = usePendingTestApprovals();
-  const itemCounts: Record<string, number> = {
+  const itemCounts: Record<string, number> = isPrincipal ? {
     leave_approvals: leave?.length ?? 0,
     student_change_requests: changeRequests?.length ?? 0,
     discount_approvals: discounts?.length ?? 0,
     test_approvals: testApprovals?.length ?? 0,
-  };
-  const tileCounts: Record<string, number> = {
+  } : {};
+  const tileCounts: Record<string, number> = isPrincipal ? {
     approvals:
-      itemCounts.leave_approvals +
-      itemCounts.student_change_requests +
-      itemCounts.discount_approvals +
-      itemCounts.test_approvals,
-  };
+      (itemCounts.leave_approvals ?? 0) +
+      (itemCounts.student_change_requests ?? 0) +
+      (itemCounts.discount_approvals ?? 0) +
+      (itemCounts.test_approvals ?? 0),
+  } : {};
 
   useEffect(() => {
     if (!isOpen) {
@@ -416,8 +662,8 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
 
   if (!isOpen) return null;
 
-  const activeGroup = PRINCIPAL_SECTIONS.find((g) => g.id === activeGroupId) || null;
-  const activeTile = TILES.find((t) => t.id === activeGroupId) || null;
+  const activeGroup = sections.find((g) => g.id === activeGroupId) || null;
+  const activeTile = visibleTiles.find((t) => t.id === activeGroupId) || null;
 
   const navigateToPage = (item: SubMenuItem) => {
     navigate(item.path);
@@ -511,7 +757,7 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
           {/* Category grid — padded so tile edges are never clipped */}
           <div className="overflow-y-auto custom-scrollbar flex-1 max-h-[400px] mt-2">
             <div className="grid grid-cols-3 gap-2 p-1.5">
-              {TILES.map((tile) => (
+              {visibleTiles.map((tile) => (
                 <button
                   key={tile.id}
                   type="button"

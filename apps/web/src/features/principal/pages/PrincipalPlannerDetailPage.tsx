@@ -13,7 +13,7 @@ export function PrincipalPlannerDetailPage() {
   const [justAdded, setJustAdded] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -23,7 +23,7 @@ export function PrincipalPlannerDetailPage() {
           <button
             type="button"
             onClick={() => { setJustAdded(false); setShowAddTask(true); }}
-            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#6D4AFF] text-white text-xs font-bold"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[#254A9A] text-white text-xs font-bold"
           >
             <Plus className="w-3.5 h-3.5" /> Add Task
           </button>
@@ -40,7 +40,7 @@ export function PrincipalPlannerDetailPage() {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
           </div>
         ) : isError || !data ? (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-start gap-3">

@@ -135,7 +135,7 @@ export function TeacherProfilePage() {
           {/* Avatar card */}
           <div
             className="rounded-2xl p-6 text-center"
-            style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
           >
             <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl font-bold text-white">{initials}</span>
@@ -198,14 +198,14 @@ export function TeacherProfilePage() {
                 {teacher.subjects.length > 0 && (
                   <div className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <BookOpen className="w-4 h-4 text-[#5B21B6] dark:text-violet-300" />
+                      <BookOpen className="w-4 h-4 text-[#1B2A4E] dark:text-violet-300" />
                       <p className="text-sm font-bold text-gray-800 dark:text-white">Subjects</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {teacher.subjects.map((s) => (
                         <span
                           key={s}
-                          className="px-3 py-1.5 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 text-[#5B21B6] dark:text-violet-300 rounded-xl text-sm font-medium border border-[#A855F7]/20 dark:border-[#A855F7]/25"
+                          className="px-3 py-1.5 bg-[#EEF1F8] dark:bg-[#A855F7]/15 text-[#1B2A4E] dark:text-violet-300 rounded-xl text-sm font-medium border border-[#1B2A4E]/20 dark:border-[#1B2A4E]/20"
                         >
                           {s}
                         </span>
@@ -218,14 +218,14 @@ export function TeacherProfilePage() {
                 {teacher.assignedClasses.length > 0 && (
                   <div className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <GraduationCap className="w-4 h-4 text-[#5B21B6]" />
+                      <GraduationCap className="w-4 h-4 text-[#1B2A4E]" />
                       <p className="text-sm font-bold text-gray-800">Assigned Classes</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {teacher.assignedClasses.map((c) => (
                         <span
                           key={c}
-                          className="px-3 py-1.5 bg-[#A855F7]/10 text-[#5B21B6] rounded-xl text-sm font-medium border border-[#A855F7]/20"
+                          className="px-3 py-1.5 bg-[#EEF1F8] text-[#1B2A4E] rounded-xl text-sm font-medium border border-[#1B2A4E]/20"
                         >
                           {c}
                         </span>
@@ -238,7 +238,7 @@ export function TeacherProfilePage() {
                 {data && (
                   <div className="pt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Briefcase className="w-4 h-4 text-[#5B21B6] dark:text-violet-300" />
+                      <Briefcase className="w-4 h-4 text-[#1B2A4E] dark:text-violet-300" />
                       <p className="text-sm font-bold text-gray-800 dark:text-white">Weekly Load</p>
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-1">
@@ -250,7 +250,7 @@ export function TeacherProfilePage() {
                             <div
                               className={`mt-1 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold ${
                                 count > 0
-                                  ? 'bg-[#A855F7]/10 dark:bg-[#A855F7]/15 text-[#5B21B6] dark:text-violet-300'
+                                  ? 'bg-[#EEF1F8] dark:bg-[#A855F7]/15 text-[#1B2A4E] dark:text-violet-300'
                                   : 'bg-gray-100 dark:bg-white/10 text-gray-300 dark:text-white/20'
                               }`}
                             >

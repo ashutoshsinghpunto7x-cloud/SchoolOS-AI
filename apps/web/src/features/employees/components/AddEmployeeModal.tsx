@@ -44,7 +44,7 @@ const ROLE_OPTIONS: { value: string; label: string }[] = [
 
 const inputCls = (err?: boolean) => cn(
   'w-full h-10 px-3 rounded-xl border bg-white text-sm text-gray-900 placeholder:text-gray-400',
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]',
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]',
   err ? 'border-red-300' : 'border-gray-200',
 );
 
@@ -139,12 +139,12 @@ export function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="w-16 h-16 rounded-full bg-[#A855F7]/10 border border-dashed border-[#A855F7]/40 flex items-center justify-center overflow-hidden shrink-0"
+              className="w-16 h-16 rounded-full bg-[#EEF1F8] border border-dashed border-[#A855F7]/40 flex items-center justify-center overflow-hidden shrink-0"
             >
               {photoPreview ? (
                 <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
               ) : (
-                <Camera className="w-5 h-5 text-[#5B21B6]" />
+                <Camera className="w-5 h-5 text-[#1B2A4E]" />
               )}
             </button>
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handlePhotoChange} className="hidden" />
@@ -226,7 +226,7 @@ export function AddEmployeeModal({ onClose }: AddEmployeeModalProps) {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+            className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Create Employee
           </button>

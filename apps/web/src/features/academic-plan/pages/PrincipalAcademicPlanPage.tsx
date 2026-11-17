@@ -8,7 +8,7 @@ function initials(name: string) {
   return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 }
 
-const AVATAR_COLORS = ['bg-violet-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-rose-500'];
+const AVATAR_COLORS = ['bg-[#254A9A]', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-rose-500'];
 function avatarColor(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
@@ -57,7 +57,7 @@ export function PrincipalAcademicPlanPage({ basePath = '/principal/academic-plan
   }, [data, search]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate(homePath)} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -118,7 +118,7 @@ export function PrincipalAcademicPlanPage({ basePath = '/principal/academic-plan
                 {t.overallPercent !== null && (
                   <div className="flex items-center gap-2 shrink-0">
                     <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
-                      <div className="h-full rounded-full bg-[#6D4AFF]" style={{ width: `${t.overallPercent}%` }} />
+                      <div className="h-full rounded-full bg-[#254A9A]" style={{ width: `${t.overallPercent}%` }} />
                     </div>
                     <span className="text-sm font-bold text-gray-700 dark:text-white/70 w-9 text-right">{t.overallPercent}%</span>
                   </div>

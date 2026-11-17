@@ -333,7 +333,7 @@ export function ImportSessionDetail() {
                 <button
                   onClick={() => void runAIMap()}
                   disabled={aiMap.isPending}
-                  className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
+                  className="flex items-center gap-1 text-xs text-[#254A9A] font-medium hover:underline disabled:opacity-40"
                 >
                   {aiMap.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                   AI Auto Map
@@ -353,7 +353,7 @@ export function ImportSessionDetail() {
                 <button
                   onClick={() => void runAIMap()}
                   disabled={aiMap.isPending}
-                  className="flex items-center gap-1 text-xs text-violet-600 font-medium hover:underline disabled:opacity-40"
+                  className="flex items-center gap-1 text-xs text-[#254A9A] font-medium hover:underline disabled:opacity-40"
                 >
                   {aiMap.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
                   AI Auto Map
@@ -390,7 +390,7 @@ export function ImportSessionDetail() {
                       title={suggestion.requiresConfirmation ? 'Low confidence — please confirm' : 'AI suggestion'}
                       className={cn(
                         'shrink-0 text-[10px] font-bold rounded-full px-1.5 py-0.5',
-                        suggestion.confidence >= 0.8 ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'bg-amber-50 text-amber-700',
+                        suggestion.confidence >= 0.8 ? 'bg-[#EEF1F8] text-[#1B2A4E]' : 'bg-amber-50 text-amber-700',
                       )}
                     >
                       {Math.round(suggestion.confidence * 100)}%

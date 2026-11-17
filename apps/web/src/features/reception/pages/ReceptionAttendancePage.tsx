@@ -389,7 +389,7 @@ export function ReceptionAttendancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       {(printing || printingAll || printingRange) && (
         <style>{`
           /* Every register prints landscape — the wider sheet gives the

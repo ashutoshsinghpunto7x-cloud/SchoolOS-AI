@@ -12,20 +12,20 @@ function initialsOf(name: string): string {
 // Renders a mini non-interactive front-only thumbnail for the grid.
 function CardThumbnail({ employee, onPrint }: { employee: Employee; onPrint: () => void }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col items-center">
-      <div className="w-16 h-16 rounded-full bg-[#A855F7]/10 border-2 border-[#5B21B6]/40 overflow-hidden flex items-center justify-center mb-2">
+    <div className="bg-white rounded-[18px] border border-[#E8E2D6] shadow-xs p-4 flex flex-col items-center">
+      <div className="w-16 h-16 rounded-full bg-[#EEF1F8] border-2 border-[#254A9A]/40 overflow-hidden flex items-center justify-center mb-2">
         {employee.photoUrl ? (
           <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
-          <span className="text-[#5B21B6] font-bold text-sm">{initialsOf(employee.fullName)}</span>
+          <span className="text-[#1B2A4E] font-bold text-sm">{initialsOf(employee.fullName)}</span>
         )}
       </div>
-      <p className="text-sm font-bold text-gray-900 text-center truncate w-full">{employee.fullName}</p>
-      <p className="text-xs text-gray-400 text-center truncate w-full">{employee.employeeId}</p>
-      <p className="text-[11px] text-gray-400 text-center mt-0.5 truncate w-full">{employee.designation}</p>
+      <p className="text-sm font-bold text-[#1B2A4E] text-center truncate w-full">{employee.fullName}</p>
+      <p className="text-xs text-[#55607A] text-center truncate w-full">{employee.employeeId}</p>
+      <p className="text-[11px] text-[#55607A] text-center mt-0.5 truncate w-full">{employee.designation}</p>
       <button
         onClick={onPrint}
-        className="mt-3 h-8 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5"
+        className="mt-3 h-8 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
       >
         <Printer className="w-3.5 h-3.5" /> Print
       </button>
@@ -63,7 +63,7 @@ export function IdCardsPage() {
   const [printingEmployee, setPrintingEmployee] = useState<Employee | null>(null);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3 print:hidden">
         <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />

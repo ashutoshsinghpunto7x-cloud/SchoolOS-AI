@@ -1,9 +1,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { Sidebar } from '@/components/sidebar/Sidebar';
 import { Topbar } from '@/components/topbar/Topbar';
-import { AccountantTopNav } from '@/features/accountant-workspace/components/AccountantTopNav';
 import { NotificationNudge } from '@/features/notifications/components/NotificationNudge';
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
@@ -11,6 +9,7 @@ import { TeacherThemeProvider, useTeacherTheme } from '@/features/teacher-worksp
 import { LanguageProvider } from '@/context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { getHomePathForRole } from '@/features/auth/utils/roleHome';
 import { useModuleAccessStatus } from '@/features/ops-center/hooks/useModuleAccess';
 import { getActiveRestriction } from '@/lib/moduleAccess';
 import { ModuleRestrictedNotice } from '@/components/ModuleRestrictedNotice';
@@ -22,9 +21,7 @@ function AppLayoutInner() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const isAccountant = user?.role === 'accountant';
   const isTeacher = user?.role === 'teacher';
-  const isPrincipal = user?.role === 'principal' || user?.role === 'incharge';
   // Parent Workspace ships its own full-bleed shell (ParentLayout: header +
   // bottom nav) — same treatment as the teacher portal above.
   const isParentWorkspace = user?.role === 'parent';
@@ -71,12 +68,12 @@ function AppLayoutInner() {
 
   return (
     <div className={cn(
-      "flex h-screen overflow-hidden",
-      isAccountant || isDriver
+      "flex h-screen overflow-hidden font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]",
+      isDriver
         ? "bg-white"
         : isDark
           ? (isTeacher ? "teacher-aurora-bg" : "bg-[#0B0C12]")
-          : (isTeacher ? "bg-[#F5F5F7]" : "bg-[#FBF8F3]")
+          : "bg-[#FBF8F3]"
     )}>
       <NotificationNudge />
       <ReminderWatcher />
@@ -91,24 +88,12 @@ function AppLayoutInner() {
         />
       )}
 
-      {/* Sidebar — Principal, teacher portal, Parent Workspace, and Accountant have no left
-          sidebar; Principal uses the topbar 9-dot launcher on desktop and capsule dock on mobile. */}
-      {!isPrincipal && !isTeacher && !isParentWorkspace && !isAccountant && !isDriver && (
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main content — offset by sidebar on desktop (not for principal/teacher/parent/accountant/driver, whose sidebar doesn't apply). */}
-      <div className={cn(
-        'flex flex-1 flex-col min-h-0 min-w-0',
-        !isPrincipal && !isTeacher && !isParentWorkspace && !isAccountant && !isDriver && 'lg:ml-[260px]'
-      )}>
-        {!isParentWorkspace && !isAccountant && !isDriver && (
+      {/* Left sidebar removed — all workspace roles use the Chrome-like Topbar 9-dot launcher
+          on desktop and the sticky bottom capsule dock on mobile. */}
+      <div className="flex flex-1 flex-col min-h-0 min-w-0">
+        {!isParentWorkspace && !isDriver && (
           <Topbar onMenuToggle={() => setSidebarOpen(prev => !prev)} />
         )}
-        {isAccountant && <AccountantTopNav />}
 
         <main ref={mainRef} className="flex-1 overflow-y-auto flex flex-col">
           {activeRestriction ? (
@@ -124,14 +109,14 @@ function AppLayoutInner() {
           )}
         </main>
 
-        {/* Mobile Sticky Bottom Capsule Dock — Principal only */}
-        {isPrincipal && (
+        {/* Mobile Sticky Bottom Capsule Dock — all Chrome-topbar workspace roles */}
+        {!isParentWorkspace && !isDriver && (
           <footer className="flex md:hidden shrink-0 bg-[#FBF8F3] items-center px-3 pb-2.5 pt-1 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
             <nav className="w-full bg-[#1B2A4E] rounded-[22px] px-2 py-1.5 flex items-center justify-around shadow-[0_8px_24px_rgba(27,42,78,0.3)] border border-white/10">
               {/* 1. Home */}
               <button
                 type="button"
-                onClick={() => navigate('/principal')}
+                onClick={() => navigate(user?.role ? getHomePathForRole(user.role) : '/')}
                 aria-label="Home"
                 className={cn(
                   'flex-1 max-w-[48px] h-9 rounded-xl flex items-center justify-center text-white transition-all active:scale-90 cursor-pointer',

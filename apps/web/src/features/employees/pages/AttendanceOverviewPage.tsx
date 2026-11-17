@@ -12,7 +12,7 @@ export function AttendanceOverviewPage() {
   const { data: records, isLoading } = useTodayStaffAttendance();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -51,7 +51,7 @@ export function AttendanceOverviewPage() {
                     <td className="px-4 py-3 text-gray-600 flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-gray-300" /> {timeLabel(r.checkIn?.time)}</td>
                     <td className="px-4 py-3 text-gray-600">{timeLabel(r.checkOut?.time)}</td>
                     <td className="px-4 py-3">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#A855F7]/10 text-[#5B21B6] capitalize">{r.status.replace('_', ' ')}</span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EEF1F8] text-[#254A9A] capitalize">{r.status.replace('_', ' ')}</span>
                     </td>
                   </tr>
                 ))}

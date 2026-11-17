@@ -64,8 +64,8 @@ export function ReportCardPreviewPage() {
 
   if (loading || !student || !exam) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFBFF]">
-        <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF8F3]">
+        <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
         <p className="text-sm text-gray-500">{generate.isPending ? 'Generating report card with AI…' : 'Loading…'}</p>
       </div>
     );
@@ -73,7 +73,7 @@ export function ReportCardPreviewPage() {
 
   if (!resolvedCard) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FAFBFF] px-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF8F3] px-6 text-center">
         <AlertTriangle className="w-8 h-8 text-amber-500" />
         <p className="text-sm font-semibold text-gray-700">Couldn't generate this report card</p>
         <button type="button" onClick={() => generate.mutate({ examId, studentId })} className="mt-2 h-9 px-4 rounded-lg bg-[#1C2B4A] text-white text-sm font-semibold">
@@ -192,19 +192,19 @@ export function ReportCardPreviewPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#6D4AFF]" /> AI Remark
+                <Sparkles className="w-3.5 h-3.5 text-[#254A9A]" /> AI Remark
               </p>
               <button
                 type="button"
                 onClick={() => regenerateRemark.mutate()}
                 disabled={regenerateRemark.isPending}
-                className="text-xs font-semibold text-[#6D4AFF] disabled:opacity-50"
+                className="text-xs font-semibold text-[#254A9A] disabled:opacity-50"
               >
                 {regenerateRemark.isPending ? 'Regenerating…' : 'Regenerate'}
               </button>
             </div>
             <textarea
-              className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#6D4AFF]/30"
+              className="w-full text-sm text-gray-800 border border-gray-200 rounded-lg p-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#254A9A]/30"
               rows={3}
               value={remarkDraft ?? resolvedCard.aiRemark?.text ?? ''}
               onChange={(e) => setRemarkDraft(e.target.value)}
@@ -300,7 +300,7 @@ function MarksCorrectionPanel({
           <Pencil className="w-3.5 h-3.5 text-[#1C2B4A]" /> Correct Marks
         </p>
         {!editing && (
-          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#6D4AFF]">
+          <button type="button" onClick={startEditing} className="text-xs font-semibold text-[#254A9A]">
             Fix a mark
           </button>
         )}

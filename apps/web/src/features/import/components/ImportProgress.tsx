@@ -31,7 +31,7 @@ export function ImportProgress({ session }: ImportProgressProps) {
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${isFailed ? 'bg-red-400' : 'bg-[#5B21B6]'}`}
+            className={`h-full rounded-full transition-all duration-500 ${isFailed ? 'bg-red-400' : 'bg-[#1B2A4E]'}`}
             style={{ width: `${pct}%` }}
           />
         </div>

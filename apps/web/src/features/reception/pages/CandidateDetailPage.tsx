@@ -37,7 +37,7 @@ function FeedbackForm({ interviewId }: { interviewId: string }) {
         type="button"
         onClick={() => submitFeedback.mutate({ id: interviewId, payload: { score: Number(score), comments: comments.trim() || undefined, recommendation } })}
         disabled={submitFeedback.isPending}
-        className="h-8 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-xs font-semibold disabled:opacity-50"
+        className="h-8 rounded-lg bg-[#1B2A4E] hover:bg-[#2C4177] text-white text-xs font-semibold disabled:opacity-50"
       >
         {submitFeedback.isPending ? 'Submitting…' : 'Submit Feedback'}
       </button>
@@ -64,7 +64,7 @@ export function CandidateDetailPage() {
   if (!candidate) return <div className="text-center py-32 text-gray-400">Candidate not found.</div>;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       <button
         onClick={() => navigate('/reception/candidates')}
         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-5"

@@ -53,7 +53,7 @@ export const TermReportCardHubPage = () => {
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder='Search class — e.g. "6 A" or "VI A"'
-            className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+            className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
           />
           {search && (
             <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear search">
@@ -83,8 +83,8 @@ export const TermReportCardHubPage = () => {
               onClick={() => navigate(`/term-report-cards/${cls}/${section}/${academicYear}`)}
               className="group text-left bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md hover:border-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#F3EEFF] flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-[#6D4AFF]" />
+              <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-[#254A9A]" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900">Class {cls}{section !== '—' ? ` – ${section}` : ''}</p>

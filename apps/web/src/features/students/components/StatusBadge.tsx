@@ -4,7 +4,7 @@ import type { AdmissionStatus } from '@schoolos/types';
 const CONFIG: Record<AdmissionStatus, { label: string; classes: string }> = {
   // current lifecycle
   enquiry:           { label: 'Enquiry',           classes: 'bg-sky-50 text-sky-700 border border-sky-200' },
-  application:       { label: 'Application',       classes: 'bg-purple-50 text-purple-700 border border-purple-200' },
+  application:       { label: 'Application',       classes: 'bg-[#EEF1F8] text-[#1B2A4E] border border-[#E8E2D6]' },
   admission_pending: { label: 'Admission Pending', classes: 'bg-amber-50 text-amber-700 border border-amber-200' },
   active:            { label: 'Active',            classes: 'bg-green-50 text-green-700 border border-green-200' },
   transferred:       { label: 'Transferred',       classes: 'bg-blue-50 text-blue-700 border border-blue-200' },

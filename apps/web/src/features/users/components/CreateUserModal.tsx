@@ -150,7 +150,7 @@ export const CreateUserModal = ({ onClose }: CreateUserModalProps) => {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+              className="flex-1 h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
             >
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {isPending ? 'Creating…' : 'Create User'}

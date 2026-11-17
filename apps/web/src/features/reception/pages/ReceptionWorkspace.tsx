@@ -129,53 +129,132 @@ function todayEndISO(): string {
   return d.toISOString();
 }
 
-function StatTile({ label, value }: { label: string; value: number | undefined }) {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-200 px-6 py-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value ?? '–'}</p>
-    </div>
-  );
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
+const RECEPTION_QUICK_LINKS: { label: string; path: string; d: string }[] = [
+  { label: 'Visitor Log', path: '/reception/visitors', d: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3' },
+  { label: 'Admission', path: '/students/new', d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM22 11h-6M19 8v6' },
+  { label: 'Enquiries', path: '/enquiries', d: 'M3 5h18v12H8l-5 4zM8 10h8M8 13h5' },
+  { label: 'Follow-ups', path: '/reception/follow-ups', d: 'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
+  { label: 'My Tasks', path: '/reception/tasks', d: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+  { label: 'Attendance', path: '/reception/attendance', d: 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3M9 15l2 2 4-4' },
+  { label: 'Resumes', path: '/reception/candidates', d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8' },
+  { label: 'Messages', path: '/communication', d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+  { label: 'Staff Chat', path: '/messages', d: 'M3 6h18v12H3zM3 7l9 7 9-7' },
+  { label: 'Reports', path: '/reception/reports', d: 'M18 20V10M12 20V4M6 20v-6' },
+];
+
 function ReceptionHome({ onNavigate }: { onNavigate: (to: string) => void }) {
+  const { user } = useAuth();
   const { data: waiting } = useVisitors({ status: 'waiting', limit: 1 });
   const { data: onSite } = useVisitors({ onlyOnSite: true, limit: 1 });
   const { data: tasks } = useReceptionTasks({ status: 'open', mine: true, limit: 1 });
   const { data: followUps } = useFollowUps({ status: 'pending', dueBy: todayEndISO(), limit: 1 });
+  const firstName = user?.firstName ?? '';
+  const card = 'bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs';
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatTile label="Visitors Waiting" value={waiting?.meta.total} />
-        <StatTile label="Visitors On Site" value={onSite?.meta.total} />
-        <StatTile label="Open Tasks" value={tasks?.meta.total} />
-        <StatTile label="Follow-ups Due" value={followUps?.meta.total} />
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4">
-          <h2 className="text-base font-semibold text-gray-900">Quick Access</h2>
+    <div className="flex-1 w-full bg-[#FBF8F3] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+      <div className="w-full max-w-[1100px] mx-auto px-4 py-6 md:py-8 space-y-6">
+        <div className="text-center">
+          <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1">
+            Front office, visitors &amp; daily follow-ups.
+          </p>
         </div>
-        <ul className="border-t border-gray-200 divide-y divide-gray-100">
-          {RECEPTION_LINKS.map((l) => (
-            <li key={l.to}>
+
+        {/* Quick launch */}
+        <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 sm:gap-3">
+          {RECEPTION_QUICK_LINKS.map((q) => (
+            <button
+              key={q.label}
+              type="button"
+              onClick={() => onNavigate(q.path)}
+              className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
+            >
+              <span className="relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={q.d} />
+                </svg>
+              </span>
+              <span className="text-center leading-tight">{q.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* 3 Key Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <button type="button" onClick={() => onNavigate('/reception/visitors')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">Visitors Waiting</div>
+            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{waiting?.meta.total ?? '—'}</div>
+            <span className="text-[11px] font-semibold text-emerald-600">
+              {onSite?.meta.total ?? 0} visitor{(onSite?.meta.total ?? 0) === 1 ? '' : 's'} on site
+            </span>
+          </button>
+
+          <button type="button" onClick={() => onNavigate('/reception/tasks')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">Open Tasks</div>
+            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{tasks?.meta.total ?? '—'}</div>
+            <span className="text-[11px] font-semibold text-amber-600">
+              {(tasks?.meta.total ?? 0) > 0 ? `${tasks?.meta.total} assigned to you` : 'All caught up'}
+            </span>
+          </button>
+
+          <button type="button" onClick={() => onNavigate('/reception/follow-ups')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+            <div className="text-[13px] text-[#55607A]">Follow-ups Due</div>
+            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{followUps?.meta.total ?? '—'}</div>
+            <span className="text-[11px] font-semibold text-[#254A9A]">
+              Admission leads due today
+            </span>
+          </button>
+        </div>
+
+        {/* 2-Column Action Lists */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={`${card} p-5`}>
+            <div className="text-[16px] font-bold text-[#1B2A4E] pb-1">Front Desk</div>
+            {RECEPTION_LINKS.slice(0, 3).map((l) => (
               <button
+                key={l.to}
                 type="button"
                 onClick={() => onNavigate(l.to)}
-                className="w-full flex items-center justify-between gap-4 px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center justify-between py-2.5 border-b last:border-b-0 border-[#E8E2D6]/60 text-left cursor-pointer hover:bg-[#FBF8F3] rounded-lg px-1"
               >
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-gray-900">{l.title}</span>
-                  <span className="block text-sm text-gray-500 truncate">{l.description}</span>
+                <span className="min-w-0 pr-3">
+                  <span className="block text-[14px] text-[#1B2A4E]">{l.title}</span>
+                  <span className="block text-[11px] text-[#55607A] truncate">{l.description}</span>
                 </span>
-                <span className="text-sm font-semibold text-[var(--brand-purple-dark)] flex-shrink-0">Open</span>
+                <span className="text-[12px] font-semibold text-[#254A9A] shrink-0">Open →</span>
               </button>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+
+          <div className={`${card} p-5`}>
+            <div className="text-[16px] font-bold text-[#1B2A4E] pb-1">Follow-ups &amp; Records</div>
+            {RECEPTION_LINKS.slice(3).map((l) => (
+              <button
+                key={l.to}
+                type="button"
+                onClick={() => onNavigate(l.to)}
+                className="w-full flex items-center justify-between py-2.5 border-b last:border-b-0 border-[#E8E2D6]/60 text-left cursor-pointer hover:bg-[#FBF8F3] rounded-lg px-1"
+              >
+                <span className="min-w-0 pr-3">
+                  <span className="block text-[14px] text-[#1B2A4E]">{l.title}</span>
+                  <span className="block text-[11px] text-[#55607A] truncate">{l.description}</span>
+                </span>
+                <span className="text-[12px] font-semibold text-[#D9822B] shrink-0">Open →</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

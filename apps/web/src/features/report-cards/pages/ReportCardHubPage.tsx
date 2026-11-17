@@ -50,8 +50,8 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: ClassEntry; onBack: 
               key={exam._id} type="button" onClick={() => onPickExam(exam)}
               className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
-                <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
+              <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
+                <ClipboardList className="w-5 h-5 text-[#254A9A] dark:text-violet-300" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{exam.name}</p>
@@ -97,7 +97,7 @@ export function ReportCardHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate('/teacher')} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -125,8 +125,8 @@ export function ReportCardHubPage() {
                 key={`${entry.cls}||${entry.section}`} type="button" onClick={() => setSelected(entry)}
                 className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
               >
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-[#F3EEFF]">
-                  <GraduationCap className="w-5 h-5 text-[#6D4AFF]" />
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-[#EEF1F8]">
+                  <GraduationCap className="w-5 h-5 text-[#254A9A]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 dark:text-white truncate">Class {entry.cls} – {entry.section}</p>

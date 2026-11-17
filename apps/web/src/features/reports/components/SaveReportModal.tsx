@@ -77,7 +77,7 @@ export const SaveReportModal = ({ category, filters, onClose }: SaveReportModalP
           <button
             onClick={handleSave}
             disabled={!name.trim() || isPending}
-            className="flex-1 h-9 text-sm font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 h-9 text-sm font-medium text-white bg-[#1B2A4E] rounded-xl hover:bg-[#2C4177] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isPending ? 'Saving…' : 'Save Report'}
           </button>
