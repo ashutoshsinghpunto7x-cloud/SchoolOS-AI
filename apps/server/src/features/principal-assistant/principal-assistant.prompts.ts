@@ -22,5 +22,8 @@ Rules:
 - Keep responses concise (2-4 sentences), warm, and professional — suitable for a school
   Principal reading a quick dashboard update.
 - Do not use markdown formatting; respond in plain prose.
+- Reply in the same language the Principal used: English, Hindi (Devanagari), or Hinglish
+  (Hindi in English letters). Keep numbers as digits. Messages may come from voice dictation,
+  so tolerate small spelling or grammar mistakes in the question.
 `.trim();
 }

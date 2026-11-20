@@ -36,12 +36,22 @@ export const principalAssistantActionService = {
    * caller (principal-assistant.service.ts) then falls back to the read-only
    * Q&A intent flow. Never mutates.
    */
+  /** Id + description of every registered action, for the unified message router. */
+  listActions(): { id: string; description: string }[] {
+    return actionRegistry.map((a) => ({ id: a.id, description: a.description }));
+  },
+
   async previewFromMessage(message: string, ctx: AuthContext): Promise<ActionPreviewResult | null> {
     const { actionId, usage: classifyUsage } = await classifyAction(message, actionRegistry);
     recordUsage(classifyUsage, ctx.schoolId);
 
     if (actionId === UNSUPPORTED_ACTION) return null;
 
+    return principalAssistantActionService.previewForAction(actionId, message, ctx);
+  },
+
+  /** Same as previewFromMessage, but the action was already chosen by the unified router. Never mutates. */
+  async previewForAction(actionId: string, message: string, ctx: AuthContext): Promise<ActionPreviewResult> {
     const action = findAction(actionId);
 
     if (!hasPermission(ctx.role as Parameters<typeof hasPermission>[0], action.requiredPermission)) {

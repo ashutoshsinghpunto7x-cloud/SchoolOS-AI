@@ -3,6 +3,7 @@ import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isPrincipalRole } from '@/features/auth/utils/roleHome';
+import { useBuddyTip } from '@/features/companion/useBuddyTip';
 
 interface SidebarNavItemProps {
   to: string;
@@ -16,6 +17,7 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
   const { user } = useAuth();
   const isAccountant = user?.role === 'accountant';
   const isPrincipal = isPrincipalRole(user?.role);
+  const buddyTip = useBuddyTip();
   // Accountant renders on the purple/pink liquid-glass sidebar (same as
   // Teacher) — the white/transparent nav-item styling here is built for
   // that background.
@@ -25,6 +27,7 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
     <NavLink
       to={to}
       end={end}
+      {...buddyTip(to, 'row', label)}
       className={({ isActive }) =>
         cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent',

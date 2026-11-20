@@ -6,7 +6,9 @@ import { NotificationNudge } from '@/features/notifications/components/Notificat
 import { ReminderWatcher } from '@/features/reminders/components/ReminderWatcher';
 import { HighPriorityMessageGate } from '@/features/internal-messages/components/HighPriorityMessageGate';
 import { TeacherThemeProvider, useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+import { PrincipalAssistantWidget } from '@/features/principal-assistant/components/PrincipalAssistantWidget';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { RoleCompanion } from '@/features/companion/RoleCompanion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getHomePathForRole } from '@/features/auth/utils/roleHome';
@@ -78,6 +80,8 @@ function AppLayoutInner() {
       <NotificationNudge />
       <ReminderWatcher />
       <HighPriorityMessageGate />
+      {user?.role === 'principal' && <PrincipalAssistantWidget />}
+      <RoleCompanion />
 
       {/* Backdrop — mobile-only, since the sidebar is permanently docked on desktop */}
       {sidebarOpen && (

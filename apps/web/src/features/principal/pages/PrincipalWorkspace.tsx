@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { Sparkles, Send, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { usePrincipalDashboard } from '../hooks/usePrincipal';
 import { useAnalytics } from '@/features/reports/hooks/useReports';
@@ -8,10 +7,7 @@ import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeav
 import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
-import { usePrincipalAssistant } from '@/features/principal-assistant/hooks/usePrincipalAssistant';
-import { ChatMessage } from '@/features/principal-assistant/components/ChatMessage';
 import { getPrincipalPagePath } from '@/components/topbar/AppLauncherModal';
-import { extractErrorMessage } from '@/services/api';
 
 // Principal home — every number on this page comes from the live API
 // (/principal/dashboard, attendance analytics, and the four pending-approval
@@ -52,23 +48,6 @@ export const PrincipalWorkspace = () => {
   const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
 
-  // AI assistant (real backend, same as the previous dashboard)
-  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading: aiBusy, error: aiError } =
-    usePrincipalAssistant();
-  const [aiOpen, setAiOpen] = useState(false);
-  const [aiInput, setAiInput] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (aiOpen) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [aiOpen, messages, aiBusy]);
-
-  const send = (text?: string) => {
-    const value = (text ?? aiInput).trim();
-    if (!value || aiBusy) return;
-    sendMessage(value);
-    setAiInput('');
-  };
-
   const lowest = useMemo(() => {
     const rows = analytics?.category === 'attendance' ? analytics.data.byClass : [];
     return [...rows].filter((c) => c.total > 0).sort((a, b) => a.rate - b.rate).slice(0, 3);
@@ -99,6 +78,36 @@ export const PrincipalWorkspace = () => {
   ];
 
   const card = 'bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs';
+
+  // Speech-bubble text for the assistant companion (CompanionBuddy) — "Title|Text",
+  // built from the same live numbers shown on this page. Purely data attributes.
+  const absentToday = attendance && attendance.total > 0 ? attendance.absent : null;
+  const lowestClass = lowest[0] ? `${lowest[0].class}–${lowest[0].section}` : null;
+  const followUps = data?.admissions.pendingFollowUp ?? 0;
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const attendanceTip =
+    attendanceRate === null
+      ? "Attendance|Attendance hasn't been marked yet today."
+      : `Attendance|${attendanceRate}% present today — ${plural(absentToday ?? 0, 'student', 'students')} absent.${lowestClass ? ` Lowest is ${lowestClass}.` : ''}`;
+  const leaveTip =
+    pendingLeaves > 0
+      ? `Leave requests|${plural(pendingLeaves, 'request is', 'requests are')} waiting for your decision.`
+      : 'Leave requests|Nothing waiting for you right now.';
+  const enquiryTip = `Admission enquiries|${plural(newEnquiries, 'new enquiry', 'new enquiries')} this month${followUps > 0 ? `, ${followUps} need a follow-up call` : ''}.`;
+  const QUICK_TIPS: Record<string, string> = {
+    Attendance: attendanceTip,
+    Leave: leaveTip,
+    Messages: 'Messages|Notices and messages to staff and parents.',
+    Calendar: 'Calendar|School events, holidays and exam dates.',
+    Exams: 'Exams|Exam and unit test schedules.',
+    Marks: 'Marks|Marks entry and report cards for every class.',
+    Transport: 'Transport|Buses, routes and drivers.',
+    Teachers: 'Teachers|Every teacher, their classes and subjects.',
+    'Academic Plan': 'Academic Plan|How far each class has got through the syllabus.',
+    Timetable: "Timetable|The whole school's timetable on one page.",
+    Enquiries: enquiryTip,
+    Hiring: 'Hiring|Candidates, interviews and hiring approvals.',
+  };
 
   return (
     <div className="flex-1 w-full font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
@@ -131,6 +140,8 @@ export const PrincipalWorkspace = () => {
               key={q.label}
               type="button"
               onClick={() => navigate(q.path)}
+              data-buddy-tip={QUICK_TIPS[q.label]}
+              data-buddy-kind="icon"
               className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
             >
               <span className="relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
@@ -150,7 +161,7 @@ export const PrincipalWorkspace = () => {
 
         {/* Key metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button type="button" onClick={() => navigate('/attendance')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/attendance')} data-buddy-tip={attendanceTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">Attendance today</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">
               {isLoading ? '…' : attendanceRate === null ? '—' : `${attendanceRate}%`}
@@ -163,14 +174,14 @@ export const PrincipalWorkspace = () => {
                   : 'Not marked yet today'}
             </span>
           </button>
-          <button type="button" onClick={() => navigate('/principal/leave-approvals')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/principal/leave-approvals')} data-buddy-tip={leaveTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">Leave requests</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{leaves ? pendingLeaves : '…'}</div>
             <span className="text-[11px] font-semibold text-amber-600">
               {pendingLeaves > 0 ? `${pendingLeaves} awaiting your decision` : 'Nothing pending'}
             </span>
           </button>
-          <button type="button" onClick={() => navigate('/enquiries')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
+          <button type="button" onClick={() => navigate('/enquiries')} data-buddy-tip={enquiryTip} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
             <div className="text-[13px] text-[#55607A]">New enquiries this month</div>
             <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{isLoading ? '…' : newEnquiries}</div>
             <span className="text-[11px] font-semibold text-[#254A9A]">
@@ -218,6 +229,8 @@ export const PrincipalWorkspace = () => {
                 key={r.label}
                 type="button"
                 onClick={() => navigate(r.path)}
+                data-buddy-tip={`${r.label}|${r.count > 0 ? `${r.count} waiting for you — click to review.` : 'Nothing waiting here.'}`}
+                data-buddy-kind="row"
                 className="w-full flex items-center justify-between py-2.5 border-b last:border-b-0 border-[#E8E2D6]/60 text-left cursor-pointer hover:bg-[#FBF8F3] rounded-lg px-1"
               >
                 <span className="text-[14px] text-[#1B2A4E]">{r.label}</span>
@@ -247,60 +260,6 @@ export const PrincipalWorkspace = () => {
         )}
       </div>
 
-      {/* AI assistant — real backend */}
-      {aiOpen && (
-        <div className="fixed bottom-24 right-4 sm:right-6 z-50 w-[380px] max-w-[calc(100vw-24px)] h-[520px] max-h-[calc(100vh-130px)] bg-white rounded-[24px] shadow-[0_20px_50px_rgba(27,42,78,0.28)] border border-[#E8E2D6] flex flex-col overflow-hidden">
-          <div className="px-5 py-3.5 bg-gradient-to-r from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
-              <Sparkles className="w-4 h-4 text-[#F5B332]" />
-              <h3 className="text-[15px] font-bold m-0">SchoolOS AI</h3>
-            </div>
-            <button type="button" onClick={() => setAiOpen(false)} aria-label="Close assistant" className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div ref={scrollRef} className="p-4 flex-1 overflow-y-auto space-y-3 min-h-0 bg-[#FAF8F5]">
-            {messages.length === 0 && (
-              <p className="text-[13px] text-[#55607A]">
-                Ask about today&apos;s attendance, pending approvals, fee collection, teachers on leave or admissions.
-              </p>
-            )}
-            {messages.map((m) => (
-              <ChatMessage key={m.id} message={m} onEditField={onEditField} onApprove={onApprove} onCancel={onCancel} onQuickReply={send} />
-            ))}
-            {aiBusy && <p className="text-[12px] text-[#55607A]">Thinking…</p>}
-            {aiError && <p className="text-[12px] text-red-600">{extractErrorMessage(aiError)}</p>}
-          </div>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-            className="p-3 bg-white border-t border-[#E8E2D6] flex items-center gap-2 shrink-0"
-          >
-            <input
-              type="text"
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              placeholder="Ask AI anything..."
-              disabled={aiBusy}
-              className="flex-1 bg-[#F3EEE3] rounded-full px-3.5 py-2 text-[13px] text-[#1B2A4E] outline-none"
-            />
-            <button type="submit" disabled={!aiInput.trim() || aiBusy} aria-label="Send" className="w-8 h-8 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40">
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
-        </div>
-      )}
-      <button
-        type="button"
-        onClick={() => setAiOpen((v) => !v)}
-        aria-label="Ask AI Assistant"
-        title="Ask AI Assistant"
-        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-[#1B2A4E] to-[#254A9A] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(27,42,78,0.28)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
-      >
-        <Sparkles className="w-6 h-6 text-[#F5B332]" />
-      </button>
     </div>
   );
 };
