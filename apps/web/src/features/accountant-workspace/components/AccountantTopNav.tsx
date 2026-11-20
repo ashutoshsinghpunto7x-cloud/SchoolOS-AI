@@ -27,6 +27,7 @@ const FEES: NavGroup = {
   label: 'Fees', icon: IndianRupee,
   items: [
     { label: 'Collect Fee',   path: '/accountant/collect-fee',   icon: IndianRupee },
+    { label: 'Other Payments', path: '/accountant?tab=other-payment', icon: Wallet },
     { label: 'Fee Records',   path: '/accountant/fee-records',   icon: ClipboardList },
     { label: 'Pending Fees',  path: '/accountant/pending-fees',  icon: Wallet },
     { label: 'Fee Structure', path: '/accountant/fee-structure', icon: IndianRupee },
@@ -36,6 +37,7 @@ const FEES: NavGroup = {
 const EXPENSES: NavGroup = {
   label: 'Expenses', icon: Receipt,
   items: [
+    { label: 'Create Invoice', path: '/accountant?tab=invoice', icon: Receipt },
     { label: 'Expenses', path: '/accountant/expenses', icon: Receipt },
     { label: 'Salary',   path: '/accountant/salary',   icon: FileBarChart },
   ],
