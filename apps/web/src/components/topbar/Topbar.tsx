@@ -206,8 +206,16 @@ function ProfileMenu({ displayName, roleLabel, showSettings, onClose }: { displa
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // The principal topbar mounts this menu in BOTH its desktop and mobile
+    // headers (one is display:none) against the same open-state. Each instance
+    // used to treat a click inside the other as "outside" and close the menu
+    // on mousedown — before the item's click could fire, so Settings / Change
+    // Password / Contact Support / Log Out all appeared dead. Only a click
+    // outside every profile menu counts as outside.
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      const target = e.target as Element | null;
+      if (target?.closest?.('[data-profile-menu]')) return;
+      if (ref.current && !ref.current.contains(target as Node)) onClose();
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
@@ -223,6 +231,7 @@ function ProfileMenu({ displayName, roleLabel, showSettings, onClose }: { displa
   return (
     <div
       ref={ref}
+      data-profile-menu
       className="absolute right-0 top-[calc(100%+8px)] z-50 w-60 bg-white rounded-2xl border border-[#E8E8E8] shadow-[0_16px_48px_rgba(0,0,0,0.14)] overflow-hidden py-1.5"
     >
       <div className="px-4 py-2.5 border-b border-gray-50">
