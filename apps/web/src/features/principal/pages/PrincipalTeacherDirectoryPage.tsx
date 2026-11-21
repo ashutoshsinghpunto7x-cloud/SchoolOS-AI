@@ -19,7 +19,7 @@ function initials(name: string) {
 }
 
 const AVATAR_COLORS = [
-  'bg-violet-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500',
+  'bg-[#254A9A]', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500',
   'bg-sky-500', 'bg-rose-500', 'bg-teal-500', 'bg-indigo-500',
 ];
 function avatarColor(id: string) {
@@ -81,7 +81,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 text-[#7C3AED] animate-spin" />
+        <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
       </div>
     );
   }
@@ -119,7 +119,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
       </button>
 
       {/* Profile header */}
-      <div className="bg-gradient-to-br from-[#4C1D95] to-[#DB2777] rounded-2xl p-5 text-white mb-5">
+      <div className="bg-gradient-to-br from-[#1B2A4E] to-[#254A9A] rounded-2xl p-5 text-white mb-5">
         <div className="flex items-center gap-4">
           <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden', color)}>
             {teacher.photoUrl ? (
@@ -155,7 +155,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
             <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mb-2">{t('teacherDirectory.subjects')}</p>
             <div className="flex flex-wrap gap-1.5">
               {teacher.subjects.map((s) => (
-                <span key={s} className="text-xs font-semibold bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full">
+                <span key={s} className="text-xs font-semibold bg-[#EEF1F8] text-[#1B2A4E] px-2.5 py-1 rounded-full">
                   {s}
                 </span>
               ))}
@@ -168,7 +168,7 @@ function TeacherDetailPanel({ teacherId, onBack }: { teacherId: string; onBack: 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => navigate(`/timetable/teacher/${teacher._id}`)}
-          className="flex items-center gap-1.5 h-9 px-3 bg-violet-50 text-[#5B21B6] rounded-xl text-xs font-semibold hover:bg-violet-100 transition-colors"
+          className="flex items-center gap-1.5 h-9 px-3 bg-[#EEF1F8] text-[#1B2A4E] rounded-xl text-xs font-semibold hover:bg-[#E2E8F5] transition-colors"
         >
           <BookOpen className="w-3.5 h-3.5" /> {t('teacherDirectory.viewTimetable')}
         </button>
@@ -250,8 +250,8 @@ export function PrincipalTeacherDirectoryPage() {
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4 text-[#5B21B6]" />
+            <div className="w-9 h-9 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4 text-[#1B2A4E]" />
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900 leading-none">{summary.total}</p>
@@ -287,7 +287,7 @@ export function PrincipalTeacherDirectoryPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('teacherDirectory.searchPlaceholder')}
-          className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#A855F7]/40 bg-white"
+          className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]/40 bg-white"
         />
       </div>
 
@@ -295,7 +295,7 @@ export function PrincipalTeacherDirectoryPage() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-[#7C3AED] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
           </div>
         ) : isError ? (
           <div className="flex items-center gap-3 p-5">

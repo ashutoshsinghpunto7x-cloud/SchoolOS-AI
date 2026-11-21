@@ -46,7 +46,7 @@ export function VendorDirectoryPage() {
   const vendors = data?.data ?? [];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -64,7 +64,7 @@ export function VendorDirectoryPage() {
         </button>
         <button
           onClick={() => setShowForm(true)}
-          className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" /> Add Vendor
         </button>
@@ -77,7 +77,7 @@ export function VendorDirectoryPage() {
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search vendors…"
-              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+              className="w-full h-10 pl-9 pr-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
             />
           </div>
           <select
@@ -96,7 +96,7 @@ export function VendorDirectoryPage() {
             <button
               key={value}
               onClick={() => setCategory(value)}
-              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
+              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#1B2A4E] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
             >
               {label}
             </button>
@@ -111,7 +111,7 @@ export function VendorDirectoryPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
             <Store className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-sm font-semibold text-gray-700">No vendors found</p>
-            <button onClick={() => setShowForm(true)} className="mt-3 h-9 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold">
+            <button onClick={() => setShowForm(true)} className="mt-3 h-9 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold">
               Add your first vendor
             </button>
           </div>

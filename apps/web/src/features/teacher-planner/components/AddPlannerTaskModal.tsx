@@ -122,7 +122,7 @@ export function AddPlannerTaskModal({ planner, onClose, onAdded }: AddPlannerTas
           <button
             type="submit"
             disabled={addTask.isPending || !title.trim()}
-            className="w-full h-11 rounded-xl bg-[#6D4AFF] text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full h-11 rounded-xl bg-[#254A9A] text-white text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {addTask.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Add & Notify Teacher

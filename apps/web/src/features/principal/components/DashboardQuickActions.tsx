@@ -23,7 +23,7 @@ export function DashboardQuickActions() {
             key={action.path}
             onClick={() => navigate(action.path)}
             type="button"
-            className="px-4 py-3 rounded-xl border border-black/[0.06] text-sm font-medium text-[#374151] text-left hover:border-[#6D4AFF]/25 hover:bg-[#6D4AFF]/[0.04] hover:text-[#6D4AFF] transition-colors duration-150"
+            className="px-4 py-3 rounded-xl border border-black/[0.06] text-sm font-medium text-[#374151] text-left hover:border-[#254A9A]/25 hover:bg-[#254A9A]/[0.04] hover:text-[#254A9A] transition-colors duration-150"
           >
             {t(action.labelKey)}
           </button>

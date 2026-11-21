@@ -51,7 +51,7 @@ export function OperationsDashboard() {
   const { data: summary, isLoading } = useOperationsSummary();
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-3 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-3 sm:p-6">
       <div className="w-full max-w-[1600px] mx-auto space-y-5 sm:space-y-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Operations Dashboard</h1>

@@ -7,7 +7,7 @@ const ACCENTS = [
   { bg: 'bg-[#EAF6FF]', text: 'text-[#0284C7]' },
   { bg: 'bg-emerald-50', text: 'text-[#20C997]' },
   { bg: 'bg-amber-50', text: 'text-[#FFB547]' },
-  { bg: 'bg-[#F3EEFF]', text: 'text-[#6D4AFF]' },
+  { bg: 'bg-[#EEF1F8]', text: 'text-[#254A9A]' },
 ];
 
 function SkeletonCard() {
@@ -19,7 +19,7 @@ export function PlannerHubPage() {
   const { options: entries, isLoading, isError } = useTeacherSubjectOptions();
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button
           onClick={() => navigate('/teacher')}

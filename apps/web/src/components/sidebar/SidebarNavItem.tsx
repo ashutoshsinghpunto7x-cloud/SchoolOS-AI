@@ -73,7 +73,7 @@ export const SidebarNavItem = ({ to, icon: Icon, label, badge, end }: SidebarNav
                   : isPrincipal
                   ? isActive
                     ? 'bg-white/20 text-white'
-                    : 'bg-[#A855F7]/10 text-[#5B21B6]'
+                    : 'bg-[#EEF1F8] text-[#1B2A4E]'
                   : isActive
                     ? 'bg-[#5B5CEB] text-white'
                     : 'bg-gray-100 text-gray-500'

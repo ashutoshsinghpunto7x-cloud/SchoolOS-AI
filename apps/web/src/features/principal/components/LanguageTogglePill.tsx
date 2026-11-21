@@ -17,7 +17,7 @@ export function LanguageTogglePill({
         onClick={() => onChange('en')}
         className={cn(
           'h-8 px-3.5 rounded-full text-xs font-semibold transition-colors',
-          language === 'en' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+          language === 'en' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
         )}
       >
         English
@@ -27,7 +27,7 @@ export function LanguageTogglePill({
         onClick={() => onChange('hi')}
         className={cn(
           'h-8 px-3.5 rounded-full text-xs font-semibold transition-colors',
-          language === 'hi' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+          language === 'hi' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
         )}
       >
         हिन्दी

@@ -4,7 +4,7 @@ import { useCreateVendor, useUpdateVendor } from '../hooks/useVendors';
 import type { Vendor, VendorCategory } from '@schoolos/types';
 import { cn } from '@/lib/utils';
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const CATEGORIES: { value: VendorCategory; label: string; icon: React.ElementType }[] = [
@@ -80,7 +80,7 @@ export function VendorFormModal({ existing, onClose, onSuccess }: Props) {
                   onClick={() => setCategory(value)}
                   className={cn(
                     'flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors',
-                    category === value ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                    category === value ? 'border-[#1B2A4E] bg-[#EEF1F8]/60 text-[#1B2A4E]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
                   <Icon className="w-4 h-4" /> {label}
@@ -117,7 +117,7 @@ export function VendorFormModal({ existing, onClose, onSuccess }: Props) {
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
             </div>
           )}
-          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} {existing ? 'Save Changes' : 'Add Vendor'}
           </button>
         </form>

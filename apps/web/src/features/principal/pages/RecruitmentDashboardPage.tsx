@@ -12,7 +12,7 @@ function StatTile({ icon: Icon, label, value, onClick }: { icon: typeof Inbox; l
       type="button" onClick={onClick} disabled={!onClick}
       className="flex flex-col items-start gap-2 bg-white rounded-2xl border border-gray-100 p-5 text-left disabled:cursor-default hover:border-gray-200 transition-colors"
     >
-      <Icon className="w-5 h-5 text-[#5B21B6]" />
+      <Icon className="w-5 h-5 text-[#1B2A4E]" />
       <span className="text-2xl font-bold text-gray-900">{value}</span>
       <span className="text-xs text-gray-500">{label}</span>
     </button>
@@ -24,7 +24,7 @@ export function RecruitmentDashboardPage() {
   const { data, isLoading, isError } = useRecruitmentDashboard();
 
   if (isLoading) {
-    return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-[#5B21B6]" /></div>;
+    return <div className="flex items-center justify-center py-32"><Loader2 className="w-6 h-6 animate-spin text-[#1B2A4E]" /></div>;
   }
   if (isError || !data) {
     return <div className="text-center py-32 text-red-600 text-sm">Failed to load the recruitment dashboard.</div>;
@@ -53,7 +53,7 @@ export function RecruitmentDashboardPage() {
             <ul className="flex flex-col gap-2.5">
               {data.todaysSchedule.map((item) => (
                 <li key={item.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                  {item.type === 'interview' ? <Video className="w-4 h-4 text-[#5B21B6] shrink-0" /> : <DoorOpen className="w-4 h-4 text-blue-500 shrink-0" />}
+                  {item.type === 'interview' ? <Video className="w-4 h-4 text-[#1B2A4E] shrink-0" /> : <DoorOpen className="w-4 h-4 text-blue-500 shrink-0" />}
                   <span className="text-sm font-semibold text-gray-700 w-16 shrink-0">{item.time}</span>
                   <span className="text-sm text-gray-600 truncate">{item.label}</span>
                 </li>

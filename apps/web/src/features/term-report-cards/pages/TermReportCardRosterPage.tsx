@@ -26,7 +26,7 @@ export function TermReportCardRosterPage() {
   const templateNotPublished = data?.template && data.template.status !== 'published';
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-2xl mx-auto">
         <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -61,7 +61,7 @@ export function TermReportCardRosterPage() {
             <input
               type="text" value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search student by name or roll no."
-              className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+              className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
             />
             {search && (
               <button type="button" onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear search">
@@ -96,11 +96,11 @@ export function TermReportCardRosterPage() {
                 onClick={() => navigate(`/term-report-cards/${cls}/${section}/${academicYear}/student/${row.studentId}`)}
                 className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 shadow-sm px-4 py-3.5 hover:shadow-md transition-shadow"
               >
-                <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-[#F3EEFF]">
+                <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 flex items-center justify-center bg-[#EEF1F8]">
                   {row.photoUrl ? (
                     <img src={row.photoUrl} alt={row.fullName} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-[13px] font-bold text-[#6D4AFF]">{initials(row.fullName)}</span>
+                    <span className="text-[13px] font-bold text-[#254A9A]">{initials(row.fullName)}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

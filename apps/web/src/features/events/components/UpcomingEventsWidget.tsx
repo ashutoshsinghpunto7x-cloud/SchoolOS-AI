@@ -6,7 +6,7 @@ const EVENT_TYPE_COLOR: Record<string, string> = {
   holiday:         'bg-green-100 text-green-700',
   ptm:             'bg-blue-100 text-blue-700',
   examination:     'bg-red-100 text-red-700',
-  school_event:    'bg-purple-100 text-purple-700',
+  school_event:    'bg-[#EEF1F8] text-[#1B2A4E]',
   staff_meeting:   'bg-indigo-100 text-indigo-700',
   fee_due_date:    'bg-amber-100 text-amber-700',
   admission_event: 'bg-emerald-100 text-emerald-700',
@@ -43,7 +43,7 @@ interface UpcomingEventsWidgetProps {
 }
 
 export function UpcomingEventsWidget({
-  accentClassName = 'text-[#5B21B6]',
+  accentClassName = 'text-[#1B2A4E]',
   limit = 5,
   days = 14,
 }: UpcomingEventsWidgetProps) {

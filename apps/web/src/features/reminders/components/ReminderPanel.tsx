@@ -54,7 +54,7 @@ export function ReminderPanel({ onClose }: { onClose: () => void }) {
     >
       <div className="flex items-center justify-between mb-3">
         <p className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5">
-          <Bell className="w-4 h-4 text-[#5B21B6]" /> Reminders
+          <Bell className="w-4 h-4 text-[#1B2A4E]" /> Reminders
         </p>
         <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close">
           <X className="w-4 h-4" />
@@ -70,7 +70,7 @@ export function ReminderPanel({ onClose }: { onClose: () => void }) {
               key={r.id}
               className={cn(
                 'flex items-center gap-2 px-2.5 py-2 rounded-xl',
-                r.firedAt ? 'bg-gray-50 opacity-50' : 'bg-[#A855F7]/5',
+                r.firedAt ? 'bg-gray-50 opacity-50' : 'bg-[#EEF1F8]/60',
               )}
             >
               <span className="text-xs font-bold text-gray-700 font-mono shrink-0">{r.time}</span>
@@ -106,7 +106,7 @@ export function ReminderPanel({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={addReminder}
-          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] text-white shrink-0 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#1B2A4E] hover:bg-[#2C4177] text-white shrink-0 transition-colors"
           aria-label="Add reminder"
         >
           <Plus className="w-4 h-4" />

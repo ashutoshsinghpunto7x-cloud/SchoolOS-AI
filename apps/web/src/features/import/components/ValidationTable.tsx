@@ -19,7 +19,7 @@ const STATUS_FILTER_OPTIONS: { label: string; value: ImportRowStatus | 'all' }[]
 
 const ROW_BADGE: Record<ImportRowStatus, string> = {
   pending:  'bg-gray-100 text-gray-600',
-  valid:    'bg-[#A855F7]/10 text-[#5B21B6]',
+  valid:    'bg-[#EEF1F8] text-[#1B2A4E]',
   warning:  'bg-amber-50 text-amber-700',
   error:    'bg-red-50 text-red-700',
   imported: 'bg-gray-100 text-gray-600',

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Clock, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MeetingNotesWidget } from './MeetingNotesWidget';
-import { brandPurple, heroGradient } from '@/theme/brand';
+import { brandPurple } from '@/theme/brand';
 import type { PrincipalUpcomingEvent } from '@schoolos/types';
 
 // Kanpur coordinates — Open-Meteo needs no API key, so this stays self-contained.
@@ -163,8 +163,8 @@ export function PrincipalHeaderWidget({ showWeather = true }: { upcomingEvents?:
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl shadow-lg shadow-black/10 p-6"
-      style={{ background: heroGradient }}
+      className="relative overflow-hidden rounded-[22px] shadow-[0_8px_24px_rgba(27,42,78,0.14)] p-6 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]"
+      style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
     >
       {/* Decorative blobs — same treatment as the teacher dashboard's hero header */}
       <div className="absolute top-0 right-0 w-52 h-52 rounded-full bg-white/5 -translate-y-10 translate-x-10 pointer-events-none" />

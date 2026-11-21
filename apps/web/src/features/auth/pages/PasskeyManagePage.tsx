@@ -42,8 +42,8 @@ export function PasskeyManagePage() {
 
       <div className="px-4 py-5 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
-            <Fingerprint className="w-5 h-5 text-[#5B21B6]" />
+          <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+            <Fingerprint className="w-5 h-5 text-[#1B2A4E]" />
           </div>
           <p className="text-sm text-gray-500 dark:text-white/50">
             Devices where you can sign in with your fingerprint or Face ID instead of a password.
@@ -89,7 +89,7 @@ export function PasskeyManagePage() {
         {isPasskeyAvailable && (
           <button
             type="button" onClick={handleAdd}
-            className="w-full h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <PlusCircle className="w-4 h-4" /> Enable on this device
           </button>

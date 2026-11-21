@@ -28,7 +28,7 @@ function newRow(): Row {
   };
 }
 
-const cellCls = 'w-full h-9 px-2 rounded-lg border border-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const cellCls = 'w-full h-9 px-2 rounded-lg border border-gray-200 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 
 interface Props {
   onClose: () => void;
@@ -145,7 +145,7 @@ export function BulkAddSalaryModal({ onClose }: Props) {
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="w-full h-11 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+          className="w-full h-11 mt-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save All Records
         </button>

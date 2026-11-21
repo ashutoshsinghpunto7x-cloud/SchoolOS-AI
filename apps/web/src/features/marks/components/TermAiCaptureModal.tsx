@@ -245,7 +245,7 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
                 <select
                   value={skill}
                   onChange={(e) => setSkill(e.target.value)}
-                  className="mt-1 w-full h-10 px-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                  className="mt-1 w-full h-10 px-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                 >
                   <option value="">Select a skill…</option>
                   {skillsForSubject.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -265,7 +265,7 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
                 <select
                   value={value}
                   onChange={(e) => set(e.target.value)}
-                  className="mt-1 w-full h-10 px-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                  className="mt-1 w-full h-10 px-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                 >
                   <option value="">Select an exam…</option>
                   {exams.map((e) => <option key={e._id} value={e._id}>{e.name}</option>)}
@@ -286,12 +286,12 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
         {step === 'capture' && (
           <div className="p-4">
             {reading ? (
-              <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-violet-50/50 dark:bg-violet-500/5 flex flex-col items-center justify-center gap-2 text-violet-700 dark:text-violet-300 py-6 px-4">
+              <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-[#EEF1F8]/50 dark:bg-[#254A9A]/5 flex flex-col items-center justify-center gap-2 text-[#1B2A4E] dark:text-violet-300 py-6 px-4">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="text-xs font-semibold text-center">
                   Reading {job?.meta.photoCount === 1 ? 'the photo' : `${job?.meta.photoCount} photos`}…
                 </span>
-                <span className="text-[11px] text-center text-violet-600/80 dark:text-violet-300/60">
+                <span className="text-[11px] text-center text-[#254A9A]/80 dark:text-violet-300/60">
                   This keeps running in the background — you can close this, go back, or switch apps. We&apos;ll tell you when it&apos;s ready.
                 </span>
                 <button type="button" onClick={closeModal} className="mt-1 h-9 px-4 rounded-lg border border-violet-200 dark:border-violet-500/30 text-xs font-semibold">
@@ -362,7 +362,7 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
 
         {step === 'review' && result && (
           <div className="p-4 space-y-3">
-            <p className="text-xs font-semibold text-violet-600 dark:text-violet-300 uppercase tracking-wide">{effectiveSubjectName}</p>
+            <p className="text-xs font-semibold text-[#254A9A] dark:text-violet-300 uppercase tracking-wide">{effectiveSubjectName}</p>
             <p className="text-sm font-semibold text-gray-900 dark:text-white">
               {result.rows.length} student{result.rows.length === 1 ? '' : 's'} read — review before saving
             </p>
@@ -383,7 +383,7 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
                     <select
                       value={row.studentId}
                       onChange={(e) => reassignRow(row.studentId, e.target.value)}
-                      className="min-w-0 flex-1 bg-transparent text-gray-700 dark:text-white/80 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 rounded"
+                      className="min-w-0 flex-1 bg-transparent text-gray-700 dark:text-white/80 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 rounded"
                     >
                       {!roster.some((s) => s.studentId === row.studentId) && (
                         <option value={row.studentId}>{row.fullName}</option>
@@ -402,14 +402,14 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
                         inputMode="decimal"
                         value={row.unitTest1 ?? ''}
                         onChange={(e) => editRow(row.studentId, 'unitTest1', e.target.value === '' ? undefined : Number(e.target.value))}
-                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                       />
                       <input
                         type="number"
                         inputMode="decimal"
                         value={row.unitTest2 ?? ''}
                         onChange={(e) => editRow(row.studentId, 'unitTest2', e.target.value === '' ? undefined : Number(e.target.value))}
-                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                       />
                       <span className="text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.bestUnitTest ?? '—'}</span>
                       <input
@@ -417,7 +417,7 @@ export function TermAiCaptureModal({ cls: clsProp, section: sectionProp, subject
                         inputMode="decimal"
                         value={row.mainExam ?? ''}
                         onChange={(e) => editRow(row.studentId, 'mainExam', e.target.value === '' ? undefined : Number(e.target.value))}
-                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                        className="w-9 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                       />
                       <span className="text-[11px] text-center font-semibold text-gray-600 dark:text-white/60">{row.total ?? '—'}</span>
                     </>

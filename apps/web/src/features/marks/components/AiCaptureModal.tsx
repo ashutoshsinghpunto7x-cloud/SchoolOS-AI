@@ -68,7 +68,7 @@ function EditableExtractedRow({
               value={c.score ?? ''}
               onClick={(e) => e.stopPropagation()}
               onChange={(e) => onEditScore(row.studentId, c.componentName, e.target.value === '' ? undefined : Number(e.target.value))}
-              className="w-12 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+              className="w-12 h-6 px-1 rounded border border-gray-200 dark:border-white/10 bg-white dark:bg-white/10 text-[11px] text-center text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
             />
           </label>
         ))}
@@ -419,7 +419,7 @@ export function AiCaptureModal({ target, onApply, resumeJobId, onClose }: Props)
                 type="button"
                 onClick={() => setTab('photo')}
                 disabled={recording}
-                className={cn('flex-1 h-9 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50', tab === 'photo' ? 'bg-violet-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60')}
+                className={cn('flex-1 h-9 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50', tab === 'photo' ? 'bg-[#1B2A4E] text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60')}
               >
                 Photo
               </button>
@@ -429,7 +429,7 @@ export function AiCaptureModal({ target, onApply, resumeJobId, onClose }: Props)
                 type="button"
                 onClick={() => setTab('voice')}
                 disabled={recording}
-                className={cn('flex-1 h-9 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50', tab === 'voice' ? 'bg-violet-600 text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60')}
+                className={cn('flex-1 h-9 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50', tab === 'voice' ? 'bg-[#1B2A4E] text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-white/60')}
               >
                 Voice
               </button> */}
@@ -438,12 +438,12 @@ export function AiCaptureModal({ target, onApply, resumeJobId, onClose }: Props)
             <div className="p-4">
               {tab === 'photo' ? (
                 readingPhotos ? (
-                  <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-violet-50/50 dark:bg-violet-500/5 flex flex-col items-center justify-center gap-2 text-violet-700 dark:text-violet-300 py-6 px-4">
+                  <div className="w-full rounded-xl border-2 border-dashed border-violet-200 dark:border-violet-500/20 bg-[#EEF1F8]/50 dark:bg-[#254A9A]/5 flex flex-col items-center justify-center gap-2 text-[#1B2A4E] dark:text-violet-300 py-6 px-4">
                     <Loader2 className="w-6 h-6 animate-spin" />
                     <span className="text-xs font-semibold text-center">
                       Reading {job?.meta.photoCount === 1 ? 'the photo' : `${job?.meta.photoCount} photos`}…
                     </span>
-                    <span className="text-[11px] text-center text-violet-600/80 dark:text-violet-300/60">
+                    <span className="text-[11px] text-center text-[#254A9A]/80 dark:text-violet-300/60">
                       This keeps running in the background — you can close this, go back, or switch apps. We&apos;ll tell you when it&apos;s ready.
                     </span>
                     <button type="button" onClick={closeModal} className="mt-1 h-9 px-4 rounded-lg border border-violet-200 dark:border-violet-500/30 text-xs font-semibold">
@@ -506,7 +506,7 @@ export function AiCaptureModal({ target, onApply, resumeJobId, onClose }: Props)
                 )
               ) : showingLiveDictation ? (
                 <div className="space-y-3">
-                  <div className="w-full rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-500/30 bg-violet-50/50 dark:bg-violet-500/5 p-3 min-h-[5rem]">
+                  <div className="w-full rounded-xl border-2 border-dashed border-violet-300 dark:border-violet-500/30 bg-[#EEF1F8]/50 dark:bg-[#254A9A]/5 p-3 min-h-[5rem]">
                     <p className="text-xs text-gray-600 dark:text-white/60 leading-relaxed">
                       {liveCaption || <span className="text-gray-400 dark:text-white/30">Listening…</span>}
                     </p>

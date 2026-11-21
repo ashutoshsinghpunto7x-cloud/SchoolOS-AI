@@ -125,7 +125,7 @@ function StudentRow({ student, selectedDate }: { student: StudentGroup; selected
           <button
             type="button"
             onClick={() => navigate(`/accountant/collect-fee?studentId=${student.studentId}`)}
-            className="w-full h-9 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
+            className="w-full h-9 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-white text-xs font-semibold flex items-center justify-center gap-1.5"
           >
             <IndianRupee className="w-3.5 h-3.5" /> Collect Fee
           </button>
@@ -185,7 +185,7 @@ function NotifyClassTeachersPanel({ onClose }: { onClose: () => void }) {
                   {hasDefaulters ? (
                     <button
                       onClick={() => setSendingGroup(g)}
-                      className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
+                      className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
                     >
                       <Send className="w-3.5 h-3.5" /> Send
                     </button>
@@ -227,7 +227,7 @@ export function PendingFeesPage() {
   const totalDue = classGroups.reduce((s, g) => s + g.totalDue, 0);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button
           type="button"
@@ -264,7 +264,7 @@ export function PendingFeesPage() {
             <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Show dues up to</label>
             <input
               type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+              className="h-9 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
             />
           </div>
         </div>

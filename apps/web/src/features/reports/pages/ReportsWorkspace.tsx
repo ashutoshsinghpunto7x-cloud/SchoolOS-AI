@@ -29,8 +29,8 @@ const CATEGORIES: CategoryCard[] = [
     label: 'Attendance',
     description: 'Daily trends, class-wise rates',
     icon: CalendarCheck,
-    color: 'text-[#5B21B6]',
-    bg: 'bg-[#A855F7]/10',
+    color: 'text-[#1B2A4E]',
+    bg: 'bg-[#EEF1F8]',
   },
   {
     category: 'fees',
@@ -45,8 +45,8 @@ const CATEGORIES: CategoryCard[] = [
     label: 'Admissions',
     description: 'Pipeline, source breakdown, monthly trends',
     icon: UserPlus,
-    color: 'text-[#5B21B6]',
-    bg: 'bg-[#A855F7]/10',
+    color: 'text-[#1B2A4E]',
+    bg: 'bg-[#EEF1F8]',
   },
   {
     category: 'timetable',
@@ -61,8 +61,8 @@ const CATEGORIES: CategoryCard[] = [
     label: 'Calendar',
     description: 'Upcoming events, event type breakdown',
     icon: Calendar,
-    color: 'text-[#5B21B6]',
-    bg: 'bg-[#A855F7]/10',
+    color: 'text-[#1B2A4E]',
+    bg: 'bg-[#EEF1F8]',
   },
 ];
 
@@ -81,7 +81,7 @@ const SavedReportRow = ({ report, onDelete }: { report: SavedReport; onDelete: (
           onClick={() =>
             navigate(`/reports/builder?category=${report.category}&savedId=${report.id}`)
           }
-          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#5B21B6] hover:bg-[#A855F7]/10 rounded-lg transition-colors"
+          className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#1B2A4E] hover:bg-[#EEF1F8] rounded-lg transition-colors"
         >
           Run
         </button>
@@ -147,7 +147,7 @@ export const ReportsWorkspace = () => {
           {(saved?.length ?? 0) > 3 && (
             <button
               onClick={() => navigate('/reports/saved')}
-              className="text-xs font-medium text-[#5B21B6] hover:underline"
+              className="text-xs font-medium text-[#1B2A4E] hover:underline"
             >
               View all
             </button>

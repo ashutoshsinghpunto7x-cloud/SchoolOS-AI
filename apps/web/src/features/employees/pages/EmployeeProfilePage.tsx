@@ -84,7 +84,7 @@ function EditEmployeeModal({ employee, onClose }: { employee: NonNullable<Return
     onClose();
   }
 
-  const cellCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+  const cellCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
   const displayErr = localErr || (error instanceof Error ? error.message : null);
 
   return (
@@ -145,7 +145,7 @@ function EditEmployeeModal({ employee, onClose }: { employee: NonNullable<Return
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="w-full h-11 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+          className="w-full h-11 mt-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save Changes
         </button>
@@ -179,10 +179,10 @@ function CreateLoginModal({ employeeId, onClose }: { employeeId: string; onClose
         </div>
         <div className="space-y-3">
           <label className="text-xs font-bold text-gray-600 block">Username
-            <input value={username} onChange={(e) => setUsername(e.target.value)} className="w-full h-10 px-3 mt-1 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30" />
+            <input value={username} onChange={(e) => setUsername(e.target.value)} className="w-full h-10 px-3 mt-1 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20" />
           </label>
           <label className="text-xs font-bold text-gray-600 block">Temporary Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="w-full h-10 px-3 mt-1 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30" />
+            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" className="w-full h-10 px-3 mt-1 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20" />
           </label>
         </div>
         {displayErr && (
@@ -194,7 +194,7 @@ function CreateLoginModal({ employeeId, onClose }: { employeeId: string; onClose
           type="button"
           disabled={isPending}
           onClick={handleCreate}
-          className="w-full h-11 mt-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+          className="w-full h-11 mt-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
         >
           {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Create Login
         </button>
@@ -227,7 +227,7 @@ export function EmployeeProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
       </div>
     );
@@ -235,9 +235,9 @@ export function EmployeeProfilePage() {
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-center px-6">
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center text-center px-6">
         <p className="text-sm font-semibold text-gray-700">Employee not found</p>
-        <button onClick={() => navigate('/admin/employees')} className="mt-3 text-xs text-[#5B21B6] font-semibold">Back to Employees</button>
+        <button onClick={() => navigate('/admin/employees')} className="mt-3 text-xs text-[#1B2A4E] font-semibold">Back to Employees</button>
       </div>
     );
   }
@@ -259,7 +259,7 @@ export function EmployeeProfilePage() {
 
       <div className="px-4 py-5 max-w-3xl mx-auto space-y-4 print:hidden">
         {/* Avatar card */}
-        <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}>
+        <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}>
           <button onClick={() => fileInputRef.current?.click()} className="relative w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 overflow-hidden">
             {employee.photoUrl ? (
               <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" />
@@ -299,7 +299,7 @@ export function EmployeeProfilePage() {
               <p className="text-xs text-gray-400 mt-0.5">{employee.userId ? 'This employee already has a login account.' : 'No login account yet.'}</p>
             </div>
             {!employee.userId && (
-              <button onClick={() => setShowLogin(true)} className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold shrink-0">
+              <button onClick={() => setShowLogin(true)} className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold shrink-0">
                 Create Login
               </button>
             )}
@@ -317,7 +317,7 @@ export function EmployeeProfilePage() {
           <button
             onClick={() => setShowGeneratePayroll(true)}
             disabled={!employee.monthlySalary}
-            className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-40 text-white rounded-xl text-xs font-semibold shrink-0"
+            className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-40 text-white rounded-xl text-xs font-semibold shrink-0"
           >
             Generate Payroll
           </button>

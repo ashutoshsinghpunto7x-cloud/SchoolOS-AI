@@ -81,7 +81,7 @@ function ManualMarkPanel({ onMarked }: { onMarked: (result: StaffAttendanceScanR
             const hasEmployeeId = teacher.hasEmployeeRecord ?? true;
             return (
               <div key={teacher._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
-                <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-700 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#EEF1F8] text-[#1B2A4E] flex items-center justify-center text-xs font-bold shrink-0">
                   {initialsOf(teacher.fullName)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -224,7 +224,7 @@ export function AttendanceScannerPage() {
           type="button"
           onClick={() => setMode('scan')}
           className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors ${
-            mode === 'scan' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            mode === 'scan' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <QrCode className="w-4 h-4" /> {t('attendanceScanner.scanQr')}
@@ -233,7 +233,7 @@ export function AttendanceScannerPage() {
           type="button"
           onClick={() => setMode('manual')}
           className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-semibold transition-colors ${
-            mode === 'manual' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            mode === 'manual' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           <ListChecks className="w-4 h-4" /> {t('attendanceScanner.markManually')}
@@ -344,7 +344,7 @@ export function AttendanceScannerPage() {
                       <td className="px-2 py-2.5 text-gray-600">{timeLabel(r.checkIn?.time)}</td>
                       <td className="px-2 py-2.5 text-gray-600">{timeLabel(r.checkOut?.time)}</td>
                       <td className="px-2 py-2.5">
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#A855F7]/10 text-[#5B21B6] capitalize">
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EEF1F8] text-[#1B2A4E] capitalize">
                           {STATUS_KEY[r.status] ? t(STATUS_KEY[r.status]) : r.status.replace('_', ' ')}
                         </span>
                       </td>

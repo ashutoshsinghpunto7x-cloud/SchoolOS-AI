@@ -63,20 +63,20 @@ export function FeeStructureBuilderPage() {
             onClick={() => setTab('components')}
             className={cn(
               'h-10 px-4 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2',
-              tab === 'components' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+              tab === 'components' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
             )}
           >
-            <span className="w-5 h-5 rounded-full bg-[#5B21B6]/10 text-[#5B21B6] text-xs font-bold flex items-center justify-center">1</span>
+            <span className="w-5 h-5 rounded-full bg-[#1B2A4E]/10 text-[#1B2A4E] text-xs font-bold flex items-center justify-center">1</span>
             Fee Components (By Academic Month)
           </button>
           <button
             onClick={() => setTab('schedule')}
             className={cn(
               'h-10 px-4 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2',
-              tab === 'schedule' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+              tab === 'schedule' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
             )}
           >
-            <span className="w-5 h-5 rounded-full bg-[#5B21B6]/10 text-[#5B21B6] text-xs font-bold flex items-center justify-center">2</span>
+            <span className="w-5 h-5 rounded-full bg-[#1B2A4E]/10 text-[#1B2A4E] text-xs font-bold flex items-center justify-center">2</span>
             Collection Schedule (Deposit Month Mapping)
           </button>
         </div>
@@ -189,7 +189,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
         <button
           onClick={() => void saveAll()}
           disabled={!isDirty || saving}
-          className="h-10 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-2 shrink-0"
+          className="h-10 px-4 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white text-sm font-semibold flex items-center gap-2 shrink-0"
         >
           {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           Save All Changes
@@ -201,7 +201,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
           onClick={() => setScope('all')}
           className={cn(
             'h-8 px-3 rounded-lg text-xs font-semibold transition-colors',
-            scope === 'all' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+            scope === 'all' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
           )}
         >
           Same for all classes
@@ -210,7 +210,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
           onClick={() => setScope('perClass')}
           className={cn(
             'h-8 px-3 rounded-lg text-xs font-semibold transition-colors',
-            scope === 'perClass' ? 'bg-white text-[#5B21B6] shadow-sm' : 'text-gray-500 hover:text-gray-700',
+            scope === 'perClass' ? 'bg-white text-[#1B2A4E] shadow-sm' : 'text-gray-500 hover:text-gray-700',
           )}
         >
           Different per class
@@ -230,7 +230,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
                 className={cn(
                   'h-9 px-3.5 rounded-xl text-sm font-semibold border transition-colors',
                   selectedClass === c.name
-                    ? 'bg-[#5B21B6] border-[#5B21B6] text-white'
+                    ? 'bg-[#1B2A4E] border-[#1B2A4E] text-white'
                     : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
                 )}
               >
@@ -258,7 +258,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
                 className={cn(
                   'h-9 px-3.5 rounded-xl text-sm font-semibold border transition-colors',
                   selectedMonth === m
-                    ? 'bg-[#5B21B6] border-[#5B21B6] text-white'
+                    ? 'bg-[#1B2A4E] border-[#1B2A4E] text-white'
                     : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
                 )}
               >
@@ -280,7 +280,7 @@ function FeeComponentsTab({ academicYear }: { academicYear: string }) {
                     value={valueFor(selectedMonth, value)}
                     onChange={(e) => handleChange(selectedMonth, value, e.target.value)}
                     placeholder="0"
-                    className="w-full h-11 pl-8 pr-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]"
+                    className="w-full h-11 pl-8 pr-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]"
                   />
                 </div>
               </div>
@@ -351,8 +351,8 @@ function CollectionScheduleTab({ academicYear }: { academicYear: string }) {
     <div className="bg-white rounded-[18px] border border-gray-100 shadow-sm p-6">
       <div className="flex items-start justify-between gap-4 mb-5">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#5B21B6]/10 flex items-center justify-center shrink-0 mt-0.5">
-            <Info className="w-4 h-4 text-[#5B21B6]" />
+          <div className="w-9 h-9 rounded-xl bg-[#1B2A4E]/10 flex items-center justify-center shrink-0 mt-0.5">
+            <Info className="w-4 h-4 text-[#1B2A4E]" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-900">How it works?</h2>
@@ -401,10 +401,10 @@ function CollectionScheduleTab({ academicYear }: { academicYear: string }) {
                           {items.map((item, idx) => (
                             <span
                               key={`${item.academicMonth}-${item.feeHead}-${idx}`}
-                              className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-lg bg-[#A855F7]/10 text-[#5B21B6] text-xs font-semibold"
+                              className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-lg bg-[#EEF1F8] text-[#1B2A4E] text-xs font-semibold"
                             >
                               {item.academicMonth} {FEE_HEADS.find((f) => f.value === item.feeHead)?.label ?? item.feeHead}
-                              <button onClick={() => void removeItem(depositMonth, idx)} className="hover:bg-[#5B21B6]/10 rounded p-0.5">
+                              <button onClick={() => void removeItem(depositMonth, idx)} className="hover:bg-[#1B2A4E]/10 rounded p-0.5">
                                 <X className="w-3 h-3" />
                               </button>
                             </span>

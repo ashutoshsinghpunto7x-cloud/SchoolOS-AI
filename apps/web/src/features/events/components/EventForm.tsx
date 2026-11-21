@@ -246,7 +246,7 @@ export const EventForm = ({
                   onClick={() => toggleAudience(value)}
                   className={`h-9 px-4 rounded-xl text-sm font-semibold border transition-colors
                     ${form.audience.includes(value)
-                      ? 'bg-[#5B21B6] text-white border-blue-600'
+                      ? 'bg-[#1B2A4E] text-white border-blue-600'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}
                 >
                   {label}
@@ -331,7 +331,7 @@ export const EventForm = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="h-11 px-8 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50
+          className="h-11 px-8 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50
                      text-sm font-bold text-white transition-colors flex items-center gap-2"
         >
           {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -55,7 +55,7 @@ export function ReportCardPage() {
   const loading = workspaceLoading || (isLoading && !data);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       {printing && (
         <style>{`
           @page { size: A4 landscape; margin: 0; }
@@ -82,7 +82,7 @@ export function ReportCardPage() {
             <button
               type="button"
               onClick={() => setPrinting(true)}
-              className="h-11 px-4 rounded-xl bg-[#5B21B6] text-white text-sm font-semibold flex items-center gap-2 shrink-0"
+              className="h-11 px-4 rounded-xl bg-[#1B2A4E] text-white text-sm font-semibold flex items-center gap-2 shrink-0"
             >
               <Printer className="w-4 h-4" strokeWidth={2} />
               <span className="hidden sm:inline">Print / Save PDF</span>

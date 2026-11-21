@@ -86,7 +86,7 @@ export function QrPanel({ employee }: QrPanelProps) {
             type="button"
             onClick={handleRegenerate}
             disabled={regenerating}
-            className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+            className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
           >
             {regenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             {hasQr ? 'Regenerate' : 'Generate'}

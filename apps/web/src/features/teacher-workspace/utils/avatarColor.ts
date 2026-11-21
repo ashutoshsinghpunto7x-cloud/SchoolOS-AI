@@ -6,7 +6,7 @@ const AVATAR_PALETTE = [
   { bg: 'bg-blue-100',   text: 'text-blue-600'   },
   { bg: 'bg-orange-100', text: 'text-orange-600' },
   { bg: 'bg-pink-100',   text: 'text-pink-600'   },
-  { bg: 'bg-violet-100', text: 'text-violet-600' },
+  { bg: 'bg-[#EEF1F8]', text: 'text-[#254A9A]' },
   { bg: 'bg-teal-100',   text: 'text-teal-600'   },
   { bg: 'bg-amber-100',  text: 'text-amber-600'  },
   { bg: 'bg-rose-100',   text: 'text-rose-600'   },

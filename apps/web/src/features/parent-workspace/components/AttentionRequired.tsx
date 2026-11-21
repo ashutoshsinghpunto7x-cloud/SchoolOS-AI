@@ -23,8 +23,8 @@ export function AttentionRequired({ items, onAction }: AttentionRequiredProps) {
             const Icon = ICON[item.kind];
             return (
               <li key={item._id} className="flex items-center gap-3.5 py-3.5 first:pt-0 last:pb-0">
-                <span className="w-9 h-9 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-purple-600" strokeWidth={1.75} />
+                <span className="w-9 h-9 rounded-full bg-[#EEF1F8] flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-[#254A9A]" strokeWidth={1.75} />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-base text-gray-900 truncate">{item.title}</span>
@@ -33,7 +33,7 @@ export function AttentionRequired({ items, onAction }: AttentionRequiredProps) {
                 <button
                   type="button"
                   onClick={() => onAction(item)}
-                  className="text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors shrink-0"
+                  className="text-sm font-semibold text-[#254A9A] hover:text-[#1B2A4E] transition-colors shrink-0"
                 >
                   {item.actionLabel} →
                 </button>

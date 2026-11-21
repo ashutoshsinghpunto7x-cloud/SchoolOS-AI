@@ -5,11 +5,11 @@ import { useSavedReports, useDeleteSavedReport } from '../hooks/useReports';
 
 const CATEGORY_COLORS: Record<ReportCategory, { bg: string; text: string }> = {
   students:   { bg: 'bg-gray-100',      text: 'text-gray-700' },
-  attendance: { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
+  attendance: { bg: 'bg-[#EEF1F8]',  text: 'text-[#1B2A4E]' },
   fees:       { bg: 'bg-gray-100',      text: 'text-gray-700' },
-  admissions: { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
+  admissions: { bg: 'bg-[#EEF1F8]',  text: 'text-[#1B2A4E]' },
   timetable:  { bg: 'bg-gray-100',      text: 'text-gray-700' },
-  calendar:   { bg: 'bg-[#A855F7]/10',  text: 'text-[#5B21B6]' },
+  calendar:   { bg: 'bg-[#EEF1F8]',  text: 'text-[#1B2A4E]' },
 };
 
 const SavedReportCard = ({
@@ -56,7 +56,7 @@ const SavedReportCard = ({
       <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-50">
         <button
           onClick={onRun}
-          className="flex items-center gap-1.5 flex-1 justify-center h-8 text-xs font-medium text-white bg-[#5B21B6] rounded-xl hover:bg-[#4C1D95] transition-colors"
+          className="flex items-center gap-1.5 flex-1 justify-center h-8 text-xs font-medium text-white bg-[#1B2A4E] rounded-xl hover:bg-[#2C4177] transition-colors"
         >
           <Play size={12} />
           Run Report
@@ -118,7 +118,7 @@ export const SavedReportsPage = () => {
           </p>
           <button
             onClick={() => navigate('/reports')}
-            className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-[#5B21B6] border border-[#A855F7]/30 rounded-xl hover:bg-[#A855F7]/10 transition-colors"
+            className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium text-[#1B2A4E] border border-[#1B2A4E]/20 rounded-xl hover:bg-[#EEF1F8] transition-colors"
           >
             Browse Reports
           </button>

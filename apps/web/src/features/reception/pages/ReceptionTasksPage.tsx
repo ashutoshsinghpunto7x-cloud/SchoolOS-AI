@@ -93,7 +93,7 @@ export function ReceptionTasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] p-4 sm:p-6">
+    <div className="min-h-screen bg-[#FBF8F3] p-4 sm:p-6">
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => navigate('/reception')}

@@ -224,7 +224,7 @@ export const ExamForm = ({ initialData, onSubmit, isLoading = false, submitLabel
                         className={cn(
                           'h-9 px-3.5 rounded-xl text-sm font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
                           checked
-                            ? 'bg-[#5B21B6] border-[#5B21B6] text-white'
+                            ? 'bg-[#1B2A4E] border-[#1B2A4E] text-white'
                             : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300',
                         )}
                       >

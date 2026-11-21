@@ -38,7 +38,7 @@ function classRank(cls: string): number {
 }
 
 const ACCENTS = [
-  { bg: 'bg-[#F3EEFF]', text: 'text-[#6D4AFF]' },
+  { bg: 'bg-[#EEF1F8]', text: 'text-[#254A9A]' },
   { bg: 'bg-blue-50',   text: 'text-[#4A90FF]' },
   { bg: 'bg-emerald-50',text: 'text-[#20C997]' },
   { bg: 'bg-amber-50',  text: 'text-[#FFB547]' },
@@ -108,8 +108,8 @@ function ExamPicker({ entry, onBack, onPickExam }: { entry: SubjectEntry; onBack
               onClick={() => onPickExam(exam)}
               className="w-full text-left flex items-center gap-4 bg-white teacher-glass-card rounded-2xl border border-gray-100 dark:border-transparent shadow-sm px-4 py-4 hover:shadow-md transition-shadow"
             >
-              <div className="w-11 h-11 rounded-xl bg-[#F3EEFF] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
-                <ClipboardList className="w-5 h-5 text-[#6D4AFF] dark:text-violet-300" />
+              <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] dark:bg-[#A855F7]/15 flex items-center justify-center shrink-0">
+                <ClipboardList className="w-5 h-5 text-[#254A9A] dark:text-violet-300" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{exam.name}</p>
@@ -261,7 +261,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button
           onClick={() => (selectedClass ? pickClass(null) : navigate(basePath))}
@@ -305,7 +305,7 @@ export function MarksHubPage({ basePath = '/teacher' }: { basePath?: string }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={selectedClass ? 'Search subject — e.g. "Maths"' : 'Search class — e.g. "6 A" or "VI A"'}
-              className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+              className="w-full h-11 pl-10 pr-9 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
             />
             {search && (
               <button

@@ -105,7 +105,7 @@ const inputClass = (hasError?: boolean) =>
     'w-full h-12 px-4 rounded-xl border text-base text-gray-900',
     'placeholder:text-gray-400 bg-white',
     'transition-colors duration-150',
-    'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
+    'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]',
     hasError
       ? 'border-red-300 focus:border-red-400 focus:ring-red-500/20'
       : 'border-gray-200 hover:border-gray-300'
@@ -408,7 +408,7 @@ export const StudentForm = ({
               'w-full px-4 py-3 rounded-xl border text-base text-gray-900',
               'placeholder:text-gray-400 bg-white resize-none',
               'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
+              'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]',
               errors.address
                 ? 'border-red-300 focus:border-red-400'
                 : 'border-gray-200 hover:border-gray-300'
@@ -432,7 +432,7 @@ export const StudentForm = ({
               'w-full px-4 py-3 rounded-xl border text-base text-gray-900',
               'placeholder:text-gray-400 bg-white resize-none',
               'transition-colors duration-150',
-              'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]',
+              'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]',
               'border-gray-200 hover:border-gray-300'
             )}
           />
@@ -447,7 +447,7 @@ export const StudentForm = ({
           'w-full h-14 rounded-2xl',
           'flex items-center justify-center gap-3',
           'text-base font-bold text-white',
-          'bg-[#5B21B6] hover:bg-[#4C1D95] active:bg-[#3f1a94]',
+          'bg-[#1B2A4E] hover:bg-[#2C4177] active:bg-[#15223E]',
           'transition-colors duration-150',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7]/50 focus-visible:ring-offset-2',
           'disabled:opacity-60 disabled:cursor-not-allowed'

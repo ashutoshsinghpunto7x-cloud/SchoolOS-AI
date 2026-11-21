@@ -89,7 +89,7 @@ export const AssignStudentsModal = ({ vehicle, onClose }: AssignStudentsModalPro
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or admission no…"
-              className="w-full h-11 pl-9 pr-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+              className="w-full h-11 pl-9 pr-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
             />
           </div>
           <input
@@ -97,14 +97,14 @@ export const AssignStudentsModal = ({ vehicle, onClose }: AssignStudentsModalPro
             value={classFilter}
             onChange={(e) => setClassFilter(e.target.value)}
             placeholder="Class"
-            className="w-full sm:w-28 h-11 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+            className="w-full sm:w-28 h-11 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
           />
           <input
             type="text"
             value={sectionFilter}
             onChange={(e) => setSectionFilter(e.target.value)}
             placeholder="Section"
-            className="w-full sm:w-28 h-11 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+            className="w-full sm:w-28 h-11 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
           />
         </div>
 
@@ -112,7 +112,7 @@ export const AssignStudentsModal = ({ vehicle, onClose }: AssignStudentsModalPro
           <button
             type="button"
             onClick={toggleAll}
-            className="flex items-center gap-2 text-sm font-bold text-[#5B21B6] mb-2"
+            className="flex items-center gap-2 text-sm font-bold text-[#1B2A4E] mb-2"
             disabled={students.length === 0}
           >
             {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -133,7 +133,7 @@ export const AssignStudentsModal = ({ vehicle, onClose }: AssignStudentsModalPro
                     type="checkbox"
                     checked={selected.has(s._id)}
                     onChange={() => toggle(s._id)}
-                    className="w-4 h-4 accent-[#5B21B6]"
+                    className="w-4 h-4 accent-[#1B2A4E]"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{s.fullName}</p>
@@ -157,7 +157,7 @@ export const AssignStudentsModal = ({ vehicle, onClose }: AssignStudentsModalPro
             type="button"
             onClick={() => void handleSubmit()}
             disabled={isPending}
-            className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {isPending ? 'Saving…' : `Save (${selected.size})`}

@@ -145,7 +145,7 @@ export function AccountantReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       {/* Print-only header — hidden on screen, shown when printing so a printed report reads professionally */}
       <style>{`
         @media print {
@@ -172,7 +172,7 @@ export function AccountantReportsPage() {
         <button onClick={() => window.print()} className="h-9 px-3 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 flex items-center gap-1.5">
           <Printer className="w-3.5 h-3.5" /> Print
         </button>
-        <button onClick={handleExport} className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
+        <button onClick={handleExport} className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5">
           <Download className="w-3.5 h-3.5" /> Export CSV
         </button>
       </div>
@@ -186,7 +186,7 @@ export function AccountantReportsPage() {
               onClick={() => setTab(id)}
               className={cn(
                 'px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 flex items-center gap-1.5 transition-colors',
-                tab === id ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
+                tab === id ? 'bg-[#1B2A4E] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50',
               )}
             >
               <Icon className="w-3.5 h-3.5" /> {label}

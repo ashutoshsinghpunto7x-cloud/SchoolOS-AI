@@ -99,7 +99,7 @@ export const TimetableGridPage = () => {
                 type="button"
                 onClick={() => setBulkAddOpen(true)}
                 className="h-9 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
                 Bulk Add

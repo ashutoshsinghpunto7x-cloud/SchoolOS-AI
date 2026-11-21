@@ -11,7 +11,7 @@ interface TrendSparklineProps {
 export const TrendSparkline = ({
   data,
   valueKey,
-  color = '#5B21B6',
+  color = '#1B2A4E',
   height = 60,
   showLabels = true,
 }: TrendSparklineProps) => {

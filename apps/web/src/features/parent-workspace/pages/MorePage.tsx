@@ -40,8 +40,8 @@ function MenuRow({
         danger ? 'hover:bg-red-50' : 'hover:bg-gray-50'
       }`}
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? 'bg-red-50' : 'bg-purple-50'}`}>
-        <Icon className={`w-5 h-5 ${danger ? 'text-red-600' : 'text-purple-700'}`} strokeWidth={1.75} />
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${danger ? 'bg-red-50' : 'bg-[#EEF1F8]'}`}>
+        <Icon className={`w-5 h-5 ${danger ? 'text-red-600' : 'text-[#1B2A4E]'}`} strokeWidth={1.75} />
       </div>
       <span className="flex-1 min-w-0 text-left">
         <span className={`block text-base font-semibold ${danger ? 'text-red-600' : 'text-gray-900'}`}>{label}</span>
@@ -61,7 +61,7 @@ export function MorePage() {
   const initials = fullName.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader title="More" subtitle="Account, children and support" />
 
       <motion.main
@@ -74,7 +74,7 @@ export function MorePage() {
           variants={fadeUp}
           transition={{ duration: 0.25 }}
           className="rounded-2xl p-6 text-center text-white"
-          style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #A855F7 100%)' }}
+          style={{ background: 'linear-gradient(160deg, #2C4177 0%, #254A9A 45%, #A855F7 100%)' }}
         >
           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3">
             <span className="text-xl font-bold">{initials}</span>
@@ -86,7 +86,7 @@ export function MorePage() {
         {workspace && workspace.children.length > 0 && (
           <motion.section variants={fadeUp} transition={{ duration: 0.25 }} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6">
             <div className="flex items-center gap-2 mb-4">
-              <Users className="w-5 h-5 text-purple-700" strokeWidth={1.75} />
+              <Users className="w-5 h-5 text-[#1B2A4E]" strokeWidth={1.75} />
               <p className="text-lg font-bold text-gray-900">Linked children</p>
             </div>
             <div className="space-y-3">
@@ -116,8 +116,8 @@ export function MorePage() {
             onClick={() => { window.location.href = `tel:${SUPPORT_PHONE}`; }}
             className="flex-1 min-w-0 flex items-center gap-3 text-left"
           >
-            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-              <Headphones className="w-5 h-5 text-purple-700" strokeWidth={1.75} />
+            <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+              <Headphones className="w-5 h-5 text-[#1B2A4E]" strokeWidth={1.75} />
             </div>
             <span className="flex-1 min-w-0">
               <span className="block text-base font-semibold text-gray-900">Contact Support</span>

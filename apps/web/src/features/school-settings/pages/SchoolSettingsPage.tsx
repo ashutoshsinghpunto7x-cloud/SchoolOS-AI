@@ -73,7 +73,7 @@ export function SchoolSettingsPage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+                className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white text-sm font-semibold transition-colors"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {uploading ? t('settings.logo.uploading') : settings?.logoUrl ? t('settings.logo.replace') : t('settings.logo.upload')}

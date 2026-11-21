@@ -73,7 +73,7 @@ export function QuestionChapterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button type="button" onClick={() => navigate('/teacher/question-bank')} className="text-gray-500 dark:text-white/60 shrink-0">
           <ArrowLeft className="w-4 h-4" />
@@ -183,7 +183,7 @@ function QuestionRow({ question: q, editing, onStartEdit, onStopEdit, onDelete, 
 
   if (editing) {
     return (
-      <div className="bg-white dark:bg-white/5 rounded-xl border border-[#6D4AFF]/40 p-3.5 space-y-2.5">
+      <div className="bg-white dark:bg-white/5 rounded-xl border border-[#254A9A]/40 p-3.5 space-y-2.5">
         <textarea
           value={edit.questionText} onChange={(e) => patch({ questionText: e.target.value })}
           rows={2} className="w-full text-sm text-gray-800 dark:text-white/80 border border-gray-200 dark:border-white/10 dark:bg-transparent rounded-lg p-2 resize-none"
@@ -278,7 +278,7 @@ function QuestionRow({ question: q, editing, onStartEdit, onStopEdit, onDelete, 
         </div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <button type="button" onClick={startEdit} className="text-gray-300 hover:text-[#6D4AFF]">
+        <button type="button" onClick={startEdit} className="text-gray-300 hover:text-[#254A9A]">
           <Pencil className="w-4 h-4" />
         </button>
         <button type="button" onClick={onDelete} disabled={deleting} className="text-gray-300 hover:text-red-500 disabled:opacity-50">

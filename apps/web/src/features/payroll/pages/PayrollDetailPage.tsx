@@ -13,7 +13,7 @@ export function PayrollDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
       </div>
     );
@@ -21,9 +21,9 @@ export function PayrollDetailPage() {
 
   if (!record) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-center px-6">
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center text-center px-6">
         <p className="text-sm font-semibold text-gray-700">Payroll record not found</p>
-        <button onClick={() => navigate('/admin/payroll')} className="mt-3 text-xs text-[#5B21B6] font-semibold">Back to Payroll</button>
+        <button onClick={() => navigate('/admin/payroll')} className="mt-3 text-xs text-[#1B2A4E] font-semibold">Back to Payroll</button>
       </div>
     );
   }

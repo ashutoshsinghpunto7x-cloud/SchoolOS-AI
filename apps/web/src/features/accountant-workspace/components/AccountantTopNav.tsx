@@ -27,6 +27,7 @@ const FEES: NavGroup = {
   label: 'Fees', icon: IndianRupee,
   items: [
     { label: 'Collect Fee',   path: '/accountant/collect-fee',   icon: IndianRupee },
+    { label: 'Other Payments', path: '/accountant?tab=other-payment', icon: Wallet },
     { label: 'Fee Records',   path: '/accountant/fee-records',   icon: ClipboardList },
     { label: 'Pending Fees',  path: '/accountant/pending-fees',  icon: Wallet },
     { label: 'Fee Structure', path: '/accountant/fee-structure', icon: IndianRupee },
@@ -36,6 +37,7 @@ const FEES: NavGroup = {
 const EXPENSES: NavGroup = {
   label: 'Expenses', icon: Receipt,
   items: [
+    { label: 'Create Invoice', path: '/accountant?tab=invoice', icon: Receipt },
     { label: 'Expenses', path: '/accountant/expenses', icon: Receipt },
     { label: 'Salary',   path: '/accountant/salary',   icon: FileBarChart },
   ],
@@ -64,7 +66,7 @@ function isGroupActive(group: NavGroup, pathname: string): boolean {
 // trigger, Vendors, Reports — so they read as a row of distinct boxes.
 const navBoxCls = (active: boolean) => cn(
   'flex items-center gap-1.5 h-9 px-3 rounded-xl border text-sm font-semibold transition-colors',
-  active ? 'bg-[#A855F7]/10 border-[#A855F7]/30 text-[#5B21B6]' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+  active ? 'bg-[#EEF1F8] border-[#1B2A4E]/20 text-[#1B2A4E]' : 'border-[#E8E2D6] text-[#55607A] hover:bg-[#FBF8F3] hover:text-[#1B2A4E]',
 );
 
 // ── Live IST clock ────────────────────────────────────────────────────────────
@@ -117,7 +119,7 @@ function NavDropdown({ group, pathname }: { group: NavGroup; pathname: string })
               {...buddyTip(item.path, 'row', item.label)}
               className={({ isActive }) => cn(
                 'flex items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition-colors',
-                isActive ? 'text-[#5B21B6] bg-[#A855F7]/5' : 'text-gray-700 hover:bg-gray-50',
+                isActive ? 'text-[#1B2A4E] bg-[#EEF1F8]/60' : 'text-gray-700 hover:bg-gray-50',
               )}
             >
               <item.icon className="w-4 h-4 text-gray-400" />
@@ -260,7 +262,7 @@ export function AccountantTopNav() {
               className="flex items-center gap-1.5 h-9 pl-1 pr-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
               aria-label="Profile"
             >
-              <span className="w-7 h-7 rounded-full bg-[#A855F7]/10 border border-[#A855F7]/20 flex items-center justify-center text-[11px] font-bold text-[#5B21B6]">
+              <span className="w-7 h-7 rounded-full bg-[#EEF1F8] border border-[#1B2A4E]/20 flex items-center justify-center text-[11px] font-bold text-[#1B2A4E]">
                 {initials}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-gray-400 hidden md:block" />
@@ -282,7 +284,7 @@ export function AccountantTopNav() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-gray-100 px-4 py-3 max-h-[70vh] overflow-y-auto">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1 pb-1.5">{displayName}</p>
-          <NavLink to="/accountant" end className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold', isActive ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'text-gray-700')}>
+          <NavLink to="/accountant" end className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold', isActive ? 'bg-[#EEF1F8] text-[#1B2A4E]' : 'text-gray-700')}>
             <LayoutDashboard className="w-4 h-4" /> Dashboard
           </NavLink>
           {GROUPS.map((group) => (
@@ -291,7 +293,7 @@ export function AccountantTopNav() {
               {group.items.map((item) => (
                 <NavLink
                   key={item.path} to={item.path}
-                  className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'text-gray-700')}
+                  className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#EEF1F8] text-[#1B2A4E]' : 'text-gray-700')}
                 >
                   <item.icon className="w-4 h-4 text-gray-400" /> {item.label}
                 </NavLink>
@@ -300,10 +302,10 @@ export function AccountantTopNav() {
           ))}
           <div className="mt-2">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 pb-1">More</p>
-            <NavLink to="/accountant/vendors" className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'text-gray-700')}>
+            <NavLink to="/accountant/vendors" className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#EEF1F8] text-[#1B2A4E]' : 'text-gray-700')}>
               <Store className="w-4 h-4 text-gray-400" /> Vendors
             </NavLink>
-            <NavLink to="/accountant/reports" className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#A855F7]/10 text-[#5B21B6]' : 'text-gray-700')}>
+            <NavLink to="/accountant/reports" className={({ isActive }) => cn('flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium', isActive ? 'bg-[#EEF1F8] text-[#1B2A4E]' : 'text-gray-700')}>
               <FileBarChart2 className="w-4 h-4 text-gray-400" /> Reports
             </NavLink>
             <button type="button" onClick={() => navigate('/settings')} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 text-left">

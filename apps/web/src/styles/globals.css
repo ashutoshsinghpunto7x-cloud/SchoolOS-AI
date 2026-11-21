@@ -14,13 +14,13 @@
    JS-side copy in apps/web/src/theme/brand.ts (kept separate because CSS
    can't import TS constants). */
 :root {
-  --brand-purple-darkest: #4C1D95;
-  --brand-purple-dark: #5B21B6;
-  --brand-purple-hover: #4C1D95;
-  --brand-purple-active: #3f1a94;
-  --brand-purple-default: #7C3AED;
-  --brand-purple-light: #A855F7;
-  --brand-pink: #DB2777;
+  --brand-purple-darkest: #15223E;
+  --brand-purple-dark: #1B2A4E;
+  --brand-purple-hover: #2C4177;
+  --brand-purple-active: #15223E;
+  --brand-purple-default: #254A9A;
+  --brand-purple-light: #254A9A;
+  --brand-pink: #D9822B;
 }
 
 /* ── Timetable module tokens ──────────────────────────────────────────────────
@@ -30,14 +30,14 @@
    the app. Brand/status colors (purple/pink/success/warning/danger) are not
    themed here — they already work at low alpha on either background. */
 :root {
-  --tt-bg: #F5F5F7;
+  --tt-bg: #FBF8F3;
   --tt-bg-secondary: #FFFFFF;
   --tt-card: #FFFFFF;
-  --tt-border: rgba(15, 23, 42, 0.10);
-  --tt-hover: rgba(15, 23, 42, 0.04);
-  --tt-text-primary: #14161F;
-  --tt-text-secondary: #5B6072;
-  --tt-text-muted: #9296A6;
+  --tt-border: #E8E2D6;
+  --tt-hover: rgba(27, 42, 78, 0.04);
+  --tt-text-primary: #1B2A4E;
+  --tt-text-secondary: #55607A;
+  --tt-text-muted: #7B859D;
 }
 .dark {
   --tt-bg: #0B0C12;
@@ -101,7 +101,9 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background-color: #FBF8F3;
+    color: #1B2A4E;
     font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
     font-variant-numeric: tabular-nums;
     line-height: 1.6;
@@ -221,7 +223,7 @@ button {
 /* Purple/pink variant — same liquid-glass mechanics as the teacher portal,
    used by the principal's sidebar so both share one visual language. */
 .liquid-glass-sidebar-purple {
-  background: linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%);
+  background: linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%);
   overflow: hidden;
   isolation: isolate;
 }

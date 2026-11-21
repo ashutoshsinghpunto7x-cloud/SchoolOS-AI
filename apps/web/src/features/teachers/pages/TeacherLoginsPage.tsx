@@ -92,7 +92,7 @@ function BulkResultsModal({ results, onClose }: { results: BulkResult[]; onClose
           )}
           <button
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white"
+            className="flex-1 h-10 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white"
           >
             Done
           </button>
@@ -106,7 +106,7 @@ type Filter = 'all' | 'allotted' | 'not_set';
 
 const inputCls =
   'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 
 function DeleteLoginModal({
   teacher,
@@ -230,7 +230,7 @@ function EditEmailModal({
           <button
             type="submit"
             disabled={isPending}
-            className="w-full h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
+            className="w-full h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {isPending ? 'Saving…' : 'Save Email'}
@@ -307,8 +307,8 @@ export function TeacherLoginsPage() {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-start justify-between gap-3 mb-1">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center">
-            <KeyRound className="w-5 h-5 text-[#5B21B6]" />
+          <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center">
+            <KeyRound className="w-5 h-5 text-[#1B2A4E]" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Teacher Logins</h1>
         </div>
@@ -318,7 +318,7 @@ export function TeacherLoginsPage() {
             onClick={() => setShowBulkOptions((v) => !v)}
             disabled={bulkRunning}
             className="h-10 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-60 shrink-0"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
           >
             {bulkRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {bulkRunning ? `Generating ${needsLogin.length}…` : `Generate All (${needsLogin.length})`}
@@ -347,7 +347,7 @@ export function TeacherLoginsPage() {
                 onClick={() => setBulkPasswordMode(opt.value)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
                   bulkPasswordMode === opt.value
-                    ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
+                    ? 'bg-[#1B2A4E] text-white border-[#1B2A4E]'
                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                 }`}
               >
@@ -362,7 +362,7 @@ export function TeacherLoginsPage() {
                 <button
                   type="button"
                   onClick={() => { setBulkSharedPassword(generatePassword()); setShowBulkSharedPassword(true); }}
-                  className="text-[11px] font-semibold text-[#5B21B6] hover:text-[#4C1D95]"
+                  className="text-[11px] font-semibold text-[#1B2A4E] hover:text-[#2C4177]"
                 >
                   Generate
                 </button>
@@ -397,7 +397,7 @@ export function TeacherLoginsPage() {
             onClick={generateAll}
             disabled={bulkRunning}
             className="h-10 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 transition-opacity hover:opacity-90 disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #DB2777 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
           >
             {bulkRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {bulkRunning ? `Generating ${needsLogin.length}…` : `Confirm — Generate ${needsLogin.length}`}
@@ -416,7 +416,7 @@ export function TeacherLoginsPage() {
             onClick={() => setFilter(f.value)}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
               filter === f.value
-                ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
+                ? 'bg-[#1B2A4E] text-white border-[#1B2A4E]'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -428,7 +428,7 @@ export function TeacherLoginsPage() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-[#5B21B6] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#1B2A4E] animate-spin" />
           </div>
         ) : isError ? (
           <div className="py-16 text-center text-sm text-red-500">Failed to load teachers. Please refresh.</div>
@@ -468,7 +468,7 @@ export function TeacherLoginsPage() {
                     {!t.hasLogin ? (
                       <button
                         onClick={() => setCreatingFor(t)}
-                        className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#5B21B6] hover:bg-[#4C1D95] text-white"
+                        className="h-8 px-3 rounded-lg text-xs font-semibold bg-[#1B2A4E] hover:bg-[#2C4177] text-white"
                       >
                         Create Login
                       </button>

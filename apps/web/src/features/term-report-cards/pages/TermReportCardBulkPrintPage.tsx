@@ -108,7 +108,7 @@ export function TermReportCardBulkPrintPage() {
         </div>
       ) : loading ? (
         <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-6 h-6 text-[#6D4AFF] animate-spin" />
+          <Loader2 className="w-6 h-6 text-[#254A9A] animate-spin" />
           <p className="text-sm text-gray-500">Preparing report cards… {progress}/{total || '?'}</p>
         </div>
       ) : entries && entries.length === 0 ? (

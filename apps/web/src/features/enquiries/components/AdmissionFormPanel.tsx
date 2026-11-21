@@ -70,7 +70,7 @@ export const AdmissionFormPanel = ({ enquiryId }: AdmissionFormPanelProps) => {
                 type="button"
                 onClick={() => issueForm.mutate({ enquiryId, formFee: Number(formFee) || 0 }, { onSuccess: () => setIssuing(false) })}
                 disabled={issueForm.isPending}
-                className="h-8 px-3 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95] flex items-center gap-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                className="h-8 px-3 rounded-lg bg-[#1B2A4E] hover:bg-[#2C4177] flex items-center gap-1.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {issueForm.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                 Issue Form

@@ -312,7 +312,7 @@ function TeacherRowView({ row }: { row: TeacherRow }) {
             <button
               type="button"
               onClick={() => setExpanded((e) => !e)}
-              className="text-[12px] font-semibold text-[#6D4AFF] hover:text-[#5B3FE0]"
+              className="text-[12px] font-semibold text-[#254A9A] hover:text-[#5B3FE0]"
             >
               {expanded ? t('staff.close') : t('staff.assign')}
             </button>
@@ -497,8 +497,8 @@ export function StaffManagementCard() {
             onClick={() => setShowFilters((s) => !s)}
             className={`h-8 px-3 rounded-lg border text-[12px] font-semibold flex items-center gap-1.5 transition-colors ${
               showFilters
-                ? 'bg-[#6D4AFF]/10 border-[#6D4AFF]/25 text-[#6D4AFF]'
-                : 'bg-white border-black/[0.08] text-[#6B7280] hover:border-[#6D4AFF]/25 hover:text-[#6D4AFF]'
+                ? 'bg-[#254A9A]/10 border-[#254A9A]/25 text-[#254A9A]'
+                : 'bg-white border-black/[0.08] text-[#6B7280] hover:border-[#254A9A]/25 hover:text-[#254A9A]'
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -521,12 +521,12 @@ export function StaffManagementCard() {
             type="date"
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
-            className="h-9 px-3 rounded-lg border border-gray-200 bg-white text-[12px] focus:outline-none focus:border-[#6D4AFF]"
+            className="h-9 px-3 rounded-lg border border-gray-200 bg-white text-[12px] focus:outline-none focus:border-[#254A9A]"
           />
           <select
             value={classFilter}
             onChange={(e) => setClassFilter(e.target.value)}
-            className="h-9 pl-3 pr-7 rounded-lg border border-gray-200 bg-white text-[12px] cursor-pointer focus:outline-none focus:border-[#6D4AFF]"
+            className="h-9 pl-3 pr-7 rounded-lg border border-gray-200 bg-white text-[12px] cursor-pointer focus:outline-none focus:border-[#254A9A]"
           >
             <option value="">{t('staff.allClasses')}</option>
             {classOptions.map((cls) => (
@@ -536,7 +536,7 @@ export function StaffManagementCard() {
           <button
             type="button"
             onClick={() => navigate('/timetable/substitutes')}
-            className="h-9 px-3 rounded-lg text-[12px] font-semibold text-[#6B7280] hover:text-[#6D4AFF] ml-auto"
+            className="h-9 px-3 rounded-lg text-[12px] font-semibold text-[#6B7280] hover:text-[#254A9A] ml-auto"
           >
             {t('staff.manage')}
           </button>
@@ -600,7 +600,7 @@ export function StaffManagementCard() {
                 <select
                   value={selectedTt?._id ?? ''}
                   onChange={(e) => setSelectedTt(timetables.find((tt) => tt._id === e.target.value) ?? null)}
-                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-[#7C3AED]"
+                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-[#254A9A]"
                 >
                   <option value="">{t('staff.selectPublishedTimetable')}</option>
                   {timetables.map((tt) => (

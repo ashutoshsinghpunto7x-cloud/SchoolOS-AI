@@ -15,7 +15,7 @@ function currentDayOfWeek(): number {
 
 // Subject color palette — cycles through a set of warm/cool pairs
 const SUBJECT_COLORS = [
-  { bg: 'bg-violet-100', text: 'text-violet-700', dot: 'bg-violet-400', border: 'border-violet-200' },
+  { bg: 'bg-[#EEF1F8]', text: 'text-[#1B2A4E]', dot: 'bg-violet-400', border: 'border-violet-200' },
   { bg: 'bg-pink-100',   text: 'text-pink-700',   dot: 'bg-pink-400',   border: 'border-pink-200'   },
   { bg: 'bg-emerald-100',text: 'text-emerald-700',dot: 'bg-emerald-400',border: 'border-emerald-200'},
   { bg: 'bg-amber-100',  text: 'text-amber-700',  dot: 'bg-amber-400',  border: 'border-amber-200'  },
@@ -47,7 +47,7 @@ function EntryCard({
     <div
       className={`relative flex items-center gap-4 rounded-2xl border px-4 py-4 shadow-sm transition-all ${
         isCurrentPeriod
-          ? 'bg-gradient-to-r from-[#5B21B6] to-[#DB2777] border-transparent text-white shadow-lg shadow-violet-500/20'
+          ? 'bg-gradient-to-r from-[#1B2A4E] to-[#DB2777] border-transparent text-white shadow-lg shadow-violet-500/20'
           : `bg-white dark:bg-[#150C29] ${color.border} dark:border-white/10`
       }`}
     >
@@ -142,10 +142,10 @@ export function TeacherTimetablePage() {
   const activePeriodSlotId = currentPeriodSlotId();
 
   return (
-    <div className="min-h-screen bg-[#F8F7FF] dark:bg-[#0B0518] relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-[#0B0518] relative overflow-x-hidden">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-violet-200/40 dark:bg-violet-500/10 blur-3xl" />
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-violet-200/40 dark:bg-[#254A9A]/10 blur-3xl" />
         <div className="absolute top-1/2 -left-12 w-48 h-48 rounded-full bg-pink-200/35 dark:bg-pink-500/10 blur-3xl" />
         <div className="absolute bottom-20 right-0 w-40 h-40 rounded-full bg-indigo-200/30 dark:bg-indigo-500/10 blur-3xl" />
         <svg className="absolute top-[18%] right-[15%] w-6 h-6 text-violet-300/50 dark:text-violet-400/60" viewBox="0 0 24 24" fill="currentColor">
@@ -170,7 +170,7 @@ export function TeacherTimetablePage() {
       {/* Header */}
       <div
         className="relative px-5 pt-10 pb-6 overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 55%, #DB2777 100%)' }}
+        style={{ background: 'linear-gradient(160deg, #2C4177 0%, #254A9A 55%, #DB2777 100%)' }}
       >
         <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/5 -translate-y-12 translate-x-12" />
         <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 translate-y-8 -translate-x-8" />
@@ -222,7 +222,7 @@ export function TeacherTimetablePage() {
                 }
                 className={`relative w-full px-1 py-2 rounded-2xl text-sm font-semibold transition-all ${
                   isActive
-                    ? 'bg-white text-[#5B21B6] shadow-lg shadow-black/10'
+                    ? 'bg-white text-[#1B2A4E] shadow-lg shadow-black/10'
                     : 'bg-white/15 text-white/80 hover:bg-white/25'
                 }`}
               >
@@ -230,7 +230,7 @@ export function TeacherTimetablePage() {
                 {hasClass && (
                   <span
                     className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${
-                      isActive ? 'bg-[#5B21B6]' : isToday ? 'bg-yellow-300' : 'bg-white/60'
+                      isActive ? 'bg-[#1B2A4E]' : isToday ? 'bg-yellow-300' : 'bg-white/60'
                     }`}
                   />
                 )}
@@ -251,7 +251,7 @@ export function TeacherTimetablePage() {
         ) : !tt ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-4">
             {/* Illustrated empty state */}
-            <div className="w-32 h-32 rounded-full bg-violet-100/80 dark:bg-[#1B1033] flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full bg-[#EEF1F8]/80 dark:bg-[#1B1033] flex items-center justify-center">
               <svg viewBox="0 0 80 80" className="w-20 h-20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="40" cy="40" r="36" fill="#EDE9FE" className="dark:fill-[#2A1B4D]" />
                 <rect x="18" y="24" width="24" height="32" rx="3" fill="#C4B5FD" />
@@ -274,7 +274,7 @@ export function TeacherTimetablePage() {
           </div>
         ) : activeDayEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <div className="w-32 h-32 rounded-full bg-violet-100/80 dark:bg-[#1B1033] flex items-center justify-center">
+            <div className="w-32 h-32 rounded-full bg-[#EEF1F8]/80 dark:bg-[#1B1033] flex items-center justify-center">
               <svg viewBox="0 0 80 80" className="w-20 h-20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="40" cy="40" r="36" fill="#EDE9FE" className="dark:fill-[#2A1B4D]" />
                 <rect x="18" y="24" width="24" height="32" rx="3" fill="#C4B5FD" />
@@ -296,9 +296,9 @@ export function TeacherTimetablePage() {
         ) : (
           <div className="space-y-3">
             {activeDay === todayDow && (
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-[#A855F7]/20 dark:border-white/10 rounded-2xl px-4 py-2.5 backdrop-blur-sm">
-                <CalendarCheck className="w-4 h-4 text-[#5B21B6] dark:text-violet-300 shrink-0" />
-                <p className="text-sm text-[#5B21B6] dark:text-violet-300 font-semibold">Today's schedule</p>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-white/5 border border-[#1B2A4E]/20 dark:border-white/10 rounded-2xl px-4 py-2.5 backdrop-blur-sm">
+                <CalendarCheck className="w-4 h-4 text-[#1B2A4E] dark:text-violet-300 shrink-0" />
+                <p className="text-sm text-[#1B2A4E] dark:text-violet-300 font-semibold">Today's schedule</p>
                 <span className="ml-auto text-xs text-gray-400 dark:text-white/40 font-medium">
                   {activeDayEntries.length} period{activeDayEntries.length !== 1 ? 's' : ''}
                 </span>

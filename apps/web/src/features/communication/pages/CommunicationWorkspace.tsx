@@ -24,11 +24,11 @@ interface CommunicationWorkspaceProps {
 
 const NoneSelected = () => (
   <div className="flex flex-col items-center justify-center h-full text-center py-20 px-8">
-    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-      <Users className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
+    <div className="w-16 h-16 rounded-2xl bg-[#EEF1F8] flex items-center justify-center mb-4">
+      <Users className="w-8 h-8 text-[#254A9A]/60" strokeWidth={1.5} />
     </div>
-    <h3 className="text-base font-bold text-gray-700">No student selected</h3>
-    <p className="text-sm text-gray-400 mt-1.5 max-w-xs leading-relaxed">
+    <h3 className="text-base font-bold text-[#1B2A4E]">No student selected</h3>
+    <p className="text-sm text-[#55607A] mt-1.5 max-w-xs leading-relaxed">
       Search and select a student on the left to view parent information and start communicating.
     </p>
   </div>
@@ -112,13 +112,13 @@ export const CommunicationWorkspace = ({
   return (
     <>
       {/* ── 3-panel layout ─────────────────────────────────────────────────── */}
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="h-full flex flex-col overflow-hidden font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
         <div className="flex-1 flex min-h-0">
           {/* Left panel — student search */}
-          <aside className="w-72 flex-shrink-0 border-r border-gray-100 bg-white flex flex-col overflow-hidden">
-            <div className="flex-shrink-0 px-5 pt-5 pb-3 border-b border-gray-50">
-              <h2 className="text-sm font-bold text-gray-900">Students</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Select to communicate</p>
+          <aside className="w-72 flex-shrink-0 border-r border-[#E8E2D6] bg-white flex flex-col overflow-hidden">
+            <div className="flex-shrink-0 px-5 pt-5 pb-3 border-b border-[#E8E2D6]/60">
+              <h2 className="text-sm font-bold text-[#1B2A4E]">Students</h2>
+              <p className="text-xs text-[#55607A] mt-0.5">Select to communicate</p>
             </div>
             <div className="flex-1 overflow-hidden">
               <StudentSearch selectedStudent={selectedStudent} onSelect={setSelectedStudent} />
@@ -126,7 +126,7 @@ export const CommunicationWorkspace = ({
           </aside>
 
           {/* Center panel — communication */}
-          <main className="flex-1 min-w-0 overflow-y-auto bg-[#F5F5F7] px-6 py-6">
+          <main className="flex-1 min-w-0 overflow-y-auto bg-[#FBF8F3] px-6 py-6">
             {selectedStudent ? (
               <CenterContent
                 student={selectedStudent}
@@ -140,7 +140,7 @@ export const CommunicationWorkspace = ({
           </main>
 
           {/* Right panel — AI assistant */}
-          <aside className="w-80 flex-shrink-0 border-l border-gray-100 bg-white flex flex-col overflow-hidden">
+          <aside className="w-80 flex-shrink-0 border-l border-[#E8E2D6] bg-white flex flex-col overflow-hidden">
             <AISummaryCard
               student={selectedStudent}
               onCall={() => setOpenModal('call')}

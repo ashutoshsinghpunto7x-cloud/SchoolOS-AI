@@ -146,7 +146,7 @@ export function DriverDashboardPage() {
   const isActive = state === 'active';
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#FBF8F3] flex flex-col">
       <header className="px-6 pt-8 pb-4 border-b border-gray-100">
         <p className="text-sm text-gray-500">Welcome{user ? `, ${user.firstName}` : ''}</p>
         <h1 className="text-2xl font-bold text-gray-900">Transport Dashboard</h1>
@@ -156,8 +156,8 @@ export function DriverDashboardPage() {
         {/* Vehicle info card */}
         <section className="rounded-2xl border-2 border-gray-100 p-5">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-              <Bus className="w-6 h-6 text-purple-700" />
+            <div className="w-12 h-12 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+              <Bus className="w-6 h-6 text-[#1B2A4E]" />
             </div>
             <div>
               <p className="text-lg font-bold text-gray-900">{vehicle.vehicleNumber}</p>
@@ -204,7 +204,7 @@ export function DriverDashboardPage() {
         {isActive && lastFix && (
           <section className="rounded-2xl bg-gray-50 border border-gray-100 p-5 space-y-3">
             <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-purple-700 shrink-0" />
+              <MapPin className="w-5 h-5 text-[#1B2A4E] shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Current Location</p>
                 <p className="text-sm font-mono font-semibold text-gray-900">
@@ -213,7 +213,7 @@ export function DriverDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Clock className="w-5 h-5 text-purple-700 shrink-0" />
+              <Clock className="w-5 h-5 text-[#1B2A4E] shrink-0" />
               <div>
                 <p className="text-xs text-gray-500">Last Updated</p>
                 <p className="text-sm font-semibold text-gray-900">{lastFix.at.toLocaleTimeString()}</p>

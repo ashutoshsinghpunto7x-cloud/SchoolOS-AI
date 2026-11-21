@@ -30,7 +30,7 @@ function ExamCard({ exam }: { exam: ExamResult }) {
         </div>
         {typeof exam.overallPercentage === 'number' && (
           <div className="text-right shrink-0">
-            <p className="text-2xl font-bold text-purple-700 tabular-nums">{exam.overallPercentage}%</p>
+            <p className="text-2xl font-bold text-[#1B2A4E] tabular-nums">{exam.overallPercentage}%</p>
             <p className="text-sm text-gray-400">Overall</p>
           </div>
         )}
@@ -76,7 +76,7 @@ export function AcademicsPage() {
 
   if (workspaceLoading || (isLoading && !data)) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-busy="true">
           <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
@@ -88,7 +88,7 @@ export function AcademicsPage() {
 
   if (!activeChild || isError || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <EmptyState
           icon={GraduationCap}
           title={!activeChild ? 'No children linked yet' : 'Could not load academics'}
@@ -99,7 +99,7 @@ export function AcademicsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader
         title="Academics"
         subtitle={`${data.child.name}'s exam results and subject progress`}
@@ -122,8 +122,8 @@ export function AcademicsPage() {
             transition={{ duration: 0.25 }}
             className="w-full flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6 text-left hover:bg-gray-50 transition-colors"
           >
-            <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-purple-700" strokeWidth={1.75} />
+            <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-[#1B2A4E]" strokeWidth={1.75} />
             </div>
             <span className="flex-1 min-w-0">
               <span className="block text-base font-semibold text-gray-900">Term Report Card</span>

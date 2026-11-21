@@ -43,7 +43,7 @@ export function PrincipalAcademicPlanTeacherPage({ basePath = '/principal/academ
   }, [data, teacherId]);
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate(basePath)} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -84,7 +84,7 @@ export function PrincipalAcademicPlanTeacherPage({ basePath = '/principal/academ
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden">
-                        <div className="h-full rounded-full bg-[#6D4AFF]" style={{ width: `${s.avgPercent}%` }} />
+                        <div className="h-full rounded-full bg-[#254A9A]" style={{ width: `${s.avgPercent}%` }} />
                       </div>
                       <span className="text-sm font-bold text-gray-700 dark:text-white/70 w-9 text-right">{s.avgPercent}%</span>
                     </div>
@@ -106,7 +106,7 @@ export function PrincipalAcademicPlanTeacherPage({ basePath = '/principal/academ
                               <p className="text-[11px] text-gray-400 mt-0.5">{c.completedDays} of {c.totalDays} teaching periods done</p>
                             </div>
                             <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden shrink-0">
-                              <div className="h-full rounded-full bg-[#6D4AFF]" style={{ width: `${percent}%` }} />
+                              <div className="h-full rounded-full bg-[#254A9A]" style={{ width: `${percent}%` }} />
                             </div>
                             <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
                           </button>

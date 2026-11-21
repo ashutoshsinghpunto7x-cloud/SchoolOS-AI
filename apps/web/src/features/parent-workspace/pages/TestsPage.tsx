@@ -58,7 +58,7 @@ function TestCard({ test, onStart }: { test: ParentMockTestSummary; onStart: () 
           {' · '}{test.durationMinutes} min
         </p>
         {test.mode === 'ranked' && test.alreadyAttempted && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#1B2A4E]">
             <Trophy className="w-3.5 h-3.5" /> Submitted
           </span>
         )}
@@ -85,7 +85,7 @@ export function TestsPage() {
 
   if (workspaceLoading || (isLoading && !tests)) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-busy="true">
           <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
@@ -96,14 +96,14 @@ export function TestsPage() {
 
   if (!activeChild) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <EmptyState icon={ClipboardList} title="No children linked yet" description="Ask the school office to link your child's profile to this account." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader
         title="Mock Tests"
         subtitle={`Live and upcoming tests for ${activeChild.name}'s class`}

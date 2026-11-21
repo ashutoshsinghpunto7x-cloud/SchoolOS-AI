@@ -131,7 +131,7 @@ export function MeetingNotesWidget({ now, variant = 'onGradient', onChange }: Me
         <>
           {/* Nearest upcoming — with live countdown */}
           <div className={light ? 'bg-black/[0.03] rounded-lg px-3 py-2.5 flex items-start gap-2' : 'bg-white/10 rounded-lg px-3 py-2.5 flex items-start gap-2'}>
-            <CalendarClock className={light ? 'w-4 h-4 text-[#7C3AED] shrink-0 mt-0.5' : 'w-4 h-4 text-white shrink-0 mt-0.5'} />
+            <CalendarClock className={light ? 'w-4 h-4 text-[#254A9A] shrink-0 mt-0.5' : 'w-4 h-4 text-white shrink-0 mt-0.5'} />
             <div className="flex-1 min-w-0">
               <p className={light ? 'text-sm font-bold text-[#111827] truncate' : 'text-sm font-bold text-white truncate'}>{next.title}</p>
               <p className={light ? 'text-[11px] text-[#6B7280] mb-1' : 'text-[11px] text-white/60 mb-1'}>

@@ -40,8 +40,8 @@ const TYPE_CONFIG: Record<
   },
   broadcast: {
     icon: Megaphone,
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600',
+    iconBg: 'bg-[#EEF1F8]',
+    iconColor: 'text-[#254A9A]',
     showStatus: true,
   },
 };

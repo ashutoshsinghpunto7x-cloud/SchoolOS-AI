@@ -37,7 +37,7 @@ export function EmployeeDirectoryProfilePage({ basePath = '/admin/employees' }: 
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-gray-300 animate-spin" />
       </div>
     );
@@ -45,9 +45,9 @@ export function EmployeeDirectoryProfilePage({ basePath = '/admin/employees' }: 
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-center px-6">
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center text-center px-6">
         <p className="text-sm font-semibold text-gray-700">Employee not found</p>
-        <button onClick={() => navigate(basePath)} className="mt-3 text-xs text-[#5B21B6] font-semibold">Back to Employees</button>
+        <button onClick={() => navigate(basePath)} className="mt-3 text-xs text-[#1B2A4E] font-semibold">Back to Employees</button>
       </div>
     );
   }
@@ -62,7 +62,7 @@ export function EmployeeDirectoryProfilePage({ basePath = '/admin/employees' }: 
       </div>
 
       <div className="px-4 py-5 max-w-3xl mx-auto space-y-4">
-        <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(160deg, #4C1D95 0%, #7C3AED 45%, #DB2777 100%)' }}>
+        <div className="rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}>
           <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-3 overflow-hidden">
             {employee.photoUrl ? (
               <img src={employee.photoUrl} alt={employee.fullName} className="w-full h-full object-cover" />

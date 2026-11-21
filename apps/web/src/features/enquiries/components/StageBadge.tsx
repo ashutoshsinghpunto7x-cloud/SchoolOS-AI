@@ -5,7 +5,7 @@ const CONFIG: Record<EnquiryStage, { label: string; className: string; dot: stri
   new_enquiry:          { label: 'New Enquiry',       className: 'bg-sky-50 text-sky-700 border border-sky-200',         dot: 'bg-sky-500' },
   contacted:            { label: 'Contacted',          className: 'bg-blue-50 text-blue-700 border border-blue-200',       dot: 'bg-blue-500' },
   follow_up_scheduled:  { label: 'Follow-up Scheduled', className: 'bg-indigo-50 text-indigo-700 border border-indigo-200', dot: 'bg-indigo-500' },
-  campus_visit:         { label: 'Campus Visit',       className: 'bg-purple-50 text-purple-700 border border-purple-200', dot: 'bg-purple-500' },
+  campus_visit:         { label: 'Campus Visit',       className: 'bg-[#EEF1F8] text-[#1B2A4E] border border-[#E8E2D6]', dot: 'bg-[#254A9A]' },
   application_submitted:{ label: 'Application Submitted', className: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500' },
   documents_pending:    { label: 'Documents Pending',  className: 'bg-orange-50 text-orange-700 border border-orange-200', dot: 'bg-orange-500' },
   admission_approved:   { label: 'Admission Approved', className: 'bg-teal-50 text-teal-700 border border-teal-200',       dot: 'bg-teal-500' },

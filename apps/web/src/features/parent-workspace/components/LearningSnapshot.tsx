@@ -30,7 +30,7 @@ export function LearningSnapshot({ subjects }: LearningSnapshotProps) {
       <button
         type="button"
         onClick={() => navigate('/parent/academics')}
-        className="text-sm text-purple-600 hover:text-purple-700 transition-colors mt-6 font-semibold"
+        className="text-sm text-[#254A9A] hover:text-[#1B2A4E] transition-colors mt-6 font-semibold"
       >
         View academic report →
       </button>

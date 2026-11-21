@@ -52,7 +52,7 @@ function SlipBody({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className={`font-bold text-[#5B21B6] ${mm ? 'text-[10px]' : 'text-base'}`}>Salary Slip</p>
+          <p className={`font-bold text-[#1B2A4E] ${mm ? 'text-[10px]' : 'text-base'}`}>Salary Slip</p>
           <p className={`text-gray-400 ${mm ? 'text-[6.5px]' : 'text-xs'}`}>{periodLabel}</p>
         </div>
       </div>
@@ -187,7 +187,7 @@ export function SalarySlipPreview({ record, hideActions }: SalarySlipPreviewProp
         <div className="flex items-center justify-center gap-3 mt-5 print:hidden">
           <button
             onClick={handlePrint}
-            className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-semibold flex items-center gap-2"
+            className="h-10 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-sm font-semibold flex items-center gap-2"
           >
             <Printer className="w-4 h-4" /> Print
           </button>

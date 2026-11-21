@@ -42,14 +42,14 @@ function CreateVehicleModal({ onClose }: { onClose: () => void }) {
           value={vehicleNumber}
           onChange={(e) => setVehicleNumber(e.target.value)}
           placeholder="e.g. UP32 AB 1234"
-          className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+          className="w-full h-11 px-3 rounded-xl border border-[#E8E2D6] text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
         />
         <label className="block text-sm font-bold text-gray-700 mb-1.5">Route Name</label>
         <input
           value={routeName}
           onChange={(e) => setRouteName(e.target.value)}
           placeholder="e.g. Route 4 — Civil Lines"
-          className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+          className="w-full h-11 px-3 rounded-xl border border-[#E8E2D6] text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
         />
         <div className="flex gap-3">
           <button type="button" onClick={onClose} className="flex-1 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-bold text-gray-700">
@@ -59,7 +59,7 @@ function CreateVehicleModal({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => void submit()}
             disabled={isPending}
-            className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             Create
@@ -97,8 +97,8 @@ function VehicleCard({
     <div className="rounded-2xl border border-gray-100 shadow-sm bg-white p-5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-            <Bus className="w-5 h-5 text-purple-700" />
+          <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+            <Bus className="w-5 h-5 text-[#254A9A]" />
           </div>
           <div>
             <p className="text-base font-bold text-gray-900">{vehicle.vehicleNumber}</p>
@@ -127,7 +127,7 @@ function VehicleCard({
           defaultValue={vehicle.driverUserId ?? ''}
           onChange={(e) => void handleAssignDriver(e.target.value)}
           disabled={driversLoading || isPending}
-          className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent"
+          className="flex-1 h-10 px-3 rounded-xl border border-[#E8E2D6] text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E] focus:border-transparent"
         >
           <option value="" disabled>{vehicle.driverName ? vehicle.driverName : 'Assign a driver…'}</option>
           {drivers?.map((d) => (
@@ -157,36 +157,36 @@ export function TransportManagementPage() {
     .map((v) => ({ _id: v._id, latitude: v.latitude!, longitude: v.longitude!, label: `${v.vehicleNumber} · ${v.routeName}` }));
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="min-h-screen bg-[#FBF8F3] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Transport Management</h1>
-            <p className="text-sm text-gray-500 mt-1">Vehicles, drivers, student assignments, and live status.</p>
+            <h1 className="text-2xl font-bold text-[#1B2A4E]">Transport Management</h1>
+            <p className="text-sm text-[#55607A] mt-1">Vehicles, drivers, student assignments, and live status.</p>
           </div>
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="h-11 px-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white flex items-center gap-2 shrink-0"
+            className="h-11 px-4 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white flex items-center gap-2 shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Vehicle
           </button>
         </div>
 
         {activeFleet.length > 0 && (
-          <section className="rounded-2xl border border-gray-100 shadow-sm bg-white p-2">
+          <section className="rounded-[18px] border border-[#E8E2D6] shadow-xs bg-white p-2">
             <LiveFleetMap vehicles={activeFleet} />
           </section>
         )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+            <Loader2 className="w-6 h-6 text-[#55607A] animate-spin" />
           </div>
         ) : !vehicles || vehicles.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-200 bg-white py-16 text-center">
-            <Bus className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No vehicles yet. Add one to get started.</p>
+          <div className="rounded-[18px] border border-dashed border-[#E8E2D6] bg-white py-16 text-center">
+            <Bus className="w-10 h-10 text-[#55607A]/40 mx-auto mb-3" />
+            <p className="text-sm text-[#55607A]">No vehicles yet. Add one to get started.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

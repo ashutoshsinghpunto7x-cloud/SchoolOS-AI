@@ -63,7 +63,7 @@ export function TakeTestPage() {
 
   if (workspaceLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center">
         <div className="h-40 w-full max-w-md bg-gray-100 rounded-2xl animate-pulse mx-4" />
       </div>
     );
@@ -71,10 +71,10 @@ export function TakeTestPage() {
 
   if (isError || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <EmptyState icon={Clock} title="This test isn't available" description={error instanceof Error ? error.message : 'It may not be open right now.'} />
         <div className="text-center pb-8">
-          <button type="button" onClick={() => navigate('/parent/tests')} className="text-sm font-semibold text-purple-700">Back to tests</button>
+          <button type="button" onClick={() => navigate('/parent/tests')} className="text-sm font-semibold text-[#1B2A4E]">Back to tests</button>
         </div>
       </div>
     );
@@ -82,21 +82,21 @@ export function TakeTestPage() {
 
   if (result) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 max-w-md w-full text-center">
           <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
           <h1 className="text-xl font-bold text-gray-900">Test submitted</h1>
-          <p className="text-4xl font-bold text-purple-700 mt-4 tabular-nums">{result.score} / {result.totalMarks}</p>
+          <p className="text-4xl font-bold text-[#1B2A4E] mt-4 tabular-nums">{result.score} / {result.totalMarks}</p>
           <p className="text-sm text-gray-500 mt-1">{result.correctCount} of {result.totalQuestions} correct · {result.scorePercent}%</p>
           {result.mode === 'ranked' && result.rank && (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-purple-700">
+            <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1B2A4E]">
               <Trophy className="w-4 h-4" /> Rank #{result.rank}
             </p>
           )}
           <button
             type="button"
             onClick={() => navigate('/parent/tests')}
-            className="mt-6 w-full h-11 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold transition-colors"
+            className="mt-6 w-full h-11 rounded-xl bg-[#1B2A4E] hover:bg-purple-800 text-white text-sm font-semibold transition-colors"
           >
             Back to tests
           </button>
@@ -111,7 +111,7 @@ export function TakeTestPage() {
   const timeCritical = secondsLeft !== null && secondsLeft <= 60;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] pb-8">
+    <div className="min-h-screen bg-[#FBF8F3] pb-8">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -135,7 +135,7 @@ export function TakeTestPage() {
                 onClick={() => setAnswers((prev) => ({ ...prev, [question._id]: oi }))}
                 className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-colors ${
                   answers[question._id] === oi
-                    ? 'border-purple-600 bg-purple-50 text-purple-800 font-semibold'
+                    ? 'border-purple-600 bg-[#EEF1F8] text-purple-800 font-semibold'
                     : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -159,7 +159,7 @@ export function TakeTestPage() {
             <button
               type="button"
               onClick={() => setCurrent((c) => Math.min(questions.length - 1, c + 1))}
-              className="flex items-center gap-1 px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold"
+              className="flex items-center gap-1 px-4 py-2 rounded-xl bg-[#1B2A4E] hover:bg-purple-800 text-white text-sm font-semibold"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>

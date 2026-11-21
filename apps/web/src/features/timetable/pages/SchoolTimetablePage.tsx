@@ -103,7 +103,7 @@ export const SchoolTimetablePage = () => {
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}>
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}>
             <LayoutGrid className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -290,7 +290,7 @@ const ManageClassesDrawer = ({ onClose }: { onClose: () => void }) => {
             <button
               type="submit" disabled={creating || !newClassName.trim()}
               className="h-10 px-4 rounded-xl text-sm font-bold text-white flex items-center gap-1.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
-              style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
             >
               <Plus className="w-4 h-4" /> Add
             </button>

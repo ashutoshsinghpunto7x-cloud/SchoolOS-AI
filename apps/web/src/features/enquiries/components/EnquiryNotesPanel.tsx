@@ -55,7 +55,7 @@ const NoteEditor = ({
           type="button"
           onClick={() => text.trim() && onSave(text.trim())}
           disabled={isPending || !text.trim()}
-          className="h-8 px-3 rounded-lg bg-[#5B21B6] hover:bg-[#4C1D95]
+          className="h-8 px-3 rounded-lg bg-[#1B2A4E] hover:bg-[#2C4177]
                      flex items-center gap-1.5 text-sm font-semibold text-white
                      transition-colors disabled:opacity-50"
         >

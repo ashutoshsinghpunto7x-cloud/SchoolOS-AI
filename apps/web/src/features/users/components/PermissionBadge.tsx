@@ -1,7 +1,7 @@
 import type { Permission } from '@schoolos/types';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Users: 'bg-purple-50 text-purple-700 border-purple-200',
+  Users: 'bg-[#EEF1F8] text-[#1B2A4E] border-[#E8E2D6]',
   Students: 'bg-blue-50 text-blue-700 border-blue-200',
   Communications: 'bg-green-50 text-green-700 border-green-200',
   Administration: 'bg-amber-50 text-amber-700 border-amber-200',

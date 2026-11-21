@@ -217,7 +217,7 @@ export function RecordPaymentModal({ fee, onClose, onSuccess }: Props) {
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white text-sm font-bold transition-colors"
+              className="flex-1 h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white text-sm font-bold transition-colors"
             >
               {isPending ? 'Saving…' : 'Confirm Payment'}
             </button>

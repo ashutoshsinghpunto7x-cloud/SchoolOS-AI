@@ -66,7 +66,7 @@ export function ClassDetailPage() {
             {isClassTeacher && (
               <button
                 onClick={() => navigate(`/teacher/attendance/${cls}/${section}`)}
-                className="flex-1 h-10 px-3 bg-[#5B21B6] dark:bg-violet-600 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#4C1D95] dark:hover:bg-violet-700 transition-colors"
+                className="flex-1 h-10 px-3 bg-[#1B2A4E] dark:bg-[#1B2A4E] text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#2C4177] dark:hover:bg-[#2C4177] transition-colors"
               >
                 <CalendarCheck className="w-3.5 h-3.5" />
                 Mark Attendance
@@ -84,7 +84,7 @@ export function ClassDetailPage() {
             {isClassTeacher && (
               <button
                 onClick={() => navigate(`/teacher/classes/${cls}/${section}/students`)}
-                className="flex-1 h-10 px-3 bg-white dark:bg-white/5 border border-[#5B21B6]/20 dark:border-violet-400/20 text-[#5B21B6] dark:text-violet-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#F5F3FF] dark:hover:bg-white/10 transition-colors"
+                className="flex-1 h-10 px-3 bg-white dark:bg-white/5 border border-[#1B2A4E]/20 dark:border-violet-400/20 text-[#1B2A4E] dark:text-violet-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#F5F3FF] dark:hover:bg-white/10 transition-colors"
               >
                 <Users className="w-3.5 h-3.5" />
                 Manage Students
@@ -105,7 +105,7 @@ export function ClassDetailPage() {
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {subjectsTaught.map((s) => (
-                <span key={s} className="text-xs font-semibold text-[#5B21B6] dark:text-violet-300 bg-[#A855F7]/10 dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">{s}</span>
+                <span key={s} className="text-xs font-semibold text-[#1B2A4E] dark:text-violet-300 bg-[#EEF1F8] dark:bg-[#A855F7]/15 px-2.5 py-1 rounded-full">{s}</span>
               ))}
             </div>
           )}
@@ -123,7 +123,7 @@ export function ClassDetailPage() {
                   className={cn(
                     'shrink-0 h-9 px-3.5 rounded-xl text-xs font-semibold transition-colors',
                     activeDay === day 
-                      ? 'bg-[#5B21B6] dark:bg-violet-600 text-white' 
+                      ? 'bg-[#1B2A4E] dark:bg-[#1B2A4E] text-white' 
                       : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-white/60 hover:bg-gray-200 dark:hover:bg-white/15',
                   )}
                 >

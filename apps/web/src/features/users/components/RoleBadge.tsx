@@ -1,14 +1,14 @@
 import type { UserRole } from '@schoolos/types';
 
 const CONFIG: Record<UserRole, { label: string; className: string }> = {
-  admin: { label: 'Administrator', className: 'bg-purple-100 text-purple-700' },
+  admin: { label: 'Administrator', className: 'bg-[#EEF1F8] text-[#1B2A4E]' },
   principal: { label: 'Principal', className: 'bg-indigo-100 text-indigo-700' },
   incharge: { label: 'Incharge', className: 'bg-indigo-100 text-indigo-700' },
   reception: { label: 'Receptionist', className: 'bg-blue-100 text-blue-700' },
   teacher: { label: 'Teacher', className: 'bg-green-100 text-green-700' },
   accountant: { label: 'Accountant', className: 'bg-amber-100 text-amber-700' },
   operations_manager: { label: 'Operations Manager', className: 'bg-cyan-100 text-cyan-700' },
-  academic_coordinator: { label: 'Academic Coordinator', className: 'bg-violet-100 text-violet-700' },
+  academic_coordinator: { label: 'Academic Coordinator', className: 'bg-[#EEF1F8] text-[#1B2A4E]' },
   parent: { label: 'Parent', className: 'bg-pink-100 text-pink-700' },
   driver: { label: 'Driver', className: 'bg-teal-100 text-teal-700' },
   owner: { label: 'Owner', className: 'bg-slate-100 text-slate-700' },

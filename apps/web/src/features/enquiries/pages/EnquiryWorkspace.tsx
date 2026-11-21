@@ -55,7 +55,7 @@ export const EnquiryWorkspace = () => {
         <button
           type="button"
           onClick={() => navigate('/enquiries/new')}
-          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95]
+          className="flex items-center gap-2 h-11 px-5 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177]
                      text-sm font-bold text-white transition-colors shadow-sm"
         >
           <Plus className="w-4 h-4" />
@@ -92,7 +92,7 @@ export const EnquiryWorkspace = () => {
       {/* Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-7 h-7 text-[#5B21B6] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#1B2A4E] animate-spin" />
         </div>
       ) : enquiries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
@@ -133,7 +133,7 @@ export const EnquiryWorkspace = () => {
                 onClick={() => setPage(p)}
                 className={`h-9 w-9 rounded-xl text-sm font-bold transition-colors ${
                   p === page
-                    ? 'bg-[#5B21B6] text-white'
+                    ? 'bg-[#1B2A4E] text-white'
                     : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >

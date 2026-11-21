@@ -168,7 +168,7 @@ export const BulkCreateParentsModal = ({ onClose }: BulkCreateParentsModalProps)
               <button
                 type="button"
                 onClick={toggleAll}
-                className="flex items-center gap-2 text-sm font-bold text-[#5B21B6] mb-2"
+                className="flex items-center gap-2 text-sm font-bold text-[#1B2A4E] mb-2"
                 disabled={students.length === 0}
               >
                 {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -192,7 +192,7 @@ export const BulkCreateParentsModal = ({ onClose }: BulkCreateParentsModalProps)
                         type="checkbox"
                         checked={selected.has(s._id)}
                         onChange={() => toggle(s._id)}
-                        className="w-4 h-4 accent-[#5B21B6]"
+                        className="w-4 h-4 accent-[#1B2A4E]"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">{s.fullName}</p>
@@ -235,7 +235,7 @@ export const BulkCreateParentsModal = ({ onClose }: BulkCreateParentsModalProps)
                   type="button"
                   onClick={handleSubmit}
                   disabled={isPending || selected.size === 0}
-                  className="flex-1 h-12 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                  className="flex-1 h-12 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                 >
                   {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   {isPending ? 'Creating…' : `Create ${selected.size || ''} Login${selected.size === 1 ? '' : 's'}`}
@@ -331,7 +331,7 @@ const ResultsView = ({
     <button
       type="button"
       onClick={onClose}
-      className="w-full h-12 mt-4 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white transition-colors"
+      className="w-full h-12 mt-4 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white transition-colors"
     >
       Done
     </button>

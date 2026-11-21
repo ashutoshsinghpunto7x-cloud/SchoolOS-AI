@@ -72,7 +72,7 @@ export function FeesPage() {
 
   if (workspaceLoading || (isLoading && !data)) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-busy="true">
           <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
@@ -83,7 +83,7 @@ export function FeesPage() {
 
   if (!activeChild || isError || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <EmptyState
           icon={Wallet}
           title={!activeChild ? 'No children linked yet' : 'Could not load fees'}
@@ -97,7 +97,7 @@ export function FeesPage() {
   const settled = data.records.filter((f) => f.balance <= 0);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader
         title="Fees"
         subtitle={`${data.child.name}'s fee summary and payment status`}
@@ -138,7 +138,7 @@ export function FeesPage() {
           <motion.div
             variants={fadeUp}
             transition={{ duration: 0.25 }}
-            className="bg-purple-50 border border-purple-100 rounded-2xl px-5 py-4"
+            className="bg-[#EEF1F8] border border-purple-100 rounded-2xl px-5 py-4"
           >
             <p className="text-base text-purple-900">
               You have {money(data.totalOutstanding)} in outstanding dues. Payments are collected by the school office —

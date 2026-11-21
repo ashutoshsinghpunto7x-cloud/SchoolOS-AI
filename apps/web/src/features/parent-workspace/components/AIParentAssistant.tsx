@@ -75,7 +75,7 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
             role="dialog"
             aria-modal="true"
             aria-label="Ask SchoolOS AI"
-            className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[600px] bg-gradient-to-b from-[#5B21B6] to-[#4C1D95] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl overflow-hidden"
+            className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-6 sm:bottom-6 z-50 w-full sm:w-[420px] max-h-[85vh] sm:max-h-[600px] bg-gradient-to-b from-[#1B2A4E] to-[#2C4177] sm:rounded-2xl rounded-t-2xl flex flex-col shadow-2xl overflow-hidden"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export function AIParentAssistant({ open, onClose, childId, childName }: AIParen
                 type="submit"
                 disabled={!input.trim() || thinking}
                 aria-label="Send"
-                className="w-9 h-9 shrink-0 rounded-full bg-white text-purple-700 flex items-center justify-center disabled:opacity-30 transition-opacity"
+                className="w-9 h-9 shrink-0 rounded-full bg-white text-[#1B2A4E] flex items-center justify-center disabled:opacity-30 transition-opacity"
               >
                 <ArrowUp className="w-4 h-4" strokeWidth={2} />
               </button>

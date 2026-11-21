@@ -50,7 +50,7 @@ export const SubstituteWorkspace = () => {
         </div>
         {canManage && (
           <button type="button" onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white transition-colors">
+            className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white transition-colors">
             <Plus className="w-4 h-4" />
             Assign Substitute
           </button>
@@ -63,12 +63,12 @@ export const SubstituteWorkspace = () => {
           type="date"
           value={filters.dateFrom ?? today}
           onChange={handleFilterDate}
-          className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-[#7C3AED]"
+          className="h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-[#254A9A]"
         />
         <select
           value={filters.class ?? ''}
           onChange={(e) => setFilters((f) => ({ ...f, class: e.target.value || undefined }))}
-          className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm cursor-pointer focus:outline-none focus:border-[#7C3AED]"
+          className="h-10 pl-3 pr-8 rounded-xl border border-gray-200 bg-white text-sm cursor-pointer focus:outline-none focus:border-[#254A9A]"
         >
           <option value="">All Classes</option>
           {timetables.map((tt) => (
@@ -99,7 +99,7 @@ export const SubstituteWorkspace = () => {
                 <select
                   value={selectedTt?._id ?? ''}
                   onChange={(e) => setSelectedTt(timetables.find((tt) => tt._id === e.target.value) ?? null)}
-                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-[#7C3AED]"
+                  className="h-11 w-full rounded-xl border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:border-[#254A9A]"
                 >
                   <option value="">Select published timetable</option>
                   {timetables.map((tt) => (
@@ -125,7 +125,7 @@ export const SubstituteWorkspace = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#5B21B6] animate-spin" /></div>
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#1B2A4E] animate-spin" /></div>
       ) : substitutes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <CalendarClock className="w-10 h-10 text-gray-300" />
@@ -182,7 +182,7 @@ const SubstituteRow = ({
           {sub.originalTeacherName && (
             <p className="text-xs text-gray-500">Original: {sub.originalTeacherName}</p>
           )}
-          <p className="text-sm text-[#4C1D95] font-semibold">
+          <p className="text-sm text-[#2C4177] font-semibold">
             Substitute: {sub.substituteTeacherName}
           </p>
           {sub.reason && <p className="text-xs text-gray-500">Reason: {sub.reason}</p>}

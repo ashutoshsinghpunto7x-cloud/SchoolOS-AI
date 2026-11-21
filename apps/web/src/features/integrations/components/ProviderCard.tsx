@@ -5,7 +5,7 @@ import type { ProviderDefinition, IntegrationProviderType } from '@schoolos/type
 const TYPE_COLOR: Record<IntegrationProviderType | string, string> = {
   attendance:    'bg-blue-50 text-blue-700',
   payment:       'bg-green-50 text-green-700',
-  communication: 'bg-purple-50 text-purple-700',
+  communication: 'bg-[#EEF1F8] text-[#1B2A4E]',
   erp:           'bg-orange-50 text-orange-700',
   calendar:      'bg-indigo-50 text-indigo-700',
   lms:           'bg-teal-50 text-teal-700',

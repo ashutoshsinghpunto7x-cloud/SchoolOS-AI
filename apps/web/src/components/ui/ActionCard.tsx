@@ -32,10 +32,10 @@ const ACCENT_MAP: Record<
     arrowHover: 'group-hover:text-emerald-500',
   },
   purple: {
-    iconBg: 'bg-purple-50',
-    iconColor: 'text-purple-600',
-    badgeBg: 'bg-purple-50 text-purple-700',
-    arrowHover: 'group-hover:text-purple-500',
+    iconBg: 'bg-[#EEF1F8]',
+    iconColor: 'text-[#254A9A]',
+    badgeBg: 'bg-[#EEF1F8] text-[#1B2A4E]',
+    arrowHover: 'group-hover:text-[#254A9A]',
   },
   rose: {
     iconBg: 'bg-rose-50',

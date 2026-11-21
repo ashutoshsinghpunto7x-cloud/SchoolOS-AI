@@ -3,7 +3,7 @@ import { X, Loader2, AlertCircle, CheckCircle2, XCircle, Zap } from 'lucide-reac
 import { useGenerateAllPayroll } from '../hooks/usePayroll';
 import type { GenerateAllPayrollResult } from '@schoolos/types';
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -71,7 +71,7 @@ export function GenerateAllPayrollModal({
               <button
                 onClick={() => void handleConfirm()}
                 disabled={isPending}
-                className="flex-1 h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+                className="flex-1 h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} Confirm & Generate
               </button>
@@ -93,7 +93,7 @@ export function GenerateAllPayrollModal({
             </div>
             <button
               onClick={() => setConfirming(true)}
-              className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
+              className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2"
             >
               Continue
             </button>

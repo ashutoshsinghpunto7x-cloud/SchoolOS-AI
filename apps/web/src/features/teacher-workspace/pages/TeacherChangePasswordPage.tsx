@@ -6,7 +6,7 @@ import { useChangePassword } from '@/features/auth/hooks/useChangePassword';
 
 const inputCls =
   'w-full h-12 px-3.5 pr-10 rounded-xl border border-gray-200 bg-white text-base ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 
 function PasswordField({
   label, value, onChange, show, onToggleShow, autoComplete,
@@ -93,8 +93,8 @@ export function TeacherChangePasswordPage() {
 
       <div className="px-4 py-5">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center shrink-0">
-            <KeyRound className="w-5 h-5 text-[#5B21B6]" />
+          <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
+            <KeyRound className="w-5 h-5 text-[#1B2A4E]" />
           </div>
           <p className="text-sm text-gray-500">
             This only changes the password for your own account. You'll stay signed in here, but other devices will need to log in again.
@@ -151,7 +151,7 @@ export function TeacherChangePasswordPage() {
               <button
                 type="submit"
                 disabled={isPending || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full h-12 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+                className="w-full h-12 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
               >
                 {isPending ? 'Updating…' : 'Update Password'}
               </button>

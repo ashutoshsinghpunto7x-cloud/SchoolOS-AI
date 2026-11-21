@@ -374,7 +374,7 @@ export const BulkAddDrawer = ({ timetable, slots, onClose }: BulkAddDrawerProps)
             onClick={handleSaveAll}
             disabled={!canSave || isPending}
             className="h-11 px-6 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #1B2A4E 0%, #254A9A 100%)' }}
           >
             {isPending && <Loader2 className="w-4 h-4 animate-spin" />}
             Save All ({rowsWithSubject.length})

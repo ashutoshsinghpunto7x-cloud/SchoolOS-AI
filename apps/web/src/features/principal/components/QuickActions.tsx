@@ -14,10 +14,10 @@ import { useLanguage } from '@/context/LanguageContext';
 import type { PrincipalTranslationKey } from '@/i18n/principalTranslations';
 
 const ACTIONS = [
-  { labelKey: 'widget.quickActions.newAdmission' as PrincipalTranslationKey,      icon: UserPlus,       path: '/students/new',        color: 'text-[#5B21B6] bg-[#A855F7]/10 hover:bg-[#A855F7]/20' },
+  { labelKey: 'widget.quickActions.newAdmission' as PrincipalTranslationKey,      icon: UserPlus,       path: '/students/new',        color: 'text-[#1B2A4E] bg-[#EEF1F8] hover:bg-[#A855F7]/20' },
   { labelKey: 'widget.quickActions.viewAttendance' as PrincipalTranslationKey,    icon: CalendarCheck,  path: '/attendance',           color: 'text-green-600 bg-green-50 hover:bg-green-100' },
   { labelKey: 'widget.quickActions.viewFees' as PrincipalTranslationKey,          icon: IndianRupee,    path: '/fees',                 color: 'text-amber-600 bg-amber-50 hover:bg-amber-100' },
-  { labelKey: 'widget.quickActions.viewTimetable' as PrincipalTranslationKey,     icon: LayoutGrid,     path: '/timetable',            color: 'text-[#5B21B6] bg-[#A855F7]/10 hover:bg-[#A855F7]/20' },
+  { labelKey: 'widget.quickActions.viewTimetable' as PrincipalTranslationKey,     icon: LayoutGrid,     path: '/timetable',            color: 'text-[#1B2A4E] bg-[#EEF1F8] hover:bg-[#A855F7]/20' },
   { labelKey: 'widget.quickActions.teacherTimetable' as PrincipalTranslationKey,  icon: UserCog,        path: '/timetable/teacher-builder', color: 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' },
   { labelKey: 'widget.quickActions.manageCalendar' as PrincipalTranslationKey,    icon: CalendarPlus,   path: '/calendar/new',         color: 'text-rose-600 bg-rose-50 hover:bg-rose-100' },
   { labelKey: 'widget.quickActions.viewCalendar' as PrincipalTranslationKey,      icon: CalendarDays,   path: '/calendar',             color: 'text-rose-600 bg-rose-50 hover:bg-rose-100' },

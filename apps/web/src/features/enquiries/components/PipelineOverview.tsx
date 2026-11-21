@@ -12,9 +12,9 @@ interface PipelineOverviewProps {
 
 const STAGE_COLOR: Record<EnquiryStage, { bg: string; text: string; activeBg: string; activeText: string; border: string }> = {
   new_enquiry:           { bg: 'bg-sky-50',     text: 'text-sky-600',    activeBg: 'bg-sky-600',     activeText: 'text-white', border: 'border-sky-200' },
-  contacted:             { bg: 'bg-blue-50',    text: 'text-blue-600',   activeBg: 'bg-[#5B21B6]',    activeText: 'text-white', border: 'border-blue-200' },
+  contacted:             { bg: 'bg-blue-50',    text: 'text-blue-600',   activeBg: 'bg-[#1B2A4E]',    activeText: 'text-white', border: 'border-blue-200' },
   follow_up_scheduled:   { bg: 'bg-indigo-50',  text: 'text-indigo-600', activeBg: 'bg-indigo-600',  activeText: 'text-white', border: 'border-indigo-200' },
-  campus_visit:          { bg: 'bg-purple-50',  text: 'text-purple-600', activeBg: 'bg-purple-600',  activeText: 'text-white', border: 'border-purple-200' },
+  campus_visit:          { bg: 'bg-[#EEF1F8]',  text: 'text-[#254A9A]', activeBg: 'bg-[#1B2A4E]',  activeText: 'text-white', border: 'border-[#E8E2D6]' },
   application_submitted: { bg: 'bg-amber-50',   text: 'text-amber-600',  activeBg: 'bg-amber-600',   activeText: 'text-white', border: 'border-amber-200' },
   documents_pending:     { bg: 'bg-orange-50',  text: 'text-orange-600', activeBg: 'bg-orange-600',  activeText: 'text-white', border: 'border-orange-200' },
   admission_approved:    { bg: 'bg-teal-50',    text: 'text-teal-600',   activeBg: 'bg-teal-600',    activeText: 'text-white', border: 'border-teal-200' },

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { CalendarRange, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useSchoolSettings, useUpdateAcademicYear } from '../hooks/useSchoolSettings';
 
-const inputCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const inputCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 function toDateInput(iso?: string): string {
@@ -69,7 +69,7 @@ export function AcademicYearPanel() {
           <button
             type="submit"
             disabled={saving || !start || !end}
-            className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
+            className="h-10 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
           </button>

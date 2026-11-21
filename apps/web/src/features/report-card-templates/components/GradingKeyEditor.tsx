@@ -3,7 +3,7 @@ import type { TemplateGradingKeyEntry } from '@schoolos/types';
 
 const cellInputCls =
   'w-full h-10 px-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#A855F7]/20 focus:border-[#A855F7]';
+  'focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#A855F7]';
 
 interface GradingKeyEditorProps {
   entries: TemplateGradingKeyEntry[];

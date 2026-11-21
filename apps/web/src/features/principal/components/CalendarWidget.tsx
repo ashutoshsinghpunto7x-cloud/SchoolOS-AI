@@ -6,10 +6,10 @@ import type { PrincipalUpcomingEvent } from '@schoolos/types';
 
 const EVENT_TYPE_COLOR: Record<string, string> = {
   holiday:       'bg-green-100 text-green-700',
-  ptm:           'bg-[#A855F7]/20 text-[#4C1D95]',
+  ptm:           'bg-[#A855F7]/20 text-[#2C4177]',
   examination:   'bg-red-100 text-red-700',
-  school_event:  'bg-purple-100 text-purple-700',
-  staff_meeting: 'bg-[#A855F7]/20 text-[#4C1D95]',
+  school_event:  'bg-[#EEF1F8] text-[#1B2A4E]',
+  staff_meeting: 'bg-[#A855F7]/20 text-[#2C4177]',
   fee_due_date:  'bg-amber-100 text-amber-700',
   admission_event:'bg-emerald-100 text-emerald-700',
   general:       'bg-gray-100 text-gray-600',
@@ -79,7 +79,7 @@ export const CalendarWidget = ({ events, isLoading }: Props) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{ev.title}</p>
-              {today && <p className="text-[11px] text-[#5B21B6] font-medium">{t('widget.calendar.today')}</p>}
+              {today && <p className="text-[11px] text-[#1B2A4E] font-medium">{t('widget.calendar.today')}</p>}
             </div>
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${colorClass}`}>
               {typeLabel}

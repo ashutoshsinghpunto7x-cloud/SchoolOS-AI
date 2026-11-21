@@ -8,7 +8,7 @@ import {
 } from '@/features/behavior/hooks/useBehavior';
 import type { BehaviorCategory } from '@schoolos/types';
 
-const inputCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const inputCls = 'w-full h-10 px-3 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const CATEGORY_META: Record<BehaviorCategory, { icon: React.ElementType; text: string; bg: string; label: string }> = {
@@ -116,7 +116,7 @@ export function BehaviorSettingsPanel() {
             <button
               type="submit"
               disabled={savingWindow}
-              className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
+              className="h-10 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
             >
               {savingWindow ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save Window
             </button>
@@ -154,7 +154,7 @@ export function BehaviorSettingsPanel() {
                       autoFocus
                       value={editingLabel}
                       onChange={(e) => setEditingLabel(e.target.value)}
-                      className="flex-1 h-8 px-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+                      className="flex-1 h-8 px-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
                     />
                   ) : (
                     <span className="flex-1 text-sm font-semibold text-gray-800">{opt.label}</span>
@@ -166,7 +166,7 @@ export function BehaviorSettingsPanel() {
                       type="button"
                       onClick={() => void handleSaveEdit(opt._id)}
                       disabled={updating}
-                      className="h-7 px-2 text-xs font-semibold text-white bg-[#5B21B6] rounded-lg"
+                      className="h-7 px-2 text-xs font-semibold text-white bg-[#1B2A4E] rounded-lg"
                     >
                       Save
                     </button>
@@ -239,7 +239,7 @@ export function BehaviorSettingsPanel() {
           <button
             type="submit"
             disabled={creating || !newLabel.trim()}
-            className="h-10 px-4 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
+            className="h-10 px-4 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white text-sm font-semibold rounded-xl flex items-center gap-2"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Add
           </button>

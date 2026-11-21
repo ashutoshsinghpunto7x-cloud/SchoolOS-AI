@@ -68,7 +68,7 @@ export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
             type="button"
             onClick={handleSummarize}
             disabled={isPending}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-[#7C3AED] hover:text-[#6D28D9] transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-[11px] font-semibold text-[#254A9A] hover:text-[#6D28D9] transition-colors disabled:opacity-50"
           >
             {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             {t('briefing.summarizeWithAi')}
@@ -77,7 +77,7 @@ export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
       </div>
 
       {showSummary && (
-        <div className="mb-3 px-3 py-2.5 rounded-xl bg-[#A855F7]/5 border border-[#A855F7]/15">
+        <div className="mb-3 px-3 py-2.5 rounded-xl bg-[#EEF1F8]/60 border border-[#A855F7]/15">
           {isPending ? (
             <p className="text-[12px] text-[#6B7280]">{t('briefing.generating')}</p>
           ) : error ? (
@@ -101,7 +101,7 @@ export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
             >
               <span
                 className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${
-                  tile.danger ? 'bg-[#EF4444]/10 text-[#EF4444]' : 'bg-[#7C3AED]/8 text-[#7C3AED]'
+                  tile.danger ? 'bg-[#EF4444]/10 text-[#EF4444]' : 'bg-[#254A9A]/8 text-[#254A9A]'
                 }`}
               >
                 <tile.icon className="w-4 h-4" strokeWidth={2} />
@@ -115,7 +115,7 @@ export function DailyBriefingCard({ data, isLoading }: DailyBriefingCardProps) {
                   {tile.value}
                 </span>
                 {tile.linkLabel && (
-                  <span className="text-[10px] font-semibold text-[#7C3AED] truncate w-full">{tile.linkLabel} ›</span>
+                  <span className="text-[10px] font-semibold text-[#254A9A] truncate w-full">{tile.linkLabel} ›</span>
                 )}
               </span>
             </button>

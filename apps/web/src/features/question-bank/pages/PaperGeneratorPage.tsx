@@ -273,7 +273,7 @@ export function PaperGeneratorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="sticky top-0 z-10 bg-white/90 dark:bg-black/40 backdrop-blur border-b border-gray-100 dark:border-white/10 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-white/50">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -368,7 +368,7 @@ export function PaperGeneratorPage() {
           <div className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 p-4">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Sections</p>
-              <button type="button" onClick={addSection} className="text-xs font-semibold text-[#6D4AFF] flex items-center gap-1">
+              <button type="button" onClick={addSection} className="text-xs font-semibold text-[#254A9A] flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5" /> Add section
               </button>
             </div>

@@ -5,7 +5,7 @@ import { importApi } from '../api/import.api';
 
 const TYPE_COLORS: Record<string, string> = {
   students:   'bg-blue-50 border-blue-100',
-  teachers:   'bg-purple-50 border-purple-100',
+  teachers:   'bg-[#EEF1F8] border-purple-100',
   fees:       'bg-gray-50 border-gray-200',
   admissions: 'bg-orange-50 border-orange-100',
   attendance: 'bg-teal-50 border-teal-100',

@@ -39,15 +39,15 @@ function FeeCollectionForStudent({ student, onBack }: { student: Student; onBack
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-[#1B2A4E] animate-spin" />
       </div>
     );
   }
 
   if (isError || !feeRecords) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center py-24 gap-4 text-center">
         <p className="text-gray-600">Could not load this student's fee records.</p>
         <button onClick={onBack} className="h-10 px-5 rounded-xl bg-gray-100 text-sm font-semibold text-gray-700 hover:bg-gray-200">
           Back to Search
@@ -166,7 +166,7 @@ export function FeeCollectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4">
         <h1 className="text-base lg:text-lg font-bold text-slate-900">Collect Fee</h1>
         <p className="text-xs lg:text-sm text-slate-400 mt-0.5">Find a student to collect their fee payment.</p>
@@ -284,7 +284,7 @@ export function FeeCollectionPage() {
                     onClick={() => openStudent(s)}
                     className={`w-full flex items-center gap-3 rounded-xl border shadow-sm px-4 py-3 lg:px-5 lg:py-4 hover:border-[#1E293B]/30 hover:shadow-md transition-all text-left ${
                       idx === focusedIndex
-                        ? 'bg-[#5B21B6]/5 border-[#5B21B6]/40 ring-2 ring-[#5B21B6]/20'
+                        ? 'bg-[#1B2A4E]/5 border-[#1B2A4E]/40 ring-2 ring-[#1B2A4E]/20'
                         : 'bg-white border-gray-200'
                     }`}
                   >

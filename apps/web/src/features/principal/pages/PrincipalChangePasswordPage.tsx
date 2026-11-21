@@ -8,7 +8,7 @@ import { useLanguage } from '@/context/LanguageContext';
 
 const inputCls =
   'w-full h-11 px-3.5 pr-10 rounded-xl border border-gray-200 bg-white text-base ' +
-  'focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/20 focus:border-[#7C3AED]';
+  'focus:outline-none focus:ring-2 focus:ring-[#254A9A]/20 focus:border-[#254A9A]';
 
 function PasswordField({
   label, value, onChange, show, onToggleShow, autoComplete,
@@ -87,8 +87,8 @@ export function PrincipalChangePasswordPage() {
 
       <div className="max-w-md">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center">
-            <KeyRound className="w-5 h-5 text-[#5B21B6]" />
+          <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center">
+            <KeyRound className="w-5 h-5 text-[#1B2A4E]" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{t('changePassword.title')}</h1>
         </div>
@@ -148,7 +148,7 @@ export function PrincipalChangePasswordPage() {
               <button
                 type="submit"
                 disabled={isPending || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+                className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
               >
                 {isPending ? t('changePassword.updating') : t('changePassword.update')}
               </button>

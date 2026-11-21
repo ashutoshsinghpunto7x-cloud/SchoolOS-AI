@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users } from 'lucide-react';
+import { Users, CreditCard, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { ParentHeader } from '../components/ParentHeader';
@@ -51,8 +51,8 @@ export function ParentDashboardPage() {
 
   if (isError) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center px-4">
-        <p className="text-base text-gray-500 text-center max-w-sm">
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center px-4 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+        <p className="text-base text-[#55607A] text-center max-w-sm">
           Something went wrong loading your dashboard. Please try again shortly.
         </p>
       </div>
@@ -61,7 +61,7 @@ export function ParentDashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7]">
+      <div className="min-h-screen bg-[#FBF8F3]">
         <DashboardSkeleton />
       </div>
     );
@@ -69,12 +69,12 @@ export function ParentDashboardPage() {
 
   if (!activeChild) {
     return (
-      <div className="min-h-screen bg-[#F5F5F7] flex flex-col items-center justify-center px-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-purple-50 flex items-center justify-center mb-4">
-          <Users className="w-6 h-6 text-purple-600" strokeWidth={1.75} />
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center px-6 text-center font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+        <div className="w-14 h-14 rounded-full bg-[#EEF1F8] flex items-center justify-center mb-4">
+          <Users className="w-6 h-6 text-[#254A9A]" strokeWidth={1.75} />
         </div>
-        <h1 className="text-lg font-bold text-gray-900">No children linked yet</h1>
-        <p className="text-sm text-gray-500 mt-1.5 max-w-xs">
+        <h1 className="text-lg font-bold text-[#1B2A4E]">No children linked yet</h1>
+        <p className="text-sm text-[#55607A] mt-1.5 max-w-xs">
           Ask the school office to link your child's profile to this account.
         </p>
       </div>
@@ -104,6 +104,89 @@ export function ParentDashboardPage() {
             activeChild={activeChild}
             onSelect={setActiveChildId}
           />
+        </motion.div>
+
+        {/* Prominent Fee & Pay Dues Card */}
+        <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
+          <section
+            aria-label="Fee status"
+            className={`rounded-2xl border p-5 sm:p-6 shadow-sm transition-colors ${
+              activeChild.feeStatus !== 'paid'
+                ? 'bg-gradient-to-br from-[#1B2A4E] to-[#254A9A] border-[#1B2A4E] text-white'
+                : 'bg-white border-[#E8E2D6] text-[#1B2A4E]'
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                    activeChild.feeStatus !== 'paid'
+                      ? 'bg-white/15 text-amber-300'
+                      : 'bg-emerald-50 text-emerald-600'
+                  }`}
+                >
+                  {activeChild.feeStatus !== 'paid' ? (
+                    <CreditCard className="w-5 h-5" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-semibold uppercase tracking-wider ${
+                        activeChild.feeStatus !== 'paid' ? 'text-white/75' : 'text-[#55607A]'
+                      }`}
+                    >
+                      School Fees
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        activeChild.feeStatus === 'overdue'
+                          ? 'bg-red-500/25 text-red-100'
+                          : activeChild.feeStatus === 'due'
+                            ? 'bg-amber-400/25 text-amber-100'
+                            : 'bg-emerald-50 text-emerald-700'
+                      }`}
+                    >
+                      {activeChild.feeStatus === 'overdue'
+                        ? 'Overdue'
+                        : activeChild.feeStatus === 'due'
+                          ? 'Payment Due'
+                          : 'Paid'}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-2xl sm:text-[28px] font-bold tracking-tight">
+                    {activeChild.feeStatus !== 'paid'
+                      ? `₹${(activeChild.feeDueAmount ?? 0).toLocaleString('en-IN')}`
+                      : 'All dues cleared'}
+                  </div>
+                  <p
+                    className={`text-xs sm:text-sm mt-0.5 ${
+                      activeChild.feeStatus !== 'paid' ? 'text-white/75' : 'text-[#55607A]'
+                    }`}
+                  >
+                    {activeChild.feeStatus !== 'paid'
+                      ? `Pending tuition & term fees for ${activeChild.name}`
+                      : 'View receipts, upcoming installments & fee breakdown'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/parent/fees')}
+                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer shrink-0 ${
+                  activeChild.feeStatus !== 'paid'
+                    ? 'bg-amber-400 hover:bg-amber-300 text-[#1B2A4E] shadow-md'
+                    : 'bg-[#EEF1F8] hover:bg-[#E2E8F5] text-[#1B2A4E]'
+                }`}
+              >
+                <span>{activeChild.feeStatus !== 'paid' ? 'Pay Dues' : 'View Fee Details'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </section>
         </motion.div>
 
         <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>

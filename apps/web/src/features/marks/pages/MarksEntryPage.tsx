@@ -65,7 +65,7 @@ const WORKFLOW_BADGE: Record<MarksWorkflowStatus, { label: string; className: st
   approved:          { label: 'Approved',          className: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' },
   published:         { label: 'Published',         className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
   locked:            { label: 'Locked',            className: 'bg-gray-200 text-gray-600 dark:bg-white/10 dark:text-white/50' },
-  reopened:          { label: 'Reopened',          className: 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300' },
+  reopened:          { label: 'Reopened',          className: 'bg-[#EEF1F8] text-[#1B2A4E] dark:bg-[#254A9A]/10 dark:text-violet-300' },
 };
 
 // Draft/needs_correction/reopened are always editable (any role). Beyond
@@ -205,7 +205,7 @@ function StudentRow({
     : [{ value: rowStatus, label: STATUS_LABELS[rowStatus] }, ...STATUS_OPTIONS];
 
   return (
-    <div className={cn('px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0', aiFilled && 'bg-violet-50/60 dark:bg-violet-500/[0.06]')}>
+    <div className={cn('px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0', aiFilled && 'bg-[#EEF1F8]/60 dark:bg-[#254A9A]/[0.06]')}>
       <div className="flex items-center gap-3">
         {selectMode ? (
           <input
@@ -213,7 +213,7 @@ function StudentRow({
             checked={!!selected}
             disabled={!deletable}
             onChange={() => onToggleSelect?.(row.studentId)}
-            className="w-4 h-4 shrink-0 rounded border-gray-300 dark:border-white/20 text-[#A855F7] focus:ring-[#A855F7]/30 disabled:opacity-30"
+            className="w-4 h-4 shrink-0 rounded border-gray-300 dark:border-white/20 text-[#A855F7] focus:ring-[#1B2A4E]/20 disabled:opacity-30"
             title={deletable ? undefined : 'Not yours to delete'}
           />
         ) : (
@@ -251,7 +251,7 @@ function StudentRow({
           value={rowStatus}
           disabled={!canEdit}
           onChange={(e) => onChangeStatus(row.studentId, e.target.value as ComponentStatus)}
-          className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-white/70 px-2 py-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30"
+          className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-700 dark:text-white/70 px-2 py-1.5 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20"
         >
           {statusOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -292,7 +292,7 @@ function StudentRow({
                     // auto-zoom the whole page in on focus, which is what made this
                     // field look broken/oversized on phones.
                     'w-[4.5rem] h-10 px-2 rounded-lg border text-base tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed',
-                    invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#A855F7]/30',
+                    invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#1B2A4E]/20',
                   )}
                 />
               </label>
@@ -1257,7 +1257,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
               Class {cls} – {section} · {subjectName}
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1B2A4E] bg-[#EEF1F8] border border-violet-200 rounded-full px-2 py-0.5">
                 <ListTree className="w-3 h-3" /> {skills.length} skills
               </span>
             </h1>
@@ -1394,7 +1394,7 @@ function CompoundMarksEntryPage({ cls, section, subjectName, examId, skills, exa
                                         className={cn(
                                           // text-base (16px) avoids iOS Safari's auto-zoom-on-focus for small inputs.
                                           'w-[4.5rem] h-9 px-2 rounded-lg border text-base tabular-nums text-gray-900 dark:text-white bg-white dark:bg-white/5 focus:outline-none focus:ring-2 disabled:opacity-50',
-                                          invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#A855F7]/30',
+                                          invalid ? 'border-red-300 focus:ring-red-300' : 'border-gray-200 dark:border-white/10 focus:ring-[#1B2A4E]/20',
                                         )}
                                       />
                                     </label>

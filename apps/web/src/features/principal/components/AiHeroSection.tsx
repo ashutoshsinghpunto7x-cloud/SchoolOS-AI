@@ -67,7 +67,7 @@ export function AiHeroSection() {
       <div className="bg-white rounded-2xl border border-black/[0.06] shadow-[0_4px_24px_rgba(0,0,0,0.02)] px-6 py-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <span className="text-sm font-semibold text-[#111827] shrink-0">{t('hero.aiAssistant')}</span>
-          <span className="text-sm font-medium text-[#7C3AED] truncate">
+          <span className="text-sm font-medium text-[#254A9A] truncate">
             {t(greetingKey())}, {user?.firstName ?? 'Principal'}
           </span>
         </div>
@@ -214,7 +214,7 @@ export function AiHeroSection() {
           className="w-8 h-8 shrink-0 rounded-full bg-white/90 hover:bg-white flex items-center justify-center disabled:opacity-40 transition-colors"
           aria-label="Send"
         >
-          <ArrowRight className="w-4 h-4 text-[#4C1D95]" strokeWidth={2.25} />
+          <ArrowRight className="w-4 h-4 text-[#2C4177]" strokeWidth={2.25} />
         </button>
       </div>
     </div>

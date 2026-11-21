@@ -23,7 +23,7 @@ export function SubjectProgress({ subject, note, percent, trend }: SubjectSnapsh
       </div>
       <div className="h-1.5 rounded-full bg-gray-100 mt-3 overflow-hidden">
         <div
-          className="h-full rounded-full bg-purple-600 transition-all duration-500"
+          className="h-full rounded-full bg-[#1B2A4E] transition-all duration-500"
           style={{ width: `${percent}%` }}
           role="progressbar"
           aria-valuenow={percent}

@@ -121,7 +121,7 @@ export function PrincipalQuestionBankOverviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFBFF] dark:bg-transparent pb-24">
+    <div className="min-h-screen bg-[#FBF8F3] dark:bg-transparent pb-24">
       <div className="px-5 pt-6 pb-4 max-w-3xl mx-auto">
         <button onClick={() => navigate('/principal')} className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 -ml-1 p-1" type="button">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -168,7 +168,7 @@ export function PrincipalQuestionBankOverviewPage() {
                     onClick={() => toggleClass(c.class)}
                     className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50/80 dark:hover:bg-white/10 transition-colors"
                   >
-                    <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-[#6D4AFF]">
+                    <div className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-[#254A9A]">
                       <span className="text-sm font-bold text-white">{c.class}</span>
                     </div>
                     <div className="flex-1 min-w-0">

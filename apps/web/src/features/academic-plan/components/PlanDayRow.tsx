@@ -96,7 +96,7 @@ export function PlanDayRow({
       }}
       className={cn(
         'bg-white teacher-glass-card rounded-2xl border shadow-sm px-4 py-4 transition-colors',
-        draggedOver ? 'border-[#6D4AFF] border-2' : 'border-gray-100 dark:border-transparent',
+        draggedOver ? 'border-[#254A9A] border-2' : 'border-gray-100 dark:border-transparent',
       )}
     >
       <div className="flex items-start gap-3">
@@ -114,7 +114,7 @@ export function PlanDayRow({
               <span className="text-[11px] text-amber-600 dark:text-amber-300 font-medium">carried forward</span>
             )}
             {day.manuallyEdited && (
-              <span className="text-[11px] text-[#6D4AFF] font-medium">edited</span>
+              <span className="text-[11px] text-[#254A9A] font-medium">edited</span>
             )}
           </div>
 

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 const STATUS_LABELS: Record<string, { label: string; classes: string }> = {
   active:      { label: 'Active',     classes: 'bg-emerald-100 text-emerald-800' },
   on_leave:    { label: 'On Leave',   classes: 'bg-amber-100 text-amber-800' },
-  applicant:   { label: 'Applicant',  classes: 'bg-purple-100 text-purple-800' },
+  applicant:   { label: 'Applicant',  classes: 'bg-[#EEF1F8] text-[#1B2A4E]' },
   suspended:   { label: 'Suspended',  classes: 'bg-red-100 text-red-700' },
   resigned:    { label: 'Resigned',   classes: 'bg-gray-100 text-gray-600' },
   retired:     { label: 'Retired',    classes: 'bg-gray-100 text-gray-600' },
@@ -47,15 +47,15 @@ export function AccountantTeacherProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 text-[#5B21B6] animate-spin" />
+      <div className="min-h-screen bg-[#FBF8F3] flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 text-[#1B2A4E] animate-spin" />
       </div>
     );
   }
 
   if (isError || !teacher) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div className="min-h-screen bg-[#FBF8F3] flex flex-col items-center justify-center py-24 gap-4 text-center">
         <AlertCircle className="w-10 h-10 text-red-400" />
         <p className="text-gray-600">Could not load this teacher's profile.</p>
         <button
@@ -72,7 +72,7 @@ export function AccountantTeacherProfilePage() {
   const initials = teacher.fullName.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button
           onClick={() => navigate('/accountant/teachers')}
@@ -91,7 +91,7 @@ export function AccountantTeacherProfilePage() {
           <div className="flex items-center justify-between gap-3 pb-4 border-b border-gray-200">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative w-16 h-16 shrink-0 group">
-                <div className="w-16 h-16 rounded-2xl bg-[#5B21B6] flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-2xl bg-[#1B2A4E] flex items-center justify-center overflow-hidden">
                   {teacher.photoUrl ? (
                     <img src={teacher.photoUrl} alt={teacher.fullName} className="w-full h-full object-cover" />
                   ) : (
@@ -104,7 +104,7 @@ export function AccountantTeacherProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   title={teacher.photoUrl ? 'Replace photo' : 'Add photo'}
-                  className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#5B21B6] hover:border-[#A855F7]/30 transition-colors"
+                  className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-[#1B2A4E] hover:border-[#1B2A4E]/20 transition-colors"
                 >
                   {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
                 </button>

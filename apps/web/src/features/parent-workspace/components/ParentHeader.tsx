@@ -41,7 +41,7 @@ export function ParentHeader({ parentName, childName, unreadCount, onOpenNotific
           >
             <Bell className="w-[18px] h-[18px] text-gray-700" strokeWidth={1.75} />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-600" aria-hidden="true" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#1B2A4E]" aria-hidden="true" />
             )}
           </button>
           <button
@@ -53,7 +53,7 @@ export function ParentHeader({ parentName, childName, unreadCount, onOpenNotific
           </button>
           <span
             aria-hidden="true"
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white text-xs font-semibold flex items-center justify-center ml-1 shadow-sm"
+            className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B2A4E] to-[#254A9A] text-white text-xs font-semibold flex items-center justify-center ml-1 shadow-sm"
           >
             {firstName[0]}
           </span>

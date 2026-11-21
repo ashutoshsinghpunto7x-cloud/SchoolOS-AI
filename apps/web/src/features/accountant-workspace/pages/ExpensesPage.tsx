@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
-const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#A855F7]/30 focus:border-[#5B21B6]';
+const inputCls = 'w-full h-11 px-3.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#1B2A4E]/20 focus:border-[#1B2A4E]';
 const labelCls = 'block text-xs font-semibold text-gray-600 mb-1';
 
 const CATEGORIES: { value: ExpenseCategory; label: string; icon: React.ElementType }[] = [
@@ -63,9 +63,9 @@ function ExpenseRow({ exp, onOpen }: { exp: ExpenseRecord; onOpen: () => void })
   const categoryLabel = exp.category === 'other' && customCategory ? customCategory : meta.label;
 
   return (
-    <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3 hover:border-[#A855F7]/30 transition-colors">
+    <div className="w-full bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex items-center gap-3 hover:border-[#1B2A4E]/20 transition-colors">
       <button onClick={onOpen} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-        <div className="w-10 h-10 rounded-xl bg-[#A855F7]/10 flex items-center justify-center text-[#5B21B6] shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-[#EEF1F8] flex items-center justify-center text-[#1B2A4E] shrink-0">
           <Icon className="w-5 h-5" />
         </div>
         <div className="flex-1 min-w-0">
@@ -154,7 +154,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
                   onClick={() => setCategory(value)}
                   className={cn(
                     'flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors',
-                    category === value ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                    category === value ? 'border-[#1B2A4E] bg-[#EEF1F8]/60 text-[#1B2A4E]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
                   <Icon className="w-4 h-4" /> {label}
@@ -192,7 +192,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
                   onClick={() => setMode(value)}
                   className={cn(
                     'flex items-center justify-center gap-1.5 h-10 rounded-xl border text-xs font-semibold transition-colors',
-                    mode === value ? 'border-[#5B21B6] bg-[#A855F7]/5 text-[#5B21B6]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                    mode === value ? 'border-[#1B2A4E] bg-[#EEF1F8]/60 text-[#1B2A4E]' : 'border-gray-200 text-gray-500 hover:bg-gray-50',
                   )}
                 >
                   <Icon className="w-4 h-4" /> {label}
@@ -209,7 +209,7 @@ function ExpenseFormModal({ existing, onClose }: { existing?: ExpenseRecord; onC
               <AlertCircle className="w-4 h-4 shrink-0" /> {displayErr}
             </div>
           )}
-          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
+          <button type="submit" disabled={isPending} className="w-full h-11 bg-[#1B2A4E] hover:bg-[#2C4177] disabled:opacity-60 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2">
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null} {existing ? 'Save Changes' : 'Add Expense'}
           </button>
         </form>
@@ -229,7 +229,7 @@ export function ExpensesPage() {
   const { data: summary } = useExpenseSummary();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FBF8F3]">
       <div className="bg-white border-b border-gray-200 px-4 py-4 flex items-center gap-3">
         <button onClick={() => navigate('/accountant')} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors lg:hidden">
           <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -239,7 +239,7 @@ export function ExpensesPage() {
         </div>
         <button
           onClick={() => setFormTarget('new')}
-          className="h-9 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
+          className="h-9 px-3 bg-[#1B2A4E] hover:bg-[#2C4177] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5"
         >
           <Plus className="w-3.5 h-3.5" /> Add
         </button>
@@ -262,7 +262,7 @@ export function ExpensesPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setCategory('all')}
-            className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === 'all' ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
+            className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === 'all' ? 'bg-[#1B2A4E] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
           >
             All
           </button>
@@ -270,7 +270,7 @@ export function ExpensesPage() {
             <button
               key={value}
               onClick={() => setCategory(value)}
-              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#5B21B6] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
+              className={cn('px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition-colors', category === value ? 'bg-[#1B2A4E] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')}
             >
               {label}
             </button>

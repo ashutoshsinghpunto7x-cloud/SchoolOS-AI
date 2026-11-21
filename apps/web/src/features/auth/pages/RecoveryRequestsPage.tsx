@@ -66,7 +66,7 @@ export const RecoveryRequestsPage = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-1">
-        <ShieldAlert className="w-6 h-6 text-[#5B21B6]" />
+        <ShieldAlert className="w-6 h-6 text-[#1B2A4E]" />
         <h1 className="text-2xl font-bold text-gray-900">Recovery Requests</h1>
       </div>
       <p className="text-sm text-gray-500 mb-6">Review and act on account recovery requests submitted by staff.</p>
@@ -78,7 +78,7 @@ export const RecoveryRequestsPage = () => {
             onClick={() => setStatusFilter(f.value)}
             className={`px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
               statusFilter === f.value
-                ? 'bg-[#5B21B6] text-white border-blue-600'
+                ? 'bg-[#1B2A4E] text-white border-blue-600'
                 : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
@@ -269,7 +269,7 @@ export const RecoveryRequestsPage = () => {
             )}
             <button
               onClick={() => setTempPasswordResult(null)}
-              className="w-full mt-5 h-11 rounded-xl bg-[#5B21B6] hover:bg-[#4C1D95] text-sm font-bold text-white"
+              className="w-full mt-5 h-11 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white"
             >
               Done
             </button>

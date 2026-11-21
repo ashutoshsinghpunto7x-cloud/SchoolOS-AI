@@ -10,7 +10,7 @@ const vanIcon = L.divIcon({
   className: '',
   html: `<div style="
     width: 36px; height: 36px; border-radius: 9999px;
-    background: #7C3AED; border: 3px solid white;
+    background: #254A9A; border: 3px solid white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.25);
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;

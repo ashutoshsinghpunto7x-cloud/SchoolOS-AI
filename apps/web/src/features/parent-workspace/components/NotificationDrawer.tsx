@@ -63,7 +63,7 @@ export function NotificationDrawer({ open, onClose, notifications }: Notificatio
                   {notifications.map((n) => (
                     <li key={n._id} className="px-5 py-4">
                       <div className="flex items-center gap-2">
-                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" aria-hidden="true" />}
+                        {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4E] shrink-0" aria-hidden="true" />}
                         <span className="text-xs uppercase tracking-wide text-gray-400 font-medium">
                           {CATEGORY_LABEL[n.category]}
                         </span>

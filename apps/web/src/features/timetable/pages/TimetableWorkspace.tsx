@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Loader2, CalendarClock, AlertTriangle, Settings } from 'lucide-react';
@@ -12,8 +12,8 @@ import type { TimetableListOptions, TimetableStatus } from '@schoolos/types';
 const CLASSES = ['Nursery','LKG','UKG','1','2','3','4','5','6','7','8','9','10','11','12'];
 const STATUSES: TimetableStatus[] = ['draft', 'published', 'archived'];
 
-const selectCls = `h-10 pl-3 pr-8 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-card)] text-sm text-[var(--tt-text-primary)]
-  focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25 cursor-pointer`;
+const selectCls = `h-10 pl-3 pr-8 rounded-xl border border-[#E8E2D6] bg-white text-sm text-[#1B2A4E]
+  focus:outline-none focus:border-[#1B2A4E] focus:ring-2 focus:ring-[#1B2A4E]/15 cursor-pointer`;
 
 export const TimetableWorkspace = () => {
   const navigate = useNavigate();
@@ -33,41 +33,40 @@ export const TimetableWorkspace = () => {
   const totalPages = data?.meta?.totalPages ?? 1;
 
   return (
-    <div className="min-h-screen w-full bg-[var(--tt-bg)] flex flex-col gap-6 px-6 py-6">
+    <div className="min-h-screen w-full bg-[#FBF8F3] flex flex-col gap-6 px-6 py-6 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
       {isPrincipal && <BackLink to="/principal" label="Principal Dashboard" />}
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--tt-text-primary)]">Timetable</h1>
-          <p className="text-sm text-[var(--tt-text-secondary)] mt-0.5">Manage class schedules and teacher assignments</p>
+          <h1 className="text-2xl font-bold text-[#1B2A4E]">Timetable</h1>
+          <p className="text-sm text-[#55607A] mt-0.5">Manage class schedules and teacher assignments</p>
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
             <button
               type="button"
               onClick={() => navigate('/timetable/periods')}
-              className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-hover)]
-                         text-sm font-semibold text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] transition-colors"
+              className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[#E8E2D6] bg-white
+                         text-sm font-semibold text-[#1B2A4E] hover:bg-[#F3EEE3]/60 transition-colors cursor-pointer"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-4 h-4 text-[#254A9A]" />
               Period Setup
             </button>
           )}
           <button
             type="button"
             onClick={() => navigate('/timetable/substitutes')}
-            className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-hover)]
-                       text-sm font-semibold text-[var(--tt-text-secondary)] hover:bg-[var(--tt-hover)] transition-colors"
+            className="flex items-center gap-1.5 h-10 px-4 rounded-xl border border-[#E8E2D6] bg-white
+                       text-sm font-semibold text-[#1B2A4E] hover:bg-[#F3EEE3]/60 transition-colors cursor-pointer"
           >
-            <CalendarClock className="w-4 h-4" />
+            <CalendarClock className="w-4 h-4 text-[#254A9A]" />
             Substitutes
           </button>
           {isAdmin && (
             <button
               type="button"
               onClick={() => navigate('/timetable/new')}
-              className="flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90 shadow-sm"
-              style={{ background: 'linear-gradient(135deg, #7C5CFF 0%, #E954B8 100%)' }}
+              className="flex items-center gap-2 h-10 px-5 rounded-xl bg-[#1B2A4E] hover:bg-[#2C4177] text-sm font-bold text-white transition-colors shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               New Timetable
@@ -115,25 +114,25 @@ export const TimetableWorkspace = () => {
           value={filters.academicYear ?? ''}
           onChange={(e) => { setFilters((f) => ({ ...f, academicYear: e.target.value || undefined })); setPage(1); }}
           placeholder="Academic Year (e.g. 2024-25)"
-          className="h-10 px-3 rounded-xl border border-[var(--tt-border)] bg-[var(--tt-card)] text-sm text-[var(--tt-text-primary)] placeholder:text-[var(--tt-text-muted)]
-                     focus:outline-none focus:border-[#7C5CFF] focus:ring-2 focus:ring-[#7C5CFF]/25 w-52"
+          className="h-10 px-3 rounded-xl border border-[#E8E2D6] bg-white text-sm text-[#1B2A4E] placeholder:text-[#55607A]/60
+                     focus:outline-none focus:border-[#1B2A4E] focus:ring-2 focus:ring-[#1B2A4E]/15 w-52"
         />
       </div>
 
       {/* List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-7 h-7 text-[#7C5CFF] animate-spin" />
+          <Loader2 className="w-7 h-7 text-[#254A9A] animate-spin" />
         </div>
       ) : timetables.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <CalendarClock className="w-12 h-12 text-[var(--tt-text-muted)]" />
-          <p className="text-base font-semibold text-[var(--tt-text-secondary)]">No timetables found</p>
+        <div className="flex flex-col items-center justify-center py-24 gap-3 bg-white rounded-[18px] border border-[#E8E2D6] shadow-xs">
+          <CalendarClock className="w-12 h-12 text-[#55607A]/50" />
+          <p className="text-base font-semibold text-[#1B2A4E]">No timetables found</p>
           {isAdmin && (
             <button
               type="button"
               onClick={() => navigate('/timetable/new')}
-              className="text-sm text-[#7C5CFF] hover:underline font-semibold"
+              className="text-sm text-[#254A9A] hover:underline font-semibold cursor-pointer"
             >
               Create the first timetable →
             </button>
