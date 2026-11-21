@@ -1,0 +1,15 @@
+{
+  // Used only by `npm run type-check`. Pins `react` types to this app's own @types/react 19 —
+  // the hoisted root copy is 18.x (for apps/web), and react-native's typings would otherwise
+  // pick that one up and clash ("bigint is not assignable to ReactNode").
+  // Kept out of tsconfig.json on purpose: Expo/Metro read that file's `paths` for bundling,
+  // and `react` must keep resolving to real JavaScript there.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["src/*"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"]
+    }
+  }
+}
