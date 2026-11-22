@@ -98,6 +98,7 @@ export default function WebShell() {
   const reload = useCallback(() => {
     setFailed(false);
     setLoading(true);
+    setTimeout(() => setLoading(false), 8000);
     webRef.current?.reload();
   }, []);
 
@@ -143,7 +144,13 @@ export default function WebShell() {
         overScrollMode="never"
         onNavigationStateChange={onNavChange}
         onShouldStartLoadWithRequest={onShouldStart}
-        onLoadStart={() => setLoading(true)}
+        // Spinner only covers the very first paint. The web app is a SPA that keeps
+        // loading/polling in the background, so tying it to every load event
+        // left it spinning forever over a fully rendered page.
+        onLoadProgress={(e) => {
+          if (e.nativeEvent.progress >= 0.7) setLoading(false);
+        }}
+        onLoad={() => setLoading(false)}
         onLoadEnd={() => setLoading(false)}
         onError={() => setFailed(true)}
         onHttpError={(e) => {
