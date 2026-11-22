@@ -1,12 +1,14 @@
+import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { AppProviders } from '@/providers/AppProviders';
-import { RootNavigator } from '@/navigation/RootNavigator';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// The Android/iOS app is a native shell around the real SchoolOS web app
+// (see app/index.tsx) — so there are no native screens to provide here.
 export default function RootLayout() {
   return (
-    <AppProviders>
-      <StatusBar style="auto" />
-      <RootNavigator />
-    </AppProviders>
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      <Slot />
+    </SafeAreaProvider>
   );
 }
