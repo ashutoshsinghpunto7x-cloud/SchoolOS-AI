@@ -1,7 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import {Clock,ChevronRight,AlertCircle,Users,Calculator,FlaskConical,Globe2,Palette,Music2,Dumbbell,Calendar,BookOpen,} from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
+import { useTeacherTheme } from '../context/TeacherThemeContext';
+import { useFeature } from '@/lib/featureFlags';
+import { useWinter } from '../winter/winterStore';
+import { nextClassLabel, sortClasses, useNowMinutes } from '../winter/winterTime';
+import { WinterHero } from '../winter/WinterHero';
+import { SchoolDayRoute } from '../winter/SchoolDayRoute';
+import { DailyQuestCard, StreakCard, type QuestTask } from '../winter/DailyQuest';
+import { SnowCanvas } from '../winter/SnowCanvas';
+import '../winter/winter.css';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
@@ -446,7 +455,21 @@ export function TeacherDashboard() {
   const { data: myLeaves } = useMyLeaveRequests();
   const [showApplyLeave, setShowApplyLeave] = useState(false);
   const [infoClass, setInfoClass] = useState<TodayClass | null>(null);
-  const card = 'bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs';
+  const [moreQuick, setMoreQuick] = useState(false);
+
+  // Seasonal winter theme. Light-mode only — the teacher dark theme has its own look.
+  const { theme } = useTeacherTheme();
+  const winter = useWinter(user?.userId);
+  // Ops Center kill switch ("teacher-winter-theme" feature flag). Off while the flag is
+  // loading/unreachable, so any problem falls back to the standard dashboard.
+  const winterAllowed = useFeature('teacher-winter-theme');
+  const winterOn = winterAllowed && winter.enabled && theme !== 'dark';
+  const nowMin = useNowMinutes();
+
+  const card = cn('bg-white border border-[#E8E2D6] rounded-[18px] shadow-xs', winterOn && 'tw-frost');
+  // Stat tiles sit three-up on phones in winter mode, so the long hint text gets a short form.
+  const cta = (long: string, short: string) =>
+    winterOn ? (<><span className="hidden sm:inline">{long}</span><span className="sm:hidden">{short}</span></>) : long;
 
   const firstName = user?.firstName ?? data?.teacher.fullName.split(' ')[0] ?? 'Teacher';
 
@@ -455,6 +478,28 @@ export function TeacherDashboard() {
   }
 
   const currentPeriod = data ? getCurrentPeriod(data.todayClasses) : null;
+
+  // ── Winter quest / hero data — all derived from the teacher's real day ──
+  const todayClasses = data?.todayClasses ?? [];
+  const markable = todayClasses.filter((c) => c.canMarkAttendance);
+  const pendingAttendance = markable.filter((c) => !c.attendanceMarked).length;
+  const attendanceDone = markable.length > 0 && pendingAttendance === 0;
+  const nextLabel = nextClassLabel(sortClasses(todayClasses), nowMin);
+  const questTasks: QuestTask[] = [
+    ...(markable.length
+      ? [{ id: 'attendance', label: 'Mark attendance for today', points: 10, auto: true, path: '/teacher/attendance' }]
+      : []),
+    { id: 'plan', label: "Update today's Academic Plan", points: 15, path: '/teacher/academic-plan' },
+    { id: 'marks', label: 'Enter or review marks', points: 25, path: '/teacher/marks' },
+  ];
+  const frostyTips = [
+    pendingAttendance > 0
+      ? `${pendingAttendance} class${pendingAttendance > 1 ? 'es' : ''} still need attendance today ✅`
+      : markable.length ? 'Attendance is all done today — nice! 🎉' : 'Tap me for a little winter cheer ❄',
+    nextLabel ? `Up next: ${nextLabel} ⏱` : 'No more classes today — a good time to plan ahead 📚',
+    winter.streak > 0 ? `${winter.streak}-day quest streak — keep it going! 🔥` : "Finish today's quest to start a streak 🔥",
+    'No two snowflakes are alike — just like your students ❄',
+  ];
 
   // "Mark Attendance" must always open a sheet directly, never an intermediate
   // list. If no period is currently active/upcoming (e.g. all of today's
@@ -488,16 +533,38 @@ export function TeacherDashboard() {
   }
 
   return (
-    <div className="flex-1 w-full bg-[#FBF8F3] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+    <div className={cn("flex-1 w-full font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]", winterOn ? 'tw-winter' : 'bg-[#FBF8F3]')}>
+      {winterOn && <SnowCanvas />}
       <div className="w-full max-w-[1100px] mx-auto px-4 py-6 md:py-8 space-y-6">
-        {/* Greeting */}
-        <div className="text-center">
-          <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
-            {greeting()}
-            {firstName ? `, ${firstName}` : ''}
-          </h1>
-          <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1">{todayDateStr()}</p>
-        </div>
+        {/* Greeting — snowy hero in winter mode, plain greeting otherwise */}
+        {winterOn ? (
+          <div className="tw-rise">
+            <WinterHero
+              greeting={greeting()}
+              firstName={firstName}
+              dateStr={todayDateStr()}
+              streak={winter.streak}
+              nextLabel={nextLabel}
+              level={winter.level}
+              points={winter.points}
+              tips={frostyTips}
+              onTurnOff={() => winter.setEnabled(false)}
+            />
+          </div>
+        ) : (
+          <div className="text-center">
+            <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
+              {greeting()}
+              {firstName ? `, ${firstName}` : ''}
+            </h1>
+            <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1">{todayDateStr()}</p>
+            {winterAllowed && theme !== 'dark' && (
+              <button type="button" className="tw-toggle-pill mt-3" onClick={() => winter.setEnabled(true)}>
+                ❄ Turn on winter theme
+              </button>
+            )}
+          </div>
+        )}
 
         {isError && (
           <div className="px-4 py-3 bg-red-50 border border-red-100 rounded-xl flex items-center justify-between gap-3">
@@ -527,50 +594,68 @@ export function TeacherDashboard() {
             { label: 'Messages', onClick: () => navigate('/messages'), d: 'M3 6h18v12H3zM3 7l9 7 9-7' },
             { label: 'Calendar', onClick: () => navigate('/calendar'), d: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5' },
             { label: 'Apply Leave', onClick: () => setShowApplyLeave(true), d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z' },
-          ].map((q) => (
-            <button
-              key={q.label}
-              type="button"
-              onClick={q.onClick}
-              className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
-            >
-              <span className="relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
-                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={q.d} />
-                </svg>
-              </span>
-              <span className="text-center leading-tight">{q.label}</span>
-            </button>
+          ].map((q, i) => (
+            <Fragment key={q.label}>
+              {/* Winter/phone layout: first 7 shortcuts + a "More" tile; the rest expand on tap. */}
+              {winterOn && i === 7 && (
+                <button
+                  type="button"
+                  onClick={() => setMoreQuick((v) => !v)}
+                  aria-expanded={moreQuick}
+                  className="tw-q group flex sm:hidden flex-col items-center gap-1.5 text-[11px] text-[#1B2A4E] font-medium cursor-pointer min-h-[44px]"
+                >
+                  <span className="tw-q-ic relative w-[56px] h-[56px] rounded-full bg-[#EEF1F8] flex items-center justify-center text-[#254A9A] text-lg font-bold">
+                    {moreQuick ? '−' : '•••'}
+                  </span>
+                  <span className="text-center leading-tight">{moreQuick ? 'Less' : 'More'}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={q.onClick}
+                className={cn(
+                  'tw-q group flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer min-h-[44px]',
+                  winterOn && i >= 7 && !moreQuick ? 'hidden sm:flex' : 'flex',
+                )}
+              >
+                <span className="tw-q-ic relative w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={q.d} />
+                  </svg>
+                </span>
+                <span className="text-center leading-tight">{q.label}</span>
+              </button>
+            </Fragment>
           ))}
         </div>
 
         {/* 3 Key Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button type="button" onClick={handleMarkAttendance} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
-            <div className="text-[13px] text-[#55607A]">Classes today</div>
-            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">
+        <div className={cn('grid gap-4', winterOn ? 'grid-cols-3 gap-2.5 sm:gap-4' : 'grid-cols-1 sm:grid-cols-3')}>
+          <button type="button" onClick={handleMarkAttendance} className={cn(card, 'text-left cursor-pointer hover:shadow-md transition-shadow min-w-0', winterOn ? 'p-3 sm:p-5' : 'p-5')}>
+            <div className="text-[11px] sm:text-[13px] text-[#55607A] leading-tight">Classes today</div>
+            <div className="text-[26px] sm:text-[32px] font-medium text-[#1B2A4E] mt-1">
               {isLoading ? '…' : (data?.todayClasses.length ?? 0)}
             </div>
-            <span className="text-[11px] font-semibold text-emerald-600">
-              Tap to mark attendance →
+            <span className="text-[10.5px] sm:text-[11px] font-semibold text-emerald-600 leading-tight block">
+              {cta('Tap to mark attendance →', 'Mark →')}
             </span>
           </button>
 
-          <button type="button" onClick={() => navigate('/teacher/timetable')} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
-            <div className="text-[13px] text-[#55607A]">{currentPeriod?.isNow ? 'Current period' : 'Next period'}</div>
-            <div className="text-[24px] font-medium text-[#1B2A4E] mt-2 truncate">
+          <button type="button" onClick={() => navigate('/teacher/timetable')} className={cn(card, 'text-left cursor-pointer hover:shadow-md transition-shadow min-w-0', winterOn ? 'p-3 sm:p-5' : 'p-5')}>
+            <div className="text-[11px] sm:text-[13px] text-[#55607A] leading-tight">{currentPeriod?.isNow ? 'Current period' : 'Next period'}</div>
+            <div className={cn('font-medium text-[#1B2A4E] truncate', winterOn ? 'text-[16px] sm:text-[24px] mt-2.5 sm:mt-2' : 'text-[24px] mt-2')}>
               {isLoading ? '…' : currentPeriod ? currentPeriod.cls.subjectName : 'None'}
             </div>
-            <span className="text-[11px] font-semibold text-[#254A9A]">
+            <span className="text-[10.5px] sm:text-[11px] font-semibold text-[#254A9A] leading-tight block">
               {currentPeriod ? `Class ${currentPeriod.cls.class}–${currentPeriod.cls.section} · ${currentPeriod.cls.startTime}` : 'No remaining periods today'}
             </span>
           </button>
 
-          <button type="button" onClick={() => setShowApplyLeave(true)} className={`${card} p-5 text-left cursor-pointer hover:shadow-md transition-shadow`}>
-            <div className="text-[13px] text-[#55607A]">My leave requests</div>
-            <div className="text-[32px] font-medium text-[#1B2A4E] mt-1">{myLeaves ? myLeaves.length : '…'}</div>
-            <span className="text-[11px] font-semibold text-amber-600">
-              Tap to apply for leave →
+          <button type="button" onClick={() => setShowApplyLeave(true)} className={cn(card, 'text-left cursor-pointer hover:shadow-md transition-shadow min-w-0', winterOn ? 'p-3 sm:p-5' : 'p-5')}>
+            <div className="text-[11px] sm:text-[13px] text-[#55607A] leading-tight">{winterOn ? 'My leaves' : 'My leave requests'}</div>
+            <div className="text-[26px] sm:text-[32px] font-medium text-[#1B2A4E] mt-1">{myLeaves ? myLeaves.length : '…'}</div>
+            <span className="text-[10.5px] sm:text-[11px] font-semibold text-amber-600 leading-tight block">
+              {cta('Tap to apply for leave →', 'Apply →')}
             </span>
           </button>
         </div>
@@ -632,6 +717,22 @@ export function TeacherDashboard() {
             ))}
           </div>
         </div>
+
+        {winterOn && (
+          <>
+            <SchoolDayRoute classes={todayClasses} onSelect={setInfoClass} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DailyQuestCard
+                winter={winter}
+                tasks={questTasks}
+                attendanceDone={attendanceDone}
+                ready={!isLoading && !!data}
+                onOpen={(path) => (path === '/teacher/attendance' ? handleMarkAttendance() : navigate(path))}
+              />
+              <StreakCard winter={winter} />
+            </div>
+          </>
+        )}
 
         <UpcomingEventsWidget />
 

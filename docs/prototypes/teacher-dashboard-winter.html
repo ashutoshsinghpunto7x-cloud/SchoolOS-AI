@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1437" />
+<title>Teacher Dashboard — Winter (Mobile-first) Prototype v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--navy:#1B2A4E;--blue:#254A9A;--muted:#55607A;--amber:#D9822B;
+    --bg:#FBF8F3;--card:#fff;--line:#E8E2D6;--chip:#EEF1F8;--tag:#F3EEE3;--shadow:0 1px 2px rgba(27,42,78,.05);--dock:76px}
+  body.winter{--bg:#E6F0FB;--card:rgba(255,255,255,.8);--line:rgba(190,212,238,.9);--chip:rgba(214,230,250,.8);--tag:rgba(214,230,250,.7);
+    --shadow:0 6px 20px -10px rgba(37,74,154,.3),inset 0 1px 0 rgba(255,255,255,.9)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:#cfdcf0;color:var(--navy);min-height:100vh;overflow-x:hidden}
+  button{font-family:inherit;touch-action:manipulation}
+
+  /* phone-width app column (centered on desktop, full-bleed on phones) */
+  .app{position:relative;max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);overflow:hidden;transition:background .5s;box-shadow:0 0 60px rgba(20,40,100,.25)}
+  .backdrop{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;
+    background:radial-gradient(60% 30% at 10% 5%,rgba(147,197,253,.5),transparent 70%),radial-gradient(50% 25% at 95% 30%,rgba(196,181,253,.35),transparent 70%),radial-gradient(60% 30% at 40% 95%,rgba(125,211,252,.4),transparent 70%)}
+  body.winter .backdrop{opacity:1}
+  #fx{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;transition:opacity .6s}
+  body.winter #fx{opacity:1}
+
+  /* prototype bar (not part of product) */
+  .proto{position:sticky;top:0;z-index:70;display:flex;gap:8px;align-items:center;overflow-x:auto;white-space:nowrap;padding:8px 12px;background:rgba(255,255,255,.94);border-bottom:1px dashed #C9BFAE;font-size:12px;scrollbar-width:none}
+  .proto::-webkit-scrollbar{display:none}
+  .proto b{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .seg{display:inline-flex;background:#EEF1F8;border-radius:99px;padding:3px}
+  .seg button{border:0;background:none;font-weight:600;padding:6px 12px;border-radius:99px;color:var(--muted);font-size:12px}
+  .seg button.on{background:var(--navy);color:#fff}
+  .pbtn{border:0;background:#EEF1F8;font-weight:600;padding:7px 12px;border-radius:99px;color:var(--navy);font-size:12px}
+  .proto label{display:inline-flex;gap:5px;align-items:center}
+
+  .wrap{position:relative;z-index:2;padding:12px 14px calc(var(--dock) + 36px);display:grid;gap:16px}
+
+  /* top app bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 0}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px}
+  .brand i{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--navy),var(--blue));display:grid;place-items:center;color:#F5B332;font-style:normal;font-size:15px}
+  .tb-actions{display:flex;gap:8px}
+  .ibtn{width:44px;height:44px;border-radius:50%;border:0;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;position:relative;font-size:19px}
+  .ibtn .dot{position:absolute;top:9px;right:10px;width:9px;height:9px;border-radius:50%;background:#ef4444;border:2px solid #fff}
+  .ibtn:active{transform:scale(.92)}
+
+  /* ── hero ── */
+  .hero{display:none;position:relative;height:330px;border-radius:26px;overflow:hidden;isolation:isolate;box-shadow:0 18px 40px -16px rgba(20,40,100,.6);
+    background:linear-gradient(180deg,#0b1437 0%,#1b2a66 45%,#3b5aa8 80%,#7ea6e0 100%)}
+  body.winter .hero{display:block}
+  .hero .layer{position:absolute;inset:0;transition:transform .25s ease-out;will-change:transform}
+  .star{position:absolute;border-radius:50%;background:#fff;animation:tw 3s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.3)}}
+  .moon{position:absolute;right:7%;top:14px;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffdf0,#f3e9b8 70%);box-shadow:0 0 30px 10px rgba(255,248,200,.35);animation:float 7s ease-in-out infinite}
+  @keyframes float{50%{transform:translateY(-5px)}}
+  .shoot{position:absolute;top:60px;left:-20%;width:80px;height:2px;background:linear-gradient(90deg,transparent,#fff);opacity:0;transform:rotate(25deg);animation:shoot 9s 3s infinite}
+  @keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(25deg)}3%{opacity:1}12%{opacity:0;transform:translate(340px,160px) rotate(25deg)}100%{opacity:0}}
+  .hero svg.mts{position:absolute;left:-5%;bottom:0;width:110%;height:100%}
+  .hero-text{position:absolute;left:18px;right:18px;top:20px;color:#fff;z-index:3}
+  .hero-text h1{margin:0;font-size:26px;font-weight:600;letter-spacing:-.01em;max-width:80%;line-height:1.15;text-shadow:0 2px 14px rgba(0,0,20,.45)}
+  .hero-text p{margin:5px 0 11px;color:#d6e2fa;font-size:13px;text-shadow:0 1px 8px rgba(0,0,30,.6)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .hchip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;font-size:12px;font-weight:600;color:#fff;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(6px)}
+  .hchip .flake{animation:spin 8s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .lvl{margin-top:11px;width:54%;padding:8px 11px;border-radius:14px;background:rgba(10,20,60,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px)}
+  .lvl .row{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#d6e2fa;margin-bottom:5px;gap:6px}
+  .lvl .track{height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+  .lvl .track i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#7dd3fc,#fff);box-shadow:0 0 10px #bae6fd;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+  .frosty{position:absolute;right:3%;bottom:12px;width:112px;z-index:4;transform-origin:50% 100%;filter:drop-shadow(0 8px 8px rgba(0,0,30,.35));animation:idle 3.4s ease-in-out infinite;cursor:pointer}
+  @keyframes idle{50%{transform:rotate(-2deg) scaleY(1.02)}}
+  .frosty.jump{animation:jump .7s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes jump{0%{transform:translateY(0)}35%{transform:translateY(-30px) rotate(6deg)}100%{transform:translateY(0)}}
+  .frosty .arm-r{transform-origin:84px 78px;animation:wave 1.6s ease-in-out infinite}
+  @keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-22deg)}}
+  .frosty .eye{animation:blink 5s infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+  .bubble{position:absolute;right:calc(3% + 104px);bottom:78px;z-index:5;width:max(132px,34%);background:#fff;color:var(--navy);font-size:12px;font-weight:600;line-height:1.35;padding:9px 12px;border-radius:14px 14px 4px 14px;box-shadow:0 8px 20px -8px rgba(0,0,30,.55);transition:opacity .3s,transform .3s}
+  .bubble.out{opacity:0;transform:translateX(5px) scale(.96)}
+  .bubble::after{content:"";position:absolute;right:-5px;bottom:12px;width:11px;height:11px;background:#fff;transform:rotate(45deg);border-radius:2px}
+
+  /* ── cards ── */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:16px;position:relative;transition:transform .15s}
+  body.winter .card{backdrop-filter:blur(10px) saturate(1.25);overflow:hidden}
+  body.winter .card::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .45s;
+    background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.9),transparent 60%)}
+  body.winter .card.glow::before{opacity:1;transition:opacity .08s}
+  .card.tap:active{transform:scale(.975)}
+  button.card{color:inherit;text-align:left;width:100%}
+  .ledge{display:none}
+  body.winter .ledge{display:block;position:absolute;left:16px;right:16px;top:-1px;height:6px;border-radius:0 0 10px 10px;z-index:1;background:linear-gradient(#fff,#eef5ff);box-shadow:0 2px 4px rgba(147,197,253,.4)}
+  .hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;position:relative;z-index:2}
+  .hd h3{margin:0;font-size:16px;font-weight:700}
+  .hd a{font-size:13px;font-weight:600;color:var(--amber);padding:8px 2px}
+
+  /* ── school-day sleigh (swipeable) ── */
+  .winter-only{display:none}body.winter .winter-only{display:block}
+  .sleigh-top{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:2}
+  .cocoa{display:inline-flex;align-items:center;gap:7px;padding:9px 13px;min-height:40px;border-radius:99px;background:linear-gradient(135deg,#fff4e0,#ffe2b8);color:#8a4b0f;font-weight:700;font-size:12px;border:1px solid #f3c98b}
+  .cocoa .cup{position:relative;display:inline-block}
+  .cocoa .cup::before,.cocoa .cup::after{content:"";position:absolute;top:-8px;width:3px;height:9px;border-radius:3px;background:rgba(160,110,60,.45);animation:steam 2s ease-in-out infinite}
+  .cocoa .cup::before{left:3px}.cocoa .cup::after{left:10px;animation-delay:.7s}
+  @keyframes steam{0%{opacity:0;transform:translateY(4px) scaleY(.6)}50%{opacity:1}100%{opacity:0;transform:translateY(-6px) scaleY(1.2)}}
+  .routewrap{overflow-x:auto;scrollbar-width:none;margin:6px -16px 0;padding:0 16px;-webkit-overflow-scrolling:touch}
+  .routewrap::-webkit-scrollbar{display:none}
+  .route{position:relative;height:108px;min-width:600px}
+  .route .line{position:absolute;left:0;right:0;top:52px;height:6px;border-radius:99px;background:repeating-linear-gradient(90deg,#c5d6ee 0 10px,transparent 10px 18px)}
+  .route .done{position:absolute;left:0;top:52px;height:6px;border-radius:99px;background:linear-gradient(90deg,#60a5fa,#a5d0ff);box-shadow:0 0 12px rgba(96,165,250,.7);width:0;transition:width 1.6s cubic-bezier(.2,.8,.2,1)}
+  .stop{position:absolute;top:40px;transform:translateX(-50%);text-align:center}
+  .stop .dot{width:30px;height:30px;border-radius:50%;margin:0 auto;display:grid;place-items:center;font-size:13px;font-weight:700;background:#fff;border:3px solid #c5d6ee;color:#7b8aa8}
+  .stop.past .dot{background:#3b82f6;border-color:#3b82f6;color:#fff}
+  .stop.cur .dot{border-color:#10b981;color:#047857;animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}100%{box-shadow:0 0 0 14px rgba(16,185,129,0)}}
+  .stop .lab{position:absolute;top:36px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap}
+  .stop .lab small{display:block;font-weight:500;color:#7b86a0;font-size:10.5px}
+  .sleigh{position:absolute;top:6px;left:0;font-size:34px;transform:translateX(-50%);transition:left 1.6s cubic-bezier(.2,.8,.2,1);animation:bob 1.6s ease-in-out infinite;filter:drop-shadow(0 6px 4px rgba(37,74,154,.3))}
+  @keyframes bob{50%{margin-top:-6px;rotate:-4deg}}
+  .swipehint{font-size:11px;color:#8a93a8;text-align:center;margin-top:2px}
+
+  /* ── quest ── */
+  .quest{display:grid;grid-template-columns:1fr 92px;gap:10px;align-items:center;position:relative;z-index:2}
+  .task{display:flex;align-items:center;gap:11px;min-height:54px;padding:8px 11px;border-radius:15px;border:1px solid var(--line);background:rgba(255,255,255,.65);margin-top:8px;user-select:none;transition:background .25s,border-color .25s}
+  .task:active{transform:scale(.97)}
+  .task .box{width:28px;height:28px;border-radius:9px;border:2.5px solid #9ec1f2;display:grid;place-items:center;color:transparent;font-size:15px;font-weight:800;transition:.3s;flex:none}
+  .task.done{background:rgba(209,250,229,.7);border-color:#6ee7b7}
+  .task.done .box{background:#10b981;border-color:#10b981;color:#fff;transform:scale(1.1) rotate(360deg)}
+  .task.done .tt{text-decoration:line-through;color:#6b7a90}
+  .task .tt{font-size:14px;font-weight:600;flex:1;line-height:1.25}
+  .task .pts{font-size:12px;font-weight:700;color:#2563eb;background:#dbeafe;padding:3px 8px;border-radius:99px;white-space:nowrap}
+  .snowman{width:92px;height:124px}
+  .snowman .part{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);opacity:0;transition:transform .6s cubic-bezier(.3,1.7,.5,1),opacity .3s}
+  .snowman.s1 .p1,.snowman.s2 .p1,.snowman.s2 .p2,.snowman.s3 .p1,.snowman.s3 .p2,.snowman.s3 .p3{transform:scale(1);opacity:1}
+  .snowman .ghost{fill:none;stroke:#b7cdea;stroke-width:2;stroke-dasharray:5 5}
+  .snowman.s3{animation:dance 1.4s ease-in-out infinite}
+  @keyframes dance{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+  .qfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--muted);position:relative;z-index:2}
+  .qfoot b{color:var(--navy);white-space:nowrap}
+  .lantern-row{display:flex;justify-content:space-between;gap:4px;margin-top:8px;position:relative;z-index:2}
+  .lan{flex:1;text-align:center;font-size:11px;font-weight:700;color:#8a93a8}
+  .lan .bulb{width:28px;height:36px;margin:0 auto 6px;border-radius:50% 50% 45% 45%;position:relative;background:#dfe7f3;transition:.4s}
+  .lan .bulb::before{content:"";position:absolute;top:-6px;left:50%;width:10px;height:7px;transform:translateX(-50%);background:#8a93a8;border-radius:3px 3px 0 0}
+  .lan.on .bulb{background:radial-gradient(circle at 50% 40%,#fff7c2,#ffb938 70%);box-shadow:0 0 14px 4px rgba(255,185,56,.55);animation:flick 2.6s ease-in-out infinite}
+  .lan:nth-child(2).on .bulb{animation-delay:.3s}.lan:nth-child(3).on .bulb{animation-delay:.9s}.lan:nth-child(4).on .bulb{animation-delay:1.4s}.lan:nth-child(5).on .bulb{animation-delay:.6s}
+  @keyframes flick{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+  .lan.today .bulb{border:2px dashed #3b82f6;background:#fff}.lan.today.on .bulb{border-color:transparent}
+
+  /* ── quick launch (4 cols, thumb-sized, "More" expands) ── */
+  .quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px}
+  .q{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;font-size:12px;font-weight:600;color:var(--navy);padding:2px 0;min-height:44px}
+  .q .ic{width:60px;height:60px;border-radius:50%;background:var(--chip);display:grid;place-items:center;position:relative;transition:transform .15s}
+  .q:active .ic{transform:scale(.88)}
+  .q svg{width:25px;height:25px;stroke:var(--blue);fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+  .q .ic.pop::after{content:"❄";position:absolute;top:-6px;right:-3px;font-size:14px;animation:pop .4s ease-out}
+  @keyframes pop{from{transform:scale(0) rotate(-90deg)}to{transform:scale(1) rotate(0)}}
+  .xtra{display:none}.quick.open .xtra{display:flex;animation:rise .45s cubic-bezier(.2,.8,.2,1) backwards}
+
+  /* ── stat tiles (3 up) ── */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .stats .card{padding:13px 11px}
+  .stats .lbl{font-size:11px;color:var(--muted);line-height:1.2}
+  .stats .num{font-size:28px;font-weight:500;margin-top:3px;line-height:1.1}
+  .stats .num.sm{font-size:16px;font-weight:700;margin-top:6px}
+  .stats .cta{font-size:10.5px;font-weight:700;display:block;margin-top:4px;line-height:1.2}
+
+  /* ── class swipe cards ── */
+  .snap{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:relative;z-index:2}
+  .snap::-webkit-scrollbar{display:none}
+  .cls{flex:0 0 86%;scroll-snap-align:center;padding:13px;border:1px solid var(--line);border-radius:17px;background:rgba(255,255,255,.7)}
+  .cls .row1{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .cls .t{font-size:12px;color:#7b86a0;font-weight:500;display:flex;align-items:center;gap:8px}
+  .cls .s{font-size:16px;font-weight:700;margin-top:2px}
+  .cls .b{display:inline-block;font-size:12px;font-weight:600;background:var(--chip);padding:2px 9px;border-radius:99px;margin-top:5px}
+  .cls .meta{font-size:13px;color:#7b86a0;margin-top:10px}
+  .pill{font-size:13px;font-weight:700;padding:9px 13px;min-height:40px;border-radius:99px;border:0;white-space:nowrap}
+  .pill.ok{background:#d1fae5;color:#047857}.pill.pend{background:#fef3c7;color:#b45309;animation:nudge 2.4s ease-in-out infinite}.pill.next{background:var(--chip);color:var(--navy)}
+  .pill:active{transform:scale(.93)}
+  @keyframes nudge{0%,80%,100%{transform:scale(1)}90%{transform:scale(1.1)}}
+  .now{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:#d1fae5;color:#059669;padding:2px 6px;border-radius:99px;position:relative}
+  .now::before{content:"";position:absolute;inset:-2px;border-radius:99px;border:2px solid #34d399;animation:ping 1.8s ease-out infinite}
+  @keyframes ping{from{transform:scale(1);opacity:.8}to{transform:scale(1.6);opacity:0}}
+  .bar{height:8px;background:#e8edf5;border-radius:99px;overflow:hidden;margin-top:8px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:99px;width:0;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+  .dots{display:flex;justify-content:center;gap:6px;margin-top:8px;position:relative;z-index:2}
+  .dots i{width:7px;height:7px;border-radius:50%;background:#cbd5e1;transition:.25s}.dots i.on{background:var(--blue);width:20px;border-radius:99px}
+
+  .tool{display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:6px 4px;border-bottom:1px solid rgba(190,200,220,.5);position:relative;z-index:2;font-size:15px}
+  .tool:last-child{border-bottom:0}.tool:active{background:rgba(147,197,253,.22)}
+  .tool em{font-style:normal;font-size:11px;font-weight:600;background:var(--tag);color:var(--muted);padding:5px 11px;border-radius:99px}
+  .ev{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(190,200,220,.5);position:relative;z-index:2}.ev:last-child{border:0}
+  .ev .d{width:48px;flex:none;text-align:center;border-radius:12px;background:var(--chip);padding:6px 0;font-weight:700;line-height:1.1}.ev .d small{display:block;font-size:10px;color:var(--muted);text-transform:uppercase}
+  .ev .cd{margin-left:auto;font-size:11px;font-weight:700;color:#2563eb;background:#dbeafe;padding:4px 9px;border-radius:99px;white-space:nowrap}
+  .ev b{font-size:14px}.ev .sub{font-size:12px;color:#7b86a0}
+  .leave{display:flex;justify-content:space-between;align-items:center;gap:12px}.leave p{margin:0}.leave .r{font-size:12px;color:#7b86a0;margin-top:2px}
+
+  /* ── bottom dock (like the real mobile app) ── */
+  .dock{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,480px);z-index:60;height:calc(var(--dock) + env(safe-area-inset-bottom));padding:8px 10px env(safe-area-inset-bottom);
+    display:grid;grid-template-columns:repeat(5,1fr);align-items:center;background:rgba(255,255,255,.88);backdrop-filter:blur(16px) saturate(1.4);border-top:1px solid var(--line);box-shadow:0 -8px 24px -12px rgba(37,74,154,.35)}
+  body.winter .dock{background:rgba(236,244,255,.88)}
+  .dk{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;font-size:11px;font-weight:600;color:#7b86a0;min-height:56px;justify-content:center;position:relative}
+  .dk svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s}
+  .dk.on{color:var(--blue)}.dk.on svg{transform:translateY(-2px)}
+  .dk.on::after{content:"";position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--blue)}
+  .dk:active svg{transform:scale(.85)}
+  .dk.fab{margin-top:-30px}
+  .dk.fab .fb{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#254A9A,#4f8fe8);box-shadow:0 10px 22px -6px rgba(37,74,154,.7),0 0 0 5px var(--bg);color:#fff;position:relative}
+  .dk.fab .fb::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid rgba(79,143,232,.6);animation:ping 2.2s ease-out infinite}
+  .dk.fab svg{stroke:#fff}.dk.fab span.l{color:var(--blue);margin-top:2px}
+
+  #toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--dock) + 14px + env(safe-area-inset-bottom));z-index:80;display:grid;gap:8px;width:min(92%,440px);pointer-events:none}
+  .toast{background:var(--navy);color:#fff;font-size:14px;font-weight:600;padding:12px 16px;border-radius:14px;text-align:center;box-shadow:0 12px 30px -8px rgba(0,0,40,.55);animation:tin .4s cubic-bezier(.3,1.5,.5,1),tout .4s 2.6s forwards}
+  @keyframes tin{from{transform:translateY(24px);opacity:0}}@keyframes tout{to{transform:translateY(8px);opacity:0}}
+
+  .rise{animation:rise .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*70ms)}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}}
+  .greet-plain{text-align:center;padding:6px 0}body.winter .greet-plain{display:none}
+  .greet-plain h1{margin:0;font-size:26px;font-weight:500}.greet-plain p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}#fx{display:none}}
+  @media(max-width:360px){.hero-text h1{font-size:23px}.quest{grid-template-columns:1fr 78px}.snowman{width:78px}.lvl{width:60%}}
+</style>
+</head>
+<body class="winter">
+<canvas id="fx"></canvas>
+<div id="toasts"></div>
+
+<div class="app" id="app">
+<div class="proto">
+  <b>Proto v3 · mobile-first</b>
+  <div class="seg"><button id="bWin" class="on">❄ Winter</button><button id="bOrig">Current</button></div>
+  <label><input type="checkbox" id="snowToggle" checked> Snow</label>
+  <button class="pbtn" id="replay">↻ Intro</button>
+  <button class="pbtn" id="resetQ">⟲ Reset</button>
+</div>
+<div class="backdrop"></div>
+
+<main class="wrap">
+  <div class="topbar rise" style="--i:0">
+    <div class="brand"><i>S</i> SchoolOS</div>
+    <div class="tb-actions"><button class="ibtn" id="bell" aria-label="Notifications">🔔<span class="dot"></span></button><button class="ibtn" aria-label="Profile">👩‍🏫</button></div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero rise" id="hero" style="--i:1">
+    <div class="layer" data-d="4" id="stars"></div>
+    <div class="layer" data-d="5"><div class="moon"></div></div>
+    <div class="shoot"></div>
+    <div class="layer" data-d="10"><svg class="mts" viewBox="0 0 1100 290" preserveAspectRatio="none"><path d="M0 200 L130 110 L230 170 L360 80 L500 175 L640 95 L780 170 L920 100 L1100 190 V290 H0Z" fill="#5d7fc4" opacity=".55"/></svg></div>
+    <div class="layer" data-d="16"><svg class="mts" viewBox="0 0 1100 290" preserveAspectRatio="none"><path d="M0 235 L110 165 L210 215 L330 150 L460 225 L590 160 L720 220 L860 155 L1000 215 L1100 175 V290 H0Z" fill="#a9c3ee"/><path d="M330 150 L300 175 L330 168 L350 180Z M590 160 L565 180 L590 175 L610 185Z M860 155 L835 178 L860 172 L880 184Z" fill="#fff"/></svg></div>
+    <div class="layer" data-d="26" id="pines"></div>
+    <svg class="mts" viewBox="0 0 1100 290" preserveAspectRatio="none" style="z-index:2"><path d="M0 262 Q150 238 320 258 T640 255 T1100 250 V290 H0Z" fill="#f4f9ff"/></svg>
+
+    <div class="hero-text">
+      <h1 id="hi">Good morning, Priya</h1>
+      <p id="dt"></p>
+      <div class="chips"><span class="hchip"><span class="flake">❄</span> 8°C · Foggy</span><span class="hchip">🔥 5-day streak</span></div>
+      <div class="lvl"><div class="row"><span>Lv <span id="lvlN">3</span> · Frost Mentor</span><span><span id="ptsN">120</span>/<span id="nextN">200</span>❄</span></div><div class="track"><i id="lvlBar"></i></div></div>
+    </div>
+
+    <div class="bubble" id="bubble">Brr! Mark attendance first, then grab some cocoa ☕</div>
+    <svg class="frosty" id="frosty" viewBox="0 0 120 170" aria-label="Frosty the helper snowman">
+      <ellipse cx="60" cy="164" rx="40" ry="5" fill="rgba(0,0,40,.18)"/>
+      <defs><radialGradient id="sh" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#9db8e6" stop-opacity=".55"/></radialGradient></defs>
+      <circle cx="60" cy="126" r="34" fill="#fff"/><circle cx="60" cy="126" r="34" fill="url(#sh)"/>
+      <circle cx="60" cy="78" r="26" fill="#fff"/><circle cx="60" cy="78" r="26" fill="url(#sh)"/>
+      <circle cx="60" cy="38" r="21" fill="#fff"/><circle cx="60" cy="38" r="21" fill="url(#sh)"/>
+      <path d="M36 78 L10 62 M16 66 L8 58" stroke="#6b4423" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+      <g class="arm-r"><path d="M84 78 L112 58 M106 62 L112 52" stroke="#6b4423" stroke-width="3.5" stroke-linecap="round" fill="none"/></g>
+      <rect x="40" y="12" width="40" height="7" rx="3" fill="#1B2A4E"/><rect x="47" y="-6" width="26" height="20" rx="3" fill="#254A9A"/><rect x="47" y="6" width="26" height="4" fill="#F5B332"/>
+      <circle class="eye" cx="52" cy="36" r="2.6" fill="#1B2A4E"/><circle class="eye" cx="68" cy="36" r="2.6" fill="#1B2A4E"/>
+      <path d="M60 42 L78 46 L60 49Z" fill="#f08a24"/><path d="M50 51 Q60 58 70 51" stroke="#1B2A4E" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="46" cy="46" r="4" fill="#ffb4c2" opacity=".6"/><circle cx="74" cy="46" r="4" fill="#ffb4c2" opacity=".6"/>
+      <path d="M40 58 Q60 70 80 58 L80 66 Q60 78 40 66Z" fill="#e0354b"/><path d="M72 64 L80 90 L70 88Z" fill="#c42a3e"/>
+      <circle cx="60" cy="90" r="2.6" fill="#1B2A4E"/><circle cx="60" cy="104" r="2.6" fill="#1B2A4E"/><circle cx="60" cy="118" r="2.6" fill="#1B2A4E"/>
+    </svg>
+  </section>
+  <div class="greet-plain rise" style="--i:1"><h1 id="hi2"></h1><p id="dt2"></p></div>
+
+  <!-- Quick launch -->
+  <div class="quick rise" style="--i:2" id="quick"></div>
+
+  <!-- Stats -->
+  <div class="stats rise" style="--i:3">
+    <button class="card tap"><i class="ledge"></i><div class="lbl">Classes today</div><div class="num" data-count="6">0</div><span class="cta" style="color:#059669">Mark attendance →</span></button>
+    <button class="card tap"><i class="ledge"></i><div class="lbl">Current period</div><div class="num sm">Maths</div><span class="cta" style="color:var(--blue)">8–B · 10:20</span></button>
+    <button class="card tap"><i class="ledge"></i><div class="lbl">My leaves</div><div class="num" data-count="3">0</div><span class="cta" style="color:#d97706">Apply →</span></button>
+  </div>
+
+  <!-- Today's classes (swipe) -->
+  <section class="card rise" style="--i:4"><i class="ledge"></i>
+    <div class="hd"><h3>Today's classes</h3><a>Timetable →</a></div>
+    <div class="snap" id="snap">
+      <div class="cls"><div class="row1"><div><div class="t">09:40 - 10:20</div><div class="s">English</div><span class="b">7 - A</span></div><span class="pill ok">95%</span></div>
+        <div class="meta">👥 <b style="color:#334155">38</b> / 40 students</div><div class="bar"><i data-w="95"></i></div></div>
+      <div class="cls" style="border-color:rgba(52,211,153,.7);box-shadow:0 0 0 3px rgba(52,211,153,.14)"><div class="row1"><div><div class="t">10:20 - 11:00 <span class="now">Now</span></div><div class="s">Mathematics</div><span class="b">8 - B</span></div><button class="pill pend" id="nowPill">⏱ Tap to mark</button></div>
+        <div class="meta" id="nowMeta">42 students · attendance pending</div></div>
+      <div class="cls"><div class="row1"><div><div class="t">11:20 - 12:00</div><div class="s">Mathematics</div><span class="b">9 - A</span></div><span class="pill next">Starts 11:20</span></div>
+        <div class="meta">36 students · subject period only</div></div>
+    </div>
+    <div class="dots" id="dots"><i></i><i class="on"></i><i></i></div>
+  </section>
+
+  <!-- Sleigh day tracker -->
+  <section class="card winter-only rise" style="--i:5"><i class="ledge"></i>
+    <div class="sleigh-top"><div class="hd" style="padding:0"><h3>🛷 Your school day</h3></div><button class="cocoa" id="cocoa"><span class="cup">☕</span> Break in <span id="cd">24:00</span></button></div>
+    <div class="routewrap" id="routewrap"><div class="route" id="route"><div class="line"></div><div class="done" id="done"></div><div class="sleigh" id="sleigh">🛷</div></div></div>
+    <div class="swipehint">← swipe the day →</div>
+  </section>
+
+  <!-- Quest -->
+  <section class="card winter-only rise" style="--i:6"><i class="ledge"></i>
+    <div class="hd"><h3>⛄ Build today's snowman</h3><span style="font-size:13px;font-weight:700;color:var(--blue)" id="qcount">0 / 3</span></div>
+    <div class="quest">
+      <div id="tasks">
+        <div class="task" data-pts="10" data-stage="1"><span class="box">✓</span><span class="tt">Mark attendance · 8-B</span><span class="pts">+10 ❄</span></div>
+        <div class="task" data-pts="15" data-stage="2"><span class="box">✓</span><span class="tt">Update today's Academic Plan</span><span class="pts">+15 ❄</span></div>
+        <div class="task" data-pts="25" data-stage="3"><span class="box">✓</span><span class="tt">Enter Unit Test marks · 9-A</span><span class="pts">+25 ❄</span></div>
+      </div>
+      <svg class="snowman" id="snowman" viewBox="0 0 130 176">
+        <circle class="ghost" cx="65" cy="138" r="34"/><circle class="ghost" cx="65" cy="88" r="26"/><circle class="ghost" cx="65" cy="45" r="20"/>
+        <g class="part p1"><circle cx="65" cy="138" r="34" fill="#fff" stroke="#c5d6ee" stroke-width="2"/><circle cx="65" cy="122" r="3" fill="#1B2A4E"/><circle cx="65" cy="138" r="3" fill="#1B2A4E"/></g>
+        <g class="part p2"><circle cx="65" cy="88" r="26" fill="#fff" stroke="#c5d6ee" stroke-width="2"/><path d="M39 88 L12 70 M91 88 L118 68" stroke="#6b4423" stroke-width="4" stroke-linecap="round"/><path d="M42 68 Q65 82 88 68 L88 77 Q65 91 42 77Z" fill="#e0354b"/></g>
+        <g class="part p3"><circle cx="65" cy="45" r="20" fill="#fff" stroke="#c5d6ee" stroke-width="2"/><circle cx="58" cy="42" r="2.4" fill="#1B2A4E"/><circle cx="72" cy="42" r="2.4" fill="#1B2A4E"/><path d="M65 47 L82 51 L65 53Z" fill="#f08a24"/><rect x="46" y="22" width="38" height="6" rx="3" fill="#1B2A4E"/><rect x="52" y="4" width="26" height="19" rx="3" fill="#254A9A"/></g>
+      </svg>
+    </div>
+    <div class="qfoot"><span id="qmsg">Finish all 3 to complete the snowman!</span><b>Today: <span id="todayPts">0</span> ❄</b></div>
+  </section>
+
+  <!-- Streak -->
+  <section class="card winter-only rise" style="--i:7"><i class="ledge"></i>
+    <div class="hd"><h3>🏮 Attendance streak</h3><span style="font-size:13px;font-weight:700;color:#d97706">5 days</span></div>
+    <div class="lantern-row"><div class="lan on"><div class="bulb"></div>Mon</div><div class="lan on"><div class="bulb"></div>Tue</div><div class="lan on"><div class="bulb"></div>Wed</div><div class="lan on"><div class="bulb"></div>Thu</div><div class="lan on"><div class="bulb"></div>Fri</div><div class="lan today" id="todayLan"><div class="bulb"></div>Today</div></div>
+    <p style="font-size:12px;color:var(--muted);margin:10px 0 0;position:relative;z-index:2">Finish today's quest to light the next lantern.</p>
+  </section>
+
+  <section class="card rise" style="--i:8"><i class="ledge"></i>
+    <div class="hd"><h3>Teaching tools</h3></div>
+    <div class="tool"><span>Marks &amp; Report Cards</span><em>Marks</em></div><div class="tool"><span>Academic Plan</span><em>Daily</em></div>
+    <div class="tool"><span>Syllabus Tracker</span><em>Progress</em></div><div class="tool"><span>Question Bank &amp; Papers</span><em>Papers</em></div><div class="tool"><span>Worksheet Generator</span><em>Practice</em></div>
+  </section>
+
+  <section class="card rise" style="--i:9"><i class="ledge"></i>
+    <div class="hd"><h3>Upcoming events</h3><a>Calendar →</a></div>
+    <div class="ev"><div class="d">05<small>Dec</small></div><div><b>Winter Sports Day</b><div class="sub">Main ground · 9:00 AM</div></div><span class="cd">13 days</span></div>
+    <div class="ev"><div class="d">12<small>Dec</small></div><div><b>Half Yearly PTM</b><div class="sub">Classrooms · 10:00 AM</div></div><span class="cd">20 days</span></div>
+    <div class="ev"><div class="d">25<small>Dec</small></div><div><b>Winter Break begins</b><div class="sub">Back on 1 Jan</div></div><span class="cd">33 days</span></div>
+  </section>
+
+  <section class="rise" style="--i:10">
+    <div class="hd" style="padding:0 4px 8px"><h3 style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">My Leave</h3><a style="color:var(--navy)">Apply</a></div>
+    <div class="card leave"><i class="ledge"></i><div style="position:relative;z-index:2"><p style="font-size:14px;font-weight:600">Full day · 2026-11-10</p><p class="r">Family function</p></div><span class="pill ok" style="position:relative;z-index:2;min-height:0;padding:6px 12px;font-size:12px">approved</span></div>
+  </section>
+</main>
+
+<!-- bottom dock -->
+<nav class="dock">
+  <button class="dk on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button class="dk"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5"/></svg>Classes</button>
+  <button class="dk fab" id="fab"><span class="fb"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span class="l">Attendance</span></button>
+  <button class="dk"><svg viewBox="0 0 24 24"><path d="M5 6h14v13H5zM5 10h14M9 4v3M15 4v3"/></svg>Planner</button>
+  <button class="dk"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menu</button>
+</nav>
+</div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const now=new Date(),h=now.getHours(),greet=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', Priya';
+const dstr=now.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+$('#hi').textContent=$('#hi2').textContent=greet;$('#dt').textContent=$('#dt2').textContent=dstr;
+
+// hero scenery
+$('#stars').innerHTML=Array.from({length:34},()=>{const s=1+Math.random()*2.4;return `<i class="star" style="left:${Math.random()*100}%;top:${Math.random()*50}%;animation-delay:${(Math.random()*3).toFixed(2)}s;width:${s}px;height:${s}px"></i>`}).join('');
+const pine=(x,s)=>`<g transform="translate(${x},${268-60*s}) scale(${s})"><polygon points="0,60 -18,60 0,22 18,60" fill="#1d3a6e"/><polygon points="0,40 -15,40 0,8 15,40" fill="#24488a"/><polygon points="0,22 -11,22 0,-8 11,22" fill="#2c5aa6"/><path d="M0 -8 L-6 4 L0 1 L6 4Z M0 8 L-9 22 L0 18 L9 22Z" fill="#fff"/></g>`;
+$('#pines').innerHTML=`<svg class="mts" viewBox="0 0 1100 290" preserveAspectRatio="none">${[60,120,170,880,940,1000,1050,520].map((x,i)=>pine(x,[1,.8,1.1,.9,1.2,.8,1,.7][i])).join('')}</svg>`;
+// hero parallax: finger drag on phones, mouse on desktop
+const hero=$('#hero');
+const par=e=>{const r=hero.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;$$('#hero .layer').forEach(l=>l.style.transform=`translate(${-x*l.dataset.d}px,${-y*l.dataset.d*.5}px)`)};
+hero.addEventListener('pointermove',par);hero.addEventListener('pointerup',()=>$$('#hero .layer').forEach(l=>l.style.transform=''));hero.addEventListener('pointerleave',()=>$$('#hero .layer').forEach(l=>l.style.transform=''));
+// device tilt parallax (phones with gyro; harmless elsewhere)
+addEventListener('deviceorientation',e=>{if(e.gamma==null)return;const x=Math.max(-1,Math.min(1,e.gamma/30))*.5;$$('#hero .layer').forEach(l=>l.style.transform=`translate(${-x*l.dataset.d}px,0)`)},{passive:true});
+
+// quick launch
+const Q=[['Attendance','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],['Classes','M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5'],['Timetable','M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2'],['Marks','M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM9 12l-2 9 5-3 5 3-2-9'],['Academic Plan','M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v13'],['Planner','M5 6h14v13H5zM5 10h14M9 4v3M15 4v3'],['Syllabus','M18 20V10M12 20V4M6 20v-6']];
+const X=[['Worksheets','M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8'],['Question Bank','M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'],['Messages','M3 6h18v12H3zM3 7l9 7 9-7'],['Calendar','M4 6h16v14H4zM4 10h16M8 3v5M16 3v5'],['Apply Leave','M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z']];
+const qb=(l,d,c='')=>`<button class="q ${c}"><span class="ic"><svg viewBox="0 0 24 24"><path d="${d}"/></svg></span><span style="text-align:center;line-height:1.15">${l}</span></button>`;
+$('#quick').innerHTML=Q.map(([l,d])=>qb(l,d)).join('')+`<button class="q" id="more"><span class="ic"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span><span>More</span></button>`+X.map(([l,d])=>qb(l,d,'xtra')).join('');
+$('#more').onclick=function(){const q=$('#quick');q.classList.toggle('open');this.querySelector('span:last-child').textContent=q.classList.contains('open')?'Less':'More'};
+document.addEventListener('pointerdown',e=>{const ic=e.target.closest('.q .ic');if(ic&&body.classList.contains('winter')){ic.classList.remove('pop');void ic.offsetWidth;ic.classList.add('pop');buzz(8)}});
+
+// sleigh route
+const periods=[['English','7-A','09:00'],['Science','6-C','09:40'],['English','7-A','10:20'],['Maths','8-B','11:00'],['Maths','9-A','11:40'],['Hindi','8-A','12:20']],curIdx=3,pos=i=>(i+.5)/periods.length*100;
+$('#route').insertAdjacentHTML('beforeend',periods.map((p,i)=>`<div class="stop ${i<curIdx?'past':i==curIdx?'cur':''}" style="left:${pos(i)}%" data-t="${p[0]} · ${p[1]} · ${p[2]}"><div class="dot">${i<curIdx?'✓':i+1}</div><div class="lab">${p[0]}<small>${p[1]} · ${p[2]}</small></div></div>`).join(''));
+const go=()=>{const x=pos(curIdx)-4;$('#sleigh').style.left=x+'%';$('#done').style.width=x+'%';const w=$('#routewrap');setTimeout(()=>w.scrollTo({left:Math.max(0,w.scrollWidth*pos(curIdx)/100-w.clientWidth/2),behavior:'smooth'}),700)};
+setTimeout(go,400);
+$$('.stop').forEach(s=>s.onclick=()=>{toast('📍 '+s.dataset.t);buzz(10)});
+let sec=24*60;setInterval(()=>{sec=sec>0?sec-1:0;$('#cd').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')},1000);
+$('#cocoa').onclick=e=>{toast('☕ Enjoy your break — you earned it!');burst(e.clientX,e.clientY,'☕',9);buzz(20)};
+
+// class swipe dots
+$('#snap').addEventListener('scroll',e=>{const el=e.target,i=Math.round(el.scrollLeft/(el.scrollWidth/3));$$('#dots i').forEach((d,k)=>d.classList.toggle('on',k==Math.min(2,Math.max(0,i))))},{passive:true});
+setTimeout(()=>{const s=$('#snap');s.scrollTo({left:s.scrollWidth/3-8,behavior:'auto'})},50);
+
+// counters
+function runCounters(){$$('[data-count]').forEach(el=>{const to=+el.dataset.count;let n=0;el.textContent=0;const t=setInterval(()=>{el.textContent=++n;if(n>=to)clearInterval(t)},120)});
+  $$('.bar i').forEach(b=>{b.style.width='0';setTimeout(()=>b.style.width=b.dataset.w+'%',500)})}
+runCounters();
+
+// points / quest
+let total=120,today=0,done=new Set();
+function renderPts(){const lv=total>=200?4:3,base=lv==4?200:0,top=lv==4?400:200;$('#lvlN').textContent=lv;$('#ptsN').textContent=total;$('#nextN').textContent=top;$('#lvlBar').style.width=Math.min(100,(total-base)/(top-base)*100)+'%';$('#todayPts').textContent=today}
+renderPts();
+const msgs=['Base built 🧊','Body + scarf done 🧣','Snowman complete! +20 bonus 🎉'];
+function setTask(el){const st=+el.dataset.stage,p=+el.dataset.pts;if(done.has(st))return;done.add(st);el.classList.add('done');total+=p;today+=p;
+  const r=el.querySelector('.box').getBoundingClientRect();burst(r.left+14,r.top+14,'❄');toast(`+${p} ❄ snowflakes!`);buzz(25);syncQuest()}
+function syncQuest(){const n=[...done].filter(x=>x!='b').length;$('#snowman').setAttribute('class','snowman'+(n?' s'+n:''));$('#qcount').textContent=n+' / 3';
+  $('#qmsg').textContent=n?msgs[n-1]:'Finish all 3 to complete the snowman!';$('#todayLan').classList.toggle('on',n==3);renderPts()}
+function bonus(){const n=[...done].filter(x=>x!='b').length;if(n==3&&!done.has('b')){done.add('b');total+=20;today+=20;renderPts();
+  setTimeout(()=>{toast('🎉 Snowman complete! +20 ❄ · lantern lit 🏮');buzz([40,60,40,60,80]);for(let i=0;i<5;i++)setTimeout(()=>burst(innerWidth*(.2+Math.random()*.6),innerHeight*(.25+Math.random()*.4),'❄',22),i*170);say('WOW! You built the whole snowman! ⛄🎉')},500)}}
+function markAtt(){if(done.has(1))return;setTask($('.task[data-stage="1"]'));const p=$('#nowPill');p.className='pill ok';p.style.animation='none';p.textContent='✓ 100%';$('#nowMeta').innerHTML='👥 <b style="color:#334155">42</b> / 42 students';bonus()}
+$$('.task').forEach(t=>t.addEventListener('click',()=>{if(t.classList.contains('done'))return;if(+t.dataset.stage==1)markAtt();else{setTask(t);bonus()}}));
+$('#nowPill').onclick=e=>{e.stopPropagation();markAtt()};
+$('#fab').onclick=()=>{ if(!done.has(1)){markAtt();toast('✅ Opening attendance for 8-B…')}else toast('Attendance for 8-B already marked ✓')};
+$('#resetQ').onclick=()=>{done.clear();total=120;today=0;$$('.task').forEach(t=>t.classList.remove('done'));const p=$('#nowPill');p.className='pill pend';p.style.animation='';p.textContent='⏱ Tap to mark';$('#nowMeta').textContent='42 students · attendance pending';syncQuest()};
+
+// Frosty
+const tips=['Brr! Mark attendance first, then grab some cocoa ☕','9-A marks are pending today 📝','5-day streak — keep it up! 🔥','No two snowflakes alike — like your students ❄','Half Yearly PTM in 20 days 📅'];
+let ti=0;const bub=$('#bubble');
+function say(t){bub.classList.add('out');setTimeout(()=>{bub.textContent=t;bub.classList.remove('out')},250)}
+setInterval(()=>{ti=(ti+1)%tips.length;say(tips[ti])},6000);
+let fc=0;const silly=['Hehe, that tickles! 😆','Careful — I melt under pressure!','Got a carrot? 🥕','Hot cocoa is my weakness ☕'];
+$('#frosty').addEventListener('click',e=>{const f=e.currentTarget;f.classList.remove('jump');void f.getBoundingClientRect();f.classList.add('jump');fc++;buzz(15);
+  if(fc%5==0){say('❄ SNOWSTORM! ❄');storm()}else say(silly[fc%silly.length]);const r=f.getBoundingClientRect();burst(r.left+56,r.top+20,'❄',9);e.stopPropagation()});
+function toast(t){const box=$('#toasts');while(box.children.length>=2)box.firstChild.remove();const d=document.createElement('div');d.className='toast';d.textContent=t;$('#toasts').appendChild(d);setTimeout(()=>d.remove(),3100)}
+$('#bell').onclick=()=>{toast('🔔 2 new: leave approved · PTM reminder');buzz(10)};
+
+// touch-friendly "frost glow" on press (works with finger; no hover needed)
+document.addEventListener('pointerdown',e=>{const c=e.target.closest('.card');if(!c||!body.classList.contains('winter'))return;const r=c.getBoundingClientRect();
+  c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px');c.classList.add('glow');setTimeout(()=>c.classList.remove('glow'),420)});
+
+// dock
+$$('.dk:not(.fab)').forEach(b=>b.onclick=()=>{$$('.dk').forEach(x=>x.classList.remove('on'));b.classList.add('on');buzz(8)});
+
+// controls
+const body=document.body;
+function setTheme(w){body.classList.toggle('winter',w);$('#bWin').classList.toggle('on',w);$('#bOrig').classList.toggle('on',!w)}
+$('#bWin').onclick=()=>setTheme(true);$('#bOrig').onclick=()=>setTheme(false);
+$('#replay').onclick=()=>{$$('.rise').forEach(e=>{e.style.animation='none';void e.offsetWidth;e.style.animation=''});runCounters();$('#sleigh').style.left='0%';$('#done').style.width='0';setTimeout(go,400)};
+
+// snow + sparkles: light on phones (fewer flakes, DPR 1), finger parts the flakes
+const cv=$('#fx'),cx=cv.getContext('2d');let W,H,on=true,pt={x:-999,y:-999};
+const size=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};size();addEventListener('resize',size);
+const COUNT=innerWidth<600?42:70;
+const mk=()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.4+.8,v:Math.random()*.8+.35,s:Math.random()*6.28,a:Math.random()*.5+.4,vx:0});
+let flakes=Array.from({length:COUNT},mk),parts=[];
+let rel;addEventListener('pointermove',e=>{pt.x=e.clientX;pt.y=e.clientY},{passive:true});
+addEventListener('pointerdown',e=>{pt.x=e.clientX;pt.y=e.clientY;clearTimeout(rel)},{passive:true});
+addEventListener('pointerup',()=>{rel=setTimeout(()=>{pt.x=pt.y=-999},500)},{passive:true});
+$('#snowToggle').onchange=e=>{on=e.target.checked;cv.style.display=on?'':'none'};
+function burst(x,y,ch='❄',n=12){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=2+Math.random()*4;parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,life:1,ch,sz:12+Math.random()*12,rot:Math.random()*6})}}
+function storm(){flakes.push(...Array.from({length:110},()=>({...mk(),y:-Math.random()*H,v:Math.random()*3+2,vx:1.5})));setTimeout(()=>flakes.splice(COUNT),6000)}
+addEventListener('click',e=>{if(!body.classList.contains('winter')||e.target.closest('.proto,.dock'))return;burst(e.clientX,e.clientY,'✦',6)});
+(function tick(){
+  if(on&&!document.hidden&&body.classList.contains('winter')){
+    cx.clearRect(0,0,W,H);
+    for(const f of flakes){const dx=f.x-pt.x,dy=f.y-pt.y,d=Math.hypot(dx,dy);if(d<80&&d>0){f.vx+=dx/d*.9;f.y+=dy/d*.5}
+      f.vx*=.94;f.s+=.012;f.x+=Math.sin(f.s)*.5+f.vx;f.y+=f.v;if(f.y>H+5){f.y=-5;f.x=Math.random()*W}if(f.x<-5)f.x=W+5;if(f.x>W+5)f.x=-5;
+      cx.beginPath();cx.arc(f.x,f.y,f.r,0,6.283);cx.fillStyle=`rgba(255,255,255,${f.a})`;cx.fill();cx.strokeStyle='rgba(110,165,240,.35)';cx.lineWidth=.6;cx.stroke()}
+    parts=parts.filter(p=>p.life>0);
+    for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.12;p.life-=.016;p.rot+=.1;cx.save();cx.globalAlpha=Math.max(0,p.life);cx.translate(p.x,p.y);cx.rotate(p.rot);cx.font=p.sz+'px sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#7db4f5';cx.fillText(p.ch,0,0);cx.restore()}
+  }else cx.clearRect(0,0,W,H);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

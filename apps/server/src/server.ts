@@ -8,9 +8,12 @@ import { startReceptionTaskAutoScheduler } from './features/reception-tasks/rece
 import { startFollowUpAutoScheduler } from './features/follow-ups/follow-up-auto.job';
 import { startPlanAlertScheduler } from './features/academic-plan/plan-alert.job';
 import { resumeStuckBulkJobs } from './features/communication/queue/bulk-processor';
+import { ensureDefaultFeatures } from './features/feature-flags/feature-flag.defaults';
 
 const start = async (): Promise<void> => {
   await connectDatabase();
+  // Make sure Ops Center has a switch for every flag the app ships (never overwrites existing ones).
+  await ensureDefaultFeatures();
   startPlannerScheduler();
   startMockTestScheduler();
   startReceptionTaskAutoScheduler();
