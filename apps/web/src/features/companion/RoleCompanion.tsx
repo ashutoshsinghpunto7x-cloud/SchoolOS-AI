@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { CompanionBuddy } from './CompanionBuddy';
 import { companionConfigFor } from './companionConfigs';
+import { TeacherAssistantWidget } from './TeacherAssistantWidget';
 
 // Companion buddy for every dashboard except the principal's (that one is
 // mounted by PrincipalAssistantWidget, since it drives the principal chat).
@@ -24,5 +25,6 @@ export const RoleCompanion = () => {
       />
     );
   }
+  if (role === 'teacher') return <TeacherAssistantWidget />;
   return <CompanionBuddy config={config} label="Help on this page" />;
 };

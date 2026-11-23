@@ -66,7 +66,7 @@ const TEACHER: CompanionConfig = {
     { path: '/teacher/profile', label: 'My Profile', hint: 'Your details and password.' },
     { path: '/teacher/id-card', label: 'ID Card', hint: 'Your staff ID card.' },
   ],
-  hello: "Hover any button and I'll explain it. Click me any time for help on this page.",
+  hello: "Hover any button and I'll explain it. Click me to ask a question or browse the FAQ.",
   bottomOffset: () => 96, // floating pill nav is visible at every width
 };
 
