@@ -1,128 +1,227 @@
-/* Companion "glide buddy" for the Principal assistant — see CompanionBuddy.tsx.
-   Position is driven from JS via transform; everything else is CSS. */
+/* Static Siri-inspired luminous orb launcher — see CompanionBuddy.tsx.
+   Pinned at one fixed bottom-right position; two silky horizontal Siri-style
+   sine waves glide across the glass sphere and morph into a cross (×) when open. */
 
-.sb-buddy {
+:root {
+  --siri-in-oklab: ;
+  --siri-in-oklch: ;
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --siri-in-oklab: in oklab;
+    --siri-in-oklch: in oklch;
+  }
+}
+
+.siri-orb-btn {
   position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 40;
-  width: 56px;
-  height: 56px;
+  right: 16px;
+  bottom: calc(var(--siri-bottom, 24px) + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  width: 54px;
+  height: 54px;
   padding: 0;
   border: 0;
-  background: none;
+  border-radius: 9999px;
+  background: transparent;
   cursor: pointer;
-  transition: transform 0.7s cubic-bezier(0.34, 1.36, 0.64, 1);
-  will-change: transform;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   -webkit-tap-highlight-color: transparent;
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.sb-buddy.sb-fast { transition-duration: 0.45s; }
-.sb-buddy.sb-instant { transition: none; }
-.sb-buddy:focus-visible { outline: none; }
-.sb-buddy:focus-visible .sb-body { box-shadow: 0 0 0 3px #fff, 0 0 0 6px #F5B332; }
 
-.sb-float, .sb-tilt, .sb-body { display: block; width: 100%; height: 100%; }
-.sb-float { animation: sb-bob 3.2s ease-in-out infinite; }
-.sb-tilt { transition: transform 0.35s ease; transform: rotate(var(--sb-tilt, 0deg)); }
-.sb-body {
+@media (min-width: 640px) {
+  .siri-orb-btn {
+    right: 24px;
+  }
+}
+
+.siri-orb-btn:hover {
+  transform: scale(1.05);
+}
+
+.siri-orb-btn:active {
+  transform: scale(0.96);
+}
+
+.siri-orb-btn:focus-visible {
+  outline: 2.5px solid #1B2A4E;
+  outline-offset: 3px;
+}
+
+.dark .siri-orb-btn:focus-visible {
+  outline-color: #93C5FD;
+}
+
+/* Soft outer halo */
+.siri-orb-halo {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg var(--siri-in-oklch),
+    rgba(56, 189, 248, 0.45),
+    rgba(129, 140, 248, 0.45),
+    rgba(244, 114, 182, 0.4),
+    rgba(245, 179, 50, 0.4),
+    rgba(56, 189, 248, 0.45)
+  );
+  filter: blur(7px);
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+
+.siri-orb-btn:hover .siri-orb-halo,
+.siri-orb-btn.is-open .siri-orb-halo,
+.siri-orb-btn.is-thinking .siri-orb-halo {
+  opacity: 1;
+}
+
+/* Main clipped glass sphere */
+.siri-orb {
   position: relative;
-  border-radius: 46% 46% 42% 42%;
-  background: radial-gradient(circle at 32% 28%, #3E66BF 0%, #254A9A 35%, #1B2A4E 100%);
-  box-shadow: 0 8px 22px rgba(27, 42, 78, 0.32), inset 0 -6px 12px rgba(0, 0, 0, 0.18), inset 0 4px 8px rgba(255, 255, 255, 0.12);
-  transform-origin: 50% 100%;
-}
-.sb-buddy:hover .sb-body { filter: brightness(1.08); }
-
-.sb-antenna {
-  position: absolute; left: 50%; top: -11px; width: 2px; height: 12px;
-  background: #F5B332; border-radius: 2px; transform: translateX(-50%); transform-origin: bottom;
-}
-.sb-antenna::after {
-  content: '✦'; position: absolute; left: 50%; top: -13px; transform: translateX(-50%);
-  color: #F5B332; font-size: 14px; line-height: 1; text-shadow: 0 0 8px rgba(245, 179, 50, 0.7);
-  animation: sb-twinkle 2.4s ease-in-out infinite;
-}
-.sb-moving .sb-antenna { animation: sb-wiggle 0.35s ease-in-out infinite; }
-
-.sb-eyes { position: absolute; top: 37%; left: 0; right: 0; display: flex; justify-content: center; gap: 10px; }
-.sb-eye { position: relative; width: 12px; height: 15px; background: #fff; border-radius: 50%; overflow: hidden; transition: transform 0.08s; }
-.sb-pupil { position: absolute; left: 3px; top: 4px; width: 6px; height: 7px; background: #1B2A4E; border-radius: 50%; transition: transform 0.12s ease-out; }
-.sb-pupil::after { content: ''; position: absolute; top: 1px; left: 1px; width: 2px; height: 2px; background: #fff; border-radius: 50%; }
-.sb-blink .sb-eye { transform: scaleY(0.1); }
-.sb-mouth {
-  position: absolute; left: 50%; top: 68%; width: 11px; height: 5px; transform: translateX(-50%);
-  border-bottom: 2.5px solid #F5B332; border-radius: 0 0 12px 12px; transition: all 0.2s;
-}
-.sb-cheek { position: absolute; top: 60%; width: 7px; height: 4px; border-radius: 50%; background: #F49C9C; opacity: 0.35; }
-.sb-cheek.l { left: 13%; }
-.sb-cheek.r { right: 13%; }
-
-/* expressions */
-.sb-happy .sb-eye { background: transparent; overflow: visible; }
-.sb-happy .sb-pupil { opacity: 0; }
-.sb-happy .sb-eye::after {
-  content: ''; position: absolute; left: 0; top: 4px; width: 12px; height: 7px; box-sizing: border-box;
-  border: 3px solid #fff; border-bottom: 0; border-radius: 12px 12px 0 0;
-}
-.sb-happy .sb-mouth { width: 15px; height: 7px; border-bottom-width: 3px; }
-.sb-happy .sb-cheek { opacity: 0.6; }
-.sb-thinking .sb-pupil { transform: translate(2px, -3px) !important; }
-.sb-thinking .sb-mouth { width: 6px; height: 6px; border: 2px solid #F5B332; border-radius: 50%; }
-
-.sb-hop .sb-body { animation: sb-hop 0.7s cubic-bezier(0.3, 0.7, 0.4, 1); }
-.sb-land .sb-body { animation: sb-land 0.35s ease-out; }
-.sb-poke .sb-body { animation: sb-poke 0.4s ease-out; }
-
-@keyframes sb-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-@keyframes sb-twinkle {
-  0%, 100% { transform: translateX(-50%) scale(1) rotate(0); }
-  50% { transform: translateX(-50%) scale(1.25) rotate(45deg); }
-}
-@keyframes sb-wiggle {
-  0%, 100% { transform: translateX(-50%) rotate(-14deg); }
-  50% { transform: translateX(-50%) rotate(14deg); }
-}
-@keyframes sb-hop {
-  0% { transform: scale(1, 1); }
-  15% { transform: scale(1.15, 0.85); }
-  45% { transform: translateY(-20px) scale(0.92, 1.1); }
-  70% { transform: translateY(0) scale(1.12, 0.88); }
-  85% { transform: scale(0.97, 1.03); }
-  100% { transform: scale(1, 1); }
-}
-@keyframes sb-land { 0% { transform: scale(1.14, 0.86); } 60% { transform: scale(0.96, 1.04); } 100% { transform: scale(1); } }
-@keyframes sb-poke { 0% { transform: scale(0.85, 1.12); } 50% { transform: scale(1.1, 0.92); } 100% { transform: scale(1); } }
-
-/* sparkle trail while travelling */
-.sb-trail {
-  position: fixed; z-index: 39; pointer-events: none; color: #F5B332; font-size: 10px;
-  animation: sb-trail 0.8s ease-out forwards;
-}
-@keyframes sb-trail {
-  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(1) rotate(0); }
-  100% { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(0.3) rotate(90deg); }
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  overflow: hidden;
+  isolation: isolate;
+  background: radial-gradient(circle at 50% 42% var(--siri-in-oklab), #1F3568 0%, #111C3D 65%, #090F24 100%);
+  box-shadow:
+    0 8px 24px rgba(27, 42, 78, 0.34),
+    0 2px 6px rgba(15, 23, 42, 0.18),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.25);
 }
 
-/* speech bubble */
-.sb-bubble {
-  position: fixed; left: 0; top: 0; z-index: 41; max-width: 260px; pointer-events: none;
-  background: #fff; color: #1B2A4E; border: 1px solid #E8E2D6; border-radius: 16px; padding: 10px 14px;
-  box-shadow: 0 14px 34px rgba(27, 42, 78, 0.18);
-  font-family: 'DM Sans', 'Plus Jakarta Sans', sans-serif; font-size: 14px; line-height: 1.4;
-  opacity: 0; transform: scale(0.6); visibility: hidden;
-  transition: opacity 0.2s, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s 0.28s;
+/* Mini non-interactive Siri badge used inside minimalist assistant headers */
+.siri-mini-orb {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  overflow: hidden;
+  isolation: isolate;
+  flex-shrink: 0;
+  background: radial-gradient(circle at 50% 42% var(--siri-in-oklab), #1F3568 0%, #111C3D 68%, #090F24 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 1px 3px rgba(27, 42, 78, 0.22);
 }
-.sb-bubble.sb-show { opacity: 1; transform: scale(1); visibility: visible; transition-delay: 0s; }
-.sb-bubble.sb-right { transform-origin: left center; }
-.sb-bubble.sb-left { transform-origin: right center; }
-.sb-bubble.sb-above { transform-origin: bottom right; }
-.sb-bubble strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-.sb-bubble strong:empty { display: none; }
-.sb-bubble span { color: #55607A; }
-.dark .sb-bubble { background: #171A26; color: #F1F3F9; border-color: #2A2F42; }
-.dark .sb-bubble span { color: #A9B1C7; }
+
+/* Soft ambient glow behind the Siri waves */
+.siri-wave-a {
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 32% 48% var(--siri-in-oklab), rgba(56, 189, 248, 0.35) 0%, transparent 55%),
+    radial-gradient(circle at 68% 52% var(--siri-in-oklab), rgba(244, 114, 182, 0.32) 0%, transparent 55%);
+  filter: blur(6px);
+  opacity: 0.85;
+}
+
+.siri-mini-orb .siri-wave-a {
+  filter: blur(2.5px);
+}
+
+/* ── 2 Horizontal Siri Sine Waves → Cross (×) ──────────────────────────── */
+.siri-lines-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.siri-wave-track {
+  transform-box: view-box;
+  transform-origin: 26px 26px;
+  transition: opacity 220ms ease, transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Seamless horizontal phase-glide for Siri sine waves (repeats every 52px) */
+.siri-wave-slide-1 {
+  animation: siri-flow-1 3.4s linear infinite;
+}
+
+.siri-wave-slide-2 {
+  animation: siri-flow-2 4.6s linear infinite;
+}
+
+.siri-orb-btn.is-thinking .siri-wave-slide-1 {
+  animation-duration: 1.4s;
+}
+.siri-orb-btn.is-thinking .siri-wave-slide-2 {
+  animation-duration: 1.9s;
+}
+
+/* Fade out waves cleanly when open and reveal the crisp cross (×) */
+.siri-orb-btn.is-open .siri-wave-track {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.siri-cross-group {
+  opacity: 0;
+  transform-box: view-box;
+  transform-origin: 26px 26px;
+  transform: scale(0.55) rotate(-45deg);
+  transition: opacity 220ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.siri-orb-btn.is-open .siri-cross-group {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Crisp glass lens specular highlight */
+.siri-gloss {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(
+    165deg var(--siri-in-oklab),
+    rgba(255, 255, 255, 0.38) 0%,
+    rgba(255, 255, 255, 0.05) 34%,
+    transparent 52%
+  );
+  box-shadow:
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.42),
+    inset 0 -2px 5px rgba(9, 15, 36, 0.55);
+}
+
+@keyframes siri-flow-1 {
+  0% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(-52px);
+  }
+}
+
+@keyframes siri-flow-2 {
+  0% {
+    transform: translateX(-52px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .sb-buddy { transition: none; }
-  .sb-float, .sb-antenna::after, .sb-hop .sb-body, .sb-land .sb-body, .sb-poke .sb-body { animation: none; }
+  .siri-orb-btn,
+  .siri-wave-track,
+  .siri-cross-group {
+    transition: none;
+  }
+  .siri-wave-slide-1,
+  .siri-wave-slide-2 {
+    animation: none;
+  }
 }

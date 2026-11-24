@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AssistantMessage } from '../hooks/usePrincipalAssistant';
 import { ActionPreviewCard } from './ActionPreviewCard';
@@ -12,17 +11,10 @@ interface ChatMessageProps {
   onQuickReply?: (text: string) => void;
 }
 
-const AssistantAvatar = () => (
-  <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-pink-500 text-white flex items-center justify-center shadow-sm">
-    <Sparkles className="w-3.5 h-3.5" strokeWidth={2} />
-  </div>
-);
-
 export const ChatMessage = ({ message, onEditField, onApprove, onCancel, onQuickReply }: ChatMessageProps) => {
   if (message.type === 'action_preview') {
     return (
-      <div className="flex gap-2.5 justify-start">
-        <AssistantAvatar />
+      <div className="flex justify-start">
         <ActionPreviewCard
           message={message}
           onEditField={onEditField ?? (() => {})}
@@ -35,8 +27,7 @@ export const ChatMessage = ({ message, onEditField, onApprove, onCancel, onQuick
 
   if (message.type === 'action_result') {
     return (
-      <div className="flex gap-2.5 justify-start">
-        <AssistantAvatar />
+      <div className="flex justify-start">
         <ActionResultCard message={message} />
       </div>
     );
@@ -47,27 +38,24 @@ export const ChatMessage = ({ message, onEditField, onApprove, onCancel, onQuick
 
   return (
     <div className={cn('flex flex-col gap-1.5', isUser ? 'items-end' : 'items-start')}>
-      <div className={cn('flex gap-2.5', isUser ? 'justify-end' : 'justify-start')}>
-        {!isUser && <AssistantAvatar />}
-        <div
-          className={cn(
-            'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-line',
-            isUser
-              ? 'bg-blue-600 text-white rounded-br-sm'
-              : 'bg-gray-50 text-gray-800 border border-gray-100 rounded-bl-sm'
-          )}
-        >
-          {message.content}
-        </div>
+      <div
+        className={cn(
+          'max-w-[85%] rounded-[16px] px-3.5 py-2 text-[13px] leading-relaxed whitespace-pre-line',
+          isUser
+            ? 'bg-[#1B2A4E] text-white rounded-br-[4px]'
+            : 'bg-white text-[#1B2A4E] border border-[#E8E2D6] rounded-bl-[4px]',
+        )}
+      >
+        {message.content}
       </div>
       {quickReplies && quickReplies.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pl-9">
+        <div className="flex flex-wrap gap-1.5">
           {quickReplies.map((reply) => (
             <button
               key={reply}
               type="button"
               onClick={() => onQuickReply?.(reply)}
-              className="px-3 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-3 py-1 rounded-full text-[12px] font-medium bg-white border border-[#E8E2D6] text-[#1B2A4E] hover:bg-[#F5F1E8] transition-colors cursor-pointer"
             >
               {reply}
             </button>
