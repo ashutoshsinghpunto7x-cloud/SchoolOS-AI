@@ -69,8 +69,8 @@ export const useOpsMockTestLeaderboard = (id: string | undefined) =>
 
 // ── Principal approval ───────────────────────────────────────────────────
 
-export const usePendingTestApprovals = () =>
-  useQuery({ queryKey: mockTestKeys.pendingApprovals(), queryFn: mockTestApi.listPendingApprovals });
+export const usePendingTestApprovals = (enabled = true) =>
+  useQuery({ queryKey: mockTestKeys.pendingApprovals(), queryFn: mockTestApi.listPendingApprovals, enabled });
 
 export const useApproveMockTest = () => {
   const qc = useQueryClient();

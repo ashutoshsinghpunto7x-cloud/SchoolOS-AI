@@ -17,10 +17,11 @@ export const useCreateChangeRequest = () => {
   });
 };
 
-export const usePendingChangeRequests = () =>
+export const usePendingChangeRequests = (enabled = true) =>
   useQuery({
     queryKey: changeRequestKeys.pending,
     queryFn: studentChangeRequestsApi.listPending,
+    enabled,
   });
 
 export const usePendingChangeRequestsForStudent = (studentId: string, enabled = true) =>

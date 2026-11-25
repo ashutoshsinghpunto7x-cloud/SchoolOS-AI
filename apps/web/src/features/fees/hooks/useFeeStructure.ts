@@ -52,10 +52,11 @@ export const useDeleteFeeStructure = () => {
   });
 };
 
-export const usePendingDiscounts = () =>
+export const usePendingDiscounts = (enabled = true) =>
   useQuery({
     queryKey: feeStructureKeys.pendingDiscounts(),
     queryFn: feeStructureApi.listPendingDiscounts,
+    enabled,
   });
 
 export const useStudentDiscounts = (studentId: string) =>

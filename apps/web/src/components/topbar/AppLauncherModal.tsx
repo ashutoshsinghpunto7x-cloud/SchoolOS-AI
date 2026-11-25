@@ -609,10 +609,10 @@ export function AppLauncherModal({ isOpen, onClose, buttonRef }: AppLauncherModa
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   // Live pending-approval counts — shown for Principal/Incharge.
-  const { data: leave } = usePendingLeaveRequests();
-  const { data: changeRequests } = usePendingChangeRequests();
-  const { data: discounts } = usePendingDiscounts();
-  const { data: testApprovals } = usePendingTestApprovals();
+  const { data: leave } = usePendingLeaveRequests(isPrincipal);
+  const { data: changeRequests } = usePendingChangeRequests(isPrincipal);
+  const { data: discounts } = usePendingDiscounts(isPrincipal);
+  const { data: testApprovals } = usePendingTestApprovals(isPrincipal);
   const itemCounts: Record<string, number> = isPrincipal ? {
     leave_approvals: leave?.length ?? 0,
     student_change_requests: changeRequests?.length ?? 0,

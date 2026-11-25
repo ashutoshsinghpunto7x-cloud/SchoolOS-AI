@@ -22,11 +22,12 @@ export const useLeaveRequest = (id: string | undefined) =>
     enabled: !!id,
   });
 
-export const usePendingLeaveRequests = () =>
+export const usePendingLeaveRequests = (enabled = true) =>
   useQuery({
     queryKey: leaveRequestKeys.pending,
     queryFn: leaveRequestsApi.listPending,
     staleTime: 30_000,
+    enabled,
   });
 
 export const useCreateLeaveRequest = () => {
