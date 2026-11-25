@@ -737,7 +737,7 @@ export function TeacherDashboard() {
 
         <UpcomingEventsWidget />
 
-        <EmergencyHalfDayLeaveCard scopedClasses={data?.classTeacherOf} />
+        {data && <EmergencyHalfDayLeaveCard scopedClasses={data.classTeacherOf} />}
 
         <MyLeaveSection onApply={() => setShowApplyLeave(true)} />
       </div>

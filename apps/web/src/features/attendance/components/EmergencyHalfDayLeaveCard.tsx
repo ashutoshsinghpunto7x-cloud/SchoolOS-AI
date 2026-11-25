@@ -50,8 +50,16 @@ export function EmergencyHalfDayLeaveCard({
   });
 
   const { data: halfDayToday, isLoading: loadingList } = useQuery({
-    queryKey: ['attendance-half-day-today', today],
-    queryFn: () => attendanceApi.list({ date: today, status: 'half_day', limit: 20 }),
+    queryKey: ['attendance-half-day-today', today, scopeKey],
+    queryFn: async () => {
+      const base = { date: today, status: 'half_day' as const, limit: 20 };
+      // Teachers must name a class + section (server rejects school-wide reads).
+      if (!scopedClasses || scopedClasses.length === 0) return attendanceApi.list(base);
+      const pages = await Promise.all(
+        scopedClasses.map((c) => attendanceApi.list({ ...base, class: c.class, section: c.section })),
+      );
+      return { ...pages[0], data: pages.flatMap((p) => p.data) };
+    },
     staleTime: 15_000,
   });
 
