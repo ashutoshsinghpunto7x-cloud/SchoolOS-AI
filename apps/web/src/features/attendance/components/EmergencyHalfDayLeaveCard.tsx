@@ -33,9 +33,19 @@ export function EmergencyHalfDayLeaveCard({
   });
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
+  const scopeKey = (scopedClasses ?? []).map((c) => `${c.class}::${c.section}`).join('|');
+
   const { data: studentsPage, isFetching: searching } = useQuery({
-    queryKey: ['half-day-student-search', search],
-    queryFn: () => studentsApi.listPaginated({ search: search.trim() || undefined, limit: 8, status: 'active' }),
+    queryKey: ['half-day-student-search', search, scopeKey],
+    queryFn: async () => {
+      const base = { search: search.trim() || undefined, limit: 8, status: 'active' as const };
+      if (!scopedClasses || scopedClasses.length === 0) return studentsApi.listPaginated(base);
+      // Class teachers may only see students of their own class(es): query each one server-side.
+      const pages = await Promise.all(
+        scopedClasses.map((c) => studentsApi.listPaginated({ ...base, class: c.class, section: c.section })),
+      );
+      return { ...pages[0], data: pages.flatMap((p) => p.data).slice(0, 8) };
+    },
     staleTime: 30_000,
   });
 
@@ -46,12 +56,8 @@ export function EmergencyHalfDayLeaveCard({
   });
 
   const candidateStudents = useMemo(() => {
-    const rows = studentsPage?.data ?? [];
-    if (!scopedClasses || scopedClasses.length === 0) return rows;
-    const allowed = new Set(scopedClasses.map((c) => `${c.class}::${c.section}`));
-    const filtered = rows.filter((s) => allowed.has(`${s.class}::${s.section}`));
-    return filtered.length > 0 ? filtered : rows;
-  }, [studentsPage, scopedClasses]);
+    return studentsPage?.data ?? [];
+  }, [studentsPage]);
 
   const studentNameMap = useMemo(() => {
     const map = new Map<string, Student>();
