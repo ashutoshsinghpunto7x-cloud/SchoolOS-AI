@@ -77,6 +77,13 @@ const DEMO_RECEPTION = {
   lastName: 'Rao',
 };
 
+const DEMO_ACCOUNTANT = {
+  email: 'demoaccountant@demo.schoolos.ai',
+  username: 'demoaccountant',
+  firstName: 'Rajesh',
+  lastName: 'Gupta',
+};
+
 const DEMO_PARENT = {
   email: 'demoparent@demo.schoolos.ai',
   username: 'demoparent',
@@ -222,6 +229,23 @@ async function main() {
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
   console.log(`+ Reception login ready: ${DEMO_RECEPTION.email} / ${PASSWORD}`);
+
+  // ── 3c. Accountant User login (finance — no Teacher profile) ───────────────
+  await User.findOneAndUpdate(
+    { email: DEMO_ACCOUNTANT.email },
+    {
+      firstName: DEMO_ACCOUNTANT.firstName,
+      lastName: DEMO_ACCOUNTANT.lastName,
+      email: DEMO_ACCOUNTANT.email,
+      username: DEMO_ACCOUNTANT.username,
+      passwordHash,
+      role: 'accountant',
+      schoolId: SCHOOL_ID,
+      status: 'active',
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  console.log(`+ Accountant login ready: ${DEMO_ACCOUNTANT.email} / ${PASSWORD}`);
 
   // ── 4. Class-teacher assignments ────────────────────────────────────────────
   for (const { plan, teacherId, teacherName } of teacherProfiles) {
@@ -501,6 +525,7 @@ async function main() {
   }
   console.log(`  ${DEMO_PRINCIPAL.email}  (or username "${DEMO_PRINCIPAL.username}")  /  ${PASSWORD}   — principal dashboard`);
   console.log(`  ${DEMO_RECEPTION.email}  (or username "${DEMO_RECEPTION.username}")  /  ${PASSWORD}   — reception dashboard`);
+  console.log(`  ${DEMO_ACCOUNTANT.email}  (or username "${DEMO_ACCOUNTANT.username}")  /  ${PASSWORD}   — accountant dashboard`);
   console.log(`  ${DEMO_PARENT.email}  (or username "${DEMO_PARENT.username}")  /  ${PASSWORD}   — parent dashboard`);
   console.log(`  ${DEMO_DRIVER.email}  (or username "${DEMO_DRIVER.username}")  /  ${PASSWORD}   — driver dashboard (vehicle DL-1PC-4041)`);
 

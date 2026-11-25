@@ -16,6 +16,12 @@
       "autoPort": true
     },
     {
+      "name": "buddy-kit",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "5190", "--directory", "docs/companion-buddy-kit"],
+      "port": 5190
+    },
+    {
       "name": "mobile-web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "web", "-w", "apps/mobile"],

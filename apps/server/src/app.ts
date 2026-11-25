@@ -37,6 +37,7 @@ const baselineOrigins = [
   'https://fnicschool.com',
   'https://www.fnicschool.com',
   'https://fnic.vercel.app',
+  'https://mycampus-self.vercel.app',
 ];
 const envOrigins = env.FRONTEND_URL.split(',').map((origin) => origin.trim()).filter(Boolean);
 const allowedOrigins = Array.from(new Set([...baselineOrigins, ...envOrigins]));
