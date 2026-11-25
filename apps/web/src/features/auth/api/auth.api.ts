@@ -26,9 +26,13 @@ export const authApi = {
     }
   },
 
-  async logout(): Promise<void> {
+  async logout(accessToken?: string): Promise<void> {
     try {
-      await apiClient.post('/auth/logout');
+      await apiClient.post(
+        '/auth/logout',
+        null,
+        accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined,
+      );
     } catch {
       // Silently ignore — local state cleared regardless
     }

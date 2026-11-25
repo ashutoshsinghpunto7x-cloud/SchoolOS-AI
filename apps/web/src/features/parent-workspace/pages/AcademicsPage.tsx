@@ -1,11 +1,13 @@
+import type { CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GraduationCap, BookOpen, FileText, ChevronRight } from 'lucide-react';
+import { GraduationCap, BookOpen, FileText, ChevronRight, Award, Sparkles } from 'lucide-react';
 import { parentWorkspaceApi } from '../api/parent-workspace.api';
 import { useParentWorkspace } from '../hooks/useParentWorkspace';
 import { ParentScreenHeader } from '../components/ParentScreenHeader';
 import { SubjectProgress } from '../components/SubjectProgress';
+import { StudentPersonalityCard } from '../components/StudentPersonalityCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { ExamResult } from '../types';
 
@@ -15,42 +17,81 @@ const fadeUp = {
 };
 
 const RESULT_BADGE: Record<ExamResult['subjects'][number]['result'], string> = {
-  pass: 'bg-emerald-50 text-emerald-700',
-  fail: 'bg-red-50 text-red-700',
-  na: 'bg-gray-100 text-gray-500',
+  pass: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+  fail: 'bg-rose-50 text-rose-800 border border-rose-200',
+  na: 'bg-slate-100 text-slate-600 border border-slate-200',
 };
 
+function barColors(pct?: number) {
+  const v = pct ?? 0;
+  if (v >= 85) return { fill: '#059669', track: '#D1FAE5' };
+  if (v >= 70) return { fill: '#2563EB', track: '#DBEAFE' };
+  if (v >= 50) return { fill: '#D97706', track: '#FEF3C7' };
+  return { fill: '#E11D48', track: '#FFE4E6' };
+}
+
 function ExamCard({ exam }: { exam: ExamResult }) {
+  const overall = exam.overallPercentage;
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-lg font-bold text-gray-900">{exam.examName}</p>
-          {exam.termLabel && <p className="text-sm text-gray-500 mt-0.5">{exam.termLabel}</p>}
+    <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-50/90 via-sky-50/70 to-white px-5 py-4 sm:px-6 border-b border-indigo-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-base sm:text-lg font-bold text-[#1B2A4E] truncate m-0">{exam.examName}</p>
+            {exam.termLabel && <p className="text-xs sm:text-sm text-[#55607A] m-0 mt-0.5">{exam.termLabel}</p>}
+          </div>
         </div>
-        {typeof exam.overallPercentage === 'number' && (
-          <div className="text-right shrink-0">
-            <p className="text-2xl font-bold text-[#1B2A4E] tabular-nums">{exam.overallPercentage}%</p>
-            <p className="text-sm text-gray-400">Overall</p>
+        {typeof overall === 'number' && (
+          <div className="px-3.5 py-1.5 rounded-xl bg-white border border-indigo-200 text-right shrink-0 shadow-2xs">
+            <p className="text-xl font-bold text-indigo-700 tabular-nums m-0">{overall}%</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#55607A] m-0">Overall</p>
           </div>
         )}
       </div>
 
-      <div className="mt-5 divide-y divide-gray-100">
-        {exam.subjects.map((s) => (
-          <div key={s.subject} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-            <span className="text-base text-gray-900">{s.subject}</span>
-            <div className="flex items-center gap-3 shrink-0">
+      <div className="px-5 py-4 sm:px-6 divide-y divide-[#EFEAE0]">
+        {exam.subjects.map((s) => {
+          const colors = barColors(s.percentage);
+          return (
+            <div key={s.subject} className="py-3.5 first:pt-0 last:pb-0">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm sm:text-base font-semibold text-[#1B2A4E]">{s.subject}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {typeof s.percentage === 'number' && (
+                    <span className="text-sm sm:text-base font-bold text-[#1B2A4E] tabular-nums">
+                      {s.percentage}%
+                    </span>
+                  )}
+                  {s.grade && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-200">
+                      Grade {s.grade}
+                    </span>
+                  )}
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${RESULT_BADGE[s.result]}`}>
+                    {s.result === 'pass' ? 'Pass' : s.result === 'fail' ? 'Needs support' : '—'}
+                  </span>
+                </div>
+              </div>
               {typeof s.percentage === 'number' && (
-                <span className="text-base font-semibold text-gray-900 tabular-nums">{s.percentage}%</span>
+                <progress
+                  value={s.percentage}
+                  max={100}
+                  aria-label={`${s.subject}: ${s.percentage}%`}
+                  className="pw-progress w-full h-1.5 mt-2 block"
+                  style={
+                    {
+                      '--pw-fill': colors.fill,
+                      '--pw-track': colors.track,
+                    } as CSSProperties
+                  }
+                />
               )}
-              {s.grade && <span className="text-sm text-gray-500">Grade {s.grade}</span>}
-              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${RESULT_BADGE[s.result]}`}>
-                {s.result === 'pass' ? 'Pass' : s.result === 'fail' ? 'Needs support' : '—'}
-              </span>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -66,8 +107,6 @@ export function AcademicsPage() {
     enabled: !!activeChild,
   });
 
-  // Lightweight check only — the full document (template, QR, school
-  // branding) is fetched on ReportCardPage once the parent actually opens it.
   const { data: reportCard } = useQuery({
     queryKey: ['parent-report-card', activeChild?._id],
     queryFn: () => parentWorkspaceApi.getReportCard(activeChild!._id),
@@ -77,7 +116,7 @@ export function AcademicsPage() {
   if (workspaceLoading || (isLoading && !data)) {
     return (
       <div className="min-h-screen bg-[#FBF8F3]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-busy="true">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5" aria-hidden="true">
           <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
           <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
@@ -101,8 +140,8 @@ export function AcademicsPage() {
   return (
     <div className="min-h-screen bg-[#FBF8F3]">
       <ParentScreenHeader
-        title="Academics"
-        subtitle={`${data.child.name}'s exam results and subject progress`}
+        title="Mark Report & Academics"
+        subtitle={`${data.child.name}'s exam marks, report card & personality profile`}
         children={workspace?.children}
         activeChild={activeChild}
         onSelectChild={setActiveChildId}
@@ -114,34 +153,43 @@ export function AcademicsPage() {
         transition={{ staggerChildren: 0.05 }}
         className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
       >
-        {reportCard?.available && (
-          <motion.button
-            type="button"
-            onClick={() => navigate('/parent/academics/report-card')}
-            variants={fadeUp}
-            transition={{ duration: 0.25 }}
-            className="w-full flex items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6 text-left hover:bg-gray-50 transition-colors"
-          >
-            <div className="w-11 h-11 rounded-xl bg-[#EEF1F8] flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5 text-[#1B2A4E]" strokeWidth={1.75} />
-            </div>
-            <span className="flex-1 min-w-0">
-              <span className="block text-base font-semibold text-gray-900">Term Report Card</span>
-              <span className="block text-sm text-gray-500 mt-0.5">View the full published report card, printable as PDF</span>
+        {/* Colourful Report Card Banner (always accessible!) */}
+        <motion.button
+          type="button"
+          onClick={() => navigate('/parent/academics/report-card')}
+          variants={fadeUp}
+          transition={{ duration: 0.25 }}
+          className="w-full flex items-center gap-4 rounded-2xl bg-gradient-to-r from-[#1E3A8A] via-[#2563EB] to-[#4F46E5] text-white shadow-sm px-5 py-5 sm:px-6 text-left hover:brightness-105 transition-all cursor-pointer"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+            <FileText className="w-6 h-6 text-white" strokeWidth={1.9} />
+          </div>
+          <span className="flex-1 min-w-0">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-sky-200">
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              {reportCard?.available ? 'Published & Ready to Print' : 'Interactive Progress View'}
             </span>
-            <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" strokeWidth={2} />
-          </motion.button>
-        )}
+            <span className="block text-base sm:text-lg font-bold text-white mt-0.5">
+              {reportCard?.available ? 'View Term Report Card & Printable PDF' : 'Open Digital Report Card & Personality Profile'}
+            </span>
+          </span>
+          <ChevronRight className="w-5 h-5 text-white/80 shrink-0" strokeWidth={2.2} />
+        </motion.button>
 
         {data.subjectTrend.length > 0 && (
           <motion.section
             variants={fadeUp}
             transition={{ duration: 0.25 }}
             aria-label="Subject progress"
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6"
+            className="bg-white rounded-2xl border border-indigo-100 shadow-sm px-5 py-5 sm:px-6 sm:py-6"
           >
-            <p className="text-lg font-bold text-gray-900 mb-4">Subject-wise progress</p>
-            <div className="space-y-5">
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <p className="text-lg font-bold text-[#1B2A4E] m-0">Subject-wise Mark Progress</p>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                {data.subjectTrend.length} Subjects
+              </span>
+            </div>
+            <div className="space-y-4">
               {data.subjectTrend.map((s) => (
                 <SubjectProgress key={s._id} {...s} />
               ))}
@@ -153,8 +201,8 @@ export function AcademicsPage() {
           <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
             <EmptyState
               icon={BookOpen}
-              title="No published results yet"
-              description="Exam results will appear here as soon as the school publishes them."
+              title="No published exam results yet"
+              description="Exam marks will appear here as soon as the school publishes them."
             />
           </motion.div>
         ) : (
@@ -164,6 +212,15 @@ export function AcademicsPage() {
             </motion.div>
           ))
         )}
+
+        <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
+          <StudentPersonalityCard
+            child={activeChild}
+            subjects={data.subjectTrend}
+            reportCard={reportCard?.reportCard}
+            template={reportCard?.template}
+          />
+        </motion.div>
       </motion.main>
     </div>
   );

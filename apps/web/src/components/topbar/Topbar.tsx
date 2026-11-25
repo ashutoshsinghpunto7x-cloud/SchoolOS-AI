@@ -12,6 +12,7 @@ import { ACCOUNTANT_HERO_GRADIENT_STYLE } from '@/features/accountant-workspace/
 import { SUPPORT_PHONE } from '@/lib/support';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { getHomePathForRole } from '@/features/auth/utils/roleHome';
+import { goBackOrFallback } from '@/lib/navigation';
 import fnicLogo from '@/assets/illustrations/fnic-logo.jpg';
 
 const WORKSPACE_LABELS: Record<string, string> = {
@@ -354,41 +355,57 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
 
   const useChromeTopbar = true;
   const homePath = user?.role ? getHomePathForRole(user.role) : '/';
+  const isAtHome =
+    location.pathname === homePath ||
+    (user?.role === 'admin' && (location.pathname === '/administration' || location.pathname === '/reception'));
 
-  // Chrome-like Topbar & Mobile Header (used by Principal, Admin, Reception, Coordinator, etc.)
+  // Chrome-like Topbar & Mobile Header (used by Principal, Admin, Reception, Coordinator, Teacher, Accountant, etc.)
   if (useChromeTopbar) {
     return (
       <>
         {/* Desktop Top App Bar (Exact 76px Spec Match) */}
         <header className="hidden md:flex h-[76px] shrink-0 bg-white border-b border-[#E8E2D6] px-7 items-center justify-between sticky top-0 z-40 shadow-[0_1px_3px_rgba(27,42,78,0.03)] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
-          {/* Logo + Title (Width: 230px) */}
-          <div
-            className="flex items-center gap-3 w-[230px] shrink-0 cursor-pointer"
-            onClick={() => navigate(homePath)}
-          >
-            <img
-              src={schoolSettings?.logoUrl || fnicLogo}
-              alt="School logo"
-              className="w-[42px] h-[42px] rounded-full object-contain block shadow-xs bg-white shrink-0"
-            />
-            <div className="flex flex-col min-w-0">
-              <b
-                className="text-[17px] font-bold text-[#1B2A4E] tracking-tight leading-tight truncate"
-                title={schoolSettings?.schoolName}
+          {/* Left: Back button (when on inner screen) + Logo + Title */}
+          <div className="flex items-center gap-2.5 min-w-[230px] shrink-0">
+            {!isAtHome && (
+              <button
+                type="button"
+                onClick={() => goBackOrFallback(navigate, homePath)}
+                aria-label="Go back to previous screen"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-[#FBF8F3] hover:bg-[#EFEAE0] border border-[#E8E2D6] text-[#1B2A4E] text-xs font-semibold transition-colors cursor-pointer shrink-0"
               >
-                {schoolSettings?.schoolName || 'SchoolOS'}
-              </b>
-              <span className="text-[10px] font-semibold text-[#55607A] tracking-wider uppercase">
-                SchoolOS
-              </span>
+                <ArrowLeft className="w-3.5 h-3.5" strokeWidth={2.2} />
+                <span>Back</span>
+              </button>
+            )}
+            <div
+              className="flex items-center gap-3 cursor-pointer min-w-0"
+              onClick={() => navigate(homePath)}
+            >
+              <img
+                src={schoolSettings?.logoUrl || fnicLogo}
+                alt="School logo"
+                className="w-[42px] h-[42px] rounded-full object-contain block shadow-xs bg-white shrink-0"
+              />
+              <div className="flex flex-col min-w-0">
+                <b
+                  className="text-[17px] font-bold text-[#1B2A4E] tracking-tight leading-tight truncate"
+                  title={schoolSettings?.schoolName}
+                >
+                  {schoolSettings?.schoolName || 'SchoolOS'}
+                </b>
+                <span className="text-[10px] font-semibold text-[#55607A] tracking-wider uppercase">
+                  SchoolOS
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Centered Search Bar (Max Width: 640px, Height: 48px, Radius: 24px) */}
           <PrincipalSearchBar />
 
-          {/* Right Controls: 9-Dot Launcher Button + Avatar (Width: 230px) */}
-          <div className="w-[230px] flex justify-end items-center gap-2.5 shrink-0 relative">
+          {/* Right Controls: 9-Dot Launcher Button + Avatar + Sign Out */}
+          <div className="min-w-[230px] flex justify-end items-center gap-2.5 shrink-0 relative">
             <button
               ref={launcherBtnRef}
               type="button"
@@ -411,14 +428,17 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
               </svg>
             </button>
 
-            <div className="relative">
-              <div
+            <div className="relative" data-profile-menu>
+              <button
+                type="button"
                 onClick={() => setProfileMenuOpen((v) => !v)}
+                aria-label="Open account menu"
+                aria-expanded={profileMenuOpen}
                 className="w-[42px] h-[42px] rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-[13px] flex items-center justify-center shadow-xs cursor-pointer hover:ring-2 hover:ring-[#D9822B]/40 transition-all select-none"
                 title={`${displayName} · ${ROLE_LABELS[user?.role ?? ''] ?? 'Staff'}`}
               >
                 {initials}
-              </div>
+              </button>
               {profileMenuOpen && (
                 <ProfileMenu
                   displayName={displayName}
@@ -437,33 +457,48 @@ export const Topbar = ({ onMenuToggle }: TopbarProps) => {
           />
         </header>
 
-        {/* Mobile Top Header (Compact Height: 52px, Exact Match to main-mobile-demo.html) */}
+        {/* Mobile Top Header (Compact Height: 52px) */}
         <header className="flex md:hidden h-[52px] shrink-0 bg-[#FBF8F3] px-3.5 items-center justify-between border-b border-[#E8E2D6]/60 font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
-          <div
-            className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
-            onClick={() => navigate(homePath)}
-          >
-            <img
-              src={schoolSettings?.logoUrl || fnicLogo}
-              alt="School logo"
-              className="w-7 h-7 rounded-full object-contain block shadow-xs shrink-0 bg-white"
-            />
-            <h1 className="text-[17px] font-medium text-[#1B2A4E] tracking-tight truncate m-0">
-              {timeGreeting(now)}{user?.firstName ? `, ${user.firstName}` : ''}
-            </h1>
-          </div>
-          <div className="relative shrink-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {!isAtHome && (
+              <button
+                type="button"
+                onClick={() => goBackOrFallback(navigate, homePath)}
+                aria-label="Go back to previous screen"
+                className="w-8 h-8 rounded-full bg-white border border-[#E8E2D6] flex items-center justify-center text-[#1B2A4E] shrink-0 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" strokeWidth={2.2} />
+              </button>
+            )}
             <div
+              className="flex items-center gap-2 cursor-pointer min-w-0"
+              onClick={() => navigate(homePath)}
+            >
+              <img
+                src={schoolSettings?.logoUrl || fnicLogo}
+                alt="School logo"
+                className="w-7 h-7 rounded-full object-contain block shadow-xs shrink-0 bg-white"
+              />
+              <h1 className="text-[17px] font-medium text-[#1B2A4E] tracking-tight truncate m-0">
+                {timeGreeting(now)}{user?.firstName ? `, ${user.firstName}` : ''}
+              </h1>
+            </div>
+          </div>
+          <div className="relative shrink-0" data-profile-menu>
+            <button
+              type="button"
               onClick={() => setProfileMenuOpen((v) => !v)}
+              aria-label="Open account menu"
+              aria-expanded={profileMenuOpen}
               className="w-8 h-8 rounded-full bg-[#1B2A4E] text-[#F5B332] font-bold text-[11px] flex items-center justify-center shadow-xs cursor-pointer shrink-0 select-none"
             >
               {initials}
-            </div>
+            </button>
             {profileMenuOpen && (
               <ProfileMenu
                 displayName={displayName}
-                roleLabel="Principal & Director"
-                showSettings={true}
+                roleLabel={ROLE_LABELS[user?.role ?? ''] ?? 'Staff'}
+                showSettings={isPrincipal || user?.role === 'admin'}
                 onClose={() => setProfileMenuOpen(false)}
               />
             )}

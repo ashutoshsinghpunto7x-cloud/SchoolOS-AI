@@ -66,8 +66,8 @@ const TEACHER: CompanionConfig = {
     { path: '/teacher/profile', label: 'My Profile', hint: 'Your details and password.' },
     { path: '/teacher/id-card', label: 'ID Card', hint: 'Your staff ID card.' },
   ],
-  hello: "Hover any button and I'll explain it. Click me to ask a question or browse the FAQ.",
-  bottomOffset: () => 96, // floating pill nav is visible at every width
+  hello: 'Ask a question or browse quick answers.',
+  bottomOffset: above(80, 768), // mobile capsule dock below md
 };
 
 const PARENT: CompanionConfig = {
@@ -125,7 +125,7 @@ const OPERATIONS: CompanionConfig = {
     { path: '/operations/facility-requests', label: 'Facility Requests', hint: 'Repairs and maintenance to arrange.' },
     ...ACCOUNTS_ROUTES.filter((r) => r.path !== '/accountant'),
   ],
-  hello: "Hover any menu and I'll explain it. Click me any time for help on this page.",
+  hello: 'Search any screen or see quick guidance for this page.',
   bottomOffset: () => 24,
 };
 
@@ -138,8 +138,8 @@ const COORDINATOR: CompanionConfig = {
     { path: '/coordinator/calendar', label: 'Academic Calendar', hint: 'Term dates, holidays and exam weeks.' },
     { path: '/exams', label: 'Exams', hint: 'Exam and unit test schedules.' },
   ],
-  hello: "Hover any menu and I'll explain it. Click me any time for help on this page.",
-  bottomOffset: () => 24,
+  hello: 'Search any screen or see quick guidance for this page.',
+  bottomOffset: above(80, 768),
 };
 
 // Reception and admin share the school-office shell (left sidebar, /reception home).
@@ -179,8 +179,8 @@ const OFFICE: CompanionConfig = {
     { path: '/admin/qr-management', label: 'QR Management', hint: 'Attendance QR codes.' },
     { path: '/admin/payroll', label: 'Payroll', hint: 'Monthly payroll runs.' },
   ],
-  hello: "Hover any menu and I'll explain it. Click me any time for help on this page.",
-  bottomOffset: () => 24,
+  hello: 'Search any screen or see quick guidance for this page.',
+  bottomOffset: above(80, 768),
 };
 
 /**

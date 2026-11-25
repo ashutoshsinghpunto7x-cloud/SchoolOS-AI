@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { goBackOrFallback } from '@/lib/navigation';
 
 interface BackLinkProps {
   to: string;
@@ -8,17 +9,16 @@ interface BackLinkProps {
   className?: string;
 }
 
-/** Shared "‹ Back to X" link used at the top of drill-down pages whose role's
- *  sidebar isn't permanently docked (principal's is an overlay), so there's
- *  otherwise no way back except reopening the hamburger menu. */
+/** Shared "‹ Back" link used at the top of drill-down pages: returns to the
+ *  exact previous screen when history exists, or falls back to `to`. */
 export function BackLink({ to, label, className }: BackLinkProps) {
   const navigate = useNavigate();
   return (
     <button
       type="button"
-      onClick={() => navigate(to)}
+      onClick={() => goBackOrFallback(navigate, to)}
       className={cn(
-        'flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors mb-6',
+        'flex items-center gap-2 text-sm font-medium text-[#55607A] hover:text-[#1B2A4E] transition-colors mb-6 cursor-pointer',
         className,
       )}
     >

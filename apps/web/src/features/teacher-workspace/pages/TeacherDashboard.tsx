@@ -14,6 +14,7 @@ import '../winter/winter.css';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
+import { EmergencyHalfDayLeaveCard } from '@/features/attendance/components/EmergencyHalfDayLeaveCard';
 import { useMyLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
 import type { TodayClass } from '@schoolos/types';
 import { cn } from '@/lib/utils';
@@ -735,6 +736,8 @@ export function TeacherDashboard() {
         )}
 
         <UpcomingEventsWidget />
+
+        <EmergencyHalfDayLeaveCard scopedClasses={data?.classTeacherOf} />
 
         <MyLeaveSection onApply={() => setShowApplyLeave(true)} />
       </div>

@@ -77,7 +77,7 @@ function AppLayoutInner() {
       <NotificationNudge />
       <ReminderWatcher />
       <HighPriorityMessageGate />
-      {user?.role === 'principal' && <PrincipalAssistantWidget />}
+      {(user?.role === 'principal' || user?.role === 'incharge') && <PrincipalAssistantWidget />}
       <RoleCompanion />
 
       {/* Backdrop — mobile-only, since the sidebar is permanently docked on desktop */}

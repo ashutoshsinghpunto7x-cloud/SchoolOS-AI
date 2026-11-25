@@ -486,11 +486,20 @@ export const parentWorkspaceService = {
     if (!child) throw new NotFoundError('Child');
 
     const q = question.toLowerCase();
-    if (q.includes('attend')) {
+    if (q.includes('fee') || q.includes('due') || q.includes('paid') || q.includes('receipt') || q.includes('payment')) {
+      const fees = await this.getFees(ctx, child._id);
+      return fees.totalOutstanding > 0
+        ? `${child.name} has ₹${fees.totalOutstanding.toLocaleString('en-IN')} in pending fee dues and ₹${fees.totalPaid.toLocaleString('en-IN')} paid so far across ${fees.records.length} fee records.`
+        : `All school fees for ${child.name} are cleared (₹${fees.totalPaid.toLocaleString('en-IN')} paid).`;
+    }
+    if (q.includes('attend') || q.includes('present') || q.includes('absent')) {
       return `${child.name} has attended ${child.attendancePercent}% of school days this year.`;
     }
-    if (q.includes('academ') || q.includes('doing') || q.includes('progress')) {
+    if (q.includes('report card') || q.includes('mark') || q.includes('academ') || q.includes('doing') || q.includes('progress')) {
       return `${child.name}'s current academic average is ${child.academicAverage}/10. ${bundle.insight.headline}`;
+    }
+    if (q.includes('personalit') || q.includes('behavio') || q.includes('habit') || q.includes('conduct')) {
+      return `${child.name} maintains ${child.attendancePercent}% attendance with steady classroom habits. ${bundle.insight.headline}`;
     }
     if (q.includes('help') || q.includes('weak') || q.includes('practice') || q.includes('subject')) {
       if (bundle.subjects.length === 0) return `No published subject marks for ${child.name} yet.`;

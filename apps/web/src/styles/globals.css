@@ -493,4 +493,115 @@ button {
   animation: glow-pulse 2.5s ease-in-out infinite;
 }
 
+/* ── 9. Semantic Parent/Student Progress Bars & Rings ─────────────────────── */
+@property --pw-ring-val {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+progress.pw-progress {
+  appearance: none;
+  border: 0 solid;
+  overflow: clip;
+  border-radius: 9999px;
+  background: var(--pw-track, #EEF2F7);
+}
+
+progress.pw-progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+progress.pw-progress::-webkit-progress-value {
+  background: var(--pw-fill, #2563EB);
+  border-radius: 9999px;
+  transition: inline-size 0.35s ease;
+}
+
+progress.pw-progress::-moz-progress-bar {
+  background: var(--pw-fill, #2563EB);
+  border-radius: 9999px;
+  transition: inline-size 0.35s ease;
+}
+
+.pw-ring-wrap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+progress.pw-ring {
+  --size: 64px;
+  --thickness: 7px;
+  --track-color: #E2E8F0;
+  --fill-color: #059669;
+  appearance: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--fill-color) calc(var(--pw-ring-val, 0) * 1%),
+    var(--track-color) 0
+  );
+  background-clip: border-area;
+  border: var(--thickness) solid transparent;
+  background-origin: border-box;
+  transition: --pw-ring-val 0s ease-in-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  progress.pw-ring {
+    transition-duration: 0.45s;
+  }
+}
+
+progress.pw-ring::-webkit-progress-bar {
+  display: none;
+  background: none;
+}
+
+progress.pw-ring::-webkit-progress-value {
+  display: none;
+  background: none;
+}
+
+progress.pw-ring::-moz-progress-bar {
+  display: none;
+  background: none;
+}
+
+@supports not (background-clip: border-area) {
+  progress.pw-ring {
+    mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    -webkit-mask-image: radial-gradient(
+      transparent calc(50% - var(--thickness)),
+      black calc(50% - var(--thickness) + 0.5px)
+    );
+    border: 0;
+  }
+}
+
+@media (forced-colors: active) {
+  progress.pw-ring {
+    forced-color-adjust: none;
+    --fill-color: CanvasText;
+    --track-color: Canvas;
+  }
+}
+
+.pw-ring-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.1;
+}
+
+
 

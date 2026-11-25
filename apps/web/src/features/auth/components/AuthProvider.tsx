@@ -124,15 +124,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
-    try {
-      await authApi.logout();
-    } catch {}
+    const token = sessionStorage.getItem('accessToken');
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('sessionId');
     resetAuthRefreshState();
     queryClient.clear();
     setUser(null);
     navigate('/login', { replace: true });
+    if (token) {
+      void authApi.logout(token).catch(() => {});
+    }
   }, [navigate]);
 
   return (

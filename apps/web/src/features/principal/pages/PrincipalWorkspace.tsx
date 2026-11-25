@@ -7,6 +7,7 @@ import { usePendingLeaveRequests } from '@/features/leave-requests/hooks/useLeav
 import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTests';
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
+import { EmergencyHalfDayLeaveCard } from '@/features/attendance/components/EmergencyHalfDayLeaveCard';
 import { getPrincipalPagePath } from '@/components/topbar/AppLauncherModal';
 
 // Principal home — every number on this page comes from the live API
@@ -258,6 +259,8 @@ export const PrincipalWorkspace = () => {
             ))}
           </div>
         )}
+
+        <EmergencyHalfDayLeaveCard />
       </div>
 
     </div>
