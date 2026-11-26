@@ -320,6 +320,15 @@ button {
   100% { transform: rotate(-3deg)  scale(1.12) translate(-2%,  3%);   }
 }
 
+/* Page-root safety net: many teacher pages use `bg-[#FBF8F3] dark:bg-transparent`
+   with light-on-dark text. On some devices/browsers the `dark:` background
+   override lost to the cream utility, leaving white text on a cream page
+   (unreadable). This plain-CSS rule doesn't depend on Tailwind's variant
+   output, so the page is always transparent over the dark layout in dark mode. */
+.dark .min-h-screen.bg-\[\#FBF8F3\] {
+  background-color: transparent;
+}
+
 /* ── 2. Glass card ────────────────────────────────────────────────────────── */
 /* Drop this on any card container in dark mode for the frosted-glass look.
    A soft diagonal sheen (::before) gives it a "liquid glass" refraction
