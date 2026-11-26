@@ -6,6 +6,8 @@ type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'teacher-theme';
 
+export const DARK_MODE_ENABLED = false;
+
 interface TeacherThemeContextValue {
   theme: Theme;
   toggleTheme: () => void;
@@ -31,7 +33,9 @@ export function TeacherThemeProvider({ children }: { children: ReactNode }) {
   // attempts. The toggle UI itself is also hidden in Settings for these
   // roles; this is the enforcement behind that, in case it's ever reachable
   // another way.
-  const isLockedLight = isPrincipalRole(user?.role) || user?.role === 'accountant';
+  // Dark mode is switched off for every dashboard for now (set DARK_MODE_ENABLED
+  // to true to bring it back — toggles and the theme itself both follow it).
+  const isLockedLight = !DARK_MODE_ENABLED || isPrincipalRole(user?.role) || user?.role === 'accountant';
 
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const [isTransitioning, setIsTransitioning] = useState(false);

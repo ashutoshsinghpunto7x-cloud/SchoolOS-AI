@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { useTeacherWorkspace } from '../hooks/useTeacherWorkspace';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { useTeacherTheme } from '../context/TeacherThemeContext';
+import { DARK_MODE_ENABLED, useTeacherTheme } from '../context/TeacherThemeContext';
 import { ThemeTogglePill } from '../components/ThemeTogglePill';
 import { SUPPORT_PHONE } from '@/lib/support';
 
@@ -269,6 +269,7 @@ export function TeacherProfilePage() {
           {/* Other options moved here from the old sidebar */}
           <div className="space-y-2">
             {/* Dark mode toggle — teacher workspace only, applies across every teacher page */}
+            {DARK_MODE_ENABLED && (
             <div className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white teacher-glass-card border border-gray-100 dark:border-white/5 shadow-sm">
               <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-white/10 flex items-center justify-center shrink-0">
                 <Moon className="w-4.5 h-4.5 text-gray-500 dark:text-white/40" />
@@ -276,6 +277,7 @@ export function TeacherProfilePage() {
               <span className="flex-1 text-left text-sm font-semibold text-gray-800 dark:text-white">Dark Mode</span>
               <ThemeTogglePill theme={theme} onToggle={toggleTheme} />
             </div>
+            )}
 
             <MenuRow icon={CreditCard} label="My ID Card"     onClick={() => navigate('/teacher/id-card')} />
             <MenuRow icon={ScanLine} label="My Attendance"    onClick={() => navigate('/teacher/my-attendance')} />

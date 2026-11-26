@@ -11,7 +11,7 @@ import { BehaviorSettingsPanel } from '../components/BehaviorSettingsPanel';
 import { AttendanceEditCutoffPanel } from '../components/AttendanceEditCutoffPanel';
 import { AcademicYearPanel } from '../components/AcademicYearPanel';
 import { SchoolNamePanel } from '../components/SchoolNamePanel';
-import { useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
+import { DARK_MODE_ENABLED, useTeacherTheme } from '@/features/teacher-workspace/context/TeacherThemeContext';
 import { ThemeTogglePill } from '@/features/teacher-workspace/components/ThemeTogglePill';
 import { NotificationSoundToggle } from '@/features/notifications/components/NotificationSoundToggle';
 import { useLanguage } from '@/context/LanguageContext';
@@ -96,7 +96,7 @@ export function SchoolSettingsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-5">
-        {!isPrincipalRole(user?.role) && (
+        {DARK_MODE_ENABLED && !isPrincipalRole(user?.role) && (
           <>
             <div className="flex items-center gap-2 mb-1">
               <Palette className="w-4 h-4 text-gray-400" />
@@ -114,7 +114,7 @@ export function SchoolSettingsPage() {
           </>
         )}
 
-        <div className={cn('flex items-center justify-between', !isPrincipalRole(user?.role) && 'mt-5 pt-5 border-t border-gray-50')}>
+        <div className={cn('flex items-center justify-between', DARK_MODE_ENABLED && !isPrincipalRole(user?.role) && 'mt-5 pt-5 border-t border-gray-50')}>
           <div>
             <span className="text-sm font-semibold text-gray-800 block">{t('settings.notifSounds.title')}</span>
             <span className="text-xs text-gray-400">{t('settings.notifSounds.subtitle')}</span>
