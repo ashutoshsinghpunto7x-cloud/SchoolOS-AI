@@ -25,6 +25,14 @@ import type {
 
 const BASE = '/timetable';
 
+export interface SubstituteSuggestionQuery {
+  class: string;
+  section: string;
+  date: string;
+  slotId: string;
+  excludeTeacherId?: string;
+}
+
 export const timetableApi = {
   // ── Period Slots ──────────────────────────────────────────────────────────
 
@@ -193,10 +201,11 @@ export const timetableApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  suggestSubstituteTeachers: async (cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number): Promise<SubstituteSuggestion[]> => {
+  suggestSubstituteTeachers: async (query: SubstituteSuggestionQuery): Promise<SubstituteSuggestion[]> => {
     try {
+      const { class: cls, section, date, slotId, excludeTeacherId } = query;
       const res = await apiClient.get<{ data: SubstituteSuggestion[] }>(`${BASE}/substitutes/suggest-teachers`, {
-        params: { class: cls, section, excludeTeacherId, dayOfWeek },
+        params: { class: cls, section, date, slotId, excludeTeacherId },
       });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }

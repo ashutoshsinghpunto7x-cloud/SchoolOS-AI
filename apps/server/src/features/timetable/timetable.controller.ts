@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { timetableService } from './timetable.service';
+import { staffAttendanceRepository } from '../staff-attendance/staff-attendance.repository';
 import { sendSuccess, sendCreated, sendPaginated } from '../../lib/response';
 import { buildAuthContext } from '../../lib/auth-context';
 import { ValidationError } from '../../middlewares/errorHandler';
@@ -194,7 +195,7 @@ export const timetableController = {
   async getNeedsSubstitute(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);
-      const date = typeof req.query.date === 'string' ? req.query.date : new Date().toISOString().split('T')[0];
+      const date = typeof req.query.date === 'string' ? req.query.date : staffAttendanceRepository.todayString();
       const needed = await timetableService.getNeedsSubstitute(ctx.schoolId, date);
       sendSuccess(res, needed);
     } catch (err) { next(err); }
@@ -203,11 +204,12 @@ export const timetableController = {
   async suggestSubstituteTeachers(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!);
-      const { class: cls, section, excludeTeacherId, dayOfWeek } = req.query as Record<string, string | undefined>;
+      const { class: cls, section, excludeTeacherId, date, slotId } = req.query as Record<string, string | undefined>;
       if (!cls || !section) throw new ValidationError('class and section are required');
-      const suggestions = await timetableService.suggestSubstituteTeachers(
-        ctx.schoolId, cls, section, excludeTeacherId, dayOfWeek ? Number(dayOfWeek) : undefined,
-      );
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ValidationError('date must be YYYY-MM-DD');
+      const suggestions = await timetableService.suggestSubstituteTeachers(ctx.schoolId, cls, section, {
+        date: date ?? staffAttendanceRepository.todayString(), slotId, excludeTeacherId,
+      });
       sendSuccess(res, suggestions);
     } catch (err) { next(err); }
   },

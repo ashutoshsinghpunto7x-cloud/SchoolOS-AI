@@ -19,6 +19,7 @@ export interface ActionPreview {
 export type ChatReply =
   | { type: 'text'; reply: string; quickReplies?: string[] }
   | { type: 'navigate'; reply: string; path: string; label: string }
+  | { type: 'substitution_plan'; reply: string; date: string }
   | { type: 'action_preview'; actionId: string; params: Record<string, unknown>; preview: ActionPreview };
 
 export interface ActionPreviewResponse {

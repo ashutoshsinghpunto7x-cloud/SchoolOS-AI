@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { Timetable, PeriodSlot, CreateSubstitutePayload } from '@schoolos/types';
 import { useCreateSubstitute } from '../hooks/useTimetable';
+import { SubstituteSuggestionList } from './SubstituteSuggestionList';
+import { localDateString } from './SubstitutionPlan';
 
 interface SubstituteFormProps {
   timetable: Timetable;
@@ -35,12 +37,13 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
   const schedulable = slots.filter((s) => !s.isBreak);
 
   const [form, setForm] = useState(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateString();
     return {
       date:                  today,
       dayOfWeek:             String(dateStrToDayOfWeek(today)),
       slotId:                '',
       substituteTeacherName: '',
+      substituteTeacherId:   '',
       reason:                '',
       notes:                 '',
     };
@@ -52,7 +55,10 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
 
   function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
     const dow = dateStrToDayOfWeek(e.target.value);
-    setForm((p) => ({ ...p, date: e.target.value, dayOfWeek: String(dow) }));
+    setForm((p) => ({
+      ...p, date: e.target.value, dayOfWeek: String(dow),
+      substituteTeacherId: '', substituteTeacherName: '',
+    }));
   }
 
   function getOriginalEntry() {
@@ -78,6 +84,7 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
       originalTeacherId:     orig?.teacherId,
       originalTeacherName:   orig?.teacherName,
       substituteTeacherName: form.substituteTeacherName.trim(),
+      substituteTeacherId:   form.substituteTeacherId || undefined,
       reason:                form.reason.trim() || undefined,
       notes:                 form.notes.trim()  || undefined,
     };
@@ -95,7 +102,14 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
         </Field>
 
         <Field label="Period" required>
-          <select value={form.slotId} onChange={set('slotId')} className={inputCls} required>
+          <select
+            value={form.slotId}
+            onChange={(e) => setForm((p) => ({
+              ...p, slotId: e.target.value, substituteTeacherId: '', substituteTeacherName: '',
+            }))}
+            className={inputCls}
+            required
+          >
             <option value="">Select period</option>
             {schedulable.map((s) => (
               <option key={s._id} value={s._id}>{s.name} ({s.startTime}–{s.endTime})</option>
@@ -113,11 +127,26 @@ export const SubstituteForm = ({ timetable, slots, onSuccess, onCancel }: Substi
       )}
 
       <Field label="Substitute Teacher" required>
+        {form.slotId && form.date ? (
+          <SubstituteSuggestionList
+            query={{
+              class: timetable.class,
+              section: timetable.section,
+              date: form.date,
+              slotId: form.slotId,
+              excludeTeacherId: orig?.teacherId,
+            }}
+            selectedId={form.substituteTeacherId}
+            onPick={(t) => setForm((p) => ({ ...p, substituteTeacherId: t.teacherId, substituteTeacherName: t.teacherName }))}
+          />
+        ) : (
+          <p className="text-xs text-gray-400">Choose a period to see who is free.</p>
+        )}
         <input
           value={form.substituteTeacherName}
-          onChange={set('substituteTeacherName')}
+          onChange={(e) => setForm((p) => ({ ...p, substituteTeacherId: '', substituteTeacherName: e.target.value }))}
           className={inputCls}
-          placeholder="Name of substitute teacher"
+          placeholder="Or type a name (e.g. a visiting teacher)"
           required
         />
       </Field>

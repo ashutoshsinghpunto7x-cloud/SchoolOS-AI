@@ -3274,7 +3274,8 @@ export interface NeedsSubstituteEntry {
   date: string;
   originalTeacherId: string;
   originalTeacherName: string;
-  leaveRequestId: string;
+  absenceReason: 'leave' | 'absent';
+  leaveRequestId?: string;
 }
 
 export interface SubstituteSuggestion {

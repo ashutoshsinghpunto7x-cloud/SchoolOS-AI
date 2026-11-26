@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timetableApi } from '../api/timetable.api';
+import type { SubstituteSuggestionQuery } from '../api/timetable.api';
 import type {
   TimetableListOptions,
   SubstituteListOptions,
@@ -26,7 +27,7 @@ export const timetableKeys = {
   conflicts:    () => [...timetableKeys.all, 'conflicts'] as const,
   substitutes:  (opts: SubstituteListOptions) => [...timetableKeys.all, 'substitutes', opts] as const,
   needsSubstitute: (date: string) => [...timetableKeys.all, 'substitutes-needed', date] as const,
-  suggestTeachers: (cls: string, section: string) => [...timetableKeys.all, 'suggest-teachers', cls, section] as const,
+  suggestTeachers: (query: SubstituteSuggestionQuery) => [...timetableKeys.all, 'suggest-teachers', query] as const,
   masterGrid: (query: MasterGridQuery) => [...timetableKeys.all, 'master-grid', query] as const,
 };
 
@@ -200,11 +201,12 @@ export const useNeedsSubstitute = (date: string) =>
     refetchInterval: SUBSTITUTE_POLL_INTERVAL,
   });
 
-export const useSuggestSubstituteTeachers = (cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number, enabled = true) =>
+export const useSuggestSubstituteTeachers = (query: SubstituteSuggestionQuery) =>
   useQuery({
-    queryKey: timetableKeys.suggestTeachers(cls, section),
-    queryFn:  () => timetableApi.suggestSubstituteTeachers(cls, section, excludeTeacherId, dayOfWeek),
-    enabled:  enabled && !!cls && !!section,
+    queryKey: timetableKeys.suggestTeachers(query),
+    queryFn:  () => timetableApi.suggestSubstituteTeachers(query),
+    enabled:  !!query.class && !!query.section && !!query.date && !!query.slotId,
+    refetchInterval: SUBSTITUTE_POLL_INTERVAL,
   });
 
 // ── Master (whole-school) grid ─────────────────────────────────────────────

@@ -86,9 +86,10 @@ interface TeacherRow {
 
 function AssignPicker({ target, onDone }: { target: AssignTarget; onDone: () => void }) {
   const { t } = useLanguage();
-  const { data: suggestions, isLoading } = useSuggestSubstituteTeachers(
-    target.class, target.section, target.originalTeacherId, target.dayOfWeek,
-  );
+  const { data: suggestions, isLoading } = useSuggestSubstituteTeachers({
+    class: target.class, section: target.section, date: target.date,
+    slotId: target.slotId, excludeTeacherId: target.originalTeacherId,
+  });
   const { mutateAsync: createSubstitute, isPending } = useCreateSubstitute();
   const [error, setError] = useState('');
 

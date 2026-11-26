@@ -4,7 +4,9 @@ import { substituteRepository } from './timetable.substitute.repository';
 import { IPeriodSlot } from './timetable.period.model';
 import { ITimetable, ITimetableEntry, TimetableStatus } from './timetable.model';
 import { ITimetableSubstitute } from './timetable.substitute.model';
-import { leaveRequestRepository } from '../leave-requests/leave-request.repository';
+import { loadSubstituteDay } from './substitute-day';
+import { rankSubstitutes, classKey, SubstituteSuggestion } from './substitute-ranking';
+import { classTeacherRepository } from '../classes/class-teacher.repository';
 import { Teacher } from '../teachers/teacher.model';
 import { teacherRepository } from '../teachers/teacher.repository';
 import { userRepository } from '../users/user.repository';
@@ -37,15 +39,11 @@ export interface NeedsSubstituteEntry {
   date: string;
   originalTeacherId: string;
   originalTeacherName: string;
-  leaveRequestId: string;
+  absenceReason: 'leave' | 'absent';
+  leaveRequestId?: string;
 }
 
-export interface SubstituteSuggestion {
-  teacherId: string;
-  teacherName: string;
-  teachesThisClass: boolean;
-  freePeriodsToday: number;
-}
+export type { SubstituteSuggestion };
 
 /**
  * Auto-sync into each affected teacher's personal TeacherTimetable whenever a
@@ -386,9 +384,28 @@ export const timetableService = {
     const tt = await timetableRepository.findById(data.timetableId, ctx.schoolId);
     if (!tt) throw new NotFoundError('Timetable');
 
+    const { substitutes: sameDay } = await substituteRepository.findAll(ctx.schoolId, {
+      dateFrom: data.date, dateTo: data.date, limit: 100,
+    });
+    const isSamePeriod = (s: ITimetableSubstitute) =>
+      s.slotId === data.slotId && classKey(s.class, s.section) === classKey(data.class, data.section);
+
+    const clash = sameDay.find((s) =>
+      s.status === 'active' && !!data.substituteTeacherId &&
+      s.substituteTeacherId === data.substituteTeacherId && s.slotId === data.slotId && !isSamePeriod(s));
+    if (clash) {
+      throw new ValidationError(
+        `${data.substituteTeacherName} is already covering Class ${clash.class}-${clash.section} in this period`,
+      );
+    }
+
     const sub = await substituteRepository.create({
       ...data, date: new Date(data.date), schoolId: ctx.schoolId, createdBy: ctx.displayName,
     });
+
+    // Reassigning a period replaces the earlier record, so one period never has two substitutes.
+    await Promise.all(sameDay.filter(isSamePeriod).map((s) =>
+      substituteRepository.softDelete(String(s._id), ctx.schoolId, ctx.displayName)));
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -472,95 +489,78 @@ export const timetableService = {
   },
 
   /**
-   * Periods that need a substitute on a given date: every period an on-leave
-   * teacher was scheduled to teach, minus any that already have an active
-   * substitute assigned. This is what auto-links Leave Approval to the
-   * Substitutions tab — no substitute record is written until the principal
-   * actually assigns someone (the schema requires a substitute name), so this
-   * is derived live from approved leave + the published timetable instead.
+   * Periods that need a substitute on a given date: every period taught by a
+   * teacher who is on approved leave or marked absent, minus any that already
+   * have a substitute record. Derived live — nothing is written until the
+   * principal assigns someone.
    */
   async getNeedsSubstitute(schoolId: string, date: string): Promise<NeedsSubstituteEntry[]> {
-    const dayOfWeek = new Date(date + 'T00:00:00').getDay();
-    if (dayOfWeek === 0) return []; // no school on Sunday — entries only exist for days 1-6
+    if (new Date(date + 'T00:00:00').getDay() === 0) return []; // no school on Sunday — entries only exist for days 1-6
 
-    const approvedLeaves = await leaveRequestRepository.findApprovedForDate(schoolId, date);
-    if (!approvedLeaves.length) return [];
+    const day = await loadSubstituteDay(schoolId, date);
+    if (!day.absent.size) return [];
 
-    const existingSubs = await substituteRepository.findAll(schoolId, { dateFrom: date, dateTo: date, limit: 200 });
-    const covered = new Set(existingSubs.substitutes.map((s) => `${s.class}||${s.section}||${s.slotId}`));
+    const covered = new Set(day.substitutes.map((s) => `${classKey(s.class, s.section)}||${s.slotId}`));
 
     const needed: NeedsSubstituteEntry[] = [];
-    for (const leave of approvedLeaves) {
-      const timetables = await timetableRepository.getTeacherSchedule(schoolId, leave.teacherId);
-      for (const tt of timetables) {
-        for (const entry of tt.entries) {
-          if (entry.teacherId !== leave.teacherId || entry.dayOfWeek !== dayOfWeek) continue;
-          const key = `${tt.class}||${tt.section}||${entry.slotId}`;
-          if (covered.has(key)) continue;
-          needed.push({
-            class: tt.class,
-            section: tt.section,
-            slotId: entry.slotId,
-            subjectName: entry.subjectName,
-            timetableId: String((tt as unknown as { _id: { toString(): string } })._id),
-            dayOfWeek,
-            date,
-            originalTeacherId: leave.teacherId,
-            originalTeacherName: leave.teacherName,
-            leaveRequestId: String((leave as unknown as { _id: { toString(): string } })._id),
-          });
-        }
-      }
+    for (const period of day.periods) {
+      const teacher = day.absent.get(period.teacherId);
+      if (!teacher || covered.has(`${classKey(period.class, period.section)}||${period.slotId}`)) continue;
+      needed.push({
+        class: period.class,
+        section: period.section,
+        slotId: period.slotId,
+        subjectName: period.subjectName,
+        timetableId: period.timetableId,
+        dayOfWeek: day.dayOfWeek,
+        date,
+        originalTeacherId: teacher.teacherId,
+        originalTeacherName: teacher.teacherName,
+        absenceReason: teacher.reason,
+        leaveRequestId: teacher.leaveRequestId,
+      });
     }
     return needed;
   },
 
   /**
-   * Substitute picker priority: teachers already teaching this class/section first, then the rest of
-   * the active roster. Also surfaces each candidate's free periods on the given weekday (falls back to
-   * today if not supplied) so the principal can see at a glance who actually has room to cover a period.
+   * Ranked substitute candidates for one period (see rankSubstitutes for the
+   * order). Absent teachers, and teachers already busy in that period, are
+   * left out.
    */
   async suggestSubstituteTeachers(
-    schoolId: string, cls: string, section: string, excludeTeacherId?: string, dayOfWeek?: number,
+    schoolId: string, cls: string, section: string,
+    opts: { date: string; slotId?: string; excludeTeacherId?: string },
   ): Promise<SubstituteSuggestion[]> {
-    const effectiveDay = dayOfWeek ?? new Date().getDay();
-
-    const [classTimetable, activeTeachers, periodSlots, scheduledCounts] = await Promise.all([
-      timetableRepository.findByClassSectionAnyYear(schoolId, cls, section),
-      Teacher.find({ schoolId, isDeleted: false, employmentStatus: 'active' }).select('_id fullName').lean(),
+    const [day, activeTeachers, periodSlots, classTimetable, assignments] = await Promise.all([
+      loadSubstituteDay(schoolId, opts.date),
+      Teacher.find({ schoolId, isDeleted: false, employmentStatus: 'active' })
+        .select('_id fullName assignedClasses').lean(),
       periodSlotRepository.findAll(schoolId),
-      timetableRepository.countScheduledPeriodsByTeacher(schoolId, effectiveDay),
+      timetableRepository.findByClassSectionAnyYear(schoolId, cls, section),
+      classTeacherRepository.findAll(schoolId),
     ]);
 
-    const totalPeriodsToday = periodSlots.filter(
-      (slot) => !slot.isBreak && slot.daysApplicable.includes(effectiveDay),
-    ).length;
+    const target = classKey(cls, section);
+    const classTeacherIds = new Set<string>([
+      ...(classTimetable?.entries ?? []).map((e) => e.teacherId).filter((id): id is string => !!id),
+      ...day.periods.filter((p) => classKey(p.class, p.section) === target).map((p) => p.teacherId),
+      ...assignments.filter((a) => classKey(a.class, a.section) === target).map((a) => a.teacherId),
+      ...activeTeachers
+        .filter((t) => (t.assignedClasses ?? []).some((c) => classKey(c) === target))
+        .map((t) => String(t._id)),
+    ]);
 
-    const teachesClass = new Set(
-      (classTimetable?.entries ?? []).map((e) => e.teacherId).filter((id): id is string => !!id),
-    );
-
-    const suggestions: SubstituteSuggestion[] = activeTeachers
-      .map((t) => {
-        const teacherId = String((t as unknown as { _id: { toString(): string } })._id);
-        const scheduled = scheduledCounts.get(teacherId) ?? 0;
-        return {
-          teacherId,
-          teacherName: t.fullName,
-          teachesThisClass: teachesClass.has(teacherId),
-          freePeriodsToday: Math.max(0, totalPeriodsToday - scheduled),
-        };
-      })
-      .filter((t) => t.teacherId !== excludeTeacherId);
-
-    // Most free periods first (within each teaches-this-class tier) — the
-    // whole point is to make it easy to pick someone who actually has room.
-    suggestions.sort((a, b) => {
-      if (a.teachesThisClass !== b.teachesThisClass) return a.teachesThisClass ? -1 : 1;
-      if (a.freePeriodsToday !== b.freePeriodsToday) return b.freePeriodsToday - a.freePeriodsToday;
-      return a.teacherName.localeCompare(b.teacherName);
+    return rankSubstitutes({
+      teachers: activeTeachers.map((t) => ({ teacherId: String(t._id), teacherName: t.fullName })),
+      classTeacherIds,
+      busySlots: day.busySlots,
+      absentIds: new Set(day.absent.keys()),
+      daySlotIds: periodSlots
+        .filter((slot) => !slot.isBreak && slot.daysApplicable.includes(day.dayOfWeek))
+        .map((slot) => String(slot._id)),
+      slotId: opts.slotId,
+      excludeTeacherId: opts.excludeTeacherId,
     });
-
-    return suggestions;
   },
 };

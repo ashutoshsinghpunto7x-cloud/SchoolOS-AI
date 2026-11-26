@@ -7,6 +7,7 @@ export type ActionPreviewStatus = 'pending' | 'editing' | 'executing' | 'error';
 
 export type AssistantMessage =
   | { id: string; role: 'user' | 'assistant'; type: 'text'; content: string; quickReplies?: string[] }
+  | { id: string; role: 'assistant'; type: 'substitution_plan'; content: string; date: string }
   | {
       id: string;
       role: 'assistant';
@@ -46,6 +47,14 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
             onAssistantText?.(result.reply);
             // Brief pause so the confirmation is visible/audible before the page changes.
             window.setTimeout(() => navigate(result.path), 450);
+            return;
+          }
+          if (result.type === 'substitution_plan') {
+            onAssistantText?.(result.reply);
+            setMessages((prev) => [
+              ...prev,
+              { id: crypto.randomUUID(), role: 'assistant', type: 'substitution_plan', content: result.reply, date: result.date },
+            ]);
             return;
           }
           if (result.type === 'text') {

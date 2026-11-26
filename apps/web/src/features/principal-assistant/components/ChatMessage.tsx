@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import type { AssistantMessage } from '../hooks/usePrincipalAssistant';
 import { ActionPreviewCard } from './ActionPreviewCard';
 import { ActionResultCard } from './ActionResultCard';
+import { SubstitutionPlan } from '@/features/timetable/components/SubstitutionPlan';
 
 interface ChatMessageProps {
   message: AssistantMessage;
@@ -29,6 +30,17 @@ export const ChatMessage = ({ message, onEditField, onApprove, onCancel, onQuick
     return (
       <div className="flex justify-start">
         <ActionResultCard message={message} />
+      </div>
+    );
+  }
+
+  if (message.type === 'substitution_plan') {
+    return (
+      <div className="flex flex-col gap-1.5 items-stretch">
+        <div className="self-start max-w-[85%] rounded-[16px] rounded-bl-[4px] px-3.5 py-2 text-[13px] leading-relaxed bg-white text-[#1B2A4E] border border-[#E8E2D6]">
+          {message.content}
+        </div>
+        <SubstitutionPlan date={message.date} hideWhenEmpty />
       </div>
     );
   }

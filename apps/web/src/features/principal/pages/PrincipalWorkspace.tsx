@@ -8,6 +8,8 @@ import { usePendingTestApprovals } from '@/features/mock-tests/hooks/useMockTest
 import { usePendingDiscounts } from '@/features/fees/hooks/useFeeStructure';
 import { usePendingChangeRequests } from '@/features/student-change-requests/hooks/useStudentChangeRequests';
 import { EmergencyHalfDayLeaveCard } from '@/features/attendance/components/EmergencyHalfDayLeaveCard';
+import { useNeedsSubstitute } from '@/features/timetable/hooks/useTimetable';
+import { SubstitutionPlan, localDateString } from '@/features/timetable/components/SubstitutionPlan';
 import { getPrincipalPagePath } from '@/components/topbar/AppLauncherModal';
 
 // Principal home — every number on this page comes from the live API
@@ -48,6 +50,8 @@ export const PrincipalWorkspace = () => {
   const { data: tests } = usePendingTestApprovals();
   const { data: discounts } = usePendingDiscounts();
   const { data: changeRequests } = usePendingChangeRequests();
+  const today = localDateString();
+  const { data: uncovered } = useNeedsSubstitute(today);
 
   const lowest = useMemo(() => {
     const rows = analytics?.category === 'attendance' ? analytics.data.byClass : [];
@@ -190,6 +194,22 @@ export const PrincipalWorkspace = () => {
             </span>
           </button>
         </div>
+
+        {!!uncovered?.length && (
+          <div className={`${card} p-5`}>
+            <div className="flex items-center justify-between gap-3 pb-3">
+              <div className="text-[16px] font-bold text-[#1B2A4E]">
+                Substitutes needed today · {uncovered.length} {uncovered.length === 1 ? 'period' : 'periods'}
+              </div>
+              <button type="button" onClick={() => navigate('/timetable/substitutes')} className="text-[12px] font-semibold text-[#D9822B] hover:underline cursor-pointer shrink-0">
+                Manage →
+              </button>
+            </div>
+            <div className="max-h-[420px] overflow-y-auto">
+              <SubstitutionPlan date={today} />
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className={`${card} p-5`}>

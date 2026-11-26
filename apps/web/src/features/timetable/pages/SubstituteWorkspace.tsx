@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import type { SubstituteListOptions, Timetable } from '@schoolos/types';
 import { SubstituteForm } from '../components/SubstituteForm';
+import { SubstitutionPlan, localDateString } from '../components/SubstitutionPlan';
 
 
 export const SubstituteWorkspace = () => {
@@ -15,7 +16,7 @@ export const SubstituteWorkspace = () => {
   // server-side authorize() on POST/PATCH /timetable/substitutes. A daily
   // substitution should only ever begin because the Principal assigned it.
   const canManage = user?.role === 'admin' || isPrincipalRole(user?.role);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateString();
 
   const [filters, setFilters] = useState<SubstituteListOptions>({
     dateFrom: today,
@@ -76,6 +77,13 @@ export const SubstituteWorkspace = () => {
           ))}
         </select>
       </div>
+
+      {canManage && (
+        <section aria-label="Substitute suggestions">
+          <h2 className="text-sm font-bold text-gray-900 mb-2">Needs a substitute</h2>
+          <SubstitutionPlan date={filters.dateFrom || today} />
+        </section>
+      )}
 
       {/* Form Modal */}
       {showForm && (

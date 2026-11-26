@@ -5,6 +5,8 @@ import { routeMessage } from './unified-router';
 import { NAVIGATION_TARGETS, findNavigationTarget } from './navigation.targets';
 import { attendanceIntents } from './principal-assistant.intents';
 import { principalAssistantData } from './principal-assistant.data';
+import { parseSubstitutionRequest } from './substitution.intent';
+import { timetableService } from '../timetable/timetable.service';
 import { feeIntents } from './fees.intents';
 import { admissionsIntents } from './admissions.intents';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
@@ -15,7 +17,7 @@ import { logger } from '../../lib/logger';
 import type { ClassAttendanceList } from './principal-assistant.data';
 
 const UNSUPPORTED_REPLY =
-  "I can open any screen (try \"open leave requests\"), schedule staff meetings, move timetable periods, and answer " +
+  "I can open any screen (try \"open leave requests\"), suggest substitutes, schedule staff meetings, move timetable periods, and answer " +
   "questions about attendance, fees and admissions — e.g. \"how many students are absent today?\" or " +
   "\"outstanding fees\". You can also speak to me with the mic button. What would you like to do?";
 
@@ -58,6 +60,23 @@ async function buildAttendanceScopeReply(scope: 'students' | 'teachers' | 'both'
   return `${formatClassList(classes)}\n\nTeachers: ${teachers.teachersPresent}/${teachers.teachersTotal} present.`;
 }
 
+function substitutionReply(
+  needed: { originalTeacherId: string }[], day: 'today' | 'tomorrow', hindi: boolean,
+): string {
+  const dayHi = day === 'today' ? 'आज' : 'कल';
+  if (!needed.length) {
+    return hindi
+      ? `${dayHi} किसी पीरियड के लिए सब्स्टीट्यूट की ज़रूरत बाकी नहीं है।`
+      : `No periods are waiting for a substitute ${day}.`;
+  }
+  const periods = needed.length;
+  const teachers = new Set(needed.map((n) => n.originalTeacherId)).size;
+  return hindi
+    ? `${dayHi} ${teachers} शिक्षक अनुपस्थित हैं और ${periods} पीरियड के लिए सब्स्टीट्यूट चाहिए। सुझाव नीचे हैं।`
+    : `${periods} ${periods === 1 ? 'period needs' : 'periods need'} a substitute ${day} ` +
+      `(${teachers} ${teachers === 1 ? 'teacher' : 'teachers'} away). Suggestions are below.`;
+}
+
 // Combining all domains into one flat list keeps this a single LLM classification
 // call (cheaper/faster than routing per-domain) — intent ids are unique across
 // domains, so finding the matching intent's fetchData afterward is unambiguous.
@@ -66,11 +85,24 @@ const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceInten
 export type ChatResult =
   | { type: 'text'; reply: string; quickReplies?: string[] }
   | { type: 'navigate'; reply: string; path: string; label: string }
+  | { type: 'substitution_plan'; reply: string; date: string }
   | { type: 'action_preview'; actionId: string; params: Record<string, unknown>; preview: ActionPreviewResult['preview'] };
 
 export const principalAssistantService = {
   async chat(rawInput: unknown, ctx: AuthContext): Promise<ChatResult> {
     const { message } = chatSchema.parse(rawInput);
+
+    // Substitution questions are matched by keyword and answered from the
+    // timetable alone, so they work even when the AI service is down.
+    const substitution = parseSubstitutionRequest(message);
+    if (substitution) {
+      const needed = await timetableService.getNeedsSubstitute(ctx.schoolId, substitution.date);
+      return {
+        type: 'substitution_plan',
+        date: substitution.date,
+        reply: substitutionReply(needed, substitution.dayLabel, HAS_DEVANAGARI.test(message)),
+      };
+    }
 
     if (!openaiProvider.isAvailable()) {
       throw new AppError('AI Assistant is not configured. Please contact your administrator.', 503, 'AI_UNAVAILABLE');

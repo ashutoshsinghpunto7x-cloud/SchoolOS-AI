@@ -17,6 +17,7 @@ const BUDDY_CONFIG = companionConfigFor('principal')!;
 
 const SUGGESTIONS = [
   "Today's attendance",
+  'Substitutes today',
   'Open leave requests',
   'Absent students today',
   'Fee collection summary',
@@ -25,6 +26,7 @@ const SUGGESTIONS = [
 
 const SUGGESTIONS_HI = [
   'आज की उपस्थिति',
+  'आज के सब्स्टीट्यूट',
   'छुट्टी के अनुरोध खोलो',
   'आज कितने छात्र अनुपस्थित हैं?',
   'फीस का सारांश',
