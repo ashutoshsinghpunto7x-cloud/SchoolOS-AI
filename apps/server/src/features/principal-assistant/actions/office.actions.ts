@@ -241,6 +241,9 @@ Fields:
     if (!params.message) warnings.push('The notice text is empty — add what you want to say.');
     if (params.audience === 'class_parents' && !params.className) warnings.push('Say which class.');
     if (!preview.recipients) warnings.push('No one with an app login was found for this audience, so nobody would receive it.');
+    if (preview.recipients > 0) {
+      warnings.push(`This will be sent to ${preview.recipients} ${params.audience === 'teachers' ? 'teachers' : 'parent accounts'} right away and cannot be undone.`);
+    }
     if (params.audience !== 'teachers' && preview.students > preview.recipients) warnings.push('Only parents with an app login get in-app notices; WhatsApp is not used here.');
     return {
       title: 'Send notice',

@@ -3,6 +3,8 @@ import { peopleAssistantData } from './people.data';
 import { studentsAssistantData } from './students.data';
 import { staffAssistantData } from './staff.data';
 import { opsAssistantData } from './ops.data';
+import { moreAssistantData } from './more.data';
+import { homeworkAssistantData, buildAlertsReply } from './alerts.data';
 import { AuthContext } from '../../lib/auth-context';
 
 // Name-level and list-style questions. Each description is shown verbatim to the
@@ -15,6 +17,10 @@ const def = (
 ): IntentDefinition<AuthContext, unknown> => ({ id, description, fetchData });
 
 export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
+  def('DAILY_BRIEFING',
+    'A whole-school overview / morning briefing in one answer — "daily briefing", "morning summary", "give me an overview of the school", "aaj ka summary", "good morning".',
+    async () => ({})),
+
   // Attendance by name
   def('ABSENT_TEACHERS_LIST',
     'WHO / the NAMES of teachers or staff absent today — "which teachers are absent", "absent teachers ke naam", "aaj kaun se teacher nahi aaye". (Just a count → TEACHER_ABSENT_COUNT.)',
@@ -23,7 +29,7 @@ export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
     'WHO / the NAMES of students absent today, optionally for one class — "which students are absent in class 5", "absent bachon ki list". (Just a count → STUDENT_ABSENT_COUNT.)',
     peopleAssistantData.getAbsentStudents),
   def('STUDENT_LOOKUP',
-    'Anything about ONE named student: marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
+    'Anything about ONE named student, including a full profile (marks, attendance, fees, parent): marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
     peopleAssistantData.getStudentLookup),
 
   // Students
@@ -104,6 +110,40 @@ export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
   def('HIRING_POSITIONS',
     'Open hiring positions / candidates per position — "open positions", "hiring status".',
     opsAssistantData.getHiringPositions),
+
+  def('HOMEWORK_STATUS',
+    'Homework / school posts: which classes got NO homework today, what was posted today, or the last posts by a named teacher - "which classes have no homework today", "aaj homework kis kis ne diya", "last post by Mrs Sharma".',
+    homeworkAssistantData.getHomeworkStatus),
+  def('ATTENTION_ALERTS',
+    'What needs the Principal attention / is urgent right now - "alerts", "what needs my attention", "kuch urgent hai kya".',
+    async (ctx) => ({ alerts: await buildAlertsReply(ctx) })),
+  def('TEACHER_PROFILE',
+    'A full profile of ONE named teacher: attendance, leaves, substitute periods taken and syllabus progress - "profile of Mrs Sharma", "Rahul sir ki poori report", "how is Mr Verma performing".',
+    moreAssistantData.getTeacherProfile),
+  def('ATTENDANCE_TREND',
+    'Student attendance TREND over the last two weeks and this week vs last week - "attendance trend", "is attendance improving", "pichle hafte se attendance kaisi hai".',
+    moreAssistantData.getAttendanceTrend),
+  def('FEE_TREND',
+    'Fee collection compared with last month, and what was paid yesterday - "fee collection vs last month", "kal kitni fees aayi", "is collection improving".',
+    moreAssistantData.getFeeTrend),
+  def('BEHAVIOR_SUMMARY',
+    'Behavior / discipline records in the last 30 days: students with the most incidents or praise, or ONE named student behavior record — "most behavior incidents this month", "behavior record of Rahul", "anushasan ki report".',
+    moreAssistantData.getBehaviorSummary),
+  def('TRANSPORT_SUMMARY',
+    'Transport: buses, routes, drivers, how many students use each bus, students without transport — "bus wise students", "transport summary", "bus ka route".',
+    moreAssistantData.getTransportSummary),
+  def('PAYROLL_SUMMARY',
+    'Total SALARY for this month, how much is paid vs still pending — "total salary this month", "salary kitni baaki hai".',
+    moreAssistantData.getPayrollSummary),
+  def('EXPENSE_SUMMARY',
+    'Total EXPENSES / spending this month and by category — "how much did we spend this month", "expense by category".',
+    moreAssistantData.getExpenseSummary),
+  def('STOCK_AND_ASSETS',
+    'Low-stock inventory items, assets under repair, and warranty / AMC about to expire — "low stock items", "what is under repair", "warranty expiring".',
+    moreAssistantData.getStockAndAssets),
+  def('PLAN_COMPLIANCE',
+    'Which teachers have NOT ticked / completed the day lessons in the Academic Plan checklist — "who has not ticked the day tasks", "plan completion today", "kis teacher ne aaj ka plan complete nahi kiya".',
+    moreAssistantData.getPlanCompliance),
 
   // Operations
   def('OPEN_MAINTENANCE',

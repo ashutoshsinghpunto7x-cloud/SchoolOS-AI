@@ -2,6 +2,9 @@ import { classifyAction, extractActionParams, UNSUPPORTED_ACTION, ActionPreview 
 import { meetingAction } from './actions/meeting.action';
 import { timetableMoveAction } from './actions/timetable-move.action';
 import { reviewLeaveAction, createEventAction, markTeacherAbsentAction, sendNoticeAction } from './actions/office.actions';
+import { reviewPurchaseAction, reviewExpenseAction, reviewMockTestAction, reviewChangeRequestAction } from './actions/approvals.actions';
+import { assignSubstituteAction, editEventAction, feeReminderAction } from './actions/operations.actions';
+import { reviewCandidateAction, assignReceptionTaskAction, markStudentExcusedAction } from './actions/people.actions';
 import { previewActionSchema, executeActionSchema } from './principal-assistant.action.validation';
 import { recordUsage } from './intent-router';
 import { AuthContext } from '../../lib/auth-context';
@@ -13,6 +16,9 @@ import { logger } from '../../lib/logger';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const actionRegistry: import('./action-registry').ActionDefinition<any, any, any>[] = [
   meetingAction, timetableMoveAction, reviewLeaveAction, createEventAction, markTeacherAbsentAction, sendNoticeAction,
+  reviewPurchaseAction, reviewExpenseAction, reviewMockTestAction, reviewChangeRequestAction,
+  assignSubstituteAction, editEventAction, feeReminderAction,
+  reviewCandidateAction, assignReceptionTaskAction, markStudentExcusedAction,
 ];
 
 function findAction(actionId: string) {

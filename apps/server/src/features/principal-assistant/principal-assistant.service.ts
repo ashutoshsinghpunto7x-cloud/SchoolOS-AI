@@ -10,12 +10,42 @@ import { timetableService } from '../timetable/timetable.service';
 import { feeIntents } from './fees.intents';
 import { admissionsIntents } from './admissions.intents';
 import { peopleIntents } from './people.intents';
+import { buildMorningBriefing, BRIEFING_PATTERN } from './briefing.data';
+import { buildAlertsReply, ALERTS_PATTERN } from './alerts.data';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
 import { principalAssistantActionService, ActionPreviewResult } from './principal-assistant.action.service';
 import { AuthContext } from '../../lib/auth-context';
 import { AppError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
 import type { ClassAttendanceList } from './principal-assistant.data';
+
+const FOLLOW_UP_MAX_WORDS = 8;
+
+/** Rewrites a short follow-up into a standalone question; returns the message unchanged when it already stands alone. */
+async function resolveFollowUp(
+  message: string,
+  history: { role: 'user' | 'assistant'; content: string }[],
+  ctx: AuthContext,
+): Promise<string> {
+  if (!history.length || message.split(/\s+/).length > FOLLOW_UP_MAX_WORDS) return message;
+  try {
+    const result = await openaiProvider.complete({
+      systemPrompt:
+        "You rewrite the last message of a school Principal's chat into ONE complete standalone question or command, using the earlier turns for context " +
+        '(class, subject, student, date, topic). If the last message is already complete on its own, return it unchanged. Keep the original language ' +
+        '(English, Hindi or Hinglish). Never answer it. Respond ONLY with JSON: {"message": "<rewritten message>"}.',
+      userPrompt: `Earlier turns:\n${history.map((h) => `${h.role}: ${h.content}`).join('\n')}\n\nLast message: ${message}`,
+      temperature: 0,
+      maxTokens: 120,
+      jsonResponse: true,
+    });
+    recordUsage(result, ctx.schoolId);
+    const rewritten = (JSON.parse(result.content) as { message?: string }).message?.trim();
+    return rewritten && rewritten.length <= 1000 ? rewritten : message;
+  } catch {
+    return message;
+  }
+}
 
 const UNSUPPORTED_REPLY =
   "I can open any screen (try \"open leave requests\"), suggest substitutes, schedule staff meetings, move timetable periods, and answer " +
@@ -91,11 +121,15 @@ export type ChatResult =
 
 export const principalAssistantService = {
   async chat(rawInput: unknown, ctx: AuthContext): Promise<ChatResult> {
-    const { message } = chatSchema.parse(rawInput);
+    const parsed = chatSchema.parse(rawInput);
+    let message = parsed.message;
+    const history = parsed.history ?? [];
 
     // Substitution questions are matched by keyword and answered from the
     // timetable alone, so they work even when the AI service is down.
-    const substitution = parseSubstitutionRequest(message);
+    // "Assign X to cover 6A period 3" is an ACTION, so it skips this keyword shortcut.
+    const isAssignment = /\b(assign|appoint|lagao|laga\s?do|cover)\b|लगाओ|नियुक्त/i.test(message);
+    const substitution = isAssignment ? null : parseSubstitutionRequest(message);
     if (substitution) {
       const needed = await timetableService.getNeedsSubstitute(ctx.schoolId, substitution.date);
       return {
@@ -103,6 +137,15 @@ export const principalAssistantService = {
         date: substitution.date,
         reply: substitutionReply(needed, substitution.dayLabel, HAS_DEVANAGARI.test(message)),
       };
+    }
+
+    // Morning briefing is keyword-matched and built from live data alone, so it
+    // also works when the AI service is down and costs no tokens.
+    if (ALERTS_PATTERN.test(message)) {
+      return { type: 'text', reply: await buildAlertsReply(ctx) };
+    }
+    if (BRIEFING_PATTERN.test(message)) {
+      return { type: 'text', reply: await buildMorningBriefing(ctx) };
     }
 
     if (!openaiProvider.isAvailable()) {
@@ -116,6 +159,10 @@ export const principalAssistantService = {
     if (scope) {
       return { type: 'text', reply: await buildAttendanceScopeReply(scope, ctx) };
     }
+
+    // Short follow-ups ("and for class 7?", "aur kal?") are rewritten into a full
+    // question using the last few turns. Only runs for short messages with history.
+    message = await resolveFollowUp(message, history, ctx);
 
     // Step 0 — ONE routing call decides: open a screen, perform an action
     // (preview/approve), answer a data question, or unsupported. (Previously two
@@ -167,6 +214,13 @@ export const principalAssistantService = {
     const intent = allIntents.find((i) => i.id === intentId);
     if (!intent) {
       return { type: 'text', reply: HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY };
+    }
+
+    if (intentId === 'ATTENTION_ALERTS') {
+      return { type: 'text', reply: await buildAlertsReply(ctx) };
+    }
+    if (intentId === 'DAILY_BRIEFING') {
+      return { type: 'text', reply: await buildMorningBriefing(ctx) };
     }
 
     // A generic "today's attendance" ask is answered with a short scope

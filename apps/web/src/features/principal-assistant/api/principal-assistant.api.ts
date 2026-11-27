@@ -16,6 +16,11 @@ export interface ActionPreview {
   warnings?: string[];
 }
 
+export interface ChatHistoryTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export type ChatReply =
   | { type: 'text'; reply: string; quickReplies?: string[] }
   | { type: 'navigate'; reply: string; path: string; label: string }
@@ -35,10 +40,27 @@ export interface ActionExecuteResponse {
 }
 
 export const principalAssistantApi = {
-  async sendMessage(message: string): Promise<ChatReply> {
+  async sendMessage(message: string, history?: ChatHistoryTurn[]): Promise<ChatReply> {
     try {
-      const res = await apiClient.post<ApiResponse<ChatReply>>('/principal-assistant/chat', { message });
+      const res = await apiClient.post<ApiResponse<ChatReply>>('/principal-assistant/chat', { message, history });
       return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  /** Downloads an assistant answer as a PDF or Excel file. */
+  async exportAnswer(title: string, text: string, format: 'pdf' | 'xlsx'): Promise<void> {
+    try {
+      const res = await apiClient.post('/principal-assistant/export', { title, text, format }, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data as Blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/[^a-z0-9]+/gi, '_').slice(0, 40) || 'answer'}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       throw new Error(extractErrorMessage(err));
     }
