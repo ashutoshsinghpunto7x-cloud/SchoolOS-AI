@@ -25,6 +25,7 @@
     "seed:demo-workspace": "tsx src/scripts/seed-demo-workspace.ts",
     "seed:pitch-demo": "tsx src/scripts/seed-pitch-demo.ts",
     "seed:operations-demo": "tsx src/scripts/seed-operations-demo.ts",
+    "demo:ashutosh": "tsx src/scripts/add-demo-ashutosh.ts",
     "seed:whatsapp-demo": "tsx src/scripts/seed-whatsapp-demo-class.ts",
     "seed:whatsapp-demo-accountant": "tsx src/scripts/seed-whatsapp-demo-accountant.ts",
     "seed:perf-test-data": "tsx src/scripts/seed-perf-test-data.ts",

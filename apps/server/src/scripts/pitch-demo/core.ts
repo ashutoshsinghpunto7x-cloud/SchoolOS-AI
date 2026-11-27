@@ -69,8 +69,9 @@ export async function seedCore(): Promise<World> {
         principalName: 'Mrs. Meera Kapoor',
       },
       communicationSettings: {
-        // Everything OFF on purpose: demo phone numbers are random and must never receive a real message.
-        whatsappEnabled: false, emailEnabled: false, smsEnabled: false, pushEnabled: false,
+        // Demo phone numbers are random, so only WhatsApp is on and whatsapp-test-gate.ts
+        // restricts it to the allowlisted test numbers (Ashutosh Singh, class 6A).
+        whatsappEnabled: true, emailEnabled: false, smsEnabled: false, pushEnabled: false,
         attendanceAutoNotify: false, feeReminderAutoNotify: false,
         workingHoursStart: '08:00', workingHoursEnd: '20:00', dailyLimit: 5000, retryCount: 3,
         feeReceiptWhatsappTemplate: 'fee_payment_receipt',

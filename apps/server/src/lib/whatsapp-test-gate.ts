@@ -25,3 +25,17 @@ export function assertWhatsAppSendAllowed(schoolId: string): void {
     'WhatsApp sending is currently in testing and only available on the demo workspace.',
   );
 }
+
+/**
+ * Even inside DEMO_SCHOOL, most seeded parent phone numbers are random and may
+ * belong to real people. Until WhatsApp is live for all schools, only these
+ * known test numbers (10-digit, no country code) may ever receive a message.
+ */
+const DEMO_RECIPIENT_ALLOWLIST = new Set(['9219583594', '6386639197', '9696758321', '7292942981', '6306375483']);
+
+export function isWhatsAppRecipientAllowed(schoolId: string, phone: string | undefined): boolean {
+  if (process.env.WHATSAPP_LIVE_FOR_ALL_SCHOOLS === 'true') return true;
+  if (schoolId !== DEMO_SCHOOL_ID) return false;
+  const digits = (phone ?? '').replace(/\D/g, '').slice(-10);
+  return DEMO_RECIPIENT_ALLOWLIST.has(digits);
+}

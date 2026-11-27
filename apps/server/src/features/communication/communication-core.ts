@@ -1,5 +1,6 @@
 import { schoolSettingsService } from '../school-settings/school-settings.service';
 import { notificationLogRepository } from './notification-log.repository';
+import { isWhatsAppRecipientAllowed } from '../../lib/whatsapp-test-gate';
 import { messageTemplateRepository } from './message-template.repository';
 import { getProvider } from './providers/provider-registry';
 import { META_TEMPLATE_MAP } from './providers/meta-template-map';
@@ -72,6 +73,10 @@ export async function sendWhatsAppAttachmentTemplate(
   const metaTemplate = META_TEMPLATE_MAP[notificationType];
   if (!metaTemplate?.hasDocumentHeader) {
     return { success: false, errorMessage: `${notificationType} has no configured document-header WhatsApp template` };
+  }
+
+  if (!isWhatsAppRecipientAllowed(schoolId, phone)) {
+    return { success: false, errorMessage: 'Recipient is not on the WhatsApp test allowlist' };
   }
 
   const settings = await schoolSettingsService.getSettings(schoolId);
@@ -157,6 +162,15 @@ export async function sendOne(input: SendOneInput): Promise<INotificationLog> {
       ...baseLog,
       status: 'SKIPPED',
       errorMessage: 'No phone number on file for this recipient',
+      payload: {},
+    });
+  }
+
+  if (channel === 'whatsapp' && !isWhatsAppRecipientAllowed(schoolId, recipient.phone)) {
+    return notificationLogRepository.create({
+      ...baseLog,
+      status: 'SKIPPED',
+      errorMessage: 'Recipient is not on the WhatsApp test allowlist',
       payload: {},
     });
   }

@@ -29,6 +29,7 @@ import { seedFrontOffice } from './pitch-demo/front-office';
 import { addReliefTeachers, RELIEF_LOGIN } from './pitch-demo/relief-teachers';
 import { addExamPapersAndWorksheets } from './pitch-demo/exam-papers';
 import { seedSchoolPosts } from './pitch-demo/school-posts';
+import { addAshutoshToDemo } from './pitch-demo/ashutosh';
 
 async function wipe(): Promise<void> {
   if (SCHOOL_ID !== 'DEMO_SCHOOL') throw new Error('Refusing to wipe a non-demo tenant');
@@ -72,6 +73,8 @@ async function main(): Promise<void> {
   await addExamPapersAndWorksheets();
   log('\n[7] School Life: homework, news, activities');
   await seedSchoolPosts();
+  log('\n[8] Ashutosh Singh (real WhatsApp number) in class 6A');
+  await addAshutoshToDemo();
 
   const rows: string[] = [];
   rows.push(`| Dashboard | Email | Username | Password |`);
