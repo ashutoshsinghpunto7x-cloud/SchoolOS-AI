@@ -7,8 +7,7 @@ import { Exam } from '../exams/exam.model';
 import { FeeRecord } from '../fees/fee.model';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { principalService } from '../principal/principal.service';
-import { openaiProvider } from '../ai/providers/llm/openai.provider';
-import { recordUsage } from './intent-router';
+import { extractQueryParams, escapeRegex } from './query-params';
 import { classNameVariants } from '../../lib/class-name';
 import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
@@ -20,7 +19,6 @@ import { logger } from '../../lib/logger';
 // LLM only phrases the JSON it is handed.
 
 const MAX_NAMES = 60;
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ── Absent teachers ──────────────────────────────────────────────────────────
 
@@ -81,17 +79,10 @@ export interface AbsentStudentsList {
   note?: string;
 }
 
-/** Pulls a class like "class 5", "5th b", "10-A" or "कक्षा 7" out of the message. */
-function extractClass(message: string): { klass: string; section?: string } | null {
-  const m = message.match(/(?:class|कक्षा|क्लास)\s*[-:]?\s*(\d{1,2}|[ivx]{1,4})\s*(?:th|st|nd|rd)?\s*[-\s]?\s*([a-e])?\b/i)
-    ?? message.match(/\b(\d{1,2})\s*(?:th|st|nd|rd)\s*[-\s]?\s*([a-e])?\b/i);
-  if (!m) return null;
-  return { klass: m[1], section: m[2]?.toUpperCase() };
-}
-
 async function getAbsentStudents(ctx: AuthContext, message = ''): Promise<AbsentStudentsList> {
   const date = attendanceRepository.todayString();
-  const cls = extractClass(message);
+  const p = await extractQueryParams(message, ctx);
+  const cls = p.className ? { klass: p.className, section: p.section ?? undefined } : null;
   const query: Record<string, unknown> = { schoolId: ctx.schoolId, date, status: 'absent', isDeleted: false };
   if (cls) {
     query.class = { $in: classNameVariants(cls.klass) };
@@ -124,39 +115,6 @@ async function getAbsentStudents(ctx: AuthContext, message = ''): Promise<Absent
 
 // ── Student lookup (marks / attendance / fees for one named student) ─────────
 
-interface StudentQuery {
-  studentName: string | null;
-  subject: string | null;
-  exam: string | null;
-}
-
-/** One small extraction call — names and subjects come in English, Hindi and
- *  Hinglish, so a regex can't reliably isolate them. */
-async function extractStudentQuery(message: string, ctx: AuthContext): Promise<StudentQuery> {
-  const result = await openaiProvider.complete({
-    systemPrompt:
-      'Extract search fields from a school Principal\'s question about one student. The text may be English, Hindi or ' +
-      'Hinglish. Respond ONLY with JSON: {"studentName": string|null, "subject": string|null, "exam": string|null}. ' +
-      'studentName = the student\'s name in the same script as written, without words like "student", "bacha", "beta". ' +
-      'subject = a school subject in English (e.g. Hindi, Maths, Science) or null. exam = exam name like "Half Yearly" or null.',
-    userPrompt: message,
-    temperature: 0,
-    maxTokens: 80,
-    jsonResponse: true,
-  });
-  recordUsage(result, ctx.schoolId);
-  try {
-    const p = JSON.parse(result.content) as Partial<StudentQuery>;
-    return {
-      studentName: p.studentName?.toString().trim() || null,
-      subject: p.subject?.toString().trim() || null,
-      exam: p.exam?.toString().trim() || null,
-    };
-  } catch {
-    return { studentName: null, subject: null, exam: null };
-  }
-}
-
 export interface StudentLookupResult {
   found: boolean;
   message?: string;
@@ -173,7 +131,7 @@ export interface StudentLookupResult {
 }
 
 async function getStudentLookup(ctx: AuthContext, message = ''): Promise<StudentLookupResult> {
-  const q = await extractStudentQuery(message, ctx);
+  const q = await extractQueryParams(message, ctx);
   if (!q.studentName) {
     return { found: false, message: 'No student name was found in the question. Ask the Principal to say the student\'s name.' };
   }

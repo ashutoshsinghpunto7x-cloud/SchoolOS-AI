@@ -1,28 +1,118 @@
 import { IntentDefinition } from './intent-router';
 import { peopleAssistantData } from './people.data';
+import { studentsAssistantData } from './students.data';
+import { staffAssistantData } from './staff.data';
+import { opsAssistantData } from './ops.data';
 import { AuthContext } from '../../lib/auth-context';
 
-// Name-level questions: who is absent, and what a named student has scored.
+// Name-level and list-style questions. Each description is shown verbatim to the
+// router LLM, so it names the phrasings (English / Hindi / Hinglish) it should catch.
+
+const def = (
+  id: string,
+  description: string,
+  fetchData: IntentDefinition<AuthContext, unknown>['fetchData'],
+): IntentDefinition<AuthContext, unknown> => ({ id, description, fetchData });
+
 export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
-  {
-    id: 'ABSENT_TEACHERS_LIST',
-    description:
-      'WHO / the NAMES of teachers or staff absent today — e.g. "which teachers are absent", "absent teachers ke naam", ' +
-      '"aaj kaun se teacher nahi aaye". (For just a count, use TEACHER_ABSENT_COUNT.)',
-    fetchData: peopleAssistantData.getAbsentTeachers,
-  },
-  {
-    id: 'ABSENT_STUDENTS_LIST',
-    description:
-      'WHO / the NAMES of students absent today, optionally for one class — e.g. "which students are absent in class 5", ' +
-      '"absent bachon ki list". (For just a count, use STUDENT_ABSENT_COUNT.)',
-    fetchData: peopleAssistantData.getAbsentStudents,
-  },
-  {
-    id: 'STUDENT_LOOKUP',
-    description:
-      'Anything about ONE named student: marks/score/result in a subject or exam, their attendance, fees due, class or ' +
-      'parent — e.g. "how many marks did Arav score in Hindi", "Riya ka maths result", "show me Rohan\'s attendance".',
-    fetchData: peopleAssistantData.getStudentLookup,
-  },
+  // Attendance by name
+  def('ABSENT_TEACHERS_LIST',
+    'WHO / the NAMES of teachers or staff absent today — "which teachers are absent", "absent teachers ke naam", "aaj kaun se teacher nahi aaye". (Just a count → TEACHER_ABSENT_COUNT.)',
+    peopleAssistantData.getAbsentTeachers),
+  def('ABSENT_STUDENTS_LIST',
+    'WHO / the NAMES of students absent today, optionally for one class — "which students are absent in class 5", "absent bachon ki list". (Just a count → STUDENT_ABSENT_COUNT.)',
+    peopleAssistantData.getAbsentStudents),
+  def('STUDENT_LOOKUP',
+    'Anything about ONE named student: marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
+    peopleAssistantData.getStudentLookup),
+
+  // Students
+  def('TOP_BOTTOM_STUDENTS',
+    'Toppers or weakest students, overall or by class / section / subject / exam — "top 5 students in class 10", "who scored lowest in maths", "class 8 ke toppers".',
+    studentsAssistantData.getRankedStudents),
+  def('FAILED_STUDENTS',
+    'Students who FAILED or did not pass, optionally by class / subject / exam — "who failed in science", "fail hone wale bachche class 9".',
+    studentsAssistantData.getFailedStudents),
+  def('LOW_ATTENDANCE_STUDENTS',
+    'Students with low attendance / below a percentage (default 75%) — "students below 75% attendance", "kam attendance wale bachche class 6".',
+    studentsAssistantData.getLowAttendanceStudents),
+  def('FEE_DEFAULTERS',
+    'WHO has not paid fees: defaulter names, biggest dues, overdue fees by class — "fee defaulters", "who hasn\'t paid in class 7", "overdue fees by class". (Totals only → FEE_SUMMARY.)',
+    studentsAssistantData.getFeeDefaulters),
+  def('FEE_COLLECTION_PERIOD',
+    'Fees collected TODAY or THIS MONTH — "today\'s collection", "aaj kitni fees aayi", "this month\'s fee collection".',
+    studentsAssistantData.getFeeCollectionByPeriod),
+  def('CLASS_STRENGTH_ROSTER',
+    'How many students are in a class / section, the class list, or strength of every class — "class 5 strength", "list of class 3-A", "total students in each class".',
+    studentsAssistantData.getClassRoster),
+  def('BIRTHDAYS_TODAY',
+    'Whose birthday is today (students and teachers) — "birthdays today", "aaj kiska birthday hai".',
+    studentsAssistantData.getBirthdays),
+
+  // Marks and results
+  def('RESULTS_ANALYSIS',
+    'Results statistics: class average in a subject, pass percentage per class, which subject has the worst/best results, comparing two exams, which teacher\'s subject has the lowest scores — "class 8 maths average", "pass % of each class", "weakest subject", "compare half yearly and annual", "which teacher\'s results are poor".',
+    studentsAssistantData.getResultsAnalysis),
+
+  // Teachers and staff
+  def('TEACHERS_ON_LEAVE',
+    'Which teachers are on (approved) leave today / tomorrow / a date — "who is on leave tomorrow", "kal kaun chhutti par hai".',
+    staffAssistantData.getTeachersOnLeave),
+  def('PENDING_LEAVE_REQUESTS',
+    'Leave requests waiting for approval — "pending leave requests", "kitni leaves approve karni hain".',
+    staffAssistantData.getPendingLeaves),
+  def('TEACHER_SCHEDULE',
+    'One named teacher\'s timetable or free periods on a day — "Mrs Sharma\'s timetable", "when is Rahul sir free tomorrow".',
+    staffAssistantData.getTeacherSchedule),
+  def('FREE_TEACHERS_IN_PERIOD',
+    'Which teachers are free in a given period — "who is free in period 3", "teen number period mein kaun free hai".',
+    staffAssistantData.getFreeTeachers),
+  def('SUBSTITUTE_LEADERBOARD',
+    'Which teachers took the most substitute / adjustment periods — "who took the most substitute classes".',
+    staffAssistantData.getSubstituteLeaderboard),
+  def('LATE_STAFF',
+    'Staff / teachers who came LATE today — "late arrivals", "kaun late aaya".',
+    staffAssistantData.getLateStaff),
+
+  // Academics
+  def('SYLLABUS_PROGRESS',
+    'Syllabus / academic-plan progress per class, subject or teacher, and which chapters are behind schedule — "syllabus progress class 9", "which teacher is behind", "pichhe chal rahe chapters".',
+    opsAssistantData.getSyllabusProgress),
+  def('UPCOMING_EXAMS',
+    'Upcoming exams and their dates — "when is the next exam", "upcoming exams".',
+    opsAssistantData.getUpcomingExams),
+  def('EXAMS_MISSING_MARKS',
+    'Exams that have started but marks are not entered yet — "which exams have no marks entered", "marks entry pending".',
+    opsAssistantData.getExamsMissingMarks),
+  def('PENDING_TEST_APPROVALS',
+    'Question papers / mock tests waiting for the Principal\'s approval — "pending paper approvals".',
+    opsAssistantData.getPendingApprovals),
+
+  // Front office and admissions
+  def('VISITORS_TODAY',
+    'Visitors today at the front office — "who visited today", "visitors waiting".',
+    opsAssistantData.getVisitorsToday),
+  def('PENDING_FOLLOW_UPS',
+    'Admission enquiry follow-ups that are due or missed — "pending follow-ups", "kisko call karna hai".',
+    opsAssistantData.getPendingFollowUps),
+  def('PENDING_ADMISSION_FORMS',
+    'Admission forms not yet submitted or awaiting verification — "pending admission forms".',
+    opsAssistantData.getPendingAdmissionForms),
+  def('INTERVIEWS_SCHEDULED',
+    'Staff-recruitment interviews coming up — "interviews scheduled", "who is coming for interview".',
+    opsAssistantData.getInterviews),
+  def('HIRING_POSITIONS',
+    'Open hiring positions / candidates per position — "open positions", "hiring status".',
+    opsAssistantData.getHiringPositions),
+
+  // Operations
+  def('OPEN_MAINTENANCE',
+    'Open maintenance / facility requests — "open maintenance requests", "repair tickets pending".',
+    opsAssistantData.getOpenMaintenance),
+  def('PENDING_PURCHASES_EXPENSES',
+    'Purchase requests and expenses waiting for approval — "pending purchase approvals", "expense approvals".',
+    opsAssistantData.getPendingPurchasesAndExpenses),
+  def('UPCOMING_EVENTS',
+    'Upcoming events and holidays — "upcoming events", "next holiday", "is there any function this month".',
+    opsAssistantData.getUpcomingEvents),
 ];
