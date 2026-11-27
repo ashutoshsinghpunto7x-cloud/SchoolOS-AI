@@ -104,7 +104,7 @@ export async function seedFrontOffice(world: World): Promise<void> {
 
   // ── Visitors (today + past two weeks) + appointments ──────────────────────
   const purposes = ['meet_student', 'meet_staff', 'admission_enquiry', 'fee_payment', 'delivery', 'vendor', 'interview'] as const;
-  const people = ['Mrs. Meera Kapoor (Principal)', 'Rajesh Gupta (Accounts)', 'Anjali Sharma', 'Rahul Verma', 'Reception', 'Harish Malhotra (Operations)'];
+  const people = ['Mrs. Meera Kapoor (Principal)', 'Arpit Gupta (Accounts)', 'Anjali Sharma', 'Rahul Verma', 'Reception', 'Harish Malhotra (Operations)'];
   const visitors: Record<string, unknown>[] = [];
   const todayStatuses = ['waiting', 'waiting', 'approved', 'in_meeting', 'in_meeting', 'completed', 'completed', 'completed', 'cancelled'] as const;
   let passSeq = 0;
