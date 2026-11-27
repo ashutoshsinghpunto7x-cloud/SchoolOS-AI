@@ -46,7 +46,7 @@ export function SchoolNamePanel() {
               onChange={(e) => setName(e.target.value)}
               maxLength={120}
               className={inputCls}
-              placeholder="e.g. Sunrise Public School"
+              placeholder="e.g. FNIC"
             />
           </label>
 

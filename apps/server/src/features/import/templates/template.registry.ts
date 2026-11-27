@@ -120,7 +120,7 @@ const TEMPLATES: Record<ImportType, ImportTemplate> = {
         studentDateOfBirth: '2011-03-10',
         interestedClass: '6',
         gender: 'male',
-        currentSchool: 'St. Mary School',
+        currentSchool: 'Previous School Name',
         currentClass: '5',
         parentName: 'Vikram Mehta',
         parentPhone: '9988776655',

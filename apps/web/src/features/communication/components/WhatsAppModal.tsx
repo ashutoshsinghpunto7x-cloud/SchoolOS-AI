@@ -8,7 +8,7 @@ import type { Student } from '@schoolos/types';
 const buildTemplate = (student: Student): string =>
   `Hello ${student.fatherName},
 
-Thank you for your interest in Sunrise Academy.
+Thank you for your interest in FNIC.
 
 We are reaching out regarding the admission of ${student.fullName} in Class ${student.class}.
 
@@ -18,7 +18,7 @@ Please feel free to call us anytime or reply to this message.
 
 Warm Regards,
 Anita Sharma
-Reception · Sunrise Academy`;
+Reception · FNIC`;
 
 interface WhatsAppModalProps {
   student: Student;

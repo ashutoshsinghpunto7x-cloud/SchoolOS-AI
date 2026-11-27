@@ -64,10 +64,8 @@ export async function seedCore(): Promise<World> {
       behaviorWindow: { startTime: '08:30', endTime: '15:30' },
       reportCardBranding: {
         motto: 'Learning Today, Leading Tomorrow',
-        address: '12, Civil Lines, Lucknow, Uttar Pradesh — 226001',
-        phone: '0522-4001234',
-        website: 'www.greenwood-demo.edu',
-        email: 'office@greenwood-demo.edu',
+        address: 'Tulsi Puram, Triveni Nagar - 2, Triveni Nagar, Lucknow, Uttar Pradesh 226020',
+        website: 'www.fnicschool.com',
         principalName: 'Mrs. Meera Kapoor',
       },
       communicationSettings: {
@@ -113,7 +111,7 @@ export async function seedCore(): Promise<World> {
 
   // ── Users + Employees + Teachers ──────────────────────────────────────────
   let empSeq = 1;
-  const nextEmpId = (): string => `GIS-EMP-${String(empSeq++).padStart(3, '0')}`;
+  const nextEmpId = (): string => `FNIC-EMP-${String(empSeq++).padStart(3, '0')}`;
 
   async function makeEmployee(opts: {
     fullName: string; gender: 'male' | 'female'; designation: string; role: string; salary: number;
@@ -138,7 +136,7 @@ export async function seedCore(): Promise<World> {
       firstName: plan.firstName, lastName: plan.lastName, email: plan.email, username: plan.username, passwordHash,
       role: 'teacher', schoolId: SCHOOL_ID, status: 'active', phone: phone(),
     });
-    const employeeId = `GIS-EMP-${String(empSeq).padStart(3, '0')}`;
+    const employeeId = `FNIC-EMP-${String(empSeq).padStart(3, '0')}`;
     const teacher = await Teacher.create({
       fullName, gender: plan.gender, employeeId, phone: phone(), email: plan.email, department: 'Academics',
       subjects: [plan.subject], assignedClasses: CLASS_SECTIONS.map((c) => `${c.cls}${c.section}`),
@@ -242,7 +240,7 @@ export async function seedCore(): Promise<World> {
       do { surname = pick(SURNAMES); fullName = `${boy ? pick(BOYS) : pick(GIRLS)} ${surname}`; } while (usedNames.has(fullName));
       usedNames.add(fullName);
       const _id = new Types.ObjectId();
-      const admissionNumber = `GIS-${2026 - (clsNum - 5)}-${String(adm).padStart(4, '0')}`;
+      const admissionNumber = `FNIC-${2026 - (clsNum - 5)}-${String(adm).padStart(4, '0')}`;
       const fatherName = `${pick(FATHERS)} ${surname}`;
       const motherName = `${pick(MOTHERS)} ${surname}`;
       const parentPhone = phone();

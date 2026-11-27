@@ -15,15 +15,15 @@ import { SCHOOL_ID, ACADEMIC_YEAR, SEEDER, utc, at, log } from './common';
 // every day) gives each a different number of free periods: 4, 5 and 3.
 const RELIEF_TEACHERS = [
   {
-    fullName: 'Pooja Saxena', gender: 'female' as const, employeeId: 'GIS-EMP-R01', phone: '9000000101',
+    fullName: 'Pooja Saxena', gender: 'female' as const, employeeId: 'FNIC-EMP-R01', phone: '9000000101',
     subject: 'Art & Craft', classes: ['6A', '6B'], duty: 'Activity Room Duty', dutyPeriods: [0, 3], salary: 8700,
   },
   {
-    fullName: 'Imran Qureshi', gender: 'male' as const, employeeId: 'GIS-EMP-R02', phone: '9000000102',
+    fullName: 'Imran Qureshi', gender: 'male' as const, employeeId: 'FNIC-EMP-R02', phone: '9000000102',
     subject: 'Physical Education', classes: ['7A', '7B'], duty: 'Sports Practice', dutyPeriods: [2], salary: 9200,
   },
   {
-    fullName: 'Nandini Bose', gender: 'female' as const, employeeId: 'GIS-EMP-R03', phone: '9000000103',
+    fullName: 'Nandini Bose', gender: 'female' as const, employeeId: 'FNIC-EMP-R03', phone: '9000000103',
     subject: 'Computer Science', classes: ['8A', '6A'], duty: 'Computer Lab Duty', dutyPeriods: [1, 4, 5], salary: 9600,
   },
 ];

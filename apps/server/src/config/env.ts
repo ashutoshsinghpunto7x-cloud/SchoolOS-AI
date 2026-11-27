@@ -20,7 +20,7 @@ const envSchema = z.object({
   N8N_WEBHOOK_URL: z.string().url().optional(),
   // Optional: shared secret n8n sends in X-Automation-Secret header for webhook validation.
   AUTOMATION_WEBHOOK_SECRET: z.string().optional(),
-  SCHOOL_NAME: z.string().default('Sunrise Academy'),
+  SCHOOL_NAME: z.string().default('FNIC'),
   // JWT
   JWT_ACCESS_SECRET: z.string({ required_error: 'JWT_ACCESS_SECRET is required' }),
   JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET is required' }),

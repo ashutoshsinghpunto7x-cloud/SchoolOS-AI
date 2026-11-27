@@ -7,7 +7,7 @@
 import { AuthContext } from '../../lib/auth-context';
 
 export const SCHOOL_ID = 'DEMO_SCHOOL';
-export const SCHOOL_NAME = 'Greenwood International School';
+export const SCHOOL_NAME = 'FNIC';
 export const PASSWORD = 'Demo@123';
 export const SALT_ROUNDS = 12; // must match auth.service.ts
 export const ACADEMIC_YEAR = '2026-27';

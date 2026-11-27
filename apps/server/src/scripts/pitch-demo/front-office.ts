@@ -21,7 +21,7 @@ import { Communication } from '../../features/communications/communication.model
 import { Vehicle, VehicleLocation, StudentTransportAssignment } from '../../features/transport/transport.model';
 
 import {
-  SCHOOL_ID, SEEDER, SURNAMES, BOYS, GIRLS, FATHERS, rand, pick, randInt, phone, iso, daysAgo, daysFromNow, at, log,
+  SCHOOL_ID, SCHOOL_NAME, SEEDER, SURNAMES, BOYS, GIRLS, FATHERS, rand, pick, randInt, phone, iso, daysAgo, daysFromNow, at, log,
 } from './common';
 import { World } from './core';
 
@@ -252,7 +252,7 @@ export async function seedFrontOffice(world: World): Promise<void> {
   for (const s of world.students.slice(0, 40)) {
     comms.push({
       studentId: new Types.ObjectId(s._id), type: 'whatsapp', status: pick(['DELIVERED', 'READ', 'READ'] as const), provider: 'whatsapp-cloud', direction: 'outbound',
-      title: pick(['Fee reminder', 'Attendance alert', 'PTM invitation']), message: 'Dear parent, this is an automated message from Greenwood International School.',
+      title: pick(['Fee reminder', 'Attendance alert', 'PTM invitation']), message: `Dear parent, this is an automated message from ${SCHOOL_NAME}.`,
       summary: 'Automated WhatsApp notification delivered to parent.', createdBy: SEEDER, schoolId: SCHOOL_ID,
     });
   }

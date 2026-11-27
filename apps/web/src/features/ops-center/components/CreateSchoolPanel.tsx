@@ -137,11 +137,11 @@ export function CreateSchoolPanel() {
               <form onSubmit={submit} className="mt-4 space-y-3">
                 <label className="block text-sm text-[#98A2B3]">
                   School name
-                  <input required className={inputCls} value={form.schoolName} onChange={set('schoolName')} placeholder="e.g. Sunrise Public School" />
+                  <input required className={inputCls} value={form.schoolName} onChange={set('schoolName')} placeholder="e.g. FNIC" />
                 </label>
                 <label className="block text-sm text-[#98A2B3]">
                   School code <span className="text-[#667085]">(optional, 2–20 letters/digits — auto-generated if blank)</span>
-                  <input className={inputCls} value={form.schoolCode} onChange={set('schoolCode')} placeholder="sunrise" />
+                  <input className={inputCls} value={form.schoolCode} onChange={set('schoolCode')} placeholder="fnic" />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block text-sm text-[#98A2B3]">
