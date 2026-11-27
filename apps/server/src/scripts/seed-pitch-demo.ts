@@ -26,7 +26,7 @@ import { seedCore } from './pitch-demo/core';
 import { seedAcademics } from './pitch-demo/academics';
 import { seedFinance } from './pitch-demo/finance-ops';
 import { seedFrontOffice } from './pitch-demo/front-office';
-import { addReliefTeachers } from './pitch-demo/relief-teachers';
+import { addReliefTeachers, RELIEF_LOGIN } from './pitch-demo/relief-teachers';
 
 async function wipe(): Promise<void> {
   if (SCHOOL_ID !== 'DEMO_SCHOOL') throw new Error('Refusing to wipe a non-demo tenant');
@@ -72,6 +72,7 @@ async function main(): Promise<void> {
   rows.push(`|---|---|---|---|`);
   for (const s of STAFF) rows.push(`| ${s.dashboard} | ${s.email} | ${s.username} | ${PASSWORD} |`);
   for (const t of TEACHERS) rows.push(`| Teacher — ${t.subject} (class teacher of ${t.classTeacherOf.cls}${t.classTeacherOf.section}) | ${t.email} | ${t.username} | ${PASSWORD} |`);
+  rows.push(`| Teacher — Art & Craft (has free periods) | ${RELIEF_LOGIN.email} | ${RELIEF_LOGIN.username} | ${PASSWORD} |`);
   for (const p of PARENTS) rows.push(`| Parent (${p.childIdx.length} child${p.childIdx.length > 1 ? 'ren' : ''}) | ${p.email} | ${p.username} | ${PASSWORD} |`);
 
   const docPath = path.resolve(__dirname, '../../../../docs/Pitch_Demo_Logins.md');
