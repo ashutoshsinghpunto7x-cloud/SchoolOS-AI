@@ -28,6 +28,7 @@ import { seedFinance } from './pitch-demo/finance-ops';
 import { seedFrontOffice } from './pitch-demo/front-office';
 import { addReliefTeachers, RELIEF_LOGIN } from './pitch-demo/relief-teachers';
 import { addExamPapersAndWorksheets } from './pitch-demo/exam-papers';
+import { seedSchoolPosts } from './pitch-demo/school-posts';
 
 async function wipe(): Promise<void> {
   if (SCHOOL_ID !== 'DEMO_SCHOOL') throw new Error('Refusing to wipe a non-demo tenant');
@@ -69,6 +70,8 @@ async function main(): Promise<void> {
   await addReliefTeachers();
   log('\n[6] Exam papers and worksheets for the demo Maths teacher');
   await addExamPapersAndWorksheets();
+  log('\n[7] School Life: homework, news, activities');
+  await seedSchoolPosts();
 
   const rows: string[] = [];
   rows.push(`| Dashboard | Email | Username | Password |`);
