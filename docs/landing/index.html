@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SchoolOS AI — School management software</title>
+<meta name="description" content="School management software for attendance, fees, exams, admissions and staff. One system for principals, teachers, parents and the office.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0f1b33;--text:#3d4a63;--muted:#6b778c;--line:#e4e8ef;--bg:#fff;--soft:#f5f7fb;--brand:#1d4ed8;--brand-d:#1740b3;--tint:#eaf0ff;--ok:#16a34a;--warn:#d97706}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;color:var(--text);background:var(--bg);line-height:1.65;font-size:16px;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{color:var(--ink);line-height:1.2;letter-spacing:-.02em}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+
+/* header */
+header.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--ink);font-size:18px}
+.logo svg{width:30px;height:30px}
+.links{display:flex;gap:28px;font-size:15px;font-weight:500}
+.links a:hover{color:var(--brand)}
+.btn{display:inline-block;padding:12px 22px;border-radius:8px;font-weight:600;font-size:15px;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:background .2s,transform .2s}
+.btn.p{background:var(--brand);color:#fff}.btn.p:hover{background:var(--brand-d);transform:translateY(-1px)}
+.btn.o{border-color:#cdd5e3;color:var(--ink);background:#fff}.btn.o:hover{border-color:var(--brand);color:var(--brand)}
+.btn.s{padding:9px 18px;font-size:14px}
+
+/* hero */
+.hero{padding:84px 0 70px;background:linear-gradient(180deg,#f5f8ff,#fff)}
+.hero-grid{display:grid;grid-template-columns:1.02fr 1fr;gap:56px;align-items:center}
+.tag{display:inline-block;font-size:13px;font-weight:600;color:var(--brand);background:var(--tint);padding:5px 12px;border-radius:99px}
+.hero h1{font-size:clamp(34px,4.6vw,54px);font-weight:700;margin:18px 0 18px}
+.hero p.lead{font-size:18px;max-width:520px}
+.cta{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
+.hint{margin-top:18px;font-size:14px;color:var(--muted)}
+
+/* product mock */
+.app{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 60px rgba(15,27,51,.12);overflow:hidden;font-size:13px}
+.app-bar{display:flex;align-items:center;gap:6px;padding:11px 14px;background:var(--soft);border-bottom:1px solid var(--line)}
+.app-bar i{width:9px;height:9px;border-radius:50%;background:#d5dbe6}
+.app-body{display:grid;grid-template-columns:130px 1fr}
+.app-side{border-right:1px solid var(--line);padding:14px 10px;display:grid;gap:3px;align-content:start;color:var(--muted)}
+.app-side div{padding:7px 10px;border-radius:6px}
+.app-side .on{background:var(--tint);color:var(--brand);font-weight:600}
+.app-main{padding:16px}
+.app-main h4{color:var(--ink);font-size:14px;margin-bottom:12px}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kp div{border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.kp small{color:var(--muted);font-size:11px;display:block}.kp b{color:var(--ink);font-size:20px}
+.rows{margin-top:14px;border:1px solid var(--line);border-radius:8px}
+.row{display:grid;grid-template-columns:1.4fr 1fr 70px;padding:9px 12px;border-bottom:1px solid var(--line);align-items:center}
+.row:last-child{border:0}.row.h{background:var(--soft);color:var(--muted);font-size:11px;font-weight:600}
+.pill{font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;text-align:center}
+.pill.g{background:#e6f6ec;color:var(--ok)}.pill.a{background:#fdf1de;color:var(--warn)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:90px;margin-top:14px}
+.bars i{flex:1;background:#c9d8ff;border-radius:4px 4px 0 0;height:0;transition:height 1s ease}
+.bars i:last-child{background:var(--brand)}
+.in .bars i{height:var(--h)}
+
+/* sections */
+section{padding:84px 0}
+.alt{background:var(--soft)}
+.head{max-width:640px;margin-bottom:46px}
+.head.c{text-align:center;margin-inline:auto}
+.eyebrow{font-size:13px;font-weight:600;color:var(--brand);text-transform:uppercase;letter-spacing:.08em}
+.head h2{font-size:clamp(28px,3.4vw,40px);margin:10px 0 12px;font-weight:700}
+.head p{font-size:17px}
+
+/* feature grid */
+.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.fc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:26px;transition:box-shadow .25s,transform .25s,border-color .25s}
+.fc:hover{box-shadow:0 12px 30px rgba(15,27,51,.08);transform:translateY(-3px);border-color:#cfd9ee}
+.fc .n{width:38px;height:38px;border-radius:9px;background:var(--tint);color:var(--brand);display:grid;place-items:center;margin-bottom:16px}
+.fc .n svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fc h3{font-size:17px;margin-bottom:6px}.fc p{font-size:15px}
+
+/* split rows */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.split+.split{margin-top:84px}
+.split.rev>:first-child{order:2}
+.split h3{font-size:28px;margin-bottom:14px;font-weight:700}
+.split ul{margin-top:18px;list-style:none;display:grid;gap:10px}
+.split li{padding-left:28px;position:relative}
+.split li::before{content:"";position:absolute;left:0;top:7px;width:16px;height:16px;border-radius:50%;background:var(--tint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-4.8' fill='none' stroke='%231d4ed8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/cover}
+.paper{background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;box-shadow:0 18px 44px rgba(15,27,51,.09);font-size:13px}
+.paper h4{text-align:center;color:var(--ink);font-size:15px}.paper .sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.paper .q{display:flex;gap:10px;padding:7px 0}.paper .q b{color:var(--ink)}
+.paper .m{margin-left:auto;color:var(--muted);white-space:nowrap}
+
+/* roles */
+.roles{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.role{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px}
+.role h3{font-size:16px;margin-bottom:6px}.role p{font-size:14px}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.step b{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;margin-bottom:14px}
+.step h3{font-size:18px;margin-bottom:6px}
+
+/* faq */
+.faq{max-width:760px;margin:0 auto}
+details{border-bottom:1px solid var(--line);padding:18px 0}
+summary{cursor:pointer;font-weight:600;color:var(--ink);list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::after{content:"+";font-size:22px;line-height:1;color:var(--brand)}
+details[open] summary::after{content:"−"}
+details p{margin-top:10px}
+
+/* contact */
+.contact{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+form{background:#fff;border:1px solid var(--line);border-radius:14px;padding:30px;display:grid;gap:14px;box-shadow:0 14px 40px rgba(15,27,51,.07)}
+label{font-size:13px;font-weight:600;color:var(--ink);display:grid;gap:6px}
+input,select{padding:12px 14px;border:1px solid #cdd5e3;border-radius:8px;font:inherit;color:var(--ink);background:#fff}
+input:focus,select:focus{outline:2px solid #b9ccff;border-color:var(--brand)}
+.info{margin-top:26px;display:grid;gap:8px}.info b{color:var(--ink)}
+
+footer{background:var(--ink);color:#b4bfd4;padding:34px 0;font-size:14px}
+.ft{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center}
+footer .logo{color:#fff}
+
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+
+@media(max-width:900px){
+  .links{display:none}.hero-grid,.split,.contact{grid-template-columns:1fr;gap:36px}
+  .fg,.steps{grid-template-columns:1fr}.roles{grid-template-columns:1fr 1fr}
+  .split.rev>:first-child{order:0}section{padding:60px 0}.app-side{display:none}.app-body{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}.rv{opacity:1;transform:none}.bars i{height:var(--h)}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap nav">
+  <a href="#" class="logo">
+    <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#1d4ed8"/><path d="M16 7l10 5-10 5-10-5 10-5z" fill="#fff"/><path d="M10 15.5v4.2c0 1.6 2.7 3.3 6 3.3s6-1.7 6-3.3v-4.2l-6 3-6-3z" fill="#fff" opacity=".85"/></svg>
+    SchoolOS AI
+  </a>
+  <nav class="links"><a href="#features">Features</a><a href="#exams">Exams &amp; AI</a><a href="#roles">Who uses it</a><a href="#faq">FAQ</a></nav>
+  <a href="#contact" class="btn p s">Book a demo</a>
+</div></header>
+
+<section class="hero"><div class="wrap hero-grid">
+  <div>
+    <span class="tag">School management software</span>
+    <h1>One system to run your school, every day.</h1>
+    <p class="lead">Attendance, fees, exams, admissions and staff records in one place. Teachers save hours each week. Principals see what is happening without chasing people for reports.</p>
+    <div class="cta"><a href="#contact" class="btn p">Book a free demo</a><a href="#features" class="btn o">See what it does</a></div>
+    <p class="hint">Works in any browser. Your team can start with your existing Excel data.</p>
+  </div>
+  <div class="app rv" id="mock">
+    <div class="app-bar"><i></i><i></i><i></i></div>
+    <div class="app-body">
+      <div class="app-side"><div class="on">Overview</div><div>Attendance</div><div>Fees</div><div>Exams</div><div>Staff</div><div>Reports</div></div>
+      <div class="app-main">
+        <h4>Today at a glance</h4>
+        <div class="kp"><div><small>Present</small><b>94%</b></div><div><small>Fees collected</small><b>₹8.4L</b></div><div><small>Follow-ups due</small><b>12</b></div></div>
+        <div class="rows">
+          <div class="row h"><span>Class</span><span>Teacher</span><span>Status</span></div>
+          <div class="row"><span>Class 6 – A</span><span>Attendance marked</span><span class="pill g">Done</span></div>
+          <div class="row"><span>Class 8 – B</span><span>Attendance marked</span><span class="pill g">Done</span></div>
+          <div class="row"><span>Class 9 – A</span><span>Not yet marked</span><span class="pill a">Pending</span></div>
+        </div>
+        <div class="bars"><i style="--h:60%"></i><i style="--h:72%"></i><i style="--h:66%"></i><i style="--h:84%"></i><i style="--h:78%"></i><i style="--h:94%"></i></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <div class="head rv"><span class="eyebrow">What it covers</span><h2>Everything the school office handles, in one system</h2><p>No more separate registers, spreadsheets and messaging groups. Each person sees only what they need.</p></div>
+  <div class="fg">
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></div><h3>Attendance</h3><p>Quick daily marking for teachers, printable date-range registers, and a cut-off time set by the principal.</p></div>
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7"/></svg></div><h3>Report cards</h3><p>Term-wise report cards with your own templates for each class, ready to print.</p></div>
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg></div><h3>Fees and accounts</h3><p>Fee dues and receipts, expenses, vendors and staff salary with leave deductions.</p></div>
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a3 3 0 100-6M21 20c0-2.4-1.5-4.4-3.5-5.4"/></svg></div><h3>Front office</h3><p>Visitor passes, appointments, enquiries, follow-up reminders and admission form tracking.</p></div>
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10M15 10v10"/></svg></div><h3>Timetable</h3><p>Class timetables plus a single printable grid showing the whole school on one page.</p></div>
+    <div class="fc rv"><div class="n"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg></div><h3>Staff and recruitment</h3><p>Staff directory, CV collection, interview tracking and principal approval for new hires.</p></div>
+  </div>
+</div></section>
+
+<section id="exams" class="alt"><div class="wrap">
+  <div class="split">
+    <div class="rv">
+      <span class="eyebrow">For teachers</span>
+      <h3>Question papers in minutes, not evenings</h3>
+      <p>Upload a photo of a textbook chapter. SchoolOS picks out the questions, then builds a paper to the marks, difficulty and chapters you choose, with an answer key if you want one.</p>
+      <ul><li>Questions are worded for the class level, so they read like a teacher wrote them</li><li>Works with picture-based questions</li><li>Teachers review and edit before printing</li></ul>
+    </div>
+    <div class="paper rv">
+      <h4>Unit Test – Science</h4><div class="sub">Class 8 · Time: 40 min · Max marks: 20</div>
+      <div class="q"><b>1.</b><span>Name the process by which plants make their own food.</span><span class="m">[1]</span></div>
+      <div class="q"><b>2.</b><span>Why do we see lightning before we hear thunder?</span><span class="m">[2]</span></div>
+      <div class="q"><b>3.</b><span>Explain two differences between a conductor and an insulator.</span><span class="m">[3]</span></div>
+      <div class="q"><b>4.</b><span>Describe how you would separate salt from a salt-water mixture.</span><span class="m">[4]</span></div>
+    </div>
+  </div>
+  <div class="split rev">
+    <div class="rv">
+      <span class="eyebrow">For the office</span>
+      <h3>Bring in your existing data without retyping</h3>
+      <p>Upload your Excel sheets of students and staff. The system recognises the columns, flags duplicates and remembers your format for next time.</p>
+      <ul><li>Handles different class name styles, such as VI and 6</li><li>Shows what will change before anything is saved</li><li>Teachers can also enter marks by photo or voice</li></ul>
+    </div>
+    <div class="app rv">
+      <div class="app-bar"><i></i><i></i><i></i></div>
+      <div class="app-main"><h4>Import students</h4>
+        <div class="rows">
+          <div class="row h"><span>Your column</span><span>Maps to</span><span>Match</span></div>
+          <div class="row"><span>Student Name</span><span>Full name</span><span class="pill g">Auto</span></div>
+          <div class="row"><span>Father</span><span>Parent name</span><span class="pill g">Auto</span></div>
+          <div class="row"><span>Class</span><span>Class and section</span><span class="pill g">Auto</span></div>
+          <div class="row"><span>Mob.</span><span>Phone</span><span class="pill a">Check</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="roles"><div class="wrap">
+  <div class="head c rv"><span class="eyebrow">Who uses it</span><h2>A separate login and screen for each role</h2><p>Clear, readable screens with large text and simple buttons, so anyone on staff can use them.</p></div>
+  <div class="roles">
+    <div class="role rv"><h3>Principal</h3><p>School-wide overview, approvals, and a view of every teacher's plan.</p></div>
+    <div class="role rv"><h3>Teacher</h3><p>Attendance, marks, planner and question papers.</p></div>
+    <div class="role rv"><h3>Parent</h3><p>Child's attendance, marks, report card and fee status.</p></div>
+    <div class="role rv"><h3>Accountant</h3><p>Fees, salary, expenses and vendor records.</p></div>
+    <div class="role rv"><h3>Reception</h3><p>Visitors, enquiries, follow-ups and admissions.</p></div>
+  </div>
+</div></section>
+
+<section class="alt"><div class="wrap">
+  <div class="head c rv"><span class="eyebrow">Getting started</span><h2>Set up in three steps</h2></div>
+  <div class="steps">
+    <div class="step rv"><b>1</b><h3>Share your data</h3><p>Send your student and staff sheets. We import and check them with you.</p></div>
+    <div class="step rv"><b>2</b><h3>Set up classes and fees</h3><p>Classes, timetable, fee structure and report card format, set up together.</p></div>
+    <div class="step rv"><b>3</b><h3>Start with your staff</h3><p>Everyone gets their own login, and we stay available during the first weeks.</p></div>
+  </div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <div class="head c rv"><h2>Common questions</h2></div>
+  <div class="faq rv">
+    <details><summary>Do we need to install anything?</summary><p>No. SchoolOS runs in a web browser on a computer, tablet or phone.</p></details>
+    <details><summary>Can we use our existing Excel data?</summary><p>Yes. You can import students and staff from Excel, and the system maps the columns for you.</p></details>
+    <details><summary>Will teachers find it difficult?</summary><p>The screens are kept simple on purpose. Most daily tasks, like marking attendance, take a few taps. We also help train your staff.</p></details>
+    <details><summary>Can parents see their child's progress?</summary><p>Yes. Parents get their own login to view attendance, marks and fee status.</p></details>
+    <details><summary>Is our school's data kept separate from other schools?</summary><p>Yes. Each school's data is kept separate, and each person can only see what their role allows.</p></details>
+  </div>
+</div></section>
+
+<section id="contact" class="alt"><div class="wrap contact">
+  <div class="rv">
+    <span class="eyebrow">Book a demo</span>
+    <h2 style="font-size:clamp(28px,3.4vw,40px);margin:10px 0 14px">See it with your school's own workflow</h2>
+    <p>Tell us a little about your school and we will get in touch to arrange a short walkthrough.</p>
+    <div class="info"><span><b>Phone / WhatsApp:</b> 9219583594</span></div>
+  </div>
+  <form class="rv" id="form">
+    <label>Your name<input required name="name"></label>
+    <label>School name<input required name="school"></label>
+    <label>Phone number<input required type="tel" name="phone"></label>
+    <label>Number of students<select name="size"><option>Under 300</option><option>300 – 800</option><option>800 – 2000</option><option>2000+</option></select></label>
+    <button class="btn p" type="submit">Request a demo</button>
+  </form>
+</div></section>
+
+<footer><div class="wrap ft">
+  <a href="#" class="logo">SchoolOS AI</a>
+  <span>© <span id="yr"></span> SchoolOS AI · Support: 9219583594</span>
+</div></footer>
+
+<script>
+document.getElementById('yr').textContent=new Date().getFullYear();
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+document.getElementById('form').addEventListener('submit',e=>{e.preventDefault();
+  const d=Object.fromEntries(new FormData(e.target));
+  const t=`Hi, I would like a SchoolOS AI demo.\nName: ${d.name}\nSchool: ${d.school}\nPhone: ${d.phone}\nStudents: ${d.size}`;
+  window.open('https://wa.me/919219583594?text='+encodeURIComponent(t),'_blank');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Assistant Companion Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #1B2A4E;
+    --blue: #254A9A;
+    --gold: #F5B332;
+    --cream: #FAF8F5;
+    --sand: #F3EEE3;
+    --line: #E8E2D6;
+    --muted: #55607A;
+    --size: 64px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    overflow: hidden;
+  }
+
+  /* ---------- Mock dashboard ---------- */
+  .app { display: grid; grid-template-columns: 240px 1fr; height: 100vh; }
+  .sidebar {
+    background: #fff; border-right: 1px solid var(--line);
+    padding: 20px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; padding: 4px 10px 18px; }
+  .brand i { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--navy), var(--blue)); display: grid; place-items: center; color: var(--gold); font-style: normal; }
+  .nav {
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px;
+    font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; border: 0; background: none; text-align: left; font-family: inherit;
+    transition: background .15s, color .15s;
+  }
+  .nav:hover { background: var(--sand); color: var(--navy); }
+  .nav.active { background: var(--navy); color: #fff; }
+  .nav .ic { width: 20px; text-align: center; }
+  .nav .badge { margin-left: auto; background: var(--gold); color: var(--navy); font-size: 11px; font-weight: 700; border-radius: 99px; padding: 1px 7px; }
+
+  .main { overflow-y: auto; padding: 24px 32px 120px; }
+  .controls {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    background: #fff; border: 1px dashed #C9BFAE; border-radius: 14px; padding: 10px 14px; margin-bottom: 26px; font-size: 13px;
+  }
+  .controls b { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .seg { display: inline-flex; background: var(--sand); border-radius: 99px; padding: 3px; }
+  .seg button { border: 0; background: none; font: inherit; font-weight: 600; padding: 6px 12px; border-radius: 99px; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: var(--navy); color: #fff; }
+  .controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .controls .btn { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 6px 12px; font: inherit; font-weight: 600; cursor: pointer; color: var(--navy); }
+  .controls .btn:hover { background: var(--sand); }
+  .hint { width: 100%; color: var(--muted); }
+
+  .page { transition: opacity .25s, transform .25s; }
+  .page.swap { opacity: 0; transform: translateY(8px); }
+  .eyebrow { font-size: 13px; color: var(--muted); margin: 0 0 4px; }
+  h1 { font-size: 28px; margin: 0 0 22px; display: inline-block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+  .card {
+    background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px;
+    box-shadow: 0 2px 8px rgba(27,42,78,.04); transition: box-shadow .2s, transform .2s; cursor: default;
+  }
+  .card:hover { box-shadow: 0 10px 26px rgba(27,42,78,.1); transform: translateY(-2px); }
+  .card .k { font-size: 13px; color: var(--muted); }
+  .card .v { font-size: 30px; font-weight: 700; margin-top: 6px; }
+  .card .s { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .panel-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 16px; }
+  .block { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 18px; min-height: 180px; }
+  .block h3 { margin: 0 0 12px; font-size: 15px; }
+  .bar { height: 10px; border-radius: 99px; background: var(--sand); margin: 10px 0; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--navy)); border-radius: inherit; }
+  .li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--sand); font-size: 14px; }
+
+  /* ---------- Companion ---------- */
+  .buddy {
+    position: fixed; left: 0; top: 0; z-index: 60; width: var(--size); height: var(--size);
+    transition: transform .7s cubic-bezier(.34, 1.36, .64, 1);
+    cursor: pointer; will-change: transform;
+  }
+  .buddy.fast { transition-duration: .45s; }
+  .float { width: 100%; height: 100%; animation: bob 3.2s ease-in-out infinite; }
+  .tilt { width: 100%; height: 100%; transition: transform .35s ease; transform: rotate(var(--tilt, 0deg)); }
+  .body {
+    position: relative; width: 100%; height: 100%;
+    border-radius: 46% 46% 42% 42%;
+    background: radial-gradient(circle at 32% 28%, #3E66BF 0%, var(--blue) 35%, var(--navy) 100%);
+    box-shadow: 0 10px 22px rgba(27,42,78,.32), inset 0 -6px 12px rgba(0,0,0,.18), inset 0 4px 8px rgba(255,255,255,.12);
+    transform-origin: 50% 100%;
+  }
+  .buddy:hover .body { filter: brightness(1.08); }
+  .antenna { position: absolute; left: 50%; top: -12px; width: 2px; height: 13px; background: var(--gold); transform: translateX(-50%); transform-origin: bottom; border-radius: 2px; }
+  .antenna::after {
+    content: '✦'; position: absolute; left: 50%; top: -13px; transform: translateX(-50%);
+    color: var(--gold); font-size: 15px; line-height: 1; text-shadow: 0 0 8px rgba(245,179,50,.7);
+    animation: twinkle 2.4s ease-in-out infinite;
+  }
+  .moving .antenna { animation: wiggle .35s ease-in-out infinite; }
+  .eyes { position: absolute; top: 38%; left: 0; right: 0; display: flex; justify-content: center; gap: 11px; }
+  .eye { position: relative; width: 13px; height: 16px; background: #fff; border-radius: 50%; transition: transform .08s; overflow: hidden; }
+  .pupil { position: absolute; left: 3.5px; top: 4.5px; width: 6px; height: 7px; background: var(--navy); border-radius: 50%; transition: transform .12s ease-out; }
+  .pupil::after { content: ''; position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; top: 1px; left: 1px; }
+  .blink .eye { transform: scaleY(.1); }
+  .mouth { position: absolute; left: 50%; top: 68%; width: 12px; height: 6px; transform: translateX(-50%); border-bottom: 2.5px solid var(--gold); border-radius: 0 0 12px 12px; transition: all .2s; }
+  .cheek { position: absolute; top: 60%; width: 8px; height: 5px; border-radius: 50%; background: #F49C9C; opacity: .35; }
+  .cheek.l { left: 13%; } .cheek.r { right: 13%; }
+
+  /* expressions */
+  .happy .eye { background: transparent; overflow: visible; }
+  .happy .pupil { opacity: 0; }
+  .happy .eye::after { content: ''; position: absolute; left: 0; top: 4px; width: 13px; height: 8px; border: 3px solid #fff; border-bottom: 0; border-radius: 13px 13px 0 0; box-sizing: border-box; }
+  .happy .mouth { width: 16px; height: 8px; border-bottom-width: 3px; }
+  .happy .cheek { opacity: .6; }
+  .thinking .pupil { transform: translate(2px, -3px) !important; }
+  .thinking .mouth { width: 6px; height: 6px; border: 2px solid var(--gold); border-radius: 50%; }
+
+  .hop .body { animation: hop .7s cubic-bezier(.3, .7, .4, 1); }
+  .land .body { animation: land .35s ease-out; }
+  .poke .body { animation: poke .4s ease-out; }
+
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  @keyframes twinkle { 0%,100% { transform: translateX(-50%) scale(1) rotate(0); } 50% { transform: translateX(-50%) scale(1.25) rotate(45deg); } }
+  @keyframes wiggle { 0%,100% { transform: translateX(-50%) rotate(-14deg); } 50% { transform: translateX(-50%) rotate(14deg); } }
+  @keyframes hop {
+    0% { transform: scale(1, 1); }
+    15% { transform: scale(1.15, .85); }
+    45% { transform: translateY(-22px) scale(.92, 1.1); }
+    70% { transform: translateY(0) scale(1.12, .88); }
+    85% { transform: scale(.97, 1.03); }
+    100% { transform: scale(1, 1); }
+  }
+  @keyframes land { 0% { transform: scale(1.14, .86); } 60% { transform: scale(.96, 1.04); } 100% { transform: scale(1); } }
+  @keyframes poke { 0% { transform: scale(.85, 1.12); } 50% { transform: scale(1.1, .92); } 100% { transform: scale(1); } }
+
+  /* trail sparkles */
+  .trail { position: fixed; z-index: 55; pointer-events: none; color: var(--gold); font-size: 10px; animation: trail .8s ease-out forwards; }
+  @keyframes trail { 0% { opacity: .9; transform: translate(-50%, -50%) scale(1) rotate(0); } 100% { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.3) rotate(90deg); } }
+
+  /* speech bubble */
+  .bubble {
+    position: fixed; left: 0; top: 0; z-index: 61; max-width: 250px; pointer-events: none;
+    background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 11px 14px;
+    box-shadow: 0 14px 34px rgba(27,42,78,.18); font-size: 14px; line-height: 1.4;
+    opacity: 0; transform: scale(.6); transition: opacity .2s, transform .28s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .bubble.show { opacity: 1; transform: scale(1); }
+  .bubble.right { transform-origin: left center; }
+  .bubble.left { transform-origin: right center; }
+  .bubble.above { transform-origin: bottom right; }
+  .bubble strong { display: block; font-size: 13px; margin-bottom: 2px; }
+  .bubble .chip { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; background: var(--gold); color: var(--navy); border-radius: 99px; padding: 3px 10px; }
+  .dots { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .dots i { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: dot 1s infinite; }
+  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot { 0%,100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
+
+  /* chat panel mock */
+  .chat {
+    position: fixed; right: 24px; bottom: 110px; z-index: 58; width: 360px; max-width: calc(100vw - 32px);
+    background: #fff; border: 1px solid var(--line); border-radius: 24px; overflow: hidden;
+    box-shadow: 0 20px 50px rgba(27,42,78,.28);
+    transform-origin: bottom right; transform: scale(.4) translateY(40px); opacity: 0; pointer-events: none;
+    transition: transform .4s cubic-bezier(.34, 1.4, .64, 1), opacity .2s;
+  }
+  .chat.open { transform: none; opacity: 1; pointer-events: auto; }
+  .chat header { background: linear-gradient(90deg, var(--navy), var(--blue)); color: #fff; padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .chat header button { background: rgba(255,255,255,.12); border: 0; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+  .chat .msgs { background: var(--cream); padding: 16px; min-height: 200px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+  .msg { max-width: 85%; padding: 9px 12px; border-radius: 14px; background: #fff; border: 1px solid var(--line); }
+  .msg.me { align-self: flex-end; background: var(--navy); color: #fff; border-color: var(--navy); }
+  .sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sugg button { font: inherit; font-size: 12px; font-weight: 600; background: #fff; border: 1px solid var(--line); border-radius: 99px; padding: 6px 11px; cursor: pointer; color: var(--navy); }
+  .sugg button:hover { background: var(--sand); }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .sidebar { flex-direction: row; overflow-x: auto; padding: 10px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .brand { display: none; }
+    .nav { white-space: nowrap; padding: 8px 12px; }
+    .main { padding: 18px 16px 120px; }
+    .panel-row { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .float, .antenna::after { animation: none; }
+  }
+  .reduce .float, .reduce .antenna::after { animation: none; }
+  .reduce .buddy { transition: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><i>✦</i>SchoolOS</div>
+    <button class="nav active" data-page="dashboard" data-kind="nav" data-tip="Dashboard|Your morning snapshot — attendance, fees and anything that needs you today.">
+      <span class="ic">🏠</span>Dashboard</button>
+    <button class="nav" data-page="attendance" data-kind="nav" data-tip="Attendance|42 students absent today. Class 7B has the most — 6 absent.">
+      <span class="ic">✅</span>Attendance</button>
+    <button class="nav" data-page="leaves" data-kind="nav" data-tip="Leave Requests|3 staff requests waiting for your approval. Oldest is from Tuesday.">
+      <span class="ic">📝</span>Leave Requests <span class="badge">3</span></button>
+    <button class="nav" data-page="fees" data-kind="nav" data-tip="Fees|₹4.2L collected this month — 78% of target. 23 families overdue.">
+      <span class="ic">💰</span>Fees</button>
+    <button class="nav" data-page="timetable" data-kind="nav" data-tip="Timetable|2 periods are still unassigned for tomorrow. Want me to find substitutes?">
+      <span class="ic">🗓️</span>Timetable</button>
+    <button class="nav" data-page="staff" data-kind="nav" data-tip="Staff|48 staff members. 2 on leave today.">
+      <span class="ic">👥</span>Staff</button>
+    <button class="nav" data-page="reports" data-kind="nav" data-tip="Reports|Half-yearly report cards are ready to review for 9 of 15 classes.">
+      <span class="ic">📊</span>Reports</button>
+  </aside>
+
+  <main class="main">
+    <div class="controls">
+      <b>Prototype</b>
+      <div class="seg" id="variantSeg">
+        <button data-v="glide" class="on">Glide buddy</button>
+        <button data-v="peek">Edge peeker</button>
+      </div>
+      <label><input type="checkbox" id="optHover" checked /> Hover tips</label>
+      <label><input type="checkbox" id="optNav" checked /> Pop on navigate</label>
+      <label><input type="checkbox" id="optReduce" /> Reduce motion</label>
+      <button class="btn" id="btnThink">Simulate thinking</button>
+      <div class="hint">Hover the sidebar or the cards (pause ~½ sec) · click a menu item · click the buddy to open chat.</div>
+    </div>
+
+    <div class="page" id="page">
+      <p class="eyebrow" id="eyebrow">Sunday, 15 November</p>
+      <h1 id="title">Good morning, Principal</h1>
+      <div class="grid">
+        <div class="card" data-kind="card" data-tip="Attendance today|94% present. That's 2% better than last Sunday.">
+          <div class="k">Attendance today</div><div class="v">94%</div><div class="s">1,184 of 1,226 present</div></div>
+        <div class="card" data-kind="card" data-tip="Absent students|42 absent. 5 have been away 3+ days — maybe a call home?">
+          <div class="k">Absent students</div><div class="v">42</div><div class="s">5 absent 3+ days</div></div>
+        <div class="card" data-kind="card" data-tip="Fee collection|₹4.2L in — ₹1.2L still to go this month.">
+          <div class="k">Fees this month</div><div class="v">₹4.2L</div><div class="s">78% of target</div></div>
+        <div class="card" data-kind="card" data-tip="Pending approvals|3 leave requests and 1 purchase order. Say 'open leave requests' and I'll take you there.">
+          <div class="k">Pending approvals</div><div class="v">4</div><div class="s">3 leaves · 1 purchase</div></div>
+      </div>
+      <div class="panel-row">
+        <div class="block">
+          <h3>Class-wise attendance</h3>
+          <div class="li"><span>Class 10A</span><span>98%</span></div><div class="bar"><span style="width:98%"></span></div>
+          <div class="li"><span>Class 8C</span><span>93%</span></div><div class="bar"><span style="width:93%"></span></div>
+          <div class="li"><span>Class 7B</span><span>84%</span></div><div class="bar"><span style="width:84%"></span></div>
+        </div>
+        <div class="block">
+          <h3>Today</h3>
+          <div class="li"><span>Staff meeting</span><span>10:00</span></div>
+          <div class="li"><span>Parent visit — 6A</span><span>11:30</span></div>
+          <div class="li"><span>Bus audit</span><span>14:00</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Chat panel (mock of the existing widget) -->
+<div class="chat" id="chat" role="dialog" aria-label="SchoolOS AI assistant">
+  <header><span>✦ SchoolOS AI</span><button id="chatClose" aria-label="Close">✕</button></header>
+  <div class="msgs" id="msgs">
+    <div class="msg">Hi! What should I do for you?</div>
+    <div class="sugg">
+      <button data-q="Today's attendance">Today's attendance</button>
+      <button data-q="Open leave requests">Open leave requests</button>
+      <button data-q="Fee collection summary">Fee summary</button>
+    </div>
+  </div>
+</div>
+
+<!-- The companion -->
+<div class="buddy" id="buddy" role="button" tabindex="0" aria-label="Open AI assistant">
+  <div class="float"><div class="tilt" id="tilt"><div class="body">
+    <div class="antenna"></div>
+    <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
+    <div class="cheek l"></div><div class="cheek r"></div>
+    <div class="mouth"></div>
+  </div></div></div>
+</div>
+<div class="bubble" id="bubble" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const buddy = $('#buddy'), tilt = $('#tilt'), bubble = $('#bubble'), chat = $('#chat');
+  const pupils = [...document.querySelectorAll('.pupil')];
+  const SIZE = 64, GAP = 24;
+
+  const state = {
+    variant: 'glide',
+    hoverTips: true,
+    navPop: true,
+    reduce: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    pos: { x: 0, y: 0 },
+    busy: false,          // nav message or chat open — ignore hover
+    lookAt: null,         // fixed point to stare at instead of the cursor
+    mouse: { x: innerWidth / 2, y: innerHeight / 2 },
+  };
+  $('#optReduce').checked = state.reduce;
+  document.body.classList.toggle('reduce', state.reduce);
+
+  /* ---------- positions ---------- */
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const homePos = () => state.variant === 'peek'
+    ? { x: innerWidth - SIZE - GAP, y: innerHeight - 40 }        // docked: only head peeks above the edge
+    : { x: innerWidth - SIZE - GAP, y: innerHeight - SIZE - GAP };
+  const peekPos = () => ({ x: innerWidth - SIZE - GAP, y: innerHeight - SIZE - GAP });
+
+  function spotFor(el) {
+    const r = el.getBoundingClientRect();
+    if (el.dataset.kind === 'nav') return { x: r.right + 14, y: r.top + r.height / 2 - SIZE / 2 };
+    if (el.dataset.kind === 'card') return { x: r.right - SIZE + 8, y: r.top - SIZE + 14 };  // perch on top-right corner
+    return { x: r.right + 16, y: r.top - 6 };                                              // beside a heading
+  }
+
+  /* ---------- movement ---------- */
+  let travelEnd = 0;
+  function moveTo(p, { fast = false } = {}) {
+    p = { x: clamp(p.x, 8, innerWidth - SIZE - 8), y: clamp(p.y, 8, innerHeight - 40) };
+    const dx = p.x - state.pos.x, dist = Math.hypot(dx, p.y - state.pos.y);
+    state.pos = p;
+    buddy.classList.toggle('fast', fast);
+    buddy.style.transform = `translate(${p.x}px, ${p.y}px)`;
+    if (state.reduce || dist < 12) return;
+    // lean into the direction of travel, sprinkle a trail, squash on landing
+    tilt.style.setProperty('--tilt', `${clamp(dx / 25, -14, 14)}deg`);
+    buddy.classList.add('moving');
+    const ms = fast ? 450 : 700, until = performance.now() + ms * .8;
+    travelEnd = until;
+    let last = 0;
+    const tick = (t) => {
+      if (travelEnd !== until) return;            // superseded by a newer move
+      if (t - last > 45 && dist > 120) { spawnTrail(); last = t; }
+      if (t < until) return requestAnimationFrame(tick);
+      tilt.style.setProperty('--tilt', '0deg');
+      buddy.classList.remove('moving');
+      pulse('land', 350);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function spawnTrail() {
+    const r = buddy.getBoundingClientRect();
+    const s = document.createElement('span');
+    s.className = 'trail';
+    s.textContent = Math.random() > .5 ? '✦' : '•';
+    s.style.left = `${r.left + r.width / 2 + (Math.random() - .5) * 20}px`;
+    s.style.top = `${r.top + r.height * .7}px`;
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 800);
+  }
+
+  const timers = {};
+  function pulse(cls, ms) {
+    buddy.classList.remove(cls); void buddy.offsetWidth; buddy.classList.add(cls);
+    clearTimeout(timers[cls]); timers[cls] = setTimeout(() => buddy.classList.remove(cls), ms);
+  }
+  function mood(m, ms) {
+    buddy.classList.remove('happy', 'thinking');
+    if (m) buddy.classList.add(m);
+    clearTimeout(timers.mood);
+    if (m && ms) timers.mood = setTimeout(() => buddy.classList.remove(m), ms);
+  }
+
+  /* ---------- bubble ---------- */
+  let bubbleTimer;
+  function say(html, { at = state.pos, place = 'side', delay = 0 } = {}) {
+    clearTimeout(bubbleTimer);
+    bubble.classList.remove('show');
+    bubbleTimer = setTimeout(() => {
+      bubble.innerHTML = html;
+      bubble.className = 'bubble';
+      const bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+      let left, top, side;
+      if (place === 'above') {
+        left = at.x + SIZE - bw; top = at.y - bh - 18; side = 'above';
+      } else {
+        side = at.x + SIZE + 12 + bw < innerWidth - 12 ? 'right' : 'left';
+        left = side === 'right' ? at.x + SIZE + 12 : at.x - bw - 12;
+        top = at.y + SIZE / 2 - bh / 2;
+      }
+      bubble.style.left = `${clamp(left, 12, innerWidth - bw - 12)}px`;
+      bubble.style.top = `${clamp(top, 12, innerHeight - bh - 12)}px`;
+      bubble.classList.add(side);
+      requestAnimationFrame(() => bubble.classList.add('show'));
+    }, delay);
+  }
+  function hush() { clearTimeout(bubbleTimer); bubble.classList.remove('show'); }
+
+  /* ---------- eyes ---------- */
+  function updateEyes() {
+    const r = buddy.getBoundingClientRect();
+    const target = state.lookAt || state.mouse;
+    const ang = Math.atan2(target.y - (r.top + r.height * .45), target.x - (r.left + r.width / 2));
+    const near = Math.min(1, Math.hypot(target.x - r.left, target.y - r.top) / 120);
+    const dx = Math.cos(ang) * 3.2 * near, dy = Math.sin(ang) * 4 * near;
+    if (!buddy.classList.contains('thinking')) pupils.forEach((p) => (p.style.transform = `translate(${dx}px, ${dy}px)`));
+    requestAnimationFrame(updateEyes);
+  }
+  addEventListener('mousemove', (e) => { state.mouse = { x: e.clientX, y: e.clientY }; });
+  (function blinkLoop() {
+    setTimeout(() => { pulse('blink', 140); blinkLoop(); }, 2500 + Math.random() * 3500);
+  })();
+
+  /* ---------- behaviours ---------- */
+  const [tipTitle, tipText] = [(el) => el.dataset.tip.split('|')[0], (el) => el.dataset.tip.split('|')[1]];
+
+  function visit(el) {
+    const r = el.getBoundingClientRect();
+    const html = `<strong>${tipTitle(el)}</strong>${tipText(el)}`;
+    if (state.variant === 'peek') {
+      const p = peekPos();
+      moveTo(p, { fast: true });
+      state.lookAt = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      say(html, { at: p, place: 'above', delay: 180 });
+    } else {
+      const p = spotFor(el);
+      moveTo(p, { fast: hovering.wasVisiting });
+      state.lookAt = null;
+      say(html, { at: state.pos, delay: state.reduce ? 0 : 380 });
+    }
+    hovering.wasVisiting = true;
+  }
+
+  function goHome() {
+    hush();
+    state.lookAt = null;
+    hovering.wasVisiting = false;
+    moveTo(homePos());
+  }
+
+  // hover — with a short intent delay so the buddy doesn't chase every flick of the mouse
+  const hovering = { el: null, timer: 0, wasVisiting: false };
+  document.addEventListener('mouseover', (e) => {
+    const el = e.target.closest('[data-tip]');
+    if (el === hovering.el) return;
+    hovering.el = el;
+    clearTimeout(hovering.timer);
+    if (state.busy || !state.hoverTips) return;
+    if (el) hovering.timer = setTimeout(() => visit(el), hovering.wasVisiting ? 140 : 480);
+    else if (hovering.wasVisiting) hovering.timer = setTimeout(goHome, 650);
+  });
+
+  // navigation
+  const PAGES = {
+    dashboard: ['Sunday, 15 November', 'Good morning, Principal', "Back home! Everything's calm — 4 things need you today."],
+    attendance: ['Today', 'Attendance', '42 absent today. I\'ve put Class 7B on top since it has the most.'],
+    leaves: ['Approvals', 'Leave Requests', '3 waiting for you. Want me to approve the two short ones?'],
+    fees: ['This month', 'Fee Collection', '₹4.2L in so far. 23 families are overdue — I can draft reminders.'],
+    timetable: ['Tomorrow', 'School Timetable', '2 periods still empty. Shall I suggest substitutes?'],
+    staff: ['Directory', 'Staff', '48 people, 2 on leave today.'],
+    reports: ['Half yearly', 'Report Cards', '9 of 15 classes ready to review.'],
+  };
+  let navTimer;
+  function navigate(btn) {
+    document.querySelectorAll('.nav').forEach((n) => n.classList.toggle('active', n === btn));
+    const [eyebrow, title, line] = PAGES[btn.dataset.page];
+    const page = $('#page');
+    page.classList.add('swap');
+    setTimeout(() => {
+      $('#eyebrow').textContent = eyebrow;
+      $('#title').textContent = title;
+      page.classList.remove('swap');
+      if (!state.navPop || chat.classList.contains('open')) return;
+      state.busy = true;
+      clearTimeout(hovering.timer);
+      clearTimeout(navTimer);
+      const p = state.variant === 'peek' ? peekPos() : spotFor($('#title'));
+      moveTo(p);
+      state.lookAt = null;
+      const arrive = state.reduce ? 0 : 650;
+      setTimeout(() => { mood('happy', 1600); if (!state.reduce) pulse('hop', 700); }, arrive);
+      say(`<strong>Here's ${title}</strong>${line}`, { at: p, place: state.variant === 'peek' ? 'above' : 'side', delay: arrive + 150 });
+      navTimer = setTimeout(() => { state.busy = false; goHome(); }, arrive + 3200);
+    }, 200);
+  }
+  document.querySelectorAll('.nav').forEach((n) => n.addEventListener('click', () => navigate(n)));
+
+  // open / close chat
+  function openChat() {
+    clearTimeout(navTimer); clearTimeout(hovering.timer);
+    state.busy = true;
+    hush();
+    moveTo(peekPos(), { fast: true });
+    pulse('poke', 400);
+    mood('happy', 1200);
+    chat.classList.add('open');
+  }
+  function closeChat() {
+    chat.classList.remove('open');
+    state.busy = false;
+    goHome();
+  }
+  buddy.addEventListener('click', () => (chat.classList.contains('open') ? closeChat() : openChat()));
+  buddy.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); buddy.click(); } });
+  $('#chatClose').addEventListener('click', closeChat);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && chat.classList.contains('open')) closeChat(); });
+
+  const ANSWERS = {
+    "Today's attendance": '94% present today — 1,184 of 1,226. 42 absent, most in 7B.',
+    'Open leave requests': 'Opening Leave Requests…',
+    'Fee collection summary': '₹4.2L collected, 78% of this month\'s target.',
+  };
+  function think(q, then) {
+    mood('thinking');
+    const msgs = $('#msgs');
+    if (q) msgs.insertAdjacentHTML('beforeend', `<div class="msg me">${q}</div>`);
+    const typing = document.createElement('div');
+    typing.className = 'msg';
+    typing.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    if (chat.classList.contains('open')) msgs.appendChild(typing);
+    else say('<span class="dots"><i></i><i></i><i></i></span>', { at: state.pos, place: state.variant === 'peek' ? 'above' : 'side' });
+    setTimeout(() => {
+      typing.remove();
+      mood('happy', 1400);
+      pulse('hop', 700);
+      then();
+    }, 1500);
+  }
+  document.querySelectorAll('.sugg button').forEach((b) => b.addEventListener('click', () => {
+    const q = b.dataset.q;
+    think(q, () => {
+      $('#msgs').insertAdjacentHTML('beforeend', `<div class="msg">${ANSWERS[q]}</div>`);
+      if (q === 'Open leave requests') setTimeout(() => { closeChat(); navigate(document.querySelector('[data-page="leaves"]')); }, 700);
+    });
+  }));
+  $('#btnThink').addEventListener('click', () => {
+    if (chat.classList.contains('open')) return;
+    state.busy = true;
+    think(null, () => {
+      say('<strong>Done!</strong>Attendance is 94% today. 🎉', { at: state.pos, place: state.variant === 'peek' ? 'above' : 'side' });
+      setTimeout(() => { state.busy = false; hush(); }, 2400);
+    });
+  });
+
+  /* ---------- controls ---------- */
+  document.querySelectorAll('#variantSeg button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('#variantSeg button').forEach((x) => x.classList.toggle('on', x === b));
+    state.variant = b.dataset.v;
+    if (!chat.classList.contains('open')) goHome();
+  }));
+  $('#optHover').addEventListener('change', (e) => { state.hoverTips = e.target.checked; if (!state.hoverTips) goHome(); });
+  $('#optNav').addEventListener('change', (e) => { state.navPop = e.target.checked; });
+  $('#optReduce').addEventListener('change', (e) => { state.reduce = e.target.checked; document.body.classList.toggle('reduce', state.reduce); });
+  addEventListener('resize', () => { if (!state.busy && !hovering.wasVisiting) moveTo(homePos(), { fast: true }); });
+
+  /* ---------- entrance ---------- */
+  buddy.style.transition = 'none';
+  state.pos = { x: innerWidth - SIZE - GAP, y: innerHeight + 20 };
+  buddy.style.transform = `translate(${state.pos.x}px, ${state.pos.y}px)`;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    buddy.style.transition = '';
+    moveTo(homePos());
+    setTimeout(() => {
+      mood('happy', 1400); pulse('hop', 700);
+      say('<strong>Hi, I\'m your SchoolOS buddy 👋</strong>Hover anything and I\'ll tell you what\'s inside.', { at: state.pos, place: 'above' });
+      setTimeout(() => { if (!state.busy && !hovering.wasVisiting) hush(); }, 3600);
+    }, 750);
+  }));
+  updateEyes();
+})();
+</script>
+</body>
+</html>

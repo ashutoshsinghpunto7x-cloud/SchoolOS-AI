@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Companion Buddy Demo</title>
+<link rel="stylesheet" href="./companion-buddy.css" />
+<style>
+  :root { --bg: #F7F7FA; --card: #fff; --line: #E5E7EF; --ink: #1C2033; --muted: #646B82; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  .bar { display: flex; gap: 8px; padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .bar a { padding: 8px 14px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 600; }
+  .bar a.on, .bar a:hover { background: #EEF0F8; color: var(--ink); }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 140px; }
+  h1 { display: inline-block; margin: 0 0 24px; font-size: 30px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .card b { display: block; font-size: 28px; margin-top: 6px; }
+  .card small { color: var(--muted); }
+  .row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+  button.act { border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 8px 14px; font: inherit; font-weight: 600; cursor: pointer; }
+  .theme { margin-top: 28px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<nav class="bar">
+  <a href="#/" data-buddy-tip="Overview|Your numbers at a glance." data-buddy-kind="below">Overview</a>
+  <a href="#/projects" data-buddy-tip="Projects|Everything your team is working on." data-buddy-kind="below">Projects</a>
+  <a href="#/billing" data-buddy-tip="Billing|Invoices, plans and payment history." data-buddy-kind="below">Billing</a>
+  <a href="#/settings" data-buddy-tip="Settings|Team members and preferences." data-buddy-kind="below">Settings</a>
+</nav>
+<main>
+  <h1 id="title">Overview</h1>
+  <div class="grid">
+    <div class="card" data-buddy-tip="Active users|1,284 people used the app this week — up 6%."><small>Active users</small><b>1,284</b></div>
+    <div class="card" data-buddy-tip="Revenue|$12.4k this month, 82% of target."><small>Revenue</small><b>$12.4k</b></div>
+    <div class="card" data-buddy-tip="Open tickets|7 open. The oldest is 2 days old."><small>Open tickets</small><b>7</b></div>
+  </div>
+  <div class="row">
+    <button class="act" id="think" data-buddy-tip="Try it|Shows the thinking face for 1.5s, then a cheer." data-buddy-kind="row">Simulate AI thinking</button>
+    <button class="act" id="say">Make it say something</button>
+    <button class="act" id="recolor">Switch colour theme</button>
+  </div>
+  <p class="theme">Hover the cards and the top links · click a top link · click the buddy.</p>
+</main>
+
+<script type="module">
+  import { createCompanionBuddy } from './companion-buddy.js';
+
+  const buddy = createCompanionBuddy({
+    label: 'Help',
+    homePath: '/',
+    routes: [
+      { path: '/', label: 'Overview', hint: 'Your numbers at a glance.' },
+      { path: '/projects', label: 'Projects', hint: 'Everything your team is working on.' },
+      { path: '/billing', label: 'Billing', hint: 'Invoices, plans and payment history.' },
+      { path: '/settings', label: 'Settings', hint: 'Team members and preferences.' },
+    ],
+    getPath: () => location.hash.slice(1) || '/',
+    hello: { title: "Hi! I'm your buddy", text: "Hover anything and I'll tell you what's inside." },
+  });
+
+  // Tiny hash router so the demo shows page arrivals.
+  const titles = { '/': 'Overview', '/projects': 'Projects', '/billing': 'Billing', '/settings': 'Settings' };
+  function route() {
+    const path = location.hash.slice(1) || '/';
+    document.getElementById('title').textContent = titles[path] ?? 'Not found';
+    document.querySelectorAll('.bar a').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === `#${path}`));
+    return path;
+  }
+  route();
+  addEventListener('hashchange', () => buddy.arrived(route()));
+
+  document.getElementById('think').onclick = () => {
+    buddy.setThinking(true);
+    setTimeout(() => {
+      buddy.setThinking(false);
+      buddy.say('Done!', 'That is how a finished answer looks.');
+    }, 1500);
+  };
+  document.getElementById('say').onclick = () => buddy.say('Saved', 'Your changes are live.');
+
+  const themes = [
+    {},
+    { '--cb-body-light': '#7DE3B5', '--cb-body-mid': '#22A06B', '--cb-body-dark': '#0E5A3A', '--cb-accent': '#FFD43B' },
+    { '--cb-body-light': '#FF9DB8', '--cb-body-mid': '#E0457B', '--cb-body-dark': '#8A1C46', '--cb-accent': '#FFE08A' },
+  ];
+  let t = 0;
+  document.getElementById('recolor').onclick = () => {
+    t = (t + 1) % themes.length;
+    ['--cb-body-light', '--cb-body-mid', '--cb-body-dark', '--cb-accent'].forEach((k) => document.documentElement.style.removeProperty(k));
+    Object.entries(themes[t]).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+  };
+</script>
+</body>
+</html>
