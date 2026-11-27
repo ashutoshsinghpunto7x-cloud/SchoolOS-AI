@@ -199,7 +199,9 @@ const STOP = new Set(['the', 'a', 'an', 'i', 'my', 'me', 'to', 'do', 'how', 'can
 function tokens(text: string): string[] {
   return text
     .toLowerCase()
-    .split(/[^a-z0-9ऀ-ॿ]+/)
+    // The Devanagari range comes first: it starts with a combining mark, which
+    // would otherwise read as joined to the character before it.
+    .split(/[^ऀ-ॿa-z0-9]+/)
     .filter((t) => t.length > 1 && !STOP.has(t));
 }
 
