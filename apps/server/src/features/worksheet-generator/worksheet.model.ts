@@ -11,6 +11,7 @@ export interface IWorksheetQuestion {
   difficulty: QuestionDifficulty;
   estimatedTimeMinutes: number;
   keywords: string[];
+  marks?: number;
   imageRef?: IQuestionImageRef;
   imageRequirement?: IQuestionImageRequirement;
 }
@@ -50,7 +51,8 @@ const worksheetQuestionSchema = new Schema<IWorksheetQuestion>(
     difficulty:           { type: String, enum: DIFFICULTIES, required: true },
     estimatedTimeMinutes: { type: Number, required: true, min: 0 },
     keywords:             { type: [String], default: [] },
-    imageRef:             { type: imageRefSchema },
+    marks:                { type: Number, min: 0 },
+    imageRef:            { type: imageRefSchema },
     imageRequirement:     { type: imageRequirementSchema },
   },
   { _id: false },

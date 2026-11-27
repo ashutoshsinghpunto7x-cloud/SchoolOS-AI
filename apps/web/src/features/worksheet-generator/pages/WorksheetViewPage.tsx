@@ -1,9 +1,11 @@
-import { useEffect, useId, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Printer, Trash2, Loader2, Pencil, Check, X } from 'lucide-react';
 import { useWorksheet, useDeleteWorksheet, useUpdateWorksheet } from '../hooks/useWorksheetGenerator';
-import { CroppedFigureImage } from '@/features/question-bank/components/CroppedFigureImage';
+import { PrintPortal } from '@/components/exam-paper/PrintPortal';
+import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
+import { WorksheetDocument } from '../components/WorksheetDocument';
 import type { QuestionDifficulty } from '@schoolos/types';
 
 const DIFFICULTIES: QuestionDifficulty[] = ['easy', 'medium', 'hard'];
@@ -18,24 +20,15 @@ export function WorksheetViewPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const [printing, setPrinting] = useState(false);
-  const printAreaId = `worksheet-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: worksheet, isLoading } = useWorksheet(id);
+  const { data: schoolSettings } = useSchoolSettings();
   const deleteWorksheet = useDeleteWorksheet();
   const updateWorksheet = useUpdateWorksheet(id);
 
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [editQuestions, setEditQuestions] = useState<EditableQuestion[]>([]);
-
-  useEffect(() => {
-    if (!printing) return;
-    const reset = () => { setPrinting(false); window.removeEventListener('afterprint', reset); };
-    window.addEventListener('afterprint', reset);
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => window.print()); });
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.removeEventListener('afterprint', reset); };
-  }, [printing]);
 
   function startEdit() {
     if (!worksheet) return;
@@ -122,55 +115,10 @@ export function WorksheetViewPage() {
     );
   }
 
-  const worksheetDocument = (
-    <div className="bg-white p-8 space-y-4" style={{ width: '210mm', minHeight: '297mm' }}>
-      <div className="border-b border-gray-200 pb-3 mb-2">
-        <p className="text-lg font-bold text-[#1C2B4A]">{worksheet.title}</p>
-        <p className="text-sm text-gray-500">Class {worksheet.class} · {worksheet.subject} · {worksheet.chapterNames.join(', ')}</p>
-        <p className="text-xs text-gray-400 mt-1">Name: _______________________  Date: ____________</p>
-      </div>
-      <div className="space-y-4">
-        {worksheet.questions.map((q, i) => {
-          const resolved = q.imageRef && worksheet.resolvedImages?.[`${q.imageRef.sourceId}:${q.imageRef.figureId}`];
-          return (
-            <div key={i} className="text-sm">
-              <p><strong>Q{i + 1}.</strong> {q.questionText}</p>
-              {resolved && (
-                <div className="mt-2 pl-5" style={{ maxWidth: '90mm' }}>
-                  <CroppedFigureImage dataUri={resolved.pageImageDataUri} boundingBox={resolved.boundingBox}
-                    style={{ borderRadius: 4, border: '1px solid #E5E6EA' }} />
-                </div>
-              )}
-              {!resolved && q.imageRequirement && (
-                <p className="mt-1.5 pl-5 text-[10px] italic text-gray-400">
-                  [Image needed: {q.imageRequirement.imagePrompt || 'a suitable picture for this question'}]
-                </p>
-              )}
-              {q.questionType === 'mcq' && q.options && (
-                <div className="grid grid-cols-2 gap-x-4 mt-1 pl-5 text-xs text-gray-700">
-                  {q.options.map((opt, oi) => <span key={oi}>({String.fromCharCode(97 + oi)}) {opt}</span>)}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const worksheetDocument = <WorksheetDocument worksheet={worksheet} schoolSettings={schoolSettings} />;
 
   return (
     <div className="min-h-screen bg-[#F0F1F5] dark:bg-transparent">
-      {printing && (
-        <style>{`
-          @page { size: A4 portrait; margin: 0; }
-          @media print {
-            body * { visibility: hidden; }
-            #${printAreaId}, #${printAreaId} * { visibility: visible; }
-            #${printAreaId} { position: absolute; top: 0; left: 0; }
-          }
-        `}</style>
-      )}
-
       <div className="print:hidden sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-100 px-5 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -193,7 +141,7 @@ export function WorksheetViewPage() {
       </div>
 
       {printing && (
-        <div id={printAreaId} className="hidden print:block">{worksheetDocument}</div>
+        <PrintPortal onDone={() => setPrinting(false)}>{worksheetDocument}</PrintPortal>
       )}
     </div>
   );

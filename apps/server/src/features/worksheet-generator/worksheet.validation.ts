@@ -36,6 +36,7 @@ const worksheetQuestionSchema = z.object({
   difficulty: z.enum(DIFFICULTIES),
   estimatedTimeMinutes: z.number().min(0),
   keywords: z.array(z.string()).default([]),
+  marks: z.number().min(0).optional(),
   isNew: z.boolean().optional(),
   imageRef: imageRefSchema.optional(),
   imageRequirement: imageRequirementSchema.optional(),

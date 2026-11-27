@@ -5640,6 +5640,8 @@ export interface WorksheetQuestion {
   difficulty: QuestionDifficulty;
   estimatedTimeMinutes: number;
   keywords: string[];
+  /** Marks printed against the question; when absent the worksheet prints without marks. */
+  marks?: number;
   /** Draft-only client flag — set when this item was AI-authored rather than
    *  pulled from the bank; stripped (or resolved into a real Question) on save. */
   isNew?: boolean;

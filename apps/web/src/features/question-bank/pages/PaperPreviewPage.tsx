@@ -1,16 +1,16 @@
-import { useEffect, useId, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Printer, Loader2, AlertTriangle, Lightbulb, RotateCw, Trash2 } from 'lucide-react';
 import { useGeneratedPaper, useDeletePaper } from '../hooks/useQuestionBank';
 import { useSchoolSettings } from '@/features/school-settings/hooks/useSchoolSettings';
 import { PaperDocument } from '../components/PaperDocument';
+import { PrintPortal } from '@/components/exam-paper/PrintPortal';
 
 export function PaperPreviewPage() {
   const { paperId = '' } = useParams();
   const navigate = useNavigate();
   const [printing, setPrinting] = useState(false);
-  const printAreaId = `paper-print-${useId().replace(/[:]/g, '')}`;
 
   const { data: paper, isLoading } = useGeneratedPaper(paperId);
   const { data: schoolSettings } = useSchoolSettings();
@@ -27,15 +27,6 @@ export function PaperPreviewPage() {
     }
   }
 
-  useEffect(() => {
-    if (!printing) return;
-    const reset = () => { setPrinting(false); window.removeEventListener('afterprint', reset); };
-    window.addEventListener('afterprint', reset);
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => window.print()); });
-    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); window.removeEventListener('afterprint', reset); };
-  }, [printing]);
-
   if (isLoading || !paper) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#FBF8F3]">
@@ -47,17 +38,6 @@ export function PaperPreviewPage() {
 
   return (
     <div className="min-h-screen bg-[#F0F1F5] dark:bg-transparent">
-      {printing && (
-        <style>{`
-          @page { size: A4 portrait; margin: 0; }
-          @media print {
-            body * { visibility: hidden; }
-            #${printAreaId}, #${printAreaId} * { visibility: visible; }
-            #${printAreaId} { position: absolute; top: 0; left: 0; }
-          }
-        `}</style>
-      )}
-
       <div className="print:hidden sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-gray-100 px-5 py-3 flex items-center gap-3 flex-wrap">
         <button onClick={() => navigate(-1)} type="button" className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900">
           <ArrowLeft className="w-4 h-4" /> Back
@@ -117,9 +97,9 @@ export function PaperPreviewPage() {
       </div>
 
       {printing && (
-        <div id={printAreaId} className="hidden print:block">
+        <PrintPortal onDone={() => setPrinting(false)}>
           <PaperDocument paper={paper} schoolSettings={schoolSettings} />
-        </div>
+        </PrintPortal>
       )}
     </div>
   );
