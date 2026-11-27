@@ -17,6 +17,16 @@ export function localDateString(date = new Date()): string {
   return `${date.getFullYear()}-${m}-${d}`;
 }
 
+/** Whether the substitute has been alerted — if not, someone has to tell them. */
+export function AlertStatus({ notified }: { notified?: boolean }) {
+  if (notified === undefined) return null;
+  return (
+    <span className={`block text-[11px] ${notified ? 'text-emerald-700' : 'font-semibold text-red-600'}`}>
+      {notified ? 'Urgent alert sent to their dashboard' : 'No alert sent (no app login) — please tell them'}
+    </span>
+  );
+}
+
 function PeriodRow({ entry, slotLabel }: { entry: NeedsSubstituteEntry; slotLabel: string }) {
   const query = {
     class: entry.class,
@@ -157,6 +167,7 @@ export const SubstitutionPlan = ({ date, hideWhenEmpty }: { date: string; hideWh
           {assigned.map((s) => (
             <p key={s._id} className="text-[12px] text-[#1B2A4E] m-0 py-0.5">
               {label(s.slotId)} · Class {s.class}-{s.section} → <b>{s.substituteTeacherName}</b>
+              <AlertStatus notified={s.teacherNotified} />
             </p>
           ))}
         </div>

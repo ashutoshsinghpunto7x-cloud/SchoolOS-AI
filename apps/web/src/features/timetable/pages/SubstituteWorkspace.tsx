@@ -6,7 +6,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { isPrincipalRole } from '@/features/auth/utils/roleHome';
 import type { SubstituteListOptions, Timetable } from '@schoolos/types';
 import { SubstituteForm } from '../components/SubstituteForm';
-import { SubstitutionPlan, localDateString } from '../components/SubstitutionPlan';
+import { SubstitutionPlan, AlertStatus, localDateString } from '../components/SubstitutionPlan';
 
 
 export const SubstituteWorkspace = () => {
@@ -193,6 +193,7 @@ const SubstituteRow = ({
           <p className="text-sm text-[#2C4177] font-semibold">
             Substitute: {sub.substituteTeacherName}
           </p>
+          {!isCancelled && <p className="m-0"><AlertStatus notified={sub.teacherNotified} /></p>}
           {sub.reason && <p className="text-xs text-gray-500">Reason: {sub.reason}</p>}
         </div>
         <div className="flex flex-col items-end gap-2">

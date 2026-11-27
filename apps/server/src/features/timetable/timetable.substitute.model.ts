@@ -16,6 +16,8 @@ export interface ITimetableSubstitute extends Document {
   reason?: string;
   notes?: string;
   status: 'active' | 'cancelled';
+  /** Whether the substitute got the in-app alert. Unset on records made before this was tracked. */
+  teacherNotified?: boolean;
   isDeleted: boolean;
   deletedAt?: Date;
   deletedBy?: string;
@@ -42,6 +44,7 @@ const substituteSchema = new Schema<ITimetableSubstitute>(
     reason:                { type: String, trim: true, maxlength: 500 },
     notes:                 { type: String, maxlength: 1000 },
     status:                { type: String, enum: ['active', 'cancelled'], default: 'active' },
+    teacherNotified:       { type: Boolean },
     isDeleted:             { type: Boolean, default: false, index: true },
     deletedAt:             { type: Date },
     deletedBy:             { type: String },

@@ -13,6 +13,7 @@ import { userRepository } from '../users/user.repository';
 import { notificationRepository } from '../notifications/notification.repository';
 import { internalMessageRepository } from '../internal-messages/internal-message.repository';
 import { teacherTimetableRepository } from '../teacher-timetable/teacher-timetable.repository';
+import { staffAttendanceRepository } from '../staff-attendance/staff-attendance.repository';
 import { schoolClassRepository } from '../school-classes/school-class.repository';
 import {
   createPeriodSlotSchema, updatePeriodSlotSchema,
@@ -83,6 +84,31 @@ async function syncTeacherTimetables(
     } catch (err) {
       logger.error('[timetableService] Teacher timetable sync failed', { schoolId, teacherId: after?.teacherId ?? before?.teacherId, err });
     }
+  }
+}
+
+export type SubstituteChange = 'assigned' | 'cancelled' | 'reassigned';
+
+/**
+ * Tells a substitute their cover duty is off. Only for a live duty that is
+ * today or later, and never blocks the change that caused it.
+ */
+async function alertRemovedSubstitute(
+  record: ITimetableSubstitute, change: 'cancelled' | 'reassigned', ctx: AuthContext,
+): Promise<void> {
+  if (record.status !== 'active' || !record.substituteTeacherId) return;
+  const date = new Date(record.date).toISOString().slice(0, 10);
+  if (date < staffAttendanceRepository.todayString()) return;
+
+  try {
+    await timetableService.notifySubstituteTeacher({
+      substituteTeacherId: record.substituteTeacherId, class: record.class, section: record.section,
+      date, slotId: record.slotId, subjectName: record.subjectName,
+    }, ctx, change);
+  } catch (err) {
+    logger.error('[timetableService] Substitute removal alert failed', {
+      schoolId: ctx.schoolId, substituteId: String(record._id), err,
+    });
   }
 }
 
@@ -404,8 +430,10 @@ export const timetableService = {
     });
 
     // Reassigning a period replaces the earlier record, so one period never has two substitutes.
-    await Promise.all(sameDay.filter(isSamePeriod).map((s) =>
-      substituteRepository.softDelete(String(s._id), ctx.schoolId, ctx.displayName)));
+    await Promise.all(sameDay.filter(isSamePeriod).map(async (s) => {
+      await substituteRepository.softDelete(String(s._id), ctx.schoolId, ctx.displayName);
+      if (s.substituteTeacherId !== data.substituteTeacherId) await alertRemovedSubstitute(s, 'reassigned', ctx);
+    }));
 
     auditService.log({
       userId: ctx.userId, userDisplayName: ctx.displayName,
@@ -414,37 +442,66 @@ export const timetableService = {
       details: { class: data.class, section: data.section, date: data.date, substituteTeacherName: data.substituteTeacherName },
     });
 
-    await timetableService.notifySubstituteTeacher(data, ctx);
+    // The assignment stands even if the alert fails; the principal is told either way.
+    let teacherNotified = false;
+    try {
+      teacherNotified = await timetableService.notifySubstituteTeacher(data, ctx);
+    } catch (err) {
+      logger.error('[timetableService] Substitute alert failed', { schoolId: ctx.schoolId, substituteId: String(sub._id), err });
+    }
 
-    return sub;
+    const saved = await substituteRepository.update(String(sub._id), ctx.schoolId, { teacherNotified });
+    return saved ?? sub;
   },
 
   /**
-   * Best-effort alert to whoever just got assigned a substitution — resolved via the
-   * same Teacher.email → User match convention notificationService.sendToTeachers()
-   * relies on. Always fired at high priority: a substitution is same-day, time-sensitive
-   * work a teacher needs to notice immediately, not something that can wait in a queue.
-   * Silently skipped (no error thrown) if the substitute has no linked login account,
-   * since the assignment itself must not fail because a notification couldn't be sent.
+   * High-priority alert to a substitute whose duty was assigned, cancelled or
+   * given to someone else: it blocks their dashboard until acknowledged, and
+   * also appears in their notification bell. Returns false when the teacher has
+   * no app login to send it to.
    */
   async notifySubstituteTeacher(
-    data: { substituteTeacherId?: string; class: string; section: string; date: string; subjectName: string },
+    data: {
+      substituteTeacherId?: string; originalTeacherName?: string;
+      class: string; section: string; date: string; slotId: string; subjectName: string;
+    },
     ctx: AuthContext,
-  ): Promise<void> {
-    if (!data.substituteTeacherId) return;
+    change: SubstituteChange = 'assigned',
+  ): Promise<boolean> {
+    if (!data.substituteTeacherId) return false;
 
     const teacher = await teacherRepository.findById(data.substituteTeacherId, ctx.schoolId);
-    if (!teacher?.email) return;
+    if (!teacher) return false;
 
-    const user = await userRepository.findByEmail(teacher.email);
-    if (!user || user.schoolId !== ctx.schoolId || user.role !== 'teacher') return;
+    // The admin-issued login email and the contact email can differ, and either may be the account.
+    let recipientUserId: string | undefined;
+    for (const email of [teacher.loginEmail, teacher.email]) {
+      if (!email) continue;
+      const user = await userRepository.findByEmail(email);
+      if (user && user.schoolId === ctx.schoolId && user.role === 'teacher') {
+        recipientUserId = String(user._id);
+        break;
+      }
+    }
+    if (!recipientUserId) return false;
 
+    const slot = await periodSlotRepository.findById(data.slotId, ctx.schoolId);
+    const period = slot ? `${slot.name} (${slot.startTime}–${slot.endTime})` : 'one period';
     const dateLabel = new Date(data.date + 'T00:00:00').toLocaleDateString('en-IN', {
       weekday: 'long', day: 'numeric', month: 'long',
     });
-    const subject = `Substitution assigned — Class ${data.class}-${data.section} on ${dateLabel}`;
-    const body = `You've been assigned to cover ${data.subjectName} for Class ${data.class}-${data.section} on ${dateLabel}.`;
-    const recipientUserId = String(user._id);
+    const heading = {
+      assigned: 'Substitution', cancelled: 'Substitution cancelled', reassigned: 'Substitution reassigned',
+    }[change];
+    const subject = `${heading}: Class ${data.class}-${data.section}, ${slot?.name ?? dateLabel}`;
+    const duty = `${data.subjectName} for Class ${data.class}-${data.section} on ${dateLabel}, ${period}`;
+    const body = {
+      assigned: `You have been assigned to cover ${duty}` +
+        `${data.originalTeacherName ? `, in place of ${data.originalTeacherName}` : ''}.`,
+      cancelled: `Your substitution to cover ${duty}, has been cancelled. You do not need to take this class.`,
+      reassigned: `Your substitution to cover ${duty}, has been given to another teacher. ` +
+        'You do not need to take this class.',
+    }[change];
 
     await Promise.all([
       notificationRepository.create({
@@ -454,7 +511,7 @@ export const timetableService = {
         title: subject,
         body,
         priority: 'high',
-        payload: { class: data.class, section: data.section, date: data.date },
+        payload: { class: data.class, section: data.section, date: data.date, slotId: data.slotId, change },
         senderUserId: ctx.userId,
         senderName: ctx.displayName,
       }),
@@ -468,6 +525,7 @@ export const timetableService = {
         priority: 'high',
       }),
     ]);
+    return true;
   },
 
   async listSubstitutes(rawQuery: unknown, ctx: AuthContext) {
@@ -477,8 +535,16 @@ export const timetableService = {
 
   async updateSubstitute(id: string, rawInput: unknown, ctx: AuthContext): Promise<ITimetableSubstitute> {
     const data = updateSubstituteSchema.parse(rawInput);
+    const existing = await substituteRepository.findById(id, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Substitute');
     const sub = await substituteRepository.update(id, ctx.schoolId, { ...data, updatedBy: ctx.displayName });
     if (!sub) throw new NotFoundError('Substitute');
+
+    if (data.status === 'cancelled') {
+      await alertRemovedSubstitute(existing, 'cancelled', ctx);
+    } else if (data.substituteTeacherId !== undefined && data.substituteTeacherId !== existing.substituteTeacherId) {
+      await alertRemovedSubstitute(existing, 'reassigned', ctx);
+    }
     return sub;
   },
 
@@ -486,13 +552,14 @@ export const timetableService = {
     const existing = await substituteRepository.findById(id, ctx.schoolId);
     if (!existing) throw new NotFoundError('Substitute');
     await substituteRepository.softDelete(id, ctx.schoolId, ctx.displayName);
+    await alertRemovedSubstitute(existing, 'cancelled', ctx);
   },
 
   /**
    * Periods that need a substitute on a given date: every period taught by a
-   * teacher who is on approved leave or marked absent, minus any that already
-   * have a substitute record. Derived live — nothing is written until the
-   * principal assigns someone.
+   * teacher who is on approved leave or marked absent, minus any that have an
+   * active substitute (a cancelled one puts the period back on the list).
+   * Derived live — nothing is written until the principal assigns someone.
    */
   async getNeedsSubstitute(schoolId: string, date: string): Promise<NeedsSubstituteEntry[]> {
     if (new Date(date + 'T00:00:00').getDay() === 0) return []; // no school on Sunday — entries only exist for days 1-6
@@ -500,7 +567,9 @@ export const timetableService = {
     const day = await loadSubstituteDay(schoolId, date);
     if (!day.absent.size) return [];
 
-    const covered = new Set(day.substitutes.map((s) => `${classKey(s.class, s.section)}||${s.slotId}`));
+    const covered = new Set(
+      day.substitutes.filter((s) => s.status === 'active').map((s) => `${classKey(s.class, s.section)}||${s.slotId}`),
+    );
 
     const needed: NeedsSubstituteEntry[] = [];
     for (const period of day.periods) {

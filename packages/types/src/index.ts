@@ -2869,6 +2869,8 @@ export interface TimetableSubstitute extends BaseEntity {
   reason?: string;
   notes?: string;
   status: 'active' | 'cancelled';
+  /** Whether the substitute got the in-app alert. */
+  teacherNotified?: boolean;
   isDeleted: boolean;
   createdBy: string;
   updatedBy?: string;
