@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { academicPlanService } from './academic-plan.service';
-import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema, monthlyRowSchema } from './academic-plan.validation';
+import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema, monthlyRowSchema, bulkDayStatusSchema, checklistQuerySchema } from './academic-plan.validation';
 import { z } from 'zod';
 
 const chapterSizingSchema = z.object({
@@ -40,6 +40,24 @@ export const academicPlanController = {
       const ctx = buildAuthContext(req.user!);
       const plan = await academicPlanService.setDayStatus(req.params.id, data, ctx);
       sendSuccess(res, plan, 'Day updated');
+    } catch (err) { next(err); }
+  },
+
+  /** PATCH /academic-plan/:id/days/bulk */
+  async setDaysStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = bulkDayStatusSchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await academicPlanService.setDaysStatus(req.params.id, data, ctx), 'Checklist saved');
+    } catch (err) { next(err); }
+  },
+
+  /** GET /academic-plan/mine/checklist?from=&to= */
+  async getMyChecklist(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = checklistQuerySchema.parse(req.query);
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await academicPlanService.getMyChecklist(query, ctx));
     } catch (err) { next(err); }
   },
 

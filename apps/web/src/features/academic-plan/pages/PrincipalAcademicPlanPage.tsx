@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Search, ChevronRight, AlertCircle } from 'lucide-react';
 import { usePrincipalPlanOverview, usePlanAlerts } from '../hooks/useAcademicPlan';
+import { PeriodCounts, sumPeriods } from '../components/PeriodCounts';
 import { PlanAlertList } from '../components/PlanAlertList';
 
 function initials(name: string) {
@@ -51,7 +52,7 @@ export function PrincipalAcademicPlanPage({ basePath = '/principal/academic-plan
         const totalDays = withPlan.reduce((sum, e) => sum + e.totalDays, 0);
         const completedDays = withPlan.reduce((sum, e) => sum + e.completedDays, 0);
         const overallPercent = totalDays === 0 ? null : Math.round((completedDays / totalDays) * 100);
-        return { teacherId, teacherName: entries[0].teacherName, subjectCount: new Set(withPlan.map((e) => e.subject)).size, overallPercent };
+        return { teacherId, teacherName: entries[0].teacherName, subjectCount: new Set(withPlan.map((e) => e.subject)).size, overallPercent, periods: sumPeriods(withPlan) };
       })
       .sort((a, b) => a.teacherName.localeCompare(b.teacherName));
   }, [data, search]);
@@ -114,6 +115,7 @@ export function PrincipalAcademicPlanPage({ basePath = '/principal/academic-plan
                   <p className="text-[11px] text-gray-400 mt-0.5">
                     {t.overallPercent === null ? 'No plan generated yet' : `${t.subjectCount} subject${t.subjectCount === 1 ? '' : 's'} · completion`}
                   </p>
+                  {t.overallPercent !== null && <PeriodCounts periods={t.periods} />}
                 </div>
                 {t.overallPercent !== null && (
                   <div className="flex items-center gap-2 shrink-0">

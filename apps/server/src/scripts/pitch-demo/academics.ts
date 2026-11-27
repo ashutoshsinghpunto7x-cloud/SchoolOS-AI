@@ -20,6 +20,7 @@ import {
   rand, randInt, gauss, clamp, gradeFor, utc, daysAgo, daysFromNow, ctxOf, log, iso,
 } from './common';
 import { World, StudentRef } from './core';
+import { fillDemoPlanTasks } from './plan-tasks';
 
 // ── Chapter catalogue (NCERT-style, per class × subject) ────────────────────
 const CHAPTERS: Record<string, Record<string, string[]>> = {
@@ -239,6 +240,7 @@ export async function seedAcademics(world: World): Promise<void> {
     }
   }
   log(`  academic plans: ${plans}`);
+  await fillDemoPlanTasks();
 
   let planners = 0;
   for (const t of world.teachers) {

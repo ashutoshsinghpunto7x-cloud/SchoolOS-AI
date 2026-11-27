@@ -3,21 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, Sparkles, Loader2, RefreshCw, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMyAcademicPlan, useGenerateAcademicPlan, useSetPlanDayStatus, useEditPlanDay, useMovePlanDay, useSetMonthlyRow } from '../hooks/useAcademicPlan';
+import { useTickList } from '../hooks/useTickList';
 import { PlanDayRow } from '../components/PlanDayRow';
 import { PlanWeekView } from '../components/PlanWeekView';
 import { PlanMonthView } from '../components/PlanMonthView';
 import { NotebookDailyView, NotebookMonthlyView } from '../components/PlanNotebookView';
-import { buildMonthCalendar, buildWeekCalendar, mondayOf, weekRangeLabel } from '../lib/monthCalendar';
+import { buildMonthCalendar, buildWeekCalendar, isoDay, mondayOf, weekRangeLabel } from '../lib/monthCalendar';
 import { useAcademicYear } from '@/features/academic-year/hooks/useAcademicYear';
 import { useEvents } from '@/features/events/hooks/useEvents';
 import type { AcademicPlanDay, AcademicPlanDayStatus, EditPlanDayPayload, SchoolEvent } from '@schoolos/types';
 
 type Tab = 'today' | 'week' | 'month' | 'daily' | 'monthly';
 const TAB_LABELS: Record<Tab, string> = { today: 'Today', week: 'Week', month: 'Month', daily: 'Daily Planner', monthly: 'Monthly Planner' };
-
-function isoDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
 
 export function AcademicPlanDashboardPage() {
   const { cls = '', section = '', subject = '' } = useParams();
@@ -36,6 +33,11 @@ export function AcademicPlanDashboardPage() {
   const moveDay = useMovePlanDay(plan?._id ?? '');
   const setMonthlyRow = useSetMonthlyRow(plan?._id ?? '');
   const [savingDate, setSavingDate] = useState<string | null>(null);
+  const ticks = useTickList();
+  const tickFor = (days: AcademicPlanDay[]) => {
+    const rows = days.map((d) => ({ planId: plan?._id ?? '', date: d.date, status: d.status }));
+    return { ...ticks.groupState(rows), onToggle: () => void ticks.toggle(rows) };
+  };
 
   const { data: academicYear } = useAcademicYear();
 
@@ -256,7 +258,7 @@ export function AcademicPlanDashboardPage() {
 
         {(tab === 'today' || tab === 'week') && (
           <p className="text-xs text-gray-400 dark:text-white/40 mb-4 -mt-2">
-            Drag a lesson onto another day to swap them, or tap ✎ to edit it.
+            Tick a lesson when it is done. Drag a lesson onto another day to swap them, or tap ✎ to edit it.
           </p>
         )}
 
@@ -264,6 +266,7 @@ export function AcademicPlanDashboardPage() {
           todayEntry ? (
             <PlanDayRow
               day={todayEntry}
+              tick={tickFor([todayEntry])}
               cls={cls}
               subject={subject}
               showDate={false}
@@ -288,6 +291,7 @@ export function AcademicPlanDashboardPage() {
             onSetStatus={handleSetStatus}
             onEdit={handleEditDay}
             onMove={handleMoveDay}
+            tickFor={(day) => tickFor([day])}
           />
         ) : tab === 'daily' ? (
           <NotebookDailyView
@@ -295,6 +299,7 @@ export function AcademicPlanDashboardPage() {
             subject={subject}
             days={weekDays}
             onSaveDay={handleSaveNotebookField}
+            tickFor={tickFor}
           />
         ) : tab === 'monthly' ? (
           <NotebookMonthlyView
@@ -304,11 +309,13 @@ export function AcademicPlanDashboardPage() {
             monthKey={`${monthAnchor.getFullYear()}-${String(monthAnchor.getMonth() + 1).padStart(2, '0')}`}
             days={days}
             monthlyRows={plan.monthlyRows ?? []}
+            tickFor={tickFor}
             onSaveRow={(row) => setMonthlyRow.mutate(row, { onError: (err) => toast.error('Could not save', { description: err instanceof Error ? err.message : undefined }) })}
           />
         ) : (
           <PlanMonthView
             weeks={monthWeeks}
+            tickFor={tickFor}
             onSelectWeek={(ws) => { setWeekAnchor(ws); setTab('week'); }}
           />
         )}

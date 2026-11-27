@@ -25,8 +25,10 @@ export interface MonthCalendarWeek {
 
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/** Local calendar date as YYYY-MM-DD. (A UTC slice lands a day early in IST.) */
 export function isoDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 export function mondayOf(d: Date): Date {

@@ -24,7 +24,9 @@ router.patch('/chapters/:id/sizing', academicPlanController.updateChapterSizing)
 
 router.post('/generate', academicPlanController.generate);
 router.get('/mine',      academicPlanController.getMine);
+router.get('/mine/checklist', academicPlanController.getMyChecklist);
 router.patch('/:id/days', academicPlanController.setDayStatus);
+router.patch('/:id/days/bulk', academicPlanController.setDaysStatus);
 router.patch('/:id/monthly', academicPlanController.setMonthlyRow);
 router.patch('/:id/days/edit', academicPlanController.editDay);
 router.patch('/:id/days/move', academicPlanController.moveDay);

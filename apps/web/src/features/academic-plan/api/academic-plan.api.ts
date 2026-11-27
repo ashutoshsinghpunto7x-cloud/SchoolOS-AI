@@ -4,6 +4,8 @@ import type {
   GenerateAcademicPlanPayload,
   AcademicPlanGenerationResult,
   SetPlanDayStatusPayload,
+  SetPlanDaysStatusPayload,
+  AcademicPlanChecklistItem,
   EditPlanDayPayload,
   SetMonthlyRowPayload,
   MovePlanDayPayload,
@@ -49,6 +51,20 @@ export const academicPlanApi = {
   setDayStatus: async (planId: string, payload: SetPlanDayStatusPayload): Promise<AcademicPlan> => {
     try {
       const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  setDaysStatus: async (planId: string, payload: SetPlanDaysStatusPayload): Promise<AcademicPlan> => {
+    try {
+      const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days/bulk`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  getMyChecklist: async (from: string, to: string): Promise<AcademicPlanChecklistItem[]> => {
+    try {
+      const res = await apiClient.get<{ data: AcademicPlanChecklistItem[] }>(`${BASE}/mine/checklist`, { params: { from, to } });
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

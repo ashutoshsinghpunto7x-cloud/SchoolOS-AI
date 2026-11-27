@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, ChevronDown, ChevronUp, ChevronRight, AlertCircle } from 'lucide-react';
+import { PeriodCounts } from '../components/PeriodCounts';
 import { usePrincipalPlanOverview } from '../hooks/useAcademicPlan';
 
 interface PrincipalAcademicPlanTeacherPageProps {
@@ -104,6 +105,7 @@ export function PrincipalAcademicPlanTeacherPage({ basePath = '/principal/academ
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-800 dark:text-white/80">Class {c.class}{c.section ? `-${c.section}` : ''}</p>
                               <p className="text-[11px] text-gray-400 mt-0.5">{c.completedDays} of {c.totalDays} teaching periods done</p>
+                              <PeriodCounts periods={c.periods} />
                             </div>
                             <div className="w-16 h-1.5 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden shrink-0">
                               <div className="h-full rounded-full bg-[#254A9A]" style={{ width: `${percent}%` }} />

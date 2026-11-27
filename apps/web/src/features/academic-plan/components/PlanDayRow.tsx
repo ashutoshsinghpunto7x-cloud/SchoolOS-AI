@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BookOpen, RotateCcw, ClipboardCheck, Coffee, Loader2, Pencil, GripVertical, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useChapters } from '@/features/question-bank/hooks/useQuestionBank';
+import { TickBox } from './TickBox';
 import type { AcademicPlanDay, AcademicPlanDayStatus } from '@schoolos/types';
 
 const BLOCK_META: Record<AcademicPlanDay['blockType'], { icon: typeof BookOpen; bg: string; text: string; label: string }> = {
@@ -12,7 +13,6 @@ const BLOCK_META: Record<AcademicPlanDay['blockType'], { icon: typeof BookOpen; 
 };
 
 const STATUS_OPTIONS: { value: AcademicPlanDayStatus; label: string; activeClass: string }[] = [
-  { value: 'completed',         label: 'Completed',         activeClass: 'bg-[#20C997] text-white border-[#20C997]' },
   { value: 'partial',           label: 'Partial',            activeClass: 'bg-[#FFB547] text-white border-[#FFB547]' },
   { value: 'needs_extra_class', label: 'Need extra class',   activeClass: 'bg-[#A6432E] text-white border-[#A6432E]' },
 ];
@@ -28,7 +28,7 @@ interface DayEdit {
 }
 
 export function PlanDayRow({
-  day, cls, subject, showDate = true, condensed = false, onSetStatus, onEdit, onMove, isSaving,
+  day, cls, subject, showDate = true, condensed = false, onSetStatus, onEdit, onMove, isSaving, tick,
 }: {
   day: AcademicPlanDay;
   /** Class + subject this plan belongs to — only needed when `onEdit` is
@@ -45,6 +45,8 @@ export function PlanDayRow({
   onEdit?: (patch: DayEdit) => void;
   onMove?: (fromDate: string) => void;
   isSaving?: boolean;
+  /** Done tick box. Leave out `onToggle` to show it read-only. */
+  tick?: { checked: boolean; saving?: boolean; onToggle?: () => void };
 }) {
   const [editing, setEditing] = useState(false);
   const [draggedOver, setDraggedOver] = useState(false);
@@ -100,6 +102,11 @@ export function PlanDayRow({
       )}
     >
       <div className="flex items-start gap-3">
+        {tick && day.blockType !== 'buffer' && (
+          <span className="mt-2 mx-0.5 flex">
+            <TickBox {...tick} label={`${tick.onToggle ? 'Mark done' : 'Done'}: ${title}, ${formatDate(day.date)}`} />
+          </span>
+        )}
         {draggable && (
           <GripVertical className="w-4 h-4 text-gray-300 dark:text-white/20 mt-2.5 shrink-0 cursor-grab" />
         )}
@@ -164,7 +171,7 @@ export function PlanDayRow({
             <Pencil className="w-4 h-4" />
           </button>
         )}
-        {day.status === 'completed' && (
+        {(tick?.checked ?? day.status === 'completed') && (
           <span className="text-[11px] font-bold text-[#20C997] shrink-0">Done</span>
         )}
       </div>

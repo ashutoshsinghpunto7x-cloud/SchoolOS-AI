@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, AlertCircle, ChevronLeft, ChevronRight as ChevronRi
 import { usePrincipalPlanDetail } from '../hooks/useAcademicPlan';
 import { PlanDayRow } from '../components/PlanDayRow';
 import { NotebookDailyView, NotebookMonthlyView } from '../components/PlanNotebookView';
+import type { AcademicPlanDay } from '@schoolos/types';
 
 const MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' });
 
@@ -12,6 +13,11 @@ const MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'n
  *  Principal's oversight view, same "read-only, no ownership assertion"
  *  posture as Teacher Planner v2's principal detail route. */
 export function PrincipalAcademicPlanDetailPage() {
+  // No onToggle: the Principal sees the teacher's ticks but cannot change them.
+  const tickFor = (days: AcademicPlanDay[]) => {
+    const done = days.filter((d) => d.status === 'completed').length;
+    return { checked: done > 0 && done === days.length, partial: done > 0 && done < days.length };
+  };
   const { teacherId = '', cls = '', section = '', subject = '' } = useParams();
   const navigate = useNavigate();
   const { data: plan, isLoading, isError } = usePrincipalPlanDetail(teacherId, { class: cls, section: section || undefined, subject });
@@ -94,12 +100,12 @@ export function PrincipalAcademicPlanDetailPage() {
 
             {view === 'daily' ? (
               <NotebookDailyView
-                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveDay={() => undefined}
+                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveDay={() => undefined} tickFor={tickFor}
                 days={monthDays.map((d) => ({ date: new Date(d.date), dateKey: d.date.slice(0, 10), planDay: d }))}
               />
             ) : view === 'monthly' ? (
               <NotebookMonthlyView
-                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveRow={() => undefined}
+                title={`Class ${cls}${section ? `-${section}` : ''}`} subject={subject} readOnly onSaveRow={() => undefined} tickFor={tickFor}
                 monthLabel={MONTH_LABEL.format(viewMonth)}
                 monthKey={`${viewMonth.getFullYear()}-${String(viewMonth.getMonth() + 1).padStart(2, '0')}`}
                 days={plan.days} monthlyRows={plan.monthlyRows ?? []}
@@ -112,7 +118,7 @@ export function PrincipalAcademicPlanDetailPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 {monthDays.map((day) => (
-                  <PlanDayRow key={day.date} day={day} showDate />
+                  <PlanDayRow key={day.date} day={day} showDate tick={tickFor([day])} />
                 ))}
               </div>
             )}

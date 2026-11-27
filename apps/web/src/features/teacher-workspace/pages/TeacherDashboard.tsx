@@ -12,6 +12,7 @@ import { DailyQuestCard, StreakCard, type QuestTask } from '../winter/DailyQuest
 import { SnowCanvas } from '../winter/SnowCanvas';
 import '../winter/winter.css';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { MyChecklistCard } from '@/features/academic-plan/components/MyChecklistCard';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
 import { EmergencyHalfDayLeaveCard } from '@/features/attendance/components/EmergencyHalfDayLeaveCard';
@@ -659,6 +660,8 @@ export function TeacherDashboard() {
             </span>
           </button>
         </div>
+
+        <MyChecklistCard className={`${card} p-5`} />
 
         {/* 2-Column Detail Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

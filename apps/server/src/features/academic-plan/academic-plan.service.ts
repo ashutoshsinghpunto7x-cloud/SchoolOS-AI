@@ -12,9 +12,9 @@ import { runPlanAlertDetection } from './plan-alert.service';
 import { IAcademicPlan, IAcademicPlanDay, AcademicPlanDayStatus } from './academic-plan.model';
 import {
   buildEligibleDaysContext, listEligibleDays, nextEligibleDay, reserveExamBlocks,
-  fillChaptersIntoDays, isoDate,
+  fillChaptersIntoDays, isoDate, schoolDateKey, periodRanges, countDone,
 } from './academic-plan.util';
-import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput, MonthlyRowInput } from './academic-plan.validation';
+import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput, MonthlyRowInput, BulkDayStatusInput, ChecklistQueryInput } from './academic-plan.validation';
 
 // ── Teacher scope guard — same shape/reasoning as Teacher Planner v2's
 // assertTeacherCanManagePlanner (Teacher and User link only by email; a
@@ -66,12 +66,12 @@ export const academicPlanService = {
       throw new ValidationError('No teaching days found in the academic year for this class/subject — check the calendar and timetable setup.');
     }
 
-    // Regenerate must not touch any day the teacher has hand-edited or
-    // drag-swapped — pull the current plan (if any) and carve those dates
+    // Regenerate must not touch any day the teacher has hand-edited,
+    // drag-swapped or already ticked off — pull the current plan (if any) and carve those dates
     // out of the pool before the fill algorithm ever sees them, so it never
     // double-books a locked day.
     const existingPlan = await academicPlanRepository.findOne(ctx.schoolId, ctx.userId, input.class, input.section, input.subject);
-    const lockedDays = new Map((existingPlan?.days ?? []).filter((d) => d.manuallyEdited).map((d) => [isoDate(new Date(d.date)), d]));
+    const lockedDays = new Map((existingPlan?.days ?? []).filter((d) => d.manuallyEdited || d.status !== 'pending').map((d) => [isoDate(new Date(d.date)), d]));
 
     const schedulableDays = allEligibleDays.filter((d) => !lockedDays.has(isoDate(d)));
 
@@ -173,6 +173,38 @@ export const academicPlanService = {
     return carried ?? updated;
   },
 
+  /** Tick boxes: marks lessons done (or un-ticks them) - one day, or every
+   *  lesson behind a weekly / monthly checklist row. */
+  async setDaysStatus(planId: string, data: BulkDayStatusInput, ctx: AuthContext): Promise<IAcademicPlan> {
+    const existing = await academicPlanRepository.findById(planId, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Plan');
+    await assertTeacherCanManagePlan(ctx, existing.class, existing.subject);
+
+    const keys = new Set(data.dates.map(isoDate));
+    const updated = await academicPlanRepository.setDaysStatus(
+      planId, ctx.schoolId, keys, data.status,
+      { version: 0, changedBy: ctx.displayName, changedAt: new Date(), reason: `Marked ${keys.size} day(s) as ${data.status}` },
+    );
+    if (!updated) throw new NotFoundError('Plan day');
+    return updated;
+  },
+
+  /** The signed-in teacher's lessons across every class between two dates. */
+  async getMyChecklist({ from, to }: ChecklistQueryInput, ctx: AuthContext) {
+    const plans = await academicPlanRepository.findAllByTeacher(ctx.schoolId, ctx.userId);
+    return plans
+      .flatMap((plan) => plan.days
+        .map((d) => ({ d, dateKey: schoolDateKey(new Date(d.date)) }))
+        .filter(({ d, dateKey }) => d.blockType !== 'buffer' && dateKey >= from && dateKey <= to)
+        .map(({ d, dateKey }) => ({
+          planId: String(plan._id), class: plan.class, section: plan.section, subject: plan.subject,
+          date: new Date(d.date).toISOString(), dateKey, blockType: d.blockType, status: d.status,
+          chapterName: d.chapterName, topicTitle: d.topicTitle, examName: d.examName,
+          classWork: d.classWork, homeWork: d.homeWork,
+        })))
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey) || `${a.class}${a.section}`.localeCompare(`${b.class}${b.section}`));
+  },
+
   /** Teacher hand-edits a single day — fix a wrong auto-assignment, or fill
    *  a buffer day with a chapter of their own choosing. Exam-owned
    *  'assessment' blocks are off-limits here; those move only if the exam's
@@ -251,7 +283,9 @@ export const academicPlanService = {
     const entries: {
       teacherId: string; teacherName: string; class: string; section?: string; subject: string;
       planId: string | null; hasPlan: boolean; completedDays: number; totalDays: number;
+      periods?: Record<'today' | 'week' | 'month', { done: number; total: number }>;
     }[] = [];
+    const ranges = periodRanges(new Date());
 
     for (const teacher of teachers) {
       if (!teacher.email) continue;
@@ -272,6 +306,11 @@ export const academicPlanService = {
           planId: String(plan._id), hasPlan: true,
           completedDays: teachDays.filter((d) => d.status === 'completed').length,
           totalDays: teachDays.length,
+          periods: {
+            today: countDone(plan.days, ranges.today),
+            week: countDone(plan.days, ranges.week),
+            month: countDone(plan.days, ranges.month),
+          },
         });
       }
     }

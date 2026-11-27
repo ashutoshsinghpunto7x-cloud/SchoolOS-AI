@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicPlanApi, PlanTarget, ChapterSizingPayload } from '../api/academic-plan.api';
-import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload, SetMonthlyRowPayload } from '@schoolos/types';
+import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload, SetMonthlyRowPayload, SetPlanDaysStatusPayload } from '@schoolos/types';
 
 function targetKey(t: PlanTarget) {
   return [t.class, t.section ?? '', t.subject] as const;
@@ -39,6 +39,26 @@ export const useSetPlanDayStatus = (planId: string) => {
   });
 };
 
+export const useMyChecklist = (from: string, to: string) =>
+  useQuery({
+    queryKey: [...academicPlanKeys.all, 'checklist', from, to],
+    queryFn:  () => academicPlanApi.getMyChecklist(from, to),
+  });
+
+/** Ticks / un-ticks days across one or several plans in one go. */
+export const useTickPlanDays = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ status, days }: { status: SetPlanDaysStatusPayload['status']; days: { planId: string; date: string }[] }) => {
+      const byPlan = new Map<string, string[]>();
+      for (const d of days) byPlan.set(d.planId, [...(byPlan.get(d.planId) ?? []), d.date]);
+      return Promise.all([...byPlan].map(([planId, dates]) => academicPlanApi.setDaysStatus(planId, { dates, status })));
+    },
+    // onSettled so a half-failed multi-class tick still shows what actually saved.
+    onSettled: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+  });
+};
+
 export const useEditPlanDay = (planId: string) => {
   const qc = useQueryClient();
   return useMutation({
@@ -70,6 +90,7 @@ export const usePrincipalPlanOverview = () =>
   useQuery({
     queryKey: academicPlanKeys.principalOverview,
     queryFn:  () => academicPlanApi.getPrincipalOverview(),
+    refetchInterval: 30_000, // picks up teachers' ticks while the screen is open
   });
 
 export const usePrincipalPlanDetail = (teacherId: string, target: PlanTarget) =>
@@ -77,6 +98,7 @@ export const usePrincipalPlanDetail = (teacherId: string, target: PlanTarget) =>
     queryKey: academicPlanKeys.principalDetail(teacherId, target),
     queryFn:  () => academicPlanApi.getForTeacher(teacherId, target),
     enabled:  !!teacherId && !!target.class && !!target.subject,
+    refetchInterval: 30_000,
   });
 
 // ── Coordinator (syllabus sizing) ─────────────────────────────────────────────

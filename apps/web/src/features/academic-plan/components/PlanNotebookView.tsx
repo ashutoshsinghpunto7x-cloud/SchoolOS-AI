@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
-import type { MonthCalendarDay } from '../lib/monthCalendar';
+import { isoDay, type MonthCalendarDay } from '../lib/monthCalendar';
+import { TickBox } from './TickBox';
 import type { AcademicPlanDay, AcademicPlanMonthlyRow, EditPlanDayPayload } from '@schoolos/types';
 
 // Notebook-format planner views — same columns as the paper Daily / Monthly planners teachers
 // keep today. Both read from the existing AcademicPlan (the chapter/day engine stays the source
 // of "what is taught when"); the extra columns are teacher-typed and saved on blur.
+
+/** Tick state for a row; without `onToggle` it renders read-only. */
+type RowTick = (days: AcademicPlanDay[]) => { checked: boolean; partial?: boolean; saving?: boolean; onToggle?: () => void };
 
 type NotebookField = 'periodLabel' | 'classWork' | 'homeWork' | 'teachingAid' | 'remarks';
 
@@ -54,13 +58,14 @@ function PrintButton() {
 
 /** Daily Planner — Date/Day · Subject · Period · Topic · Class-work · Home-work · Teaching Aid · Remarks. */
 export function NotebookDailyView({
-  title, subject, days, readOnly, onSaveDay,
+  title, subject, days, readOnly, onSaveDay, tickFor,
 }: {
   title: string;
   subject: string;
   days: MonthCalendarDay[];
   readOnly?: boolean;
   onSaveDay: (day: AcademicPlanDay, patch: Partial<Pick<EditPlanDayPayload, NotebookField>>) => void;
+  tickFor: RowTick;
 }) {
   return (
     <div id="planner-print" className="bg-white dark:bg-transparent rounded-2xl border border-gray-100 dark:border-white/10 p-4 overflow-x-auto">
@@ -72,7 +77,7 @@ export function NotebookDailyView({
       <table className="w-full border-collapse min-w-[900px]">
         <thead>
           <tr>
-            {['Date / Day', 'Subject', 'Period', 'Topic', 'Class-work', 'Home-work', 'Teaching Aid', 'Remarks'].map((h) => (
+            {['Done', 'Date / Day', 'Subject', 'Period', 'Topic', 'Class-work', 'Home-work', 'Teaching Aid', 'Remarks'].map((h) => (
               <th key={h} className={TH}>{h}</th>
             ))}
           </tr>
@@ -84,6 +89,7 @@ export function NotebookDailyView({
             if (!cd.planDay) {
               return (
                 <tr key={cd.dateKey} className="bg-gray-50 dark:bg-white/[0.03]">
+                  <td className={TD} />
                   <td className={TD}><p className="font-semibold">{dateLabel}</p><p className="text-gray-500">{dayName}</p></td>
                   <td className={`${TD} text-gray-400 italic`} colSpan={7}>{cd.offLabel}</td>
                 </tr>
@@ -94,6 +100,11 @@ export function NotebookDailyView({
             const topic = [d.chapterName ?? d.examName, d.topicTitle].filter(Boolean).join(' — ') || (d.blockType === 'buffer' ? 'Buffer / free period' : '—');
             return (
               <tr key={cd.dateKey}>
+                <td className={`${TD} text-center`}>
+                  {d.blockType !== 'buffer' && (
+                    <span className="inline-flex p-2"><TickBox {...tickFor([d])} label={`Done: ${dateLabel}, ${topic}`} /></span>
+                  )}
+                </td>
                 <td className={TD}><p className="font-semibold">{dateLabel}</p><p className="text-gray-500">{dayName}</p></td>
                 <td className={TD}>{subject}</td>
                 <td className={TD}><EditableCell rows={1} value={d.periodLabel} readOnly={locked} placeholder="I" onSave={(v) => onSaveDay(d, { periodLabel: v })} /></td>
@@ -114,17 +125,18 @@ export function NotebookDailyView({
   );
 }
 
-interface MonthChapterRow { chapterName: string; topics: string[]; }
+interface MonthChapterRow { chapterName: string; topics: string[]; days: AcademicPlanDay[]; }
 
 /** Chapters taught in a month (in teaching order) with the topic titles scheduled for each. */
 export function chaptersForMonth(days: AcademicPlanDay[], monthKey: string): MonthChapterRow[] {
   const rows = new Map<string, MonthChapterRow>();
   for (const d of days) {
-    if (d.date.slice(0, 7) !== monthKey) continue;
+    if (isoDay(new Date(d.date)).slice(0, 7) !== monthKey) continue;
     if (d.blockType !== 'teach' && d.blockType !== 'revision') continue;
     const name = d.chapterName ?? (d.blockType === 'revision' ? 'Revision' : undefined);
     if (!name) continue;
-    const row = rows.get(name) ?? { chapterName: name, topics: [] };
+    const row = rows.get(name) ?? { chapterName: name, topics: [], days: [] };
+    row.days.push(d);
     if (d.topicTitle && !row.topics.includes(d.topicTitle)) row.topics.push(d.topicTitle);
     rows.set(name, row);
   }
@@ -133,7 +145,7 @@ export function chaptersForMonth(days: AcademicPlanDay[], monthKey: string): Mon
 
 /** Monthly Planner — Subject · Topic · Teaching Method · Teaching Aid · C/W · H/W. */
 export function NotebookMonthlyView({
-  title, subject, monthLabel, monthKey, days, monthlyRows, readOnly, onSaveRow,
+  title, subject, monthLabel, monthKey, days, monthlyRows, readOnly, onSaveRow, tickFor,
 }: {
   title: string;
   subject: string;
@@ -143,6 +155,7 @@ export function NotebookMonthlyView({
   monthlyRows: AcademicPlanMonthlyRow[];
   readOnly?: boolean;
   onSaveRow: (row: AcademicPlanMonthlyRow) => void;
+  tickFor: RowTick;
 }) {
   const chapters = chaptersForMonth(days, monthKey);
   const saved = (name: string) => monthlyRows.find((r) => r.monthKey === monthKey && r.chapterName === name);
@@ -162,7 +175,7 @@ export function NotebookMonthlyView({
         <table className="w-full border-collapse min-w-[860px]">
           <thead>
             <tr>
-              {['Subject', 'Topic', 'Teaching Method', 'Teaching Aid', 'C/W', 'H/W'].map((h) => <th key={h} className={TH}>{h}</th>)}
+              {['Done', 'Subject', 'Topic', 'Teaching Method', 'Teaching Aid', 'C/W', 'H/W'].map((h) => <th key={h} className={TH}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -170,6 +183,10 @@ export function NotebookMonthlyView({
               const row = saved(c.chapterName);
               return (
                 <tr key={c.chapterName}>
+                  <td className={`${TD} text-center`}>
+                    <span className="inline-flex p-2"><TickBox {...tickFor(c.days)} label={`Done: ${c.chapterName}`} /></span>
+                    <p className="text-[10px] text-gray-500 mt-1">{c.days.filter((d) => tickFor([d]).checked).length}/{c.days.length}</p>
+                  </td>
                   <td className={TD}>{subject}</td>
                   <td className={TD}>
                     <p className="font-semibold">{c.chapterName}</p>

@@ -5574,6 +5574,36 @@ export interface SetPlanDayStatusPayload {
   note?: string;
 }
 
+/** Tick-box save: marks one or many days of a plan done / not done. */
+export interface SetPlanDaysStatusPayload {
+  dates: string[];
+  status: 'completed' | 'pending';
+}
+
+/** One lesson on a teacher's daily / weekly / monthly checklist. */
+export interface AcademicPlanChecklistItem {
+  planId: string;
+  class: string;
+  section?: string;
+  subject: string;
+  /** Stored plan-day timestamp - send it back when ticking. */
+  date: string;
+  /** School-calendar date, YYYY-MM-DD. */
+  dateKey: string;
+  blockType: AcademicPlanBlockType;
+  status: AcademicPlanDayStatus;
+  chapterName?: string;
+  topicTitle?: string;
+  examName?: string;
+  classWork?: string;
+  homeWork?: string;
+}
+
+export interface AcademicPlanDoneCount {
+  done: number;
+  total: number;
+}
+
 export interface EditPlanDayPayload {
   date: string;
   blockType?: AcademicPlanBlockType;
@@ -5606,6 +5636,8 @@ export interface AcademicPlanPrincipalOverviewEntry {
   hasPlan: boolean;
   completedDays: number;
   totalDays: number;
+  /** Ticked lessons for today, this week and this month. */
+  periods?: Record<'today' | 'week' | 'month', AcademicPlanDoneCount>;
 }
 
 // ── Plan Alerts (automation — nightly risk detection) ──────────────────────────

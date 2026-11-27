@@ -9,6 +9,46 @@ export function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** The school-calendar date (IST) a stored plan day falls on. Plan days are
+ *  saved at midnight of whichever machine generated them (00:00Z, or 18:30Z the
+ *  evening before), and both land on the right date once shifted to IST. */
+export function schoolDateKey(d: Date): string {
+  return new Date(d.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+}
+
+export type DateKeyRange = [from: string, to: string];
+
+/** Today, the Monday-Sunday week and the calendar month around `now`, as date keys. */
+export function periodRanges(now: Date): Record<'today' | 'week' | 'month', DateKeyRange> {
+  const today = schoolDateKey(now);
+  const base = new Date(`${today}T00:00:00Z`);
+  const shift = (days: number) => new Date(base.getTime() + days * 86_400_000).toISOString().slice(0, 10);
+  const sinceMonday = (base.getUTCDay() + 6) % 7;
+  const monthEnd = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 0));
+  return {
+    today: [today, today],
+    week: [shift(-sinceMonday), shift(6 - sinceMonday)],
+    month: [`${today.slice(0, 7)}-01`, monthEnd.toISOString().slice(0, 10)],
+  };
+}
+
+/** Ticked / total lessons (anything but a free slot) inside a date-key range. */
+export function countDone(
+  days: { date: Date; blockType: string; status: string }[],
+  [from, to]: DateKeyRange,
+): { done: number; total: number } {
+  let done = 0;
+  let total = 0;
+  for (const d of days) {
+    if (d.blockType === 'buffer') continue;
+    const key = schoolDateKey(new Date(d.date));
+    if (key < from || key > to) continue;
+    total += 1;
+    if (d.status === 'completed') done += 1;
+  }
+  return { done, total };
+}
+
 async function loadHolidayDates(schoolId: string, start: Date, end: Date): Promise<Set<string>> {
   const { events } = await eventRepository.findAll(schoolId, {
     eventType: 'holiday',

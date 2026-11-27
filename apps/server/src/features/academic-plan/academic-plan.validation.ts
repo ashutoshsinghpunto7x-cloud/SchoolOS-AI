@@ -18,6 +18,15 @@ export const setDayStatusSchema = z.object({
   note:   z.string().trim().max(500).optional(),
 });
 
+/** Tick-box saves: one or many days of a plan marked done / not done. */
+export const bulkDayStatusSchema = z.object({
+  dates:  z.array(z.coerce.date()).min(1).max(62),
+  status: z.enum(['completed', 'pending']),
+});
+
+const DATE_KEY = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const checklistQuerySchema = z.object({ from: DATE_KEY, to: DATE_KEY });
+
 export const BLOCK_TYPES = ['teach', 'revision', 'assessment', 'buffer'] as const;
 
 export const editDaySchema = z.object({
@@ -55,6 +64,8 @@ export const moveDaySchema = z.object({
 export type PlanTargetInput = z.infer<typeof planTargetSchema>;
 export type GeneratePlanInput = z.infer<typeof generatePlanSchema>;
 export type SetDayStatusInput = z.infer<typeof setDayStatusSchema>;
+export type BulkDayStatusInput = z.infer<typeof bulkDayStatusSchema>;
+export type ChecklistQueryInput = z.infer<typeof checklistQuerySchema>;
 export type EditDayInput = z.infer<typeof editDaySchema>;
 export type MonthlyRowInput = z.infer<typeof monthlyRowSchema>;
 export type MoveDayInput = z.infer<typeof moveDaySchema>;

@@ -8,7 +8,7 @@ import type { AcademicPlanDay, AcademicPlanDayStatus } from '@schoolos/types';
  *  of their own (see monthCalendar.ts). Scheduled days show the chapter
  *  name only; edit still opens the full chapter/topic picker. */
 export function PlanWeekView({
-  days, cls, subject, savingDate, isPending, onSetStatus, onEdit, onMove,
+  days, cls, subject, savingDate, isPending, onSetStatus, onEdit, onMove, tickFor,
 }: {
   days: MonthCalendarDay[];
   cls?: string;
@@ -18,6 +18,7 @@ export function PlanWeekView({
   onSetStatus: (day: AcademicPlanDay, status: AcademicPlanDayStatus) => void;
   onEdit: (day: AcademicPlanDay, patch: { chapterId?: string; chapterName?: string; topicTitle?: string }) => void;
   onMove: (fromDate: string, toDate: string) => void;
+  tickFor: (day: AcademicPlanDay) => { checked: boolean; saving?: boolean; onToggle?: () => void };
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -45,6 +46,7 @@ export function PlanWeekView({
           <PlanDayRow
             key={cd.dateKey}
             day={planDay}
+            tick={tickFor(planDay)}
             cls={cls}
             subject={subject}
             showDate

@@ -93,6 +93,26 @@ export const academicPlanRepository = {
     return plan.toObject();
   },
 
+  async setDaysStatus(
+    id: string,
+    schoolId: string,
+    dateKeys: Set<string>,
+    status: IAcademicPlanDay['status'],
+    historyEntry: IAcademicPlanHistoryEntry,
+  ): Promise<IAcademicPlan | null> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return null;
+
+    const matched = plan.days.filter((d) => d.blockType !== 'buffer' && dateKeys.has(d.date.toISOString().slice(0, 10)));
+    if (matched.length === 0) return null;
+    for (const day of matched) day.status = status;
+
+    plan.version += 1;
+    plan.history.push({ ...historyEntry, version: plan.version });
+    await plan.save();
+    return plan.toObject();
+  },
+
   /** Appends a carried-forward day (from unfinished work) without touching
    *  any existing day — used by the carry-forward flow in
    *  academic-plan.service.ts. */
