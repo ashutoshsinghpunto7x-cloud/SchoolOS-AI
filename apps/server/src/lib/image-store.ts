@@ -17,11 +17,13 @@ import { Readable } from 'stream';
  */
 
 const BUCKET_NAME = 'question_bank_images';
+/** Photos attached to school posts (news, activities, homework). */
+export const SCHOOL_POST_BUCKET = 'school_post_images';
 
-function getBucket(): GridFSBucket {
+function getBucket(bucketName: string = BUCKET_NAME): GridFSBucket {
   const db = mongoose.connection.db;
   if (!db) throw new Error('MongoDB connection not ready — cannot access image store.');
-  return new GridFSBucket(db, { bucketName: BUCKET_NAME });
+  return new GridFSBucket(db, { bucketName });
 }
 
 export interface StoredImageMeta {
@@ -30,8 +32,8 @@ export interface StoredImageMeta {
 }
 
 /** Saves an image buffer to GridFS, tagged with the owning school for later access checks. Returns the new file's id (hex string) to store as a reference elsewhere (ChapterPage.pageImageFileId, etc). */
-export async function saveImage(buffer: Buffer, meta: StoredImageMeta): Promise<string> {
-  const bucket = getBucket();
+export async function saveImage(buffer: Buffer, meta: StoredImageMeta, bucketName?: string): Promise<string> {
+  const bucket = getBucket(bucketName);
   return new Promise((resolve, reject) => {
     const uploadStream = bucket.openUploadStream(`${meta.schoolId}-${Date.now()}`, {
       contentType: meta.contentType,
@@ -45,9 +47,9 @@ export async function saveImage(buffer: Buffer, meta: StoredImageMeta): Promise<
 }
 
 /** Reads back an image's bytes + content type. Returns null if the id doesn't exist (e.g. already deleted) rather than throwing, so callers can degrade gracefully (skip the image) instead of failing a whole paper/worksheet render over one missing figure. `schoolId` is checked against the stored tag so one school's upload can never be fetched via another school's id — the same tenant boundary every other question-bank read enforces. */
-export async function readImage(fileId: string, schoolId: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+export async function readImage(fileId: string, schoolId: string, bucketName?: string): Promise<{ buffer: Buffer; contentType: string } | null> {
   if (!ObjectId.isValid(fileId)) return null;
-  const bucket = getBucket();
+  const bucket = getBucket(bucketName);
   const files = await bucket.find({ _id: new ObjectId(fileId) }).toArray();
   const file = files[0];
   if (!file || file.metadata?.schoolId !== schoolId) return null;
@@ -62,10 +64,10 @@ export async function readImage(fileId: string, schoolId: string): Promise<{ buf
 }
 
 /** Best-effort delete — swallows "not found" rather than throwing, since callers use this to clean up on source-deletion and a missing file (already-cleaned, race, etc.) shouldn't block the rest of that deletion. */
-export async function deleteImage(fileId: string): Promise<void> {
+export async function deleteImage(fileId: string, bucketName?: string): Promise<void> {
   if (!ObjectId.isValid(fileId)) return;
   try {
-    await getBucket().delete(new ObjectId(fileId));
+    await getBucket(bucketName).delete(new ObjectId(fileId));
   } catch {
     // already gone — fine
   }

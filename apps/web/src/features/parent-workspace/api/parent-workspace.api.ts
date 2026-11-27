@@ -1,6 +1,6 @@
 import { apiClient, extractErrorMessage } from '@/services/api';
 import type { ApiResponse } from '@schoolos/types';
-import type { AcademicsBundle, AttendanceBundle, FeesBundle, ParentWorkspaceBundle, ReportCardBundle } from '../types';
+import type { AcademicsBundle, AttendanceBundle, FeesBundle, ParentWorkspaceBundle, ReportCardBundle, SchoolFeedBundle } from '../types';
 
 export const parentWorkspaceApi = {
   async getWorkspace(childId?: string): Promise<ParentWorkspaceBundle> {
@@ -51,6 +51,17 @@ export const parentWorkspaceApi = {
   async getFees(childId: string): Promise<FeesBundle> {
     try {
       const res = await apiClient.get<ApiResponse<FeesBundle>>('/parent-workspace/fees', {
+        params: { childId },
+      });
+      return res.data.data!;
+    } catch (err) {
+      throw new Error(extractErrorMessage(err));
+    }
+  },
+
+  async getFeed(childId: string): Promise<SchoolFeedBundle> {
+    try {
+      const res = await apiClient.get<ApiResponse<SchoolFeedBundle>>('/parent-workspace/feed', {
         params: { childId },
       });
       return res.data.data!;

@@ -65,6 +65,18 @@ export const parentWorkspaceController = {
     }
   },
 
+  async getFeed(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip ?? undefined);
+      const childId = typeof req.query.childId === 'string' ? req.query.childId : undefined;
+      if (!childId) throw new ValidationError('childId is required');
+      const data = await parentWorkspaceService.getFeed(ctx, childId);
+      sendSuccess(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getReportCard(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx = buildAuthContext(req.user!, req.ip ?? undefined);

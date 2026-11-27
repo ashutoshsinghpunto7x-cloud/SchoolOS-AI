@@ -923,6 +923,15 @@ const ParentTransportPage = lazyPage(
   'ParentTransportPage',
 );
 
+const ParentSchoolLifePage = lazyPage(
+  () => import('@/features/parent-workspace/pages/SchoolLifePage'),
+  'SchoolLifePage',
+);
+const SchoolPostsPage = lazyPage(
+  () => import('@/features/school-posts/pages/SchoolPostsPage'),
+  'SchoolPostsPage',
+);
+
 // Transport / Live Van Tracking
 const DriverDashboardPage = lazyPage(
   () => import('@/features/transport/pages/DriverDashboardPage'),
@@ -1117,6 +1126,7 @@ export const router = createBrowserRouter([
                       { path: 'teacher/my-attendance',                                element: <TeacherMyAttendancePage /> },
                       { path: 'teacher/my-payslips',                                  element: <TeacherMyPayslipsPage /> },
                       { path: 'teacher/messages',                                     element: <MessagesPage /> },
+                      { path: 'teacher/updates', element: <SchoolPostsPage /> },
                     ],
                   },
                 ],
@@ -1182,6 +1192,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/marks', element: <MarksHubPage basePath="/principal" /> },
                   { path: 'principal/marks/:cls/:section/:subjectName/:examId', element: <MarksEntryPage /> },
                   { path: 'principal/push-notification-design', element: <PushNotificationDesignPage /> },
+                  { path: 'principal/updates', element: <SchoolPostsPage /> },
                 ],
               },
 
@@ -1204,6 +1215,7 @@ export const router = createBrowserRouter([
                       { path: 'parent/tests/:id/take', element: <ParentTakeTestPage /> },
                       { path: 'parent/more', element: <ParentMorePage /> },
                       { path: 'parent/transport', element: <ParentTransportPage /> },
+                      { path: 'parent/school', element: <ParentSchoolLifePage /> },
                     ],
                   },
                 ],
@@ -1274,6 +1286,7 @@ export const router = createBrowserRouter([
                 element: <ProtectedRoute allowedRoles={['admin', 'principal']} />,
                 children: [
                   { path: 'timetable/teacher-builder', element: <TeacherTimetableBuilderPage /> },
+                  { path: 'school-posts', element: <SchoolPostsPage /> },
                 ],
               },
 

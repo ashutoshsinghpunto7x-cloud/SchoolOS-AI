@@ -52,6 +52,17 @@ export const chapterImagesUploadMiddleware = multer({
   },
 }).array('images', MAX_CHAPTER_PAGES);
 
+// Photos on a school post (news, activity, homework). The web app shrinks phone
+// photos before upload, so the small-image limit is enough.
+export const postPhotosUploadMiddleware = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE, files: 4 },
+  fileFilter(_req, file, cb) {
+    if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) cb(null, true);
+    else cb(new ValidationError('Only JPEG, PNG, WEBP, or GIF images are allowed.'));
+  },
+}).array('photos', 4);
+
 const ALLOWED_DOC_TYPES = [
   ...ALLOWED_IMAGE_TYPES,
   'application/pdf',

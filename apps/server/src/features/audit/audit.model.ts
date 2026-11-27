@@ -134,6 +134,8 @@ export type AuditAction =
   | 'event.updated'
   | 'event.status_changed'
   | 'event.deleted'
+  | 'school_post.created'
+  | 'school_post.deleted'
   | 'enquiry.created'
   | 'enquiry.updated'
   | 'enquiry.stage_changed'

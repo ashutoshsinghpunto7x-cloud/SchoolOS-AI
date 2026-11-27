@@ -1,3 +1,4 @@
+import type { SchoolPost } from '@/features/school-posts/types';
 // Parent Workspace — shared types.
 //
 // This feature is UI-first and currently backed by a mock data service
@@ -187,4 +188,22 @@ export interface ReportCardBundle {
   student?: ReportCardStudentHeader;
   schoolSettings?: SchoolSettings;
   qrDataUri?: string;
+}
+
+// ── School feed (homework, news, activities) ────────────────────────────────
+
+export interface FeedEvent {
+  _id: string;
+  title: string;
+  description?: string;
+  when: string;
+  location?: string;
+}
+
+export interface SchoolFeedBundle {
+  child: { _id: string; name: string; grade: string; section: string };
+  homework: SchoolPost[];
+  news: SchoolPost[];
+  activities: SchoolPost[];
+  events: FeedEvent[];
 }

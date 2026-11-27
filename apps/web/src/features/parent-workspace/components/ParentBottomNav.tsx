@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { useBuddyTip } from '@/features/companion/useBuddyTip';
-import { Home, BookOpen, CalendarCheck, Wallet, MoreHorizontal } from 'lucide-react';
+import { Home, BookOpen, CalendarCheck, Wallet, MoreHorizontal, Sparkles } from 'lucide-react';
 
 const NAV = [
   { to: '/parent', icon: Home, label: 'Home', end: true },
   { to: '/parent/academics', icon: BookOpen, label: 'Academics', end: false },
   { to: '/parent/attendance', icon: CalendarCheck, label: 'Attendance', end: false },
+  { to: '/parent/school', icon: Sparkles, label: 'School', end: false },
   { to: '/parent/fees', icon: Wallet, label: 'Fees', end: false },
   { to: '/parent/more', icon: MoreHorizontal, label: 'More', end: false },
 ];

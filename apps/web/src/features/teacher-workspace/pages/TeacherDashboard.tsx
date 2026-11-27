@@ -581,12 +581,13 @@ export function TeacherDashboard() {
         )}
 
         {/* Quick launch */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-2 sm:gap-3">
           {[
             { label: 'Attendance', onClick: handleMarkAttendance, d: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
             { label: 'Classes', onClick: () => navigate('/teacher/classes'), d: 'M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5' },
             { label: 'Timetable', onClick: () => navigate('/teacher/timetable'), d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2' },
             { label: 'Marks', onClick: () => navigate('/teacher/marks'), d: 'M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM9 12l-2 9 5-3 5 3-2-9' },
+            { label: 'Homework', onClick: () => navigate('/teacher/updates'), d: 'M3 11v3a1 1 0 0 0 1 1h3l8 5V5L7 10H4a1 1 0 0 0-1 1zM19 9a5 5 0 0 1 0 7' },
             { label: 'Academic Plan', onClick: () => navigate('/teacher/academic-plan'), d: 'M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v13' },
             { label: 'Planner', onClick: () => navigate('/teacher/planner'), d: 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3' },
             { label: 'Syllabus', onClick: () => navigate('/teacher/syllabus-tracker'), d: 'M18 20V10M12 20V4M6 20v-6' },
@@ -695,6 +696,7 @@ export function TeacherDashboard() {
             <div className="text-[16px] font-bold text-[#1B2A4E] pb-1">Teaching tools</div>
             {[
               { label: 'Marks & Report Cards', tag: 'Marks', path: '/teacher/marks' },
+              { label: 'Homework & Activities', tag: 'Parents', path: '/teacher/updates' },
               { label: 'Academic Plan', tag: 'Daily', path: '/teacher/academic-plan' },
               ...(SHOW_WIP_TEACHER_TOOLS
                 ? [

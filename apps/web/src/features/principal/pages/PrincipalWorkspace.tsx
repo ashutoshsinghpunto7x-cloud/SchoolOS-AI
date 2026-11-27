@@ -22,6 +22,7 @@ const QUICK_LINKS: { label: string; path: string; d: string }[] = [
   { label: 'Leave', path: '/principal/leave-approvals', d: 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3M9 15l2 2 4-4' },
   { label: 'Messages', path: '/messages', d: 'M3 6h18v12H3zM3 7l9 7 9-7' },
   { label: 'Calendar', path: '/calendar', d: 'M4 6h16v14H4zM4 10h16M8 3v5M16 3v5' },
+  { label: 'News', path: '/principal/updates', d: 'M3 11v3a1 1 0 0 0 1 1h3l8 5V5L7 10H4a1 1 0 0 0-1 1zM19 9a5 5 0 0 1 0 7' },
   { label: 'Exams', path: '/exams', d: 'M5 4h11v16H5zM8 9h5M8 13h5M17 20l4-9-2-1-4 9z' },
   { label: 'Marks', path: '/principal/marks', d: 'M12 3a5 5 0 100 10 5 5 0 000-10zM9 12l-2 9 5-3 5 3-2-9' },
   { label: 'Transport', path: '/principal/transport', d: 'M5 4h14v13H5zM5 11h14M8 17v3M16 17v3' },
@@ -104,6 +105,7 @@ export const PrincipalWorkspace = () => {
     Leave: leaveTip,
     Messages: 'Messages|Notices and messages to staff and parents.',
     Calendar: 'Calendar|School events, holidays and exam dates.',
+    News: 'News & activities|Post school news and activities for parents.',
     Exams: 'Exams|Exam and unit test schedules.',
     Marks: 'Marks|Marks entry and report cards for every class.',
     Transport: 'Transport|Buses, routes and drivers.',
@@ -139,7 +141,7 @@ export const PrincipalWorkspace = () => {
         )}
 
         {/* Quick launch */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-2 sm:gap-3">
           {QUICK_LINKS.map((q) => (
             <button
               key={q.label}

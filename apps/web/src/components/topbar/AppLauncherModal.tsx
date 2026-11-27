@@ -105,6 +105,7 @@ export const PRINCIPAL_SECTIONS: SubMenuGroup[] = [
       { id: 'school_timetable', label: 'Master School Timetable', path: '/timetable/school' },
       { id: 'class_timetable', label: 'Class Period Timetable', path: '/timetable' },
       { id: 'calendar', label: 'School Calendar & Events', path: '/calendar' },
+      { id: 'school_posts', label: 'School News & Activities', path: '/principal/updates' },
     ],
   },
   {
@@ -196,6 +197,7 @@ export const ADMIN_SECTIONS: SubMenuGroup[] = [
       { id: 'school_timetable', label: 'Master School Timetable', path: '/timetable/school' },
       { id: 'syllabus_setup', label: 'Classes & Sections', path: '/classes' },
       { id: 'calendar', label: 'Calendar & Events', path: '/calendar' },
+      { id: 'school_posts', label: 'School News & Activities', path: '/school-posts' },
     ],
   },
   {
@@ -333,6 +335,7 @@ export const TEACHER_SECTIONS: SubMenuGroup[] = [
     title: 'Marks, Papers & Worksheets',
     items: [
       { id: 'marks_hub', label: 'Marks & Report Cards', path: '/teacher/marks' },
+      { id: 'school_posts', label: 'Homework & Activities', path: '/teacher/updates' },
       { id: 'question_bank', label: 'Question Bank & Papers', path: '/teacher/question-bank' },
       { id: 'exams_list', label: 'Worksheet Generator', path: '/teacher/worksheet-generator' },
     ],

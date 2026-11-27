@@ -13,6 +13,7 @@ router.get('/academics', parentWorkspaceController.getAcademics);
 router.get('/attendance', parentWorkspaceController.getAttendance);
 router.get('/fees', parentWorkspaceController.getFees);
 router.get('/report-card', parentWorkspaceController.getReportCard);
+router.get('/feed', parentWorkspaceController.getFeed);
 router.post('/ai/ask', parentWorkspaceController.askAI);
 
 export default router;

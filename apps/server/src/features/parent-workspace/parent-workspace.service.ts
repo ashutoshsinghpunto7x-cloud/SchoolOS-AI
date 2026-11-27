@@ -8,6 +8,7 @@ import { examRepository } from '../exams/exam.repository';
 import { timetableRepository } from '../timetable/timetable.repository';
 import { periodSlotRepository } from '../timetable/timetable.period.repository';
 import { eventRepository } from '../events/event.repository';
+import { schoolPostService, toPostView, SchoolPostView } from '../school-posts/school-post.service';
 import { termReportCardRepository } from '../term-report-cards/term-report-card.repository';
 import { reportCardTemplateRepository } from '../report-card-templates/report-card-template.repository';
 import { schoolSettingsService } from '../school-settings/school-settings.service';
@@ -99,6 +100,17 @@ export interface ParentWorkspaceBundle {
   notifications: NotificationItem[];
 }
 
+/** Staff-only calendar entries (staff meetings and the like) must never reach a parent. */
+function isParentFacing(event: ISchoolEvent): boolean {
+  return event.audience.includes('parents') || event.audience.includes('all');
+}
+
+async function findParentEvents(schoolId: string, limit: number, days: number): Promise<ISchoolEvent[]> {
+  // Over-fetch before filtering so staff-only entries don't use up the limit.
+  const events = await eventRepository.findUpcoming(schoolId, 50, days);
+  return events.filter(isParentFacing).slice(0, limit);
+}
+
 function formatEventWhen(event: ISchoolEvent): string {
   const now = new Date();
   const start = new Date(event.startDate);
@@ -116,6 +128,24 @@ function to12Hour(hhmm: string): string {
   const period = h >= 12 ? 'PM' : 'AM';
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// ── School feed (homework, news, activities) ─────────────────────────────────
+
+export interface FeedEventView {
+  _id: string;
+  title: string;
+  description?: string;
+  when: string;
+  location?: string;
+}
+
+export interface SchoolFeedBundle {
+  child: { _id: string; name: string; grade: string; section: string };
+  homework: SchoolPostView[];
+  news: SchoolPostView[];
+  activities: SchoolPostView[];
+  events: FeedEventView[];
 }
 
 // ── Academics ────────────────────────────────────────────────────────────────
@@ -279,7 +309,7 @@ export const parentWorkspaceService = {
           ? Math.round((publishedMarks.reduce((sum, m) => sum + (m.percentage ?? 0), 0) / publishedMarks.length) / 10 * 10) / 10
           : 0;
 
-        const upcomingEvents = await eventRepository.findUpcoming(ctx.schoolId, 1, 60);
+        const upcomingEvents = await findParentEvents(ctx.schoolId, 1, 60);
         const nextEvent = upcomingEvents[0]
           ? { date: new Date(upcomingEvents[0].startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }), label: upcomingEvents[0].title }
           : undefined;
@@ -382,13 +412,12 @@ export const parentWorkspaceService = {
         kind: 'fee',
       });
     }
-    const upcoming = await eventRepository.findUpcoming(ctx.schoolId, 5, 21);
-    const parentFacing = upcoming.filter((e) => e.audience.includes('parents') || e.audience.includes('all'));
-    if (parentFacing[0]) {
+    const upcoming = await findParentEvents(ctx.schoolId, 5, 21);
+    if (upcoming[0]) {
       attention.push({
-        _id: `event-${parentFacing[0]._id}`,
-        title: parentFacing[0].title,
-        detail: formatEventWhen(parentFacing[0]),
+        _id: `event-${upcoming[0]._id}`,
+        title: upcoming[0].title,
+        detail: formatEventWhen(upcoming[0]),
         actionLabel: 'View',
         kind: 'event',
       });
@@ -464,6 +493,30 @@ export const parentWorkspaceService = {
         read: true,
       });
     }
+
+    // New homework, news and activities from the last week, newest first.
+    const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const recentPosts = (
+      await Promise.all(
+        (['homework', 'news', 'activity'] as const).map((kind) =>
+          schoolPostService.listForClass(ctx.schoolId, activeChild.grade, activeChild.section, kind, 3)
+        )
+      )
+    )
+      .flat()
+      .filter((p) => new Date(p.createdAt).getTime() >= since)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const fresh = Date.now() - 2 * 24 * 60 * 60 * 1000;
+    notifications.unshift(
+      ...recentPosts.slice(0, 5).map((p): NotificationItem => ({
+        _id: `notif-post-${p._id}`,
+        category: p.kind === 'homework' ? 'academic' : 'school',
+        title: p.title,
+        detail: p.kind === 'homework' ? `Homework · ${p.subject}` : p.kind === 'news' ? 'School news' : 'School activity',
+        when: new Date(p.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+        read: new Date(p.createdAt).getTime() < fresh,
+      }))
+    );
 
     return {
       parent: { _id: ctx.userId, name: ctx.displayName },
@@ -666,6 +719,31 @@ export const parentWorkspaceService = {
    *  (template, student header fields, school branding, verification QR).
    *  Draft cards are never returned here — publishing is what makes a card
    *  parent-visible, same rule the staff-facing UI already enforces. */
+  async getFeed(ctx: AuthContext, childId: string): Promise<SchoolFeedBundle> {
+    const student = await this.getOwnedStudent(ctx, childId);
+    const [homework, news, activities, events] = await Promise.all([
+      schoolPostService.listForClass(ctx.schoolId, student.class, student.section, 'homework'),
+      schoolPostService.listForClass(ctx.schoolId, student.class, student.section, 'news'),
+      schoolPostService.listForClass(ctx.schoolId, student.class, student.section, 'activity'),
+      findParentEvents(ctx.schoolId, 10, 60),
+    ]);
+    const view = (posts: typeof homework) => posts.map((p) => ({ ...toPostView(p, ctx), canDelete: false }));
+
+    return {
+      child: { _id: childId, name: student.fullName, grade: student.class, section: student.section },
+      homework: view(homework),
+      news: view(news),
+      activities: view(activities).sort((a, b) => (b.activityDate ?? '').localeCompare(a.activityDate ?? '')),
+      events: events.map((e) => ({
+        _id: String(e._id),
+        title: e.title,
+        description: e.description,
+        when: formatEventWhen(e),
+        location: e.location,
+      })),
+    };
+  },
+
   async getReportCard(ctx: AuthContext, childId: string): Promise<ReportCardBundle> {
     const student = await this.getOwnedStudent(ctx, childId);
 

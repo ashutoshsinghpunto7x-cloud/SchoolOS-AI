@@ -23,6 +23,7 @@ import { AttentionRequired } from '../components/AttentionRequired';
 import { StudentPersonalityCard } from '../components/StudentPersonalityCard';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { SchoolUpdates } from '../components/SchoolUpdates';
+import { SchoolLifeCard } from '../components/SchoolLifeCard';
 import { NotificationDrawer } from '../components/NotificationDrawer';
 import { AIParentAssistant } from '../components/AIParentAssistant';
 import { DashboardSkeleton } from '../components/DashboardSkeleton';
@@ -124,6 +125,10 @@ export function ParentDashboardPage() {
             activeChild={activeChild}
             onSelect={setActiveChildId}
           />
+        </motion.div>
+
+        <motion.div variants={fadeUp} transition={{ duration: 0.25 }}>
+          <SchoolLifeCard childId={activeChild._id} />
         </motion.div>
 
         {/* Prominent Fee & Pay Dues Card */}
