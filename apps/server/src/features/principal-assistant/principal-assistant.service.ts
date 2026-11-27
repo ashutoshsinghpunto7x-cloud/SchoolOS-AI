@@ -9,6 +9,7 @@ import { parseSubstitutionRequest } from './substitution.intent';
 import { timetableService } from '../timetable/timetable.service';
 import { feeIntents } from './fees.intents';
 import { admissionsIntents } from './admissions.intents';
+import { peopleIntents } from './people.intents';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
 import { principalAssistantActionService, ActionPreviewResult } from './principal-assistant.action.service';
 import { AuthContext } from '../../lib/auth-context';
@@ -18,8 +19,8 @@ import type { ClassAttendanceList } from './principal-assistant.data';
 
 const UNSUPPORTED_REPLY =
   "I can open any screen (try \"open leave requests\"), suggest substitutes, schedule staff meetings, move timetable periods, and answer " +
-  "questions about attendance, fees and admissions — e.g. \"how many students are absent today?\" or " +
-  "\"outstanding fees\". You can also speak to me with the mic button. What would you like to do?";
+  "questions about attendance, fees and admissions — e.g. \"which teachers are absent today?\", " +
+  "\"how many marks did Arav score in Hindi?\" or \"outstanding fees\". You can also speak to me with the mic button. What would you like to do?";
 
 const HAS_DEVANAGARI = /[ऀ-ॿ]/;
 
@@ -80,7 +81,7 @@ function substitutionReply(
 // Combining all domains into one flat list keeps this a single LLM classification
 // call (cheaper/faster than routing per-domain) — intent ids are unique across
 // domains, so finding the matching intent's fetchData afterward is unambiguous.
-const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents, ...admissionsIntents];
+const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents, ...admissionsIntents, ...peopleIntents];
 
 export type ChatResult =
   | { type: 'text'; reply: string; quickReplies?: string[] }
@@ -177,7 +178,7 @@ export const principalAssistantService = {
     }
 
     // Step 2 — fetch only the data this intent needs (backend does all the math).
-    const data = await intent.fetchData(ctx);
+    const data = await intent.fetchData(ctx, message);
 
     // Step 3 — OpenAI formats the pre-computed data into a natural-language answer.
     const userPrompt = `Data (JSON):\n${JSON.stringify(data, null, 2)}\n\nPrincipal's question: ${message}`;
@@ -186,7 +187,7 @@ export const principalAssistantService = {
       systemPrompt: buildFormattingSystemPrompt(),
       userPrompt,
       temperature: 0.4,
-      maxTokens: 300,
+      maxTokens: 600,
     });
     recordUsage(result, ctx.schoolId);
 

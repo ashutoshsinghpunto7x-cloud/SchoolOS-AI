@@ -270,22 +270,22 @@ export const PrincipalAssistantWidget = () => {
                   aria-label="Voice input"
                   aria-pressed={voice.listening}
                   className={cn(
-                    'w-7 h-7 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40 transition-colors',
+                    'w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40 transition-colors shadow-sm',
                     voice.listening
                       ? 'bg-red-500 text-white animate-pulse'
-                      : 'text-[#55607A] hover:text-[#1B2A4E] hover:bg-[#EFEAE0]',
+                      : 'bg-[#1B2A4E] text-white hover:bg-[#2A3C6A]',
                   )}
                 >
-                  {voice.listening ? <Square className="w-3 h-3 fill-current" /> : <Mic className="w-3.5 h-3.5" />}
+                  {voice.listening ? <Square className="w-4 h-4 fill-current" /> : <Mic className="w-6 h-6" />}
                 </button>
               )}
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading || voice.listening}
                 aria-label="Send"
-                className="w-7 h-7 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-25 transition-opacity"
+                className="w-9 h-9 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-25 transition-opacity"
               >
-                <ArrowUp className="w-3.5 h-3.5" strokeWidth={2.2} />
+                <ArrowUp className="w-4 h-4" strokeWidth={2.2} />
               </button>
             </div>
           </form>

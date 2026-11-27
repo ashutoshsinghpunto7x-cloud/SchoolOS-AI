@@ -14,7 +14,8 @@ export interface IntentDefinition<TCtx, TData> {
   id: string;
   /** Shown to the router LLM verbatim — describe what kind of question this covers. */
   description: string;
-  fetchData: (ctx: TCtx) => Promise<TData>;
+  /** The original message is passed for intents that need to read a name or class from it. */
+  fetchData: (ctx: TCtx, message: string) => Promise<TData>;
 }
 
 export interface IntentClassification {
