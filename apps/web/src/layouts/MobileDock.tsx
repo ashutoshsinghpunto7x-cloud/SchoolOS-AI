@@ -115,7 +115,7 @@ const DOCKS: Partial<Record<UserRole, DockItem[]>> = {
     home(Home, '/teacher'),
     item('Classes', '/teacher/classes', ClipboardCheck, '/teacher/attendance', '/teacher/history'),
     item('Timetable', '/teacher/timetable', Clock),
-    item('Planner', '/teacher/planner', BookOpen, '/teacher/academic-plan', '/teacher/syllabus-tracker'),
+    item('Plan', '/teacher/academic-plan', BookOpen),
     item('Marks', '/teacher/marks', Award),
     item('Papers', '/teacher/question-bank', FileText, '/teacher/worksheet-generator'),
   ],

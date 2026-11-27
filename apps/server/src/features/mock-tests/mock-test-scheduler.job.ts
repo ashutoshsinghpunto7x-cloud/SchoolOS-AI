@@ -7,7 +7,7 @@ import { sendTestLinkWhatsApp } from '../communication/mock-test-whatsapp.stub';
 
 /** Flips every approved test whose scheduledStart has arrived to 'live', and fans out the
  *  (stubbed) WhatsApp test-link send to every parent in that class. Exported standalone for
- *  manual/verification runs, same convention as runPlannerReminders. */
+ *  manual/verification runs. */
 export async function runOpenMockTestsTick(): Promise<{ opened: number }> {
   const now = new Date();
   const toOpen = await mockTestRepository.findApprovedReadyToGoLive(now);
@@ -51,13 +51,12 @@ export async function runCloseMockTestsTick(): Promise<{ closed: number }> {
   return { closed };
 }
 
-// Runs every minute — mock test windows are minute-granular (scheduled start/end times), unlike
-// the once-a-day planner reminders, so this needs a much tighter tick.
+// Runs every minute — mock test windows are minute-granular (scheduled start/end times).
 const OPEN_LOCK_KEY = 'locks:mock-tests-open';
 const CLOSE_LOCK_KEY = 'locks:mock-tests-close';
 const LOCK_TTL_SECONDS = 50;
 
-/** Registered once at process start (server.ts only), same convention as startPlannerScheduler. */
+/** Registered once at process start (server.ts only). */
 export function startMockTestScheduler(): void {
   cron.schedule('* * * * *', () => {
     withLeaderLock(OPEN_LOCK_KEY, LOCK_TTL_SECONDS, async () => {

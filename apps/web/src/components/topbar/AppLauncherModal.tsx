@@ -100,8 +100,7 @@ export const PRINCIPAL_SECTIONS: SubMenuGroup[] = [
     id: 'academics',
     title: 'Academics & Timetables',
     items: [
-      { id: 'academic_plan', label: 'Academic Plan (Syllabus Tracker)', path: '/principal/academic-plan' },
-      { id: 'lesson_planner', label: 'Teacher Planner', path: '/principal/planner' },
+      { id: 'academic_plan', label: 'Academic Plan', path: '/principal/academic-plan' },
       { id: 'school_timetable', label: 'Master School Timetable', path: '/timetable/school' },
       { id: 'class_timetable', label: 'Class Period Timetable', path: '/timetable' },
       { id: 'calendar', label: 'School Calendar & Events', path: '/calendar' },
@@ -325,8 +324,6 @@ export const TEACHER_SECTIONS: SubMenuGroup[] = [
     items: [
       { id: 'class_timetable', label: 'My Timetable', path: '/teacher/timetable' },
       { id: 'academic_plan', label: 'Academic Plan', path: '/teacher/academic-plan' },
-      { id: 'lesson_planner', label: 'Teacher Planner', path: '/teacher/planner' },
-      { id: 'syllabus_setup', label: 'Syllabus Tracker', path: '/teacher/syllabus-tracker' },
       { id: 'calendar', label: 'School Calendar', path: '/calendar' },
     ],
   },

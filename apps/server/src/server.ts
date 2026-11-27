@@ -2,7 +2,6 @@ import app from './app';
 import { env } from './config/env';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { logger } from './lib/logger';
-import { startPlannerScheduler } from './features/teacher-planner/planner-notifications.job';
 import { startMockTestScheduler } from './features/mock-tests/mock-test-scheduler.job';
 import { startReceptionTaskAutoScheduler } from './features/reception-tasks/reception-task-auto.job';
 import { startFollowUpAutoScheduler } from './features/follow-ups/follow-up-auto.job';
@@ -14,7 +13,6 @@ const start = async (): Promise<void> => {
   await connectDatabase();
   // Make sure Ops Center has a switch for every flag the app ships (never overwrites existing ones).
   await ensureDefaultFeatures();
-  startPlannerScheduler();
   startMockTestScheduler();
   startReceptionTaskAutoScheduler();
   startFollowUpAutoScheduler();

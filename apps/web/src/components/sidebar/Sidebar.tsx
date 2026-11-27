@@ -30,7 +30,6 @@ import {
   QrCode,
   ScanLine,
   FileCheck2,
-  CalendarClock,
   Bus,
   Table2,
   ShoppingCart,
@@ -133,7 +132,6 @@ const NAV_SECTION_PRINCIPAL_APPROVALS = [
 ] as const;
 
 const NAV_SECTION_PRINCIPAL_ACADEMICS = [
-  { label: 'Planner (Legacy)',     icon: CalendarClock,  path: '/principal/planner',       end: false },
   { label: 'Academic Plan',        icon: Sparkles,       path: '/principal/academic-plan', end: false },
   { label: 'Question Bank Overview', icon: Library,      path: '/principal/question-bank-overview', end: false },
   { label: 'Marks & Report Cards', icon: ClipboardCheck, path: '/principal/marks',          end: false },

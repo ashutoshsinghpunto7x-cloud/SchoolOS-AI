@@ -3,7 +3,7 @@ import { logger } from './logger';
 
 /**
  * Best-effort distributed lock for "exactly one server instance should run
- * this scheduled tick" work — e.g. the planner-reminders cron, which
+ * this scheduled tick" work — e.g. the plan-alert cron, which
  * node-cron fires independently on every instance since it has no built-in
  * cross-instance coordination. Falls back to "always run" when Redis isn't
  * configured, which is correct for today's single-instance deploy and

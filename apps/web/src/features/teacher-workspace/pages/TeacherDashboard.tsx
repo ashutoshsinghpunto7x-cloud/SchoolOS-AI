@@ -581,7 +581,7 @@ export function TeacherDashboard() {
         )}
 
         {/* Quick launch */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[repeat(13,minmax(0,1fr))] gap-2 sm:gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-[repeat(11,minmax(0,1fr))] gap-2 sm:gap-3">
           {[
             { label: 'Attendance', onClick: handleMarkAttendance, d: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
             { label: 'Classes', onClick: () => navigate('/teacher/classes'), d: 'M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5' },
@@ -589,8 +589,6 @@ export function TeacherDashboard() {
             { label: 'Marks', onClick: () => navigate('/teacher/marks'), d: 'M12 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM9 12l-2 9 5-3 5 3-2-9' },
             { label: 'Homework', onClick: () => navigate('/teacher/updates'), d: 'M3 11v3a1 1 0 0 0 1 1h3l8 5V5L7 10H4a1 1 0 0 0-1 1zM19 9a5 5 0 0 1 0 7' },
             { label: 'Academic Plan', onClick: () => navigate('/teacher/academic-plan'), d: 'M12 6c-2-2-5-2-8-1v13c3-1 6-1 8 1 2-2 5-2 8-1V5c-3-1-6-1-8 1zM12 6v13' },
-            { label: 'Planner', onClick: () => navigate('/teacher/planner'), d: 'M5 6h14v13H5zM5 10h14M9 4v3M15 4v3' },
-            { label: 'Syllabus', onClick: () => navigate('/teacher/syllabus-tracker'), d: 'M18 20V10M12 20V4M6 20v-6' },
             { label: 'Worksheets', onClick: () => navigate('/teacher/worksheet-generator'), d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8' },
             { label: 'Question Bank', onClick: () => navigate('/teacher/question-bank'), d: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z' },
             { label: 'Messages', onClick: () => navigate('/messages'), d: 'M3 6h18v12H3zM3 7l9 7 9-7' },
@@ -700,7 +698,6 @@ export function TeacherDashboard() {
               { label: 'Academic Plan', tag: 'Daily', path: '/teacher/academic-plan' },
               ...(SHOW_WIP_TEACHER_TOOLS
                 ? [
-                    { label: 'Syllabus Tracker', tag: 'Progress', path: '/teacher/syllabus-tracker' },
                     { label: 'Question Bank & Papers', tag: 'Papers', path: '/teacher/question-bank' },
                     { label: 'Worksheet Generator', tag: 'Practice', path: '/teacher/worksheet-generator' },
                   ]

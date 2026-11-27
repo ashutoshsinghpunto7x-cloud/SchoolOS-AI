@@ -91,13 +91,13 @@ export const TEACHER_FAQ: FaqItem[] = [
     keywords: ['new student', 'admission', 'enroll', 'register student'],
   },
   {
-    id: 'planner',
+    id: 'make-plan',
     category: 'Planning & Syllabus',
     question: 'How do I plan what to teach?',
     answer:
-      "In Planner, choose the class and subject, pick the chapters you want to teach and how long you need for them. The plan is saved and your principal can see it.",
-    path: '/teacher/planner',
-    pathLabel: 'Planner',
+      "Open Academic Plan, pick the class and subject, then tap Generate my plan. It builds a day-by-day plan from the syllabus, school calendar and exam dates.",
+    path: '/teacher/academic-plan',
+    pathLabel: 'Academic Plan',
     keywords: ['plan', 'lesson', 'chapters', 'schedule', 'duration', 'yojana'],
   },
   {
@@ -111,12 +111,12 @@ export const TEACHER_FAQ: FaqItem[] = [
     keywords: ['week', 'month', 'calendar', 'term plan', 'holiday'],
   },
   {
-    id: 'syllabus-tracker',
+    id: 'lesson-completed',
     category: 'Planning & Syllabus',
     question: 'How do I mark a chapter as completed?',
-    answer: 'Open Syllabus Tracker, find the subject and tick off the chapter once you have finished teaching it.',
-    path: '/teacher/syllabus-tracker',
-    pathLabel: 'Syllabus Tracker',
+    answer: 'Open Academic Plan, pick the class and subject, and tap Completed on each lesson once you have taught it. The Syllabus progress bar updates as you go.',
+    path: '/teacher/academic-plan',
+    pathLabel: 'Academic Plan',
     keywords: ['complete', 'finished', 'done', 'progress', 'chapter', 'syllabus'],
   },
   {

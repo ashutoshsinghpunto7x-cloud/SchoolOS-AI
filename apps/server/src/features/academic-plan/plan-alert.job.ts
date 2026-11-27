@@ -3,9 +3,9 @@ import { logger } from '../../lib/logger';
 import { withLeaderLock } from '../../lib/redis-lock';
 import { runPlanAlertDetection } from './plan-alert.service';
 
-// node-cron has no cross-instance coordination — same reasoning as
-// planner-notifications.job.ts's lock: without it a multi-instance deploy
-// would run detection (and send digest notifications) once per instance.
+// node-cron has no cross-instance coordination — without a lock a
+// multi-instance deploy would run detection (and send digest notifications)
+// once per instance.
 const LEADER_LOCK_KEY = 'locks:plan-alert-detection';
 const LEADER_LOCK_TTL_SECONDS = 900; // a full cross-school scan comfortably fits in 15 minutes at current scale
 

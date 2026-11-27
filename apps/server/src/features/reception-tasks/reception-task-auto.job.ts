@@ -92,9 +92,8 @@ export async function runFormOverdueCheck(): Promise<{ created: number }> {
   return { created };
 }
 
-// Same leader-lock pattern as planner-notifications.job.ts — every server
-// instance runs its own timer, so without a lock a multi-instance deploy
-// would raise the same task once per instance.
+// Leader lock: every server instance runs its own timer, so without one a
+// multi-instance deploy would raise the same task once per instance.
 const VISITOR_WAIT_LOCK_KEY = 'locks:reception-task-visitor-wait';
 const FORM_OVERDUE_LOCK_KEY = 'locks:reception-task-form-overdue';
 const LEADER_LOCK_TTL_SECONDS = 240;

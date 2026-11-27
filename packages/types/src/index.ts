@@ -161,9 +161,6 @@ export const MODULE_CATALOG: ModuleCatalogEntry[] = [
   { key: 'marks', label: 'Marks Entry', routePrefixes: ['/teacher/marks'] },
   { key: 'question-bank', label: 'Question Bank', routePrefixes: ['/teacher/question-bank'] },
   { key: 'worksheet-generator', label: 'Worksheet Generator', routePrefixes: ['/teacher/worksheet-generator'] },
-  { key: 'planner', label: 'Teacher Planner', routePrefixes: ['/teacher/planner'] },
-  { key: 'principal-planner', label: 'Principal Planner', routePrefixes: ['/principal/planner'] },
-  { key: 'syllabus-tracker', label: 'Syllabus Tracker', routePrefixes: ['/teacher/syllabus-tracker'] },
   { key: 'transport', label: 'Transport / Live Tracking', routePrefixes: ['/transport', '/driver', '/parent/transport', '/principal/transport'] },
 ];
 

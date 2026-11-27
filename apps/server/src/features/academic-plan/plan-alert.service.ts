@@ -176,10 +176,9 @@ async function runForSchool(schoolId: string, plans: IAcademicPlan[], now: Date,
   return { open: keepOpenIds.length, created: createdCount };
 }
 
-/** Runs the full detection pass across every school in one go — same
- *  "no per-school loop at the DB-query level" trade-off as
- *  runPlannerReminders. Exported standalone so it can be triggered manually
- *  for verification without waiting for the nightly schedule. */
+/** Runs the full detection pass across every school in one go — no per-school
+ *  loop at the DB-query level. Exported standalone so it can be triggered
+ *  manually for verification without waiting for the nightly schedule. */
 export async function runPlanAlertDetection(): Promise<{ schoolsProcessed: number; alertsOpen: number; alertsNew: number }> {
   const now = new Date();
   const todayKey = isoDate(now);

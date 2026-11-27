@@ -649,10 +649,6 @@ const PaperListPage = lazyPage(
   () => import('@/features/question-bank/pages/PaperListPage'),
   'PaperListPage',
 );
-const SyllabusTrackerPage = lazyPage(
-  () => import('@/features/syllabus-tracker/pages/SyllabusTrackerPage'),
-  'SyllabusTrackerPage',
-);
 const WorksheetHubPage = lazyPage(
   () => import('@/features/worksheet-generator/pages/WorksheetHubPage'),
   'WorksheetHubPage',
@@ -668,18 +664,6 @@ const WorksheetViewPage = lazyPage(
 const WorksheetListPage = lazyPage(
   () => import('@/features/worksheet-generator/pages/WorksheetListPage'),
   'WorksheetListPage',
-);
-const PlannerHubPage = lazyPage(
-  () => import('@/features/teacher-planner/pages/PlannerHubPage'),
-  'PlannerHubPage',
-);
-const PlannerBuildPage = lazyPage(
-  () => import('@/features/teacher-planner/pages/PlannerBuildPage'),
-  'PlannerBuildPage',
-);
-const PlannerDashboardPage = lazyPage(
-  () => import('@/features/teacher-planner/pages/PlannerDashboardPage'),
-  'PlannerDashboardPage',
 );
 const AcademicPlanHubPage = lazyPage(
   () => import('@/features/academic-plan/pages/AcademicPlanHubPage'),
@@ -716,18 +700,6 @@ const CoordinatorCalendarPage = lazyPage(
 const CoordinatorSyllabusPage = lazyPage(
   () => import('@/features/academic-year/pages/CoordinatorSyllabusPage'),
   'CoordinatorSyllabusPage',
-);
-const PrincipalPlannerPage = lazyPage(
-  () => import('@/features/principal/pages/PrincipalPlannerPage'),
-  'PrincipalPlannerPage',
-);
-const PrincipalPlannerDetailPage = lazyPage(
-  () => import('@/features/principal/pages/PrincipalPlannerDetailPage'),
-  'PrincipalPlannerDetailPage',
-);
-const PrincipalPlannerTeacherPage = lazyPage(
-  () => import('@/features/principal/pages/PrincipalPlannerTeacherPage'),
-  'PrincipalPlannerTeacherPage',
 );
 const MarksEntryPage = lazyPage(
   () => import('@/features/marks/pages/MarksEntryPage'),
@@ -1103,12 +1075,12 @@ export const router = createBrowserRouter([
                       { path: 'teacher/question-bank/generate',                       element: <PaperGeneratorPage /> },
                       { path: 'teacher/question-bank/papers',                         element: <PaperListPage /> },
                       { path: 'teacher/question-bank/papers/:paperId',                element: <PaperPreviewPage /> },
-                      { path: 'teacher/planner',                                      element: <PlannerHubPage /> },
-                      { path: 'teacher/planner/:cls/:subject',                        element: <PlannerDashboardPage /> },
-                      { path: 'teacher/planner/:cls/:subject/build',                  element: <PlannerBuildPage /> },
+                      // Planner and Syllabus Tracker were folded into Academic Plan —
+                      // old bookmarks and links land there.
+                      { path: 'teacher/planner/*',                                    element: <Navigate to="/teacher/academic-plan" replace /> },
+                      { path: 'teacher/syllabus-tracker',                             element: <Navigate to="/teacher/academic-plan" replace /> },
                       { path: 'teacher/academic-plan',                                element: <AcademicPlanHubPage /> },
                       { path: 'teacher/academic-plan/:cls/:section/:subject',         element: <AcademicPlanDashboardPage /> },
-                      { path: 'teacher/syllabus-tracker',                             element: <SyllabusTrackerPage /> },
                       { path: 'teacher/worksheet-generator',                          element: <WorksheetHubPage /> },
                       { path: 'teacher/worksheet-generator/my',                       element: <WorksheetListPage /> },
                       { path: 'teacher/worksheet-generator/view/:id',                 element: <WorksheetViewPage /> },
@@ -1180,9 +1152,7 @@ export const router = createBrowserRouter([
                   { path: 'principal/change-password', element: <PrincipalChangePasswordPage /> },
                   { path: 'principal/teachers-summary', element: <TeachersSummaryPage /> },
                   { path: 'principal/teachers', element: <PrincipalTeacherDirectoryPage /> },
-                  { path: 'principal/planner', element: <PrincipalPlannerPage /> },
-                  { path: 'principal/planner/teacher/:teacherId', element: <PrincipalPlannerTeacherPage /> },
-                  { path: 'principal/planner/:teacherId/:cls/:subject', element: <PrincipalPlannerDetailPage /> },
+                  { path: 'principal/planner/*', element: <Navigate to="/principal/academic-plan" replace /> },
                   { path: 'principal/academic-plan', element: <PrincipalAcademicPlanPage /> },
                   { path: 'principal/academic-plan/teacher/:teacherId', element: <PrincipalAcademicPlanTeacherPage /> },
                   { path: 'principal/academic-plan/:teacherId/:cls/:section/:subject', element: <PrincipalAcademicPlanDetailPage /> },

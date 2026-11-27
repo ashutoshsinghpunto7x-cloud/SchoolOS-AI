@@ -43,8 +43,6 @@ export const MODULE_CATALOG: ServerModuleCatalogEntry[] = [
   { key: 'marks', label: 'Marks Entry' },
   { key: 'question-bank', label: 'Question Bank' },
   { key: 'worksheet-generator', label: 'Worksheet Generator' },
-  { key: 'planner', label: 'Teacher Planner' },
-  { key: 'syllabus-tracker', label: 'Syllabus Tracker' },
   { key: 'transport', label: 'Transport / Live Tracking' },
 ];
 
