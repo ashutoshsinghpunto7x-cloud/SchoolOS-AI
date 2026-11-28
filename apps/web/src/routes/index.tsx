@@ -926,6 +926,10 @@ const UnderMaintenance = lazyPage(
   () => import('@/pages/UnderMaintenance'),
   'UnderMaintenance',
 );
+const CampusTourPage = lazyPage(
+  () => import('@/features/campus-tour/CampusTourPage'),
+  'CampusTourPage',
+);
 const NotFound = lazyPage(
   () => import('@/pages/NotFound'),
   'NotFound',
@@ -943,6 +947,14 @@ const Forbidden = lazyPage(
 
 export const router = createBrowserRouter([
   // ── Public routes ────────────────────────────────────────────────────────────
+  {
+    path: '/tour',
+    element: (
+      <Suspense fallback={<div className="h-screen bg-slate-950" />}>
+        <CampusTourPage />
+      </Suspense>
+    ),
+  },
   {
     path: '/status',
     element: <SystemStatus />,

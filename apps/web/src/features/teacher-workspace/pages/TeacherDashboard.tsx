@@ -14,6 +14,7 @@ import '../winter/winter.css';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { MyChecklistCard } from '@/features/academic-plan/components/MyChecklistCard';
 import { UpcomingEventsWidget } from '@/features/events/components/UpcomingEventsWidget';
+import { MyAttendanceCard } from '../components/MyAttendanceCard';
 import { ApplyLeaveModal } from '../components/ApplyLeaveModal';
 import { EmergencyHalfDayLeaveCard } from '@/features/attendance/components/EmergencyHalfDayLeaveCard';
 import { useMyLeaveRequests } from '@/features/leave-requests/hooks/useLeaveRequests';
@@ -660,6 +661,8 @@ export function TeacherDashboard() {
             </span>
           </button>
         </div>
+
+        <MyAttendanceCard className={`${card} p-5`} />
 
         <MyChecklistCard className={`${card} p-5`} />
 

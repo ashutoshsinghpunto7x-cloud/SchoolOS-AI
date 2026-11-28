@@ -24,7 +24,21 @@ export const staffAttendanceApi = {
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },
 
-  async today(): Promise<StaffAttendanceRecord[]> {
+  async selfPunch(): Promise<StaffAttendanceScanResult> {
+    try {
+      const res = await apiClient.post<ApiResponse<StaffAttendanceScanResult>>(`${BASE}/me/punch`);
+      return res.data.data!;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async selfToday(): Promise<StaffAttendanceRecord | null> {
+    try {
+      const res = await apiClient.get<ApiResponse<StaffAttendanceRecord | null>>(`${BASE}/me/today`);
+      return res.data.data ?? null;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  async today():Promise<StaffAttendanceRecord[]> {
     try {
       const res = await apiClient.get<ApiResponse<StaffAttendanceRecord[]>>(`${BASE}/today`);
       return res.data.data!;

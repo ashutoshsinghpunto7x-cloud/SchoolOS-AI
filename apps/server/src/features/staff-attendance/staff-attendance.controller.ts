@@ -14,6 +14,22 @@ export const staffAttendanceController = {
     } catch (err) { next(err); }
   },
 
+  async selfPunch(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const result = await staffAttendanceService.selfPunch(ctx);
+      sendSuccess(res, result, 'Attendance recorded');
+    } catch (err) { next(err); }
+  },
+
+  async selfToday(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx    = buildAuthContext(req.user!);
+      const record = await staffAttendanceService.selfToday(ctx);
+      sendSuccess(res, record);
+    } catch (err) { next(err); }
+  },
+
   async markManual(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const ctx    = buildAuthContext(req.user!);

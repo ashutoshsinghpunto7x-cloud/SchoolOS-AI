@@ -16,6 +16,20 @@ export const useTodayStaffAttendance = () =>
     refetchInterval: 30_000,
   });
 
+export const useMyAttendanceToday = () =>
+  useQuery({
+    queryKey: [...staffAttendanceKeys.all, 'me-today'] as const,
+    queryFn:  () => staffAttendanceApi.selfToday(),
+  });
+
+export const useSelfPunch = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => staffAttendanceApi.selfPunch(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: staffAttendanceKeys.all }),
+  });
+};
+
 export const useEmployeeAttendanceHistory = (employeeId: string, opts: { from?: string; to?: string } = {}) =>
   useQuery({
     queryKey: staffAttendanceKeys.employee(employeeId, opts),

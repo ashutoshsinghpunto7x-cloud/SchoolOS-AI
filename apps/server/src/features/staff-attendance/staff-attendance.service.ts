@@ -54,7 +54,30 @@ export const staffAttendanceService = {
     const { token, device } = scanQrSchema.parse(rawInput);
 
     const employee = await employeeService.verifyQrToken(token, ctx.schoolId);
+    return this.punch(employee, ctx, device ?? 'web');
+  },
 
+  /** Teacher self-service: resolve the caller's own employee record. */
+  async ownEmployee(ctx: AuthContext): Promise<IEmployee> {
+    const employee = await employeeService.getEmployeeByUserId(ctx.userId, ctx.schoolId);
+    if (!employee) throw new NotFoundError('Your employee record');
+    return employee;
+  },
+
+  /** Teacher marks their own attendance: first tap checks in, second checks out. */
+  async selfPunch(ctx: AuthContext): Promise<ScanResult> {
+    const employee = await this.ownEmployee(ctx);
+    return this.punch(employee, ctx, 'self');
+  },
+
+  async selfToday(ctx: AuthContext): Promise<IStaffAttendanceRecord | null> {
+    const employee = await this.ownEmployee(ctx);
+    return staffAttendanceRepository.findForEmployeeOnDate(
+      ctx.schoolId, employee.employeeId, staffAttendanceRepository.todayString(),
+    );
+  },
+
+  async punch(employee: IEmployee, ctx: AuthContext, device: string): Promise<ScanResult> {
     const date = staffAttendanceRepository.todayString();
     let record = await staffAttendanceRepository.findForEmployeeOnDate(ctx.schoolId, employee.employeeId, date);
 
@@ -71,7 +94,7 @@ export const staffAttendanceService = {
 
     if (!record.checkIn) {
       const { attendanceRules } = await schoolSettingsService.getSettings(ctx.schoolId);
-      record.checkIn = { time: now, recordedBy: ctx.userId, device: device ?? 'web' };
+      record.checkIn = { time: now, recordedBy: ctx.userId, device };
       record.status = statusForCheckIn(now, attendanceRules);
       await record.save();
 
@@ -87,7 +110,7 @@ export const staffAttendanceService = {
     }
 
     if (!record.checkOut) {
-      record.checkOut = { time: now, recordedBy: ctx.userId, device: device ?? 'web' };
+      record.checkOut = { time: now, recordedBy: ctx.userId, device };
       record.workingMinutes = Math.round((now.getTime() - new Date(record.checkIn.time).getTime()) / 60000);
       await record.save();
 

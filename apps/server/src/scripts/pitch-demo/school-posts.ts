@@ -107,14 +107,14 @@ const POSTS: PostPlan[] = [
     kind: 'activity', author: 'principal', postedDaysAgo: 6, category: 'sports', activityDate: '2026-11-21',
     title: 'Inter-house Athletics Meet',
     description: 'Races, relay and kho-kho across all four houses.',
-    credit: 'Jasper van’t Veen (CC BY 2.0), Pratap Public School (CC BY-SA 4.0)',
+    credit: 'Jasper van’t Veen (CC BY 2.0), Raihanwali (CC BY-SA 3.0)',
     photos: ['sports-1', 'sports-2'],
   },
   {
     kind: 'activity', author: 'principal', postedDaysAgo: 13, category: 'celebration', activityDate: '2026-11-14',
     title: 'Children’s Day celebration',
-    description: 'Dance performances and a fancy dress race made it a happy day for everyone.',
-    credit: 'Indian Navy (GODL-India), Pratap Public School (CC BY-SA 4.0)',
+    description: 'Dance performances and group games made it a happy day for everyone.',
+    credit: 'Indian Navy (GODL-India), Pal85akash (CC BY-SA 4.0)',
     photos: ['childrens-day-1', 'childrens-day-2'],
   },
   {

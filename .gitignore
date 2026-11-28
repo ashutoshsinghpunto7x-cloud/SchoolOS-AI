@@ -54,6 +54,9 @@ apps/server/src/scripts/reset-passwords.ts
 # Vite
 .vite/
 
+# Campus tour photos — may show students, and this repository is public
+apps/web/public/tour-media/
+
 
 node_modules/
 .env
