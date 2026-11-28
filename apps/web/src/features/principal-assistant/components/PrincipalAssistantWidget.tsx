@@ -100,10 +100,6 @@ export const PrincipalAssistantWidget = () => {
     [input, isLoading, sendMessage],
   );
   sendRef.current = send;
-  const keepOpenRef = useRef(false);
-  keepOpenRef.current = isLoading
-    || messages.some((m) => m.type === 'action_preview')
-    || window.location.pathname.includes('timetable');
 
   useEffect(() => {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -114,20 +110,11 @@ export const PrincipalAssistantWidget = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Element | null;
-      if (!target) return;
-      if (panelRef.current?.contains(target) || target.closest('[data-siri-orb="true"]')) return;
-      // Stay open while a change is being previewed/applied, or on the timetable
-      // screen, so the Principal can watch the grid update behind the assistant.
-      if (keepOpenRef.current) return;
-      setOpen(false);
-    };
+    // The assistant stays open until the user closes it (X button, Escape, or
+    // the orb) — clicking elsewhere must not dismiss it mid-task.
     window.addEventListener('keydown', onKey);
-    document.addEventListener('pointerdown', onPointerDown);
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.removeEventListener('pointerdown', onPointerDown);
     };
   }, [open]);
 
