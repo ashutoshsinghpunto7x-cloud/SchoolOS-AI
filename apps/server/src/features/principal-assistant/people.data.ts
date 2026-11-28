@@ -11,6 +11,8 @@ import { extractQueryParams, escapeRegex } from './query-params';
 import { classNameVariants } from '../../lib/class-name';
 import { AuthContext } from '../../lib/auth-context';
 import { logger } from '../../lib/logger';
+import { computeAttendanceStats } from './attendance-math';
+import { defaultRange, parseDateRange } from './date-range';
 
 // ── Name-level answers for the Principal assistant ───────────────────────────
 // The count-only fetchers in principal-assistant.data.ts can't answer "WHO is
@@ -129,7 +131,18 @@ export interface StudentLookupResult {
     rollNumber?: string;
     parentName?: string;
     marks?: { exam: string; subject: string; total?: number; percentage?: number; grade?: string; result: string }[];
-    attendance?: { last30DaysPresentPercent: number | null; daysMarked: number; absentDays: number };
+    attendance?: {
+      period: { label: string; from: string; to: string };
+      markedDays: number;
+      presentDays: number;
+      lateDays: number;
+      halfDays: number;
+      approvedLeaveDays: number;
+      absentDays: number;
+      attendancePercent: number | null;
+      /** Individual absent dates — included so "show the detailed report" is answerable from real records. */
+      absentDates: string[];
+    };
     fees?: { totalOutstanding: number; pendingRecords: number };
   }[];
 }
@@ -141,7 +154,10 @@ function studentFocus(message: string, hasSubjectOrExam: boolean): StudentFocus[
   if (/attend|present|absent|absence|hazir|haazir|leave|उपस्थिति|हाज़िर|हाजिर|गैरहाज़िर/.test(m)) focus.push('attendance');
   if (hasSubjectOrExam || /mark|score|result|percent|grade|rank|number|pass|fail|अंक|नंबर|परिणाम|रिज़ल्ट/.test(m)) focus.push('marks');
   if (/\bfees?\b|dues?|owe|pending|balance|outstanding|बकाया|फीस|फ़ीस/.test(m)) focus.push('fees');
-  const isProfile = /profile|report|details|everything|all about|poori|puri|पूरी|प्रोफ़ाइल|प्रोफाइल/.test(m);
+  // "report" / "details" only mean "the whole record" when no specific part was named;
+  // "detailed attendance report" is still just attendance.
+  const isProfile = /profile|everything|all about|poori|puri|पूरी|प्रोफ़ाइल|प्रोफाइल/.test(m)
+    || (!focus.length && /report|details/.test(m));
   return isProfile ? [] : focus;
 }
 
@@ -187,7 +203,8 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
   }
 
   const ids = students.map((s) => String(s._id));
-  const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const todayISO = attendanceRepository.todayString();
+  const range = parseDateRange(message, todayISO) ?? defaultRange(todayISO);
 
   const want = (f: StudentFocus) => !focus.length || focus.includes(f);
   const [marks, attendance, fees] = await Promise.all([
@@ -197,10 +214,10 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
           .lean<{ studentId: string; examId: string; subjectName: string; total?: number; percentage?: number; grade?: string; result: string }[]>()
       : Promise.resolve([] as { studentId: string; examId: string; subjectName: string; total?: number; percentage?: number; grade?: string; result: string }[]),
     want('attendance')
-      ? Attendance.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, date: { $gte: since }, isDeleted: false })
-          .select('studentId status')
-          .lean<{ studentId: string; status: string }[]>()
-      : Promise.resolve([] as { studentId: string; status: string }[]),
+      ? Attendance.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, date: { $gte: range.from, $lte: range.to }, isDeleted: false })
+          .select('studentId status date')
+          .lean<{ studentId: string; status: string; date: string }[]>()
+      : Promise.resolve([] as { studentId: string; status: string; date: string }[]),
     want('fees')
       ? FeeRecord.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, isDeleted: false, balance: { $gt: 0 } })
           .select('studentId balance')
@@ -231,7 +248,6 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
       }))
       .filter((m) => !examWanted || m.exam.toLowerCase().includes(examWanted));
     const att = attendance.filter((a) => a.studentId === id);
-    const presentLike = att.filter((a) => ['present', 'late', 'half_day'].includes(a.status)).length;
     const feeRows = fees.filter((f) => f.studentId === id);
     return {
       name: s.fullName,
@@ -242,13 +258,7 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
       ...(!focus.length ? { parentName: s.fatherName } : {}),
       ...(want('marks') ? { marks: studentMarks } : {}),
       ...(want('attendance')
-        ? {
-            attendance: {
-              last30DaysPresentPercent: att.length ? Math.round((presentLike / att.length) * 100) : null,
-              daysMarked: att.length,
-              absentDays: att.filter((a) => a.status === 'absent').length,
-            },
-          }
+        ? { attendance: { period: range, ...computeAttendanceStats(att) } }
         : {}),
       ...(want('fees')
         ? { fees: { totalOutstanding: feeRows.reduce((sum, f) => sum + f.balance, 0), pendingRecords: feeRows.length } }

@@ -105,10 +105,12 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
             return;
           }
           if (result.type === 'text') {
-            onAssistantText?.(result.reply);
+            // Never show a blank bubble, whatever the server sent.
+            const reply = result.reply?.trim() || "I couldn't put an answer together for that. Please try again.";
+            onAssistantText?.(reply);
             setMessages((prev) => [
               ...prev,
-              { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: result.reply, quickReplies: result.quickReplies },
+              { id: crypto.randomUUID(), role: 'assistant', type: 'text', content: reply, quickReplies: result.quickReplies },
             ]);
             return;
           }

@@ -15,6 +15,15 @@ export const principalAssistantController = {
     } catch (err) { next(err); }
   },
 
+  /** POST /principal-assistant/reset — forgets the remembered student/class/period ("new chat"). */
+  async reset(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!, req.ip);
+      await principalAssistantService.resetConversation(ctx);
+      sendSuccess(res, { reset: true });
+    } catch (err) { next(err); }
+  },
+
   /** POST /principal-assistant/export — returns the answer text the Principal is viewing as a PDF or Excel file. */
   async exportAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

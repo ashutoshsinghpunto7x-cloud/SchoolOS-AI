@@ -5,6 +5,7 @@ import { staffAssistantData } from './staff.data';
 import { opsAssistantData } from './ops.data';
 import { moreAssistantData } from './more.data';
 import { homeworkAssistantData, buildAlertsReply } from './alerts.data';
+import { attendancePeriodData } from './attendance-period.data';
 import { AuthContext } from '../../lib/auth-context';
 
 // Name-level and list-style questions. Each description is shown verbatim to the
@@ -31,6 +32,10 @@ export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
   def('STUDENT_LOOKUP',
     'Anything about ONE named student, including a full profile (marks, attendance, fees, parent): marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
     peopleAssistantData.getStudentLookup),
+
+  def('CLASS_ATTENDANCE_PERIOD',
+    'Attendance of a CLASS / section (or the whole school) over a PERIOD, not just today — "attendance for class 6A", "class 6A attendance last month", "attendance this month", "last 30 days attendance of class 8".',
+    attendancePeriodData.getClassAttendancePeriod),
 
   // Students
   def('TOP_BOTTOM_STUDENTS',

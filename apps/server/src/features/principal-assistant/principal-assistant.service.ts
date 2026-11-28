@@ -14,6 +14,15 @@ import { buildMorningBriefing, BRIEFING_PATTERN } from './briefing.data';
 import { buildAlertsReply, ALERTS_PATTERN } from './alerts.data';
 import { buildFormattingSystemPrompt } from './principal-assistant.prompts';
 import { principalAssistantActionService, ActionPreviewResult } from './principal-assistant.action.service';
+import { conversationStateStore } from './conversation-state.store';
+import {
+  ConversationState, describeState, resolveFollowUp, updateState, TurnOutcome,
+} from './conversation-state';
+import { assertIntentAllowed, isIntentAllowed, SENSITIVE_INTENTS } from './intent-access';
+import { parseAttendanceClaim, checkAttendanceConsistency } from './attendance-math';
+import { extractQueryParams } from './query-params';
+import { auditService } from '../audit/audit.service';
+import { attendanceRepository } from '../attendance/attendance.repository';
 import { AuthContext } from '../../lib/auth-context';
 import { AppError } from '../../middlewares/errorHandler';
 import { logger } from '../../lib/logger';
@@ -22,19 +31,23 @@ import type { ClassAttendanceList } from './principal-assistant.data';
 const FOLLOW_UP_MAX_WORDS = 8;
 
 /** Rewrites a short follow-up into a standalone question; returns the message unchanged when it already stands alone. */
-async function resolveFollowUp(
+async function rewriteFollowUpWithLlm(
   message: string,
   history: { role: 'user' | 'assistant'; content: string }[],
+  state: ConversationState,
   ctx: AuthContext,
 ): Promise<string> {
-  if (!history.length || message.split(/\s+/).length > FOLLOW_UP_MAX_WORDS) return message;
+  const stateText = describeState(state);
+  if ((!history.length && !stateText) || message.split(/\s+/).length > FOLLOW_UP_MAX_WORDS) return message;
   try {
     const result = await openaiProvider.complete({
       systemPrompt:
         "You rewrite the last message of a school Principal's chat into ONE complete standalone question or command, using the earlier turns for context " +
         '(class, subject, student, date, topic). If the last message is already complete on its own, return it unchanged. Keep the original language ' +
         '(English, Hindi or Hinglish). Never answer it. Respond ONLY with JSON: {"message": "<rewritten message>"}.',
-      userPrompt: `Earlier turns:\n${history.map((h) => `${h.role}: ${h.content}`).join('\n')}\n\nLast message: ${message}`,
+      userPrompt:
+        `Conversation state (entities in focus): ${stateText || 'none'}\n` +
+        `Earlier turns:\n${history.map((h) => `${h.role}: ${h.content}`).join('\n')}\n\nLast message: ${message}`,
       temperature: 0,
       maxTokens: 120,
       jsonResponse: true,
@@ -48,15 +61,13 @@ async function resolveFollowUp(
 }
 
 const UNSUPPORTED_REPLY =
-  "I can open any screen (try \"open leave requests\"), suggest substitutes, schedule staff meetings, move timetable periods, and answer " +
-  "questions about attendance, fees and admissions — e.g. \"which teachers are absent today?\", " +
-  "\"how many marks did Arav score in Hindi?\" or \"outstanding fees\". You can also speak to me with the mic button. What would you like to do?";
+  "I couldn't match that to anything I can look up or do. Name the class, student or screen and I'll take it from there — " +
+  'for example "attendance for class 6A last month" or "open leave requests".';
 
 const HAS_DEVANAGARI = /[ऀ-ॿ]/;
 
 const UNSUPPORTED_REPLY_HI =
-  'मैं कोई भी स्क्रीन खोल सकता हूँ (जैसे "छुट्टी के अनुरोध खोलो"), स्टाफ मीटिंग शेड्यूल कर सकता हूँ, टाइमटेबल बदल सकता हूँ, ' +
-  'और उपस्थिति, फीस व एडमिशन के सवालों के जवाब दे सकता हूँ। बताइए, क्या करना है?';
+  'मैं इसे समझ नहीं पाया। कक्षा, छात्र या स्क्रीन का नाम बताइए — जैसे "कक्षा 6A की पिछले महीने की उपस्थिति" या "छुट्टी के अनुरोध खोलो"।';
 
 const ATTENDANCE_SCOPE_QUESTION = "Would you like to see today's attendance for students, teachers, or both?";
 const ATTENDANCE_SCOPE_REPLIES: Record<string, 'students' | 'teachers' | 'both'> = {
@@ -113,13 +124,54 @@ function substitutionReply(
 // domains, so finding the matching intent's fetchData afterward is unambiguous.
 const allIntents: IntentDefinition<AuthContext, unknown>[] = [...attendanceIntents, ...feeIntents, ...admissionsIntents, ...peopleIntents];
 
+interface StudentMatch { name: string; class: string; section: string }
+
 export type ChatResult =
   | { type: 'text'; reply: string; quickReplies?: string[] }
   | { type: 'navigate'; reply: string; path: string; label: string }
   | { type: 'substitution_plan'; reply: string; date: string }
   | { type: 'action_preview'; actionId: string; params: Record<string, unknown>; preview: ActionPreviewResult['preview'] };
 
+/** Never-blank guarantee: whatever the model or a tool produced, the user always gets a sentence. */
+const FALLBACK_REPLY = "I couldn't put an answer together for that just now. Please try again, or rephrase the question.";
+const ensureReply = (text: string | undefined | null): string => (text && text.trim() ? text.trim() : FALLBACK_REPLY);
+
+const SOURCE_DOWN_REPLY =
+  "I couldn't reach that data just now, so I won't guess at the numbers. Please try again in a moment.";
+
+/** Plain, faithful rendering of fetched data for when the formatting model is unavailable. Adds nothing. */
+function plainFallback(data: unknown): string {
+  const lines: string[] = [];
+  const walk = (v: unknown, label: string, depth: number) => {
+    if (lines.length >= 40 || v == null) return;
+    if (Array.isArray(v)) {
+      v.slice(0, 15).forEach((item, i) => walk(item, `${label} ${i + 1}`, depth + 1));
+    } else if (typeof v === 'object') {
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) walk(val, depth === 0 ? k : `${label} ${k}`, depth + 1);
+    } else {
+      lines.push(`${label}: ${String(v)}`);
+    }
+  };
+  walk(data, '', 0);
+  return lines.length ? `Here is what the records show:\n${lines.join('\n')}` : FALLBACK_REPLY;
+}
+
+/** Saves the structured-state update that goes with an answered turn. */
+async function remember(
+  ctx: AuthContext,
+  prev: ConversationState,
+  outcome: Omit<TurnOutcome, 'today'>,
+): Promise<void> {
+  const next = updateState(prev, { ...outcome, today: attendanceRepository.todayString() });
+  await conversationStateStore.save(ctx.schoolId, ctx.userId, next);
+}
+
 export const principalAssistantService = {
+  /** Forget the remembered student / class / period (the "new chat" button). */
+  async resetConversation(ctx: AuthContext): Promise<void> {
+    await conversationStateStore.clear(ctx.schoolId, ctx.userId);
+  },
+
   async chat(rawInput: unknown, ctx: AuthContext): Promise<ChatResult> {
     const parsed = chatSchema.parse(rawInput);
     let message = parsed.message;
@@ -131,6 +183,7 @@ export const principalAssistantService = {
     const isAssignment = /\b(assign|appoint|lagao|laga\s?do|cover)\b|लगाओ|नियुक्त/i.test(message);
     const substitution = isAssignment ? null : parseSubstitutionRequest(message);
     if (substitution) {
+      assertIntentAllowed('TEACHER_SCHEDULE', ctx.role);
       const needed = await timetableService.getNeedsSubstitute(ctx.schoolId, substitution.date);
       return {
         type: 'substitution_plan',
@@ -142,10 +195,24 @@ export const principalAssistantService = {
     // Morning briefing is keyword-matched and built from live data alone, so it
     // also works when the AI service is down and costs no tokens.
     if (ALERTS_PATTERN.test(message)) {
-      return { type: 'text', reply: await buildAlertsReply(ctx) };
+      assertIntentAllowed('ATTENTION_ALERTS', ctx.role);
+      return { type: 'text', reply: ensureReply(await buildAlertsReply(ctx)) };
     }
     if (BRIEFING_PATTERN.test(message)) {
-      return { type: 'text', reply: await buildMorningBriefing(ctx) };
+      assertIntentAllowed('DAILY_BRIEFING', ctx.role);
+      return { type: 'text', reply: ensureReply(await buildMorningBriefing(ctx)) };
+    }
+
+    // A typed statement whose own numbers disagree ("88% in 30 days, absent 3
+    // days") is flagged, not answered with a made-up count. Pure arithmetic.
+    const claimIssues = checkAttendanceConsistency(parseAttendanceClaim(message));
+    if (claimIssues.length) {
+      return {
+        type: 'text',
+        reply:
+          `Those figures don't agree: ${claimIssues.map((i) => i.message).join(' ')} ` +
+          "I haven't changed anything — please check the attendance entries, or ask me for the day-by-day record.",
+      };
     }
 
     if (!openaiProvider.isAvailable()) {
@@ -157,22 +224,39 @@ export const principalAssistantService = {
     // deterministically, and without another LLM round trip.
     const scope = ATTENDANCE_SCOPE_REPLIES[message.trim().toLowerCase()];
     if (scope) {
-      return { type: 'text', reply: await buildAttendanceScopeReply(scope, ctx) };
+      assertIntentAllowed('ATTENDANCE_SUMMARY', ctx.role);
+      try {
+        return { type: 'text', reply: ensureReply(await buildAttendanceScopeReply(scope, ctx)) };
+      } catch (err) {
+        logger.error('[PrincipalAssistant] Attendance scope lookup failed', { schoolId: ctx.schoolId, err: (err as Error).message });
+        return { type: 'text', reply: SOURCE_DOWN_REPLY };
+      }
     }
 
-    // Short follow-ups ("and for class 7?", "aur kal?") are rewritten into a full
-    // question using the last few turns. Only runs for short messages with history.
-    message = await resolveFollowUp(message, history, ctx);
+    // Context: structured state (server-side, keyed by the signed-in user) first,
+    // plain-code resolution of "in days?", "last month", "his marks", "open it";
+    // the LLM rewrite is only a fallback for follow-ups code could not resolve.
+    const state = await conversationStateStore.load(ctx.schoolId, ctx.userId);
+    const today = attendanceRepository.todayString();
+    const resolution = resolveFollowUp(message, state, today);
+    message = resolution.message;
+    if (!resolution.deterministic && !resolution.topicChanged) {
+      message = await rewriteFollowUpWithLlm(message, history, state, ctx);
+    }
+    // A topic switch drops the old entities, so the new question can't inherit a stale student or class.
+    const stateForTurn: ConversationState = resolution.topicChanged
+      ? { ...state, student: null, teacher: null, className: null, section: null, dateRange: null }
+      : state;
 
     // Step 0 — ONE routing call decides: open a screen, perform an action
-    // (preview/approve), answer a data question, or unsupported. (Previously two
-    // sequential classification calls, which made every reply slow.)
+    // (preview/approve), answer a data question, or unsupported.
     let routing;
     try {
       routing = await routeMessage(message, {
         navigation: NAVIGATION_TARGETS.map((t) => ({ id: t.id, description: `${t.label} — ${t.description}` })),
         actions: principalAssistantActionService.listActions(),
-        intents: allIntents.map((i) => ({ id: i.id, description: i.description })),
+        // Only intents this role may use are even offered to the router.
+        intents: allIntents.filter((i) => isIntentAllowed(i.id, ctx.role)).map((i) => ({ id: i.id, description: i.description })),
       });
     } catch (err) {
       logger.error('[PrincipalAssistant] Routing call failed', { schoolId: ctx.schoolId, err: (err as Error).message });
@@ -185,16 +269,22 @@ export const principalAssistantService = {
     recordUsage(routing.usage, ctx.schoolId);
     const { kind, id: routedId } = routing.decision;
 
+    const baseOutcome = { message, topicChanged: resolution.topicChanged };
+
     if (kind === 'navigate' && routedId) {
       const target = findNavigationTarget(routedId);
       if (target) {
         const reply = HAS_DEVANAGARI.test(message) ? `${target.label} खोल रहा हूँ…` : `Opening ${target.label}…`;
+        await remember(ctx, stateForTurn, { ...baseOutcome, reply, intentId: null });
         return { type: 'navigate', reply, path: target.path, label: target.label };
       }
     }
 
     if (kind === 'action' && routedId) {
       const actionResult = await principalAssistantActionService.previewForAction(routedId, message, ctx);
+      await remember(ctx, stateForTurn, {
+        ...baseOutcome, reply: actionResult.preview.title, intentId: null, pendingAction: { actionId: actionResult.actionId },
+      });
       return {
         type: 'action_preview',
         actionId: actionResult.actionId,
@@ -205,60 +295,111 @@ export const principalAssistantService = {
 
     const intentId = kind === 'intent' && routedId ? routedId : UNSUPPORTED_INTENT;
     const routerUsage = routing.usage;
+    const unsupported = HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY;
 
     if (intentId === UNSUPPORTED_INTENT) {
-      logger.info('[PrincipalAssistant] Unsupported intent', { schoolId: ctx.schoolId, message });
-      return { type: 'text', reply: HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY };
+      logger.info('[PrincipalAssistant] Unsupported intent', { schoolId: ctx.schoolId });
+      return { type: 'text', reply: unsupported };
     }
 
     const intent = allIntents.find((i) => i.id === intentId);
-    if (!intent) {
-      return { type: 'text', reply: HAS_DEVANAGARI.test(message) ? UNSUPPORTED_REPLY_HI : UNSUPPORTED_REPLY };
+    if (!intent) return { type: 'text', reply: unsupported };
+
+    // Backend permission gate — independent of the route guard and of the prompt.
+    if (!isIntentAllowed(intentId, ctx.role)) {
+      auditService.log({
+        userId: ctx.userId, userDisplayName: ctx.displayName, action: 'ai_assistant.denied',
+        resource: 'principal-assistant', resourceId: intentId, details: { role: ctx.role }, ip: ctx.ip, schoolId: ctx.schoolId,
+      });
+      return { type: 'text', reply: "You don't have access to that information." };
+    }
+    if (SENSITIVE_INTENTS.has(intentId)) {
+      auditService.log({
+        userId: ctx.userId, userDisplayName: ctx.displayName, action: 'ai_assistant.queried',
+        resource: 'principal-assistant', resourceId: intentId, details: { question: message.slice(0, 200) }, ip: ctx.ip, schoolId: ctx.schoolId,
+      });
     }
 
-    if (intentId === 'ATTENTION_ALERTS') {
-      return { type: 'text', reply: await buildAlertsReply(ctx) };
+    try {
+      if (intentId === 'ATTENTION_ALERTS') {
+        const reply = ensureReply(await buildAlertsReply(ctx));
+        await remember(ctx, stateForTurn, { ...baseOutcome, reply, intentId });
+        return { type: 'text', reply };
+      }
+      if (intentId === 'DAILY_BRIEFING') {
+        const reply = ensureReply(await buildMorningBriefing(ctx));
+        await remember(ctx, stateForTurn, { ...baseOutcome, reply, intentId });
+        return { type: 'text', reply };
+      }
+
+      // A generic "today's attendance" ask is answered with a short scope
+      // question instead of one long narrative covering students, teachers,
+      // and class extremes all at once.
+      if (intentId === 'ATTENDANCE_SUMMARY') {
+        await remember(ctx, stateForTurn, { ...baseOutcome, reply: ATTENDANCE_SCOPE_QUESTION, intentId });
+        return { type: 'text', reply: ATTENDANCE_SCOPE_QUESTION, quickReplies: ['Students', 'Teachers', 'Both'] };
+      }
+
+      // Step 2 — fetch only the data this intent needs (backend does all the math).
+      let data: unknown;
+      try {
+        data = await intent.fetchData(ctx, message);
+      } catch (err) {
+        logger.error('[PrincipalAssistant] Data fetch failed', { schoolId: ctx.schoolId, intent: intentId, err: (err as Error).message });
+        return { type: 'text', reply: SOURCE_DOWN_REPLY };
+      }
+
+      // A fetcher that needs the Principal to pick (e.g. two students with one name)
+      // returns the question + options; show them as tap-to-answer chips, no AI pass.
+      const clarify = (data as { clarify?: { question: string; options: string[] } } | null)?.clarify;
+      if (clarify?.options?.length) {
+        return { type: 'text', reply: clarify.question, quickReplies: clarify.options };
+      }
+
+      // Step 3 — OpenAI formats the pre-computed data into a natural-language answer.
+      const userPrompt = `Data (JSON):\n${JSON.stringify(data, null, 2)}\n\nPrincipal's question: ${message}`;
+      let reply: string;
+      let totalTokens = routerUsage.totalTokens;
+      try {
+        const result = await openaiProvider.complete({
+          systemPrompt: buildFormattingSystemPrompt(),
+          userPrompt,
+          temperature: 0.4,
+          maxTokens: 600,
+        });
+        recordUsage(result, ctx.schoolId);
+        totalTokens += result.totalTokens;
+        reply = ensureReply(result.content);
+        if (reply === FALLBACK_REPLY) reply = plainFallback(data);
+      } catch (err) {
+        logger.error('[PrincipalAssistant] Formatting failed — returning plain data', { schoolId: ctx.schoolId, err: (err as Error).message });
+        reply = plainFallback(data);
+      }
+
+      logger.info('[PrincipalAssistant] Chat answered', {
+        schoolId: ctx.schoolId, userId: ctx.userId, intent: intentId, totalTokens,
+        carried: resolution.carried, topicChanged: resolution.topicChanged,
+      });
+
+      // Remember who/what this answer was about so the next short message can build on it.
+      type Period = { label: string; from: string; to: string };
+      const params = await extractQueryParams(message, ctx).catch(() => null);
+      const matches = (data as { matches?: (StudentMatch & { attendance?: { period?: Period } })[] } | null)?.matches;
+      const rangeFromData = (data as { period?: Period } | null)?.period ?? matches?.[0]?.attendance?.period;
+      await remember(ctx, stateForTurn, {
+        ...baseOutcome,
+        reply,
+        intentId,
+        params: params ?? undefined,
+        matchedStudent: matches?.length === 1 ? { name: matches[0].name, className: matches[0].class, section: matches[0].section } : null,
+        dateRange: rangeFromData ?? null,
+      });
+
+      return { type: 'text', reply };
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      logger.error('[PrincipalAssistant] Unexpected failure', { schoolId: ctx.schoolId, intent: intentId, err: (err as Error).message });
+      return { type: 'text', reply: SOURCE_DOWN_REPLY };
     }
-    if (intentId === 'DAILY_BRIEFING') {
-      return { type: 'text', reply: await buildMorningBriefing(ctx) };
-    }
-
-    // A generic "today's attendance" ask is answered with a short scope
-    // question instead of one long narrative covering students, teachers,
-    // and class extremes all at once — the Principal picks what they
-    // actually want (handled by the fast path above on their next message).
-    if (intentId === 'ATTENDANCE_SUMMARY') {
-      return { type: 'text', reply: ATTENDANCE_SCOPE_QUESTION, quickReplies: ['Students', 'Teachers', 'Both'] };
-    }
-
-    // Step 2 — fetch only the data this intent needs (backend does all the math).
-    const data = await intent.fetchData(ctx, message);
-
-    // A fetcher that needs the Principal to pick (e.g. two students with one name)
-    // returns the question + options; show them as tap-to-answer chips, no AI pass.
-    const clarify = (data as { clarify?: { question: string; options: string[] } } | null)?.clarify;
-    if (clarify?.options?.length) {
-      return { type: 'text', reply: clarify.question, quickReplies: clarify.options };
-    }
-
-    // Step 3 — OpenAI formats the pre-computed data into a natural-language answer.
-    const userPrompt = `Data (JSON):\n${JSON.stringify(data, null, 2)}\n\nPrincipal's question: ${message}`;
-
-    const result = await openaiProvider.complete({
-      systemPrompt: buildFormattingSystemPrompt(),
-      userPrompt,
-      temperature: 0.4,
-      maxTokens: 600,
-    });
-    recordUsage(result, ctx.schoolId);
-
-    logger.info('[PrincipalAssistant] Chat answered', {
-      schoolId: ctx.schoolId,
-      userId: ctx.userId,
-      intent: intentId,
-      totalTokens: routerUsage.totalTokens + result.totalTokens,
-    });
-
-    return { type: 'text', reply: result.content.trim() };
   },
 };

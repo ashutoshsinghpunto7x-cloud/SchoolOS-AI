@@ -284,6 +284,8 @@ export type AuditAction =
   | 'ai_action.previewed'
   | 'ai_action.executed'
   | 'ai_action.failed'
+  | 'ai_assistant.queried'
+  | 'ai_assistant.denied'
   | 'communication_settings.updated'
   | 'message_template.created'
   | 'message_template.updated'

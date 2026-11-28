@@ -31,7 +31,23 @@ const EMPTY: QueryParams = {
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
+// The service extracts filters once to update conversation state and the data
+// fetchers extract them again for the same text — memoise per school+message
+// for a minute so that is one model call, not two.
+const PARAM_CACHE_TTL_MS = 60_000;
+const paramCache = new Map<string, { at: number; value: QueryParams }>();
+
 export async function extractQueryParams(message: string, ctx: AuthContext): Promise<QueryParams> {
+  const key = `${ctx.schoolId}|${message}`;
+  const hit = paramCache.get(key);
+  if (hit && Date.now() - hit.at < PARAM_CACHE_TTL_MS) return { ...hit.value };
+  const value = await extractQueryParamsUncached(message, ctx);
+  if (paramCache.size > 300) paramCache.clear();
+  paramCache.set(key, { at: Date.now(), value });
+  return { ...value };
+}
+
+async function extractQueryParamsUncached(message: string, ctx: AuthContext): Promise<QueryParams> {
   const today = attendanceRepository.todayString();
   const result = await openaiProvider.complete({
     systemPrompt: `
