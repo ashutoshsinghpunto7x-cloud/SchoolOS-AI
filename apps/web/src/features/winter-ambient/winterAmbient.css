@@ -1,0 +1,79 @@
+/* Ambient winter look for non-teacher dashboards. Scoped under `.tw-ambient`,
+   which AppLayout sets on its root only while the look is active, so nothing
+   changes when it is off. Reuses the teacher theme's colour language. */
+
+.tw-ambient {
+  position: relative;
+  isolation: isolate;
+  background: #e6f0fb !important;
+}
+.tw-ambient::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 30% at 10% 5%, rgba(147, 197, 253, 0.5), transparent 70%),
+    radial-gradient(50% 25% at 95% 30%, rgba(196, 181, 253, 0.35), transparent 70%),
+    radial-gradient(60% 30% at 40% 95%, rgba(125, 211, 252, 0.4), transparent 70%);
+}
+
+/* Page-level cream backgrounds become see-through so the icy backdrop shows. */
+.tw-ambient main [class*="bg-[#FBF8F3]"],
+.tw-ambient main [class*="bg-[#FAF8F4]"],
+.tw-ambient main [class*="bg-[#F7F4EE]"],
+.tw-ambient main [class*="bg-gray-50"][class*="min-h-"] {
+  background: transparent !important;
+}
+
+/* Frosted cards: any bordered, rounded white surface inside the dashboard body. */
+.tw-ambient main .bg-white[class*="rounded-"].border,
+.tw-ambient main .bg-white[class*="rounded-"][class*="border-"],
+.tw-ambient main .bg-white[class*="rounded-"][class*="shadow"] {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(190, 212, 238, 0.9) !important;
+  box-shadow: 0 6px 20px -10px rgba(37, 74, 154, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px) saturate(1.25);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+}
+
+/* Snow "ledge" along the top of the page. */
+.tw-ambient main::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  display: block;
+  flex: none;
+  height: 5px;
+  z-index: 5;
+  background: linear-gradient(90deg, #fff, #dbeafe 50%, #fff);
+  box-shadow: 0 2px 8px rgba(147, 197, 253, 0.55);
+}
+
+.tw-ambient-toggle {
+  position: fixed;
+  left: 12px;
+  bottom: 88px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #254a9a;
+  background: #eef1f8;
+  border: 1px solid #dde3f0;
+  box-shadow: 0 4px 14px -6px rgba(37, 74, 154, 0.4);
+  cursor: pointer;
+}
+@media (min-width: 1024px) {
+  .tw-ambient-toggle { bottom: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw-ambient * { transition: none !important; }
+}

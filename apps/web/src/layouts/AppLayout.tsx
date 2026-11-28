@@ -15,6 +15,10 @@ import { useModuleAccessStatus } from '@/features/ops-center/hooks/useModuleAcce
 import { getActiveRestriction } from '@/lib/moduleAccess';
 import { ModuleRestrictedNotice } from '@/components/ModuleRestrictedNotice';
 import { MobileDock } from './MobileDock';
+import { SnowCanvas } from '@/features/teacher-workspace/winter/SnowCanvas';
+import { useAmbientWinter } from '@/features/winter-ambient/useAmbientWinter';
+import { WinterToggle } from '@/features/winter-ambient/WinterToggle';
+import '@/features/winter-ambient/winterAmbient.css';
 
 // Inner layout — rendered inside TeacherThemeProvider so it can read the theme
 function AppLayoutInner() {
@@ -36,6 +40,10 @@ function AppLayoutInner() {
   // Settings also flips it here.
   const { theme } = useTeacherTheme();
   const isDark = theme === 'dark';
+
+  // Seasonal winter look for every non-teacher dashboard (teacher has its own).
+  const ambient = useAmbientWinter(user?.role);
+  const winterOn = ambient.active && !isDark;
 
   // Ops Center > Module Access — if the current page's module is currently
   // restricted, swap only the page content for a notice; sidebar/topbar and
@@ -68,12 +76,15 @@ function AppLayoutInner() {
   return (
     <div className={cn(
       "flex h-screen overflow-hidden font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]",
+      winterOn && 'tw-ambient',
       isDriver
         ? "bg-white"
         : isDark
           ? (isTeacher ? "teacher-aurora-bg" : "bg-[#0B0C12]")
           : "bg-[#FBF8F3]"
     )}>
+      {winterOn && <SnowCanvas />}
+      {ambient.available && !isDark && <WinterToggle active={ambient.active} onToggle={ambient.toggle} />}
       <NotificationNudge />
       <ReminderWatcher />
       <HighPriorityMessageGate />

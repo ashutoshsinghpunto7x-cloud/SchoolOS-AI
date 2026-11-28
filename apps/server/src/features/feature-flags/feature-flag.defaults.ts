@@ -31,6 +31,17 @@ export const DEFAULT_FEATURES: DefaultFeature[] = [
     status: 'enabled',
     visibilityMode: 'everyone',
   },
+  {
+    key: 'winter-theme-dashboards',
+    name: 'All Dashboards — Winter Theme',
+    description:
+      'Seasonal winter look (snowfall, icy backdrop, frosted cards) on the Principal, Admin, Accountant, Reception, ' +
+      'Coordinator, Operations and Parent dashboards. Teacher has its own flag. ' +
+      'Use Emergency Rollback to instantly return everyone to the standard look — no redeploy needed.',
+    version: '1.0',
+    status: 'enabled',
+    visibilityMode: 'everyone',
+  },
 ];
 
 export async function ensureDefaultFeatures(): Promise<void> {
