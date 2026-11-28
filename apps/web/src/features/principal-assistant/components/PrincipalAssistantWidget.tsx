@@ -5,6 +5,7 @@ import { extractErrorMessage } from '@/services/api';
 import { usePrincipalAssistant } from '../hooks/usePrincipalAssistant';
 import { useVoice, type VoiceLang } from '../hooks/useVoice';
 import { ChatMessage } from './ChatMessage';
+import { PLAN_SUGGESTIONS } from '@/features/academic-plan/assistant/usePlanAssistant';
 import {
   CompanionBuddy,
   SIRI_ORB_SIZE,
@@ -74,9 +75,10 @@ export const PrincipalAssistantWidget = () => {
     [speakReplies],
   );
 
-  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading, stop, error } = usePrincipalAssistant({
-    onAssistantText,
-  });
+  const {
+    messages, sendMessage, onEditField, onApprove, onCancel, isLoading, stop, error,
+    planActive, planControls, addPlanReply,
+  } = usePrincipalAssistant({ onAssistantText });
 
   const voice = useVoice({
     lang,
@@ -98,6 +100,10 @@ export const PrincipalAssistantWidget = () => {
     [input, isLoading, sendMessage],
   );
   sendRef.current = send;
+  const keepOpenRef = useRef(false);
+  keepOpenRef.current = isLoading
+    || messages.some((m) => m.type === 'action_preview')
+    || window.location.pathname.includes('timetable');
 
   useEffect(() => {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -112,6 +118,9 @@ export const PrincipalAssistantWidget = () => {
       const target = e.target as Element | null;
       if (!target) return;
       if (panelRef.current?.contains(target) || target.closest('[data-siri-orb="true"]')) return;
+      // Stay open while a change is being previewed/applied, or on the timetable
+      // screen, so the Principal can watch the grid update behind the assistant.
+      if (keepOpenRef.current) return;
       setOpen(false);
     };
     window.addEventListener('keydown', onKey);
@@ -203,12 +212,16 @@ export const PrincipalAssistantWidget = () => {
             {messages.length === 0 && (
               <div className="space-y-3 pt-1">
                 <p className="text-[13px] text-[#55607A] m-0 leading-relaxed">
-                  {lang === 'hi-IN'
-                    ? 'कुछ भी पूछिए, स्क्रीन खोलिए या शेड्यूल कीजिए।'
-                    : 'Ask a question, jump to any screen, or schedule an update.'}
+                  {planActive
+                    ? lang === 'hi-IN'
+                      ? 'प्लान में क्या बदलना है, बोलिए या लिखिए। सेव करने से पहले मैं आपसे पूछूँगा।'
+                      : "Tell me what to change in a teaching plan, by voice or text. I'll ask before saving."
+                    : lang === 'hi-IN'
+                      ? 'कुछ भी पूछिए, स्क्रीन खोलिए या शेड्यूल कीजिए।'
+                      : 'Ask a question, jump to any screen, or schedule an update.'}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {(lang === 'hi-IN' ? SUGGESTIONS_HI : SUGGESTIONS).map((s) => (
+                  {(planActive ? PLAN_SUGGESTIONS : lang === 'hi-IN' ? SUGGESTIONS_HI : SUGGESTIONS).map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -230,6 +243,12 @@ export const PrincipalAssistantWidget = () => {
                 onApprove={onApprove}
                 onCancel={onCancel}
                 onQuickReply={send}
+                planControls={planControls}
+                onPlanReply={(reply) => {
+                  // A tapped button reads aloud only when spoken replies are on.
+                  voiceSentRef.current = false;
+                  addPlanReply(reply);
+                }}
               />
             ))}
             {isLoading && (

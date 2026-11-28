@@ -7,6 +7,7 @@ import type {
   SetPlanDaysStatusPayload,
   AcademicPlanChecklistItem,
   EditPlanDayPayload,
+  AddPlanDayPayload,
   SetMonthlyRowPayload,
   MovePlanDayPayload,
   AcademicPlanPrincipalOverviewEntry,
@@ -72,6 +73,13 @@ export const academicPlanApi = {
   editDay: async (planId: string, payload: EditPlanDayPayload): Promise<AcademicPlan> => {
     try {
       const res = await apiClient.patch<{ data: AcademicPlan }>(`${BASE}/${planId}/days/edit`, payload);
+      return res.data.data;
+    } catch (err) { throw new Error(extractErrorMessage(err)); }
+  },
+
+  addDay: async (planId: string, payload: AddPlanDayPayload): Promise<AcademicPlan> => {
+    try {
+      const res = await apiClient.post<{ data: AcademicPlan }>(`${BASE}/${planId}/days/add`, payload);
       return res.data.data;
     } catch (err) { throw new Error(extractErrorMessage(err)); }
   },

@@ -4,7 +4,9 @@ import { cn } from '@/lib/utils';
 import { useMyChecklist } from '../hooks/useAcademicPlan';
 import { useTickList } from '../hooks/useTickList';
 import { addDays, isoDay, mondayOf, weekRangeLabel } from '../lib/monthCalendar';
+import { Pencil, Plus } from 'lucide-react';
 import { TickBox } from './TickBox';
+import { ChecklistTaskDialog, type PlanChoice } from './ChecklistTaskDialog';
 import type { AcademicPlanChecklistItem } from '@schoolos/types';
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -26,7 +28,7 @@ function groupBy<T>(items: T[], key: (item: T) => string): [string, T[]][] {
 
 type Ticks = ReturnType<typeof useTickList>;
 
-function LessonRow({ item, ticks }: { item: AcademicPlanChecklistItem; ticks: Ticks }) {
+function LessonRow({ item, ticks, onEdit }: { item: AcademicPlanChecklistItem; ticks: Ticks; onEdit: (i: AcademicPlanChecklistItem) => void }) {
   const state = ticks.groupState([item]);
   const title = lessonTitle(item);
   return (
@@ -40,7 +42,18 @@ function LessonRow({ item, ticks }: { item: AcademicPlanChecklistItem; ticks: Ti
         <p className="text-[12px] text-[#55607A] dark:text-white/50">{classLabel(item)}</p>
         {item.classWork && <p className="text-[12px] text-[#55607A] dark:text-white/50 mt-0.5">Class-work: {item.classWork}</p>}
         {item.homeWork && <p className="text-[12px] text-[#55607A] dark:text-white/50">Home-work: {item.homeWork}</p>}
+        {item.carriedFromDate && (
+          <p className="text-[12px] font-semibold text-amber-700 mt-0.5">
+            Moved from {new Date(item.carriedFromDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} (you were absent)
+          </p>
+        )}
       </div>
+      {item.blockType !== 'assessment' && (
+        <button type="button" onClick={() => onEdit(item)} aria-label={`Edit: ${title}`} title="Edit"
+          className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center text-[#55607A] hover:bg-[#F3EEE3] cursor-pointer">
+          <Pencil className="w-4 h-4" />
+        </button>
+      )}
     </li>
   );
 }
@@ -52,6 +65,7 @@ export function MyChecklistCard({ className }: { className?: string }) {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<Period>('daily');
   const ticks = useTickList();
+  const [dialog, setDialog] = useState<{ item?: AcademicPlanChecklistItem } | null>(null);
 
   const now = new Date();
   const today = isoDay(now);
@@ -65,6 +79,11 @@ export function MyChecklistCard({ className }: { className?: string }) {
     week[0] < month[0] ? week[0] : month[0],
     week[1] > month[1] ? week[1] : month[1],
   );
+
+  const planChoices: PlanChoice[] = [...new Map((data ?? []).map((i) => [i.planId, {
+    planId: i.planId, label: `Class ${i.class}${i.section ? `-${i.section}` : ''} · ${i.subject}`,
+  }])).values()];
+  const onEdit = (item: AcademicPlanChecklistItem) => setDialog({ item });
 
   const [from, to] = period === 'daily' ? [today, today] : period === 'weekly' ? week : month;
   const items = (data ?? []).filter((i) => i.dateKey >= from && i.dateKey <= to);
@@ -83,6 +102,13 @@ export function MyChecklistCard({ className }: { className?: string }) {
           <h2 className="text-[16px] font-bold text-[#1B2A4E] dark:text-white">My checklist</h2>
           <p className="text-[12px] text-[#55607A] dark:text-white/50">{subtitle} · your ticks show on the Principal&apos;s screen</p>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
+        {planChoices.length > 0 && (
+          <button type="button" onClick={() => setDialog({})}
+            className="h-11 px-4 rounded-xl border border-[#1B2A4E] text-[#1B2A4E] dark:text-white dark:border-white/40 text-[13px] font-bold flex items-center gap-1.5 cursor-pointer">
+            <Plus className="w-4 h-4" /> Add task
+          </button>
+        )}
         <div className="flex items-center gap-1 bg-[#F3EEE3] dark:bg-white/5 rounded-xl p-1" role="tablist">
           {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
             <button key={p} type="button" role="tab" aria-selected={period === p} onClick={() => setPeriod(p)}
@@ -92,7 +118,12 @@ export function MyChecklistCard({ className }: { className?: string }) {
             </button>
           ))}
         </div>
+        </div>
       </div>
+
+      {dialog && (
+        <ChecklistTaskDialog item={dialog.item} plans={planChoices} defaultDate={today} onClose={() => setDialog(null)} />
+      )}
 
       {isLoading ? (
         <div className="h-24 mt-4 rounded-xl bg-gray-100 dark:bg-white/5 animate-pulse" />
@@ -120,7 +151,7 @@ export function MyChecklistCard({ className }: { className?: string }) {
           <div className="mt-2 max-h-[420px] overflow-y-auto px-2 -mx-2">
             {period === 'daily' ? (
               <ul className="divide-y divide-[#E8E2D6]/60 dark:divide-white/10">
-                {items.map((i) => <LessonRow key={`${i.planId}|${i.date}`} item={i} ticks={ticks} />)}
+                {items.map((i) => <LessonRow key={`${i.planId}|${i.date}`} item={i} ticks={ticks} onEdit={onEdit} />)}
               </ul>
             ) : period === 'weekly' ? (
               groupBy(items, (i) => i.dateKey).map(([dateKey, lessons]) => {
@@ -137,7 +168,7 @@ export function MyChecklistCard({ className }: { className?: string }) {
                       <p className="text-[12px] font-semibold text-[#55607A] dark:text-white/50">{day.done}/{day.total}</p>
                     </div>
                     <ul className="divide-y divide-[#E8E2D6]/60 dark:divide-white/10">
-                      {lessons.map((i) => <LessonRow key={`${i.planId}|${i.date}`} item={i} ticks={ticks} />)}
+                      {lessons.map((i) => <LessonRow key={`${i.planId}|${i.date}`} item={i} ticks={ticks} onEdit={onEdit} />)}
                     </ul>
                   </div>
                 );

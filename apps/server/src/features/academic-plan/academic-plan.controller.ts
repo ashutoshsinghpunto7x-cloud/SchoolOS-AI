@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { buildAuthContext } from '../../lib/auth-context';
 import { sendSuccess, sendCreated } from '../../lib/response';
 import { academicPlanService } from './academic-plan.service';
-import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, moveDaySchema, monthlyRowSchema, bulkDayStatusSchema, checklistQuerySchema } from './academic-plan.validation';
+import { planAssistantService } from './plan-assistant.service';
+import { planTargetSchema, generatePlanSchema, setDayStatusSchema, editDaySchema, addDaySchema, moveDaySchema, monthlyRowSchema, bulkDayStatusSchema, checklistQuerySchema } from './academic-plan.validation';
 import { z } from 'zod';
 
 const chapterSizingSchema = z.object({
@@ -61,6 +62,15 @@ export const academicPlanController = {
     } catch (err) { next(err); }
   },
 
+  /** POST /academic-plan/:id/days/add */
+  async addDay(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data = addDaySchema.parse(req.body);
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await academicPlanService.addDay(req.params.id, data, ctx), 'Task added');
+    } catch (err) { next(err); }
+  },
+
   /** PATCH /academic-plan/:id/days/edit */
   async editDay(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -97,6 +107,24 @@ export const academicPlanController = {
       const ctx = buildAuthContext(req.user!);
       const chapter = await academicPlanService.updateChapterSizing(req.params.id, data, ctx);
       sendSuccess(res, chapter, 'Chapter sizing saved');
+    } catch (err) { next(err); }
+  },
+
+  // ── Voice / chat assistant ───────────────────────────────────────────────
+
+  /** POST /academic-plan/assistant/interpret — reads only, never saves. */
+  async assistantInterpret(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await planAssistantService.interpret(req.body, ctx));
+    } catch (err) { next(err); }
+  },
+
+  /** POST /academic-plan/assistant/apply — saves changes the user approved. */
+  async assistantApply(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const ctx = buildAuthContext(req.user!);
+      sendSuccess(res, await planAssistantService.apply(req.body, ctx), 'Plan updated');
     } catch (err) { next(err); }
   },
 

@@ -124,6 +124,28 @@ export const academicPlanRepository = {
     ).lean<IAcademicPlan>();
   },
 
+  /** Marks one day carried-forward and appends its replacement in one save. */
+  async markCarriedAndAppend(id: string, schoolId: string, dateKey: string, replacement: IAcademicPlanDay): Promise<void> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return;
+    const day = plan.days.find((d) => d.date.toISOString().slice(0, 10) === dateKey);
+    if (!day || day.status !== 'pending') return;
+    day.status = 'carried_forward';
+    plan.days.push(replacement);
+    await plan.save();
+  },
+
+  /** Appends a teacher-made day and records it in history. */
+  async addManualDay(id: string, schoolId: string, day: IAcademicPlanDay, historyEntry: IAcademicPlanHistoryEntry): Promise<IAcademicPlan | null> {
+    const plan = await AcademicPlan.findOne({ _id: id, schoolId });
+    if (!plan) return null;
+    plan.days.push(day);
+    plan.version += 1;
+    plan.history.push({ ...historyEntry, version: plan.version });
+    await plan.save();
+    return plan.toObject();
+  },
+
   /** Teacher hand-edits one day's content (chapter/topic/blockType). Marks
    *  it manuallyEdited so a later Regenerate leaves it alone — same shape
    *  as setDayStatus. */

@@ -1,13 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { principalAssistantApi, ActionPreview } from '../api/principal-assistant.api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { principalAssistantApi, ActionPreview, type ChatHistoryTurn } from '../api/principal-assistant.api';
+import { usePlanAssistant, spokenPlanReply, type PlanReply } from '@/features/academic-plan/assistant/usePlanAssistant';
 
 export type ActionPreviewStatus = 'pending' | 'editing' | 'executing' | 'error';
 
 export type AssistantMessage =
   | { id: string; role: 'user' | 'assistant'; type: 'text'; content: string; quickReplies?: string[] }
   | { id: string; role: 'assistant'; type: 'substitution_plan'; content: string; date: string }
+  | { id: string; role: 'assistant'; type: 'plan'; reply: PlanReply }
   | {
       id: string;
       role: 'assistant';
@@ -22,6 +24,7 @@ export type AssistantMessage =
 
 export const usePrincipalAssistant = (options?: { onAssistantText?: (text: string) => void }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const onAssistantText = options?.onAssistantText;
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
@@ -29,8 +32,8 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
   const requestIdRef = useRef(0);
 
   const mutation = useMutation({
-    mutationFn: (vars: { message: string; signal: AbortSignal }) =>
-      principalAssistantApi.sendMessage(vars.message, undefined, vars.signal),
+    mutationFn: (vars: { message: string; history: ChatHistoryTurn[]; signal: AbortSignal }) =>
+      principalAssistantApi.sendMessage(vars.message, vars.history, vars.signal),
   });
 
   /** Cancels the in-flight question; its answer is discarded even if it already left the server. */
@@ -41,19 +44,46 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
     mutation.reset();
   }, [mutation]);
 
+  const plan = usePlanAssistant();
+  const { active: planActive, busy: planBusy, handle: handlePlan } = plan;
+
+  const addPlanReply = useCallback(
+    (reply: PlanReply) => {
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'assistant', type: 'plan', reply }]);
+      onAssistantText?.(spokenPlanReply(reply));
+    },
+    [onAssistantText]
+  );
+
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || mutation.isPending) return;
+      if (!trimmed || mutation.isPending || planBusy) return;
 
       const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: 'user', type: 'text', content: trimmed };
       setMessages((prev) => [...prev, userMessage]);
+
+      // On the Academic Plan screens, planner requests are handled first; anything
+      // else (null) goes to the normal assistant below.
+      if (planActive) {
+        const reply = await handlePlan(trimmed);
+        if (reply) {
+          addPlanReply(reply);
+          return;
+        }
+      }
+
+      // Last few plain-text turns, so a short follow-up ("and for class 7?") keeps its context.
+      const history: ChatHistoryTurn[] = messages
+        .filter((m): m is Extract<AssistantMessage, { type: 'text' }> => m.type === 'text')
+        .slice(-4)
+        .map((m) => ({ role: m.role, content: m.content.slice(0, 1200) }));
 
       const controller = new AbortController();
       abortRef.current = controller;
       const requestId = ++requestIdRef.current;
 
-      mutation.mutate({ message: trimmed, signal: controller.signal }, {
+      mutation.mutate({ message: trimmed, history, signal: controller.signal }, {
         onSuccess: (result) => {
           if (requestId !== requestIdRef.current) return; // stopped by the user
           if (result.type === 'navigate') {
@@ -98,7 +128,7 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
         },
       });
     },
-    [mutation, navigate, onAssistantText]
+    [messages, mutation, navigate, onAssistantText, planActive, planBusy, handlePlan, addPlanReply]
   );
 
   /** Updates one field locally, then re-previews server-side to refresh conflict warnings. Never mutates. */
@@ -150,6 +180,8 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
 
     try {
       const result = await principalAssistantApi.executeAction(actionId, params);
+      // Screens behind the open assistant (e.g. the School Timetable grid) refresh at once.
+      void queryClient.invalidateQueries({ queryKey: ['timetable'] });
       setMessages((prev) =>
         prev.map((m) =>
           m.id === messageId
@@ -176,8 +208,11 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
     onEditField,
     onApprove,
     onCancel,
-    isLoading: mutation.isPending,
+    isLoading: mutation.isPending || planBusy,
     stop,
     error: mutation.error,
+    planActive,
+    planControls: { statuses: plan.statuses, apply: plan.apply, cancel: plan.cancel },
+    addPlanReply,
   };
 };

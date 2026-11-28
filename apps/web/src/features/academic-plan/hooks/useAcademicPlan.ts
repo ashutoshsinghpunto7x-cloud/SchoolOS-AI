@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { academicPlanApi, PlanTarget, ChapterSizingPayload } from '../api/academic-plan.api';
-import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, MovePlanDayPayload, SetMonthlyRowPayload, SetPlanDaysStatusPayload } from '@schoolos/types';
+import type { GenerateAcademicPlanPayload, SetPlanDayStatusPayload, EditPlanDayPayload, AddPlanDayPayload, MovePlanDayPayload, SetMonthlyRowPayload, SetPlanDaysStatusPayload } from '@schoolos/types';
 
 function targetKey(t: PlanTarget) {
   return [t.class, t.section ?? '', t.subject] as const;
@@ -54,8 +54,45 @@ export const useTickPlanDays = () => {
       for (const d of days) byPlan.set(d.planId, [...(byPlan.get(d.planId) ?? []), d.date]);
       return Promise.all([...byPlan].map(([planId, dates]) => academicPlanApi.setDaysStatus(planId, { dates, status })));
     },
-    // onSettled so a half-failed multi-class tick still shows what actually saved.
-    onSettled: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+    // Show the tick at once: patch every cached checklist / plan, roll back on failure.
+    onMutate: async ({ status, days }) => {
+      await qc.cancelQueries({ queryKey: academicPlanKeys.all });
+      const snapshot = qc.getQueriesData({ queryKey: academicPlanKeys.all });
+      const want = new Set(days.map((d) => `${d.planId}|${d.date.slice(0, 10)}`));
+      const apply = (data: unknown): unknown => {
+        if (Array.isArray(data)) {
+          return data.map((i) => (i && typeof i === 'object' && 'planId' in i && 'date' in i && want.has(`${(i as { planId: string }).planId}|${(i as { date: string }).date.slice(0, 10)}`)
+            ? { ...i, status } : i));
+        }
+        const plan = data as { _id?: string; days?: { date: string; status: string; blockType: string }[] } | null;
+        if (plan && plan._id && Array.isArray(plan.days)) {
+          return { ...plan, days: plan.days.map((d) => (want.has(`${plan._id}|${d.date.slice(0, 10)}`) && d.blockType !== 'buffer' ? { ...d, status } : d)) };
+        }
+        return data;
+      };
+      qc.setQueriesData({ queryKey: academicPlanKeys.all }, apply);
+      return { snapshot };
+    },
+    onError: (_err, _vars, ctx) => ctx?.snapshot.forEach(([key, data]) => qc.setQueryData(key, data)),
+    // Re-sync quietly in the background; never hold the tick waiting for it.
+    onSettled: () => { void qc.invalidateQueries({ queryKey: academicPlanKeys.all }); },
+  });
+};
+
+export const useAddPlanDay = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, payload }: { planId: string; payload: AddPlanDayPayload }) => academicPlanApi.addDay(planId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
+  });
+};
+
+/** Edit one lesson of the teacher's own plan by plan id (used from the dashboard checklist). */
+export const useEditChecklistDay = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planId, payload }: { planId: string; payload: EditPlanDayPayload }) => academicPlanApi.editDay(planId, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: academicPlanKeys.all }),
   });
 };
 

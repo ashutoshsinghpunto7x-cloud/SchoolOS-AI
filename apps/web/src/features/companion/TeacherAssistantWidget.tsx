@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUp, X, ChevronDown, ArrowRight, Phone } from 'lucide-react';
+import { ArrowUp, X, ChevronDown, ArrowRight, Phone, Mic, Square, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   CompanionBuddy,
@@ -11,10 +11,33 @@ import {
 import { companionConfigFor } from './companionConfigs';
 import { FAQ_CATEGORIES, TEACHER_FAQ, searchFaq, type FaqItem } from './teacherFaq';
 import { SUPPORT_PHONE } from '@/lib/support';
+import { useVoice, type VoiceLang } from '@/features/principal-assistant/hooks/useVoice';
+import { PlanReplyCard } from '@/features/academic-plan/assistant/PlanReplyCard';
+import {
+  usePlanAssistant, spokenPlanReply, PLAN_SUGGESTIONS, type PlanReply,
+} from '@/features/academic-plan/assistant/usePlanAssistant';
 
 const BUDDY_CONFIG = companionConfigFor('teacher')!;
 
-type Turn = { id: number; role: 'user' | 'assistant'; text: string; items?: FaqItem[] };
+type Turn = { id: number; role: 'user' | 'assistant'; text: string; items?: FaqItem[]; plan?: PlanReply };
+
+const STORAGE_SPEAK = 'teacherAssistant.speakReplies';
+const STORAGE_LANG = 'teacherAssistant.voiceLang';
+
+function readStored(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+function writeStored(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable — preference just won't persist */
+  }
+}
 
 const SUGGESTIONS = [
   'Mark attendance',
@@ -55,9 +78,33 @@ export const TeacherAssistantWidget = () => {
   const nextId = useRef(1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const [speakReplies, setSpeakReplies] = useState(() => readStored(STORAGE_SPEAK) === '1');
+  const [lang, setLang] = useState<VoiceLang>(() => (readStored(STORAGE_LANG) === 'hi-IN' ? 'hi-IN' : 'en-IN'));
+  const voiceSentRef = useRef(false);
+  const askRef = useRef<(text: string) => void>(() => {});
+
+  const plan = usePlanAssistant();
+  const planControls = { statuses: plan.statuses, apply: plan.apply, cancel: plan.cancel };
+
+  const voice = useVoice({
+    lang,
+    onFinalTranscript: (text) => {
+      voiceSentRef.current = true;
+      askRef.current(text);
+    },
+  });
+
   useEffect(() => {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [open, turns, view]);
+  }, [open, turns, view, plan.busy]);
+
+  useEffect(() => {
+    if (!open) {
+      voice.stopListening();
+      voice.cancelSpeech();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -78,27 +125,59 @@ export const TeacherAssistantWidget = () => {
     };
   }, [open]);
 
-  const ask = (text: string) => {
-    const q = text.trim();
-    if (!q) return;
-    const items = searchFaq(q);
-    setView('chat');
-    setTurns((t) => [
-      ...t,
-      { id: nextId.current++, role: 'user', text: q },
-      {
-        id: nextId.current++,
-        role: 'assistant',
-        text: items.length
-          ? items.length === 1
-            ? 'Here is how to do that:'
-            : 'Closest guides:'
-          : "Couldn't match that directly — try simpler keywords or switch to FAQ.",
-        items,
-      },
-    ]);
-    setInput('');
+  const addTurn = useCallback((turn: Omit<Turn, 'id'>) => {
+    const id = nextId.current++;
+    setTurns((t) => [...t, { ...turn, id }]);
+  }, []);
+
+  const addPlanReply = (reply: PlanReply, spoken: boolean) => {
+    addTurn({ role: 'assistant', text: reply.text, plan: reply });
+    if (spoken || speakReplies) voice.speak(spokenPlanReply(reply));
   };
+
+  const ask = async (text: string) => {
+    const q = text.trim();
+    if (!q || plan.busy) return;
+    const spoken = voiceSentRef.current;
+    voiceSentRef.current = false;
+    setView('chat');
+    setInput('');
+    addTurn({ role: 'user', text: q });
+
+    // On the Academic Plan screens, planner requests are handled first.
+    if (plan.active) {
+      const reply = await plan.handle(q);
+      if (reply) {
+        addPlanReply(reply, spoken);
+        return;
+      }
+    }
+
+    const items = searchFaq(q);
+    const answer = items.length
+      ? items.length === 1
+        ? 'Here is how to do that:'
+        : 'Closest guides:'
+      : "Couldn't match that directly — try simpler keywords or switch to FAQ.";
+    addTurn({ role: 'assistant', text: answer, items });
+    if (spoken || speakReplies) voice.speak(items.length === 1 ? items[0].answer : answer);
+  };
+  askRef.current = ask;
+
+  const toggleSpeak = () => {
+    const next = !speakReplies;
+    setSpeakReplies(next);
+    writeStored(STORAGE_SPEAK, next ? '1' : '0');
+    if (!next) voice.cancelSpeech();
+  };
+  const toggleLang = () => {
+    const next: VoiceLang = lang === 'en-IN' ? 'hi-IN' : 'en-IN';
+    setLang(next);
+    writeStored(STORAGE_LANG, next);
+  };
+
+  const headerBtn =
+    'h-7 min-w-7 px-2 rounded-full text-[#55607A] dark:text-white/70 hover:text-[#1B2A4E] hover:bg-[#F5F1E8] dark:hover:bg-white/10 flex items-center justify-center cursor-pointer text-[11px] font-semibold transition-colors';
 
   const go = (path: string) => {
     setOpen(false);
@@ -153,6 +232,23 @@ export const TeacherAssistantWidget = () => {
                 </button>
               </div>
 
+              {voice.supported && (
+                <button type="button" onClick={toggleLang} className={headerBtn} aria-label="Switch voice language">
+                  {lang === 'en-IN' ? 'EN' : 'हिं'}
+                </button>
+              )}
+              {voice.ttsSupported && (
+                <button
+                  type="button"
+                  onClick={toggleSpeak}
+                  className={headerBtn}
+                  aria-pressed={speakReplies}
+                  aria-label="Spoken replies"
+                >
+                  {speakReplies ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -171,10 +267,12 @@ export const TeacherAssistantWidget = () => {
                 {turns.length === 0 && (
                   <div className="space-y-3 pt-1">
                     <p className="text-[13px] text-[#55607A] dark:text-white/70 m-0 leading-relaxed">
-                      How can I help you with your classes today?
+                      {plan.active
+                        ? "Tell me what to change in your plan, by voice or text. I'll ask before saving."
+                        : 'How can I help you with your classes today?'}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {SUGGESTIONS.map((s) => (
+                      {(plan.active ? PLAN_SUGGESTIONS : SUGGESTIONS).map((s) => (
                         <button
                           key={s}
                           type="button"
@@ -195,6 +293,14 @@ export const TeacherAssistantWidget = () => {
                         {t.text}
                       </p>
                     </div>
+                  ) : t.plan ? (
+                    <PlanReplyCard
+                      key={t.id}
+                      reply={t.plan}
+                      controls={planControls}
+                      onFollowUp={(reply) => addPlanReply(reply, false)}
+                      onOption={ask}
+                    />
                   ) : (
                     <div key={t.id} className="space-y-2">
                       <p className="m-0 text-[12.5px] text-[#55607A] dark:text-white/70">{t.text}</p>
@@ -202,6 +308,13 @@ export const TeacherAssistantWidget = () => {
                     </div>
                   ),
                 )}
+                {plan.busy && (
+                  <div className="inline-flex items-center gap-1.5 rounded-2xl bg-white border border-[#E8E2D6] px-3.5 py-2 text-[12px] text-[#55607A]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#1B2A4E]/60 animate-pulse" />
+                    Thinking…
+                  </div>
+                )}
+                {voice.voiceError && <p className="m-0 text-[12px] text-red-600">{voice.voiceError}</p>}
               </>
             ) : (
               <div className="space-y-3">
@@ -274,15 +387,33 @@ export const TeacherAssistantWidget = () => {
               <input
                 type="text"
                 autoFocus
-                value={input}
+                value={voice.listening ? voice.interim : input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask a question…"
+                readOnly={voice.listening}
+                placeholder={voice.listening ? 'Listening…' : plan.active ? 'Change your plan…' : 'Ask a question…'}
                 aria-label="Ask the assistant"
                 className="flex-1 min-w-0 bg-transparent py-1 text-[13px] text-[#1B2A4E] dark:text-white placeholder:text-[#8A93A8] outline-none"
               />
+              {voice.supported && (
+                <button
+                  type="button"
+                  onClick={() => (voice.listening ? voice.stopListening() : voice.startListening())}
+                  disabled={plan.busy}
+                  aria-label="Voice input"
+                  aria-pressed={voice.listening}
+                  className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40 transition-colors',
+                    voice.listening
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : 'text-[#55607A] dark:text-white/70 hover:text-[#1B2A4E] hover:bg-[#EFEAE0] dark:hover:bg-white/10',
+                  )}
+                >
+                  {voice.listening ? <Square className="w-3 h-3 fill-current" /> : <Mic className="w-3.5 h-3.5" />}
+                </button>
+              )}
               <button
                 type="submit"
-                disabled={!input.trim()}
+                disabled={!input.trim() || plan.busy || voice.listening}
                 aria-label="Send"
                 className="w-7 h-7 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-25 transition-opacity"
               >
@@ -296,6 +427,7 @@ export const TeacherAssistantWidget = () => {
       <CompanionBuddy
         config={BUDDY_CONFIG}
         open={open}
+        thinking={plan.busy}
         label="SchoolOS Assistant"
         onActivate={() => setOpen((v) => !v)}
       />

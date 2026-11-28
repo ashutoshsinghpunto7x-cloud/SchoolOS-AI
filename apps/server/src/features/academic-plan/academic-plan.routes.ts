@@ -22,12 +22,18 @@ router.post('/alerts/run',          authorize('admin'),   academicPlanController
 
 router.patch('/chapters/:id/sizing', academicPlanController.updateChapterSizing);
 
+// Voice/chat editing — teachers change their own plan, principals any plan in the school.
+const canUseAssistant = authorize('admin', 'principal', 'teacher');
+router.post('/assistant/interpret', canUseAssistant, academicPlanController.assistantInterpret);
+router.post('/assistant/apply',     canUseAssistant, academicPlanController.assistantApply);
+
 router.post('/generate', academicPlanController.generate);
 router.get('/mine',      academicPlanController.getMine);
 router.get('/mine/checklist', academicPlanController.getMyChecklist);
 router.patch('/:id/days', academicPlanController.setDayStatus);
 router.patch('/:id/days/bulk', academicPlanController.setDaysStatus);
 router.patch('/:id/monthly', academicPlanController.setMonthlyRow);
+router.post('/:id/days/add', academicPlanController.addDay);
 router.patch('/:id/days/edit', academicPlanController.editDay);
 router.patch('/:id/days/move', academicPlanController.moveDay);
 

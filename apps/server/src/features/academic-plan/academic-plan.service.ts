@@ -7,6 +7,7 @@ import { examRepository } from '../exams/exam.repository';
 import { timetableRepository } from '../timetable/timetable.repository';
 import { academicYearService } from '../academic-year/academic-year.service';
 import { academicPlanRepository } from './academic-plan.repository';
+import { StaffAttendanceRecord } from '../staff-attendance/staff-attendance.model';
 import { planAlertRepository } from './plan-alert.repository';
 import { runPlanAlertDetection } from './plan-alert.service';
 import { IAcademicPlan, IAcademicPlanDay, AcademicPlanDayStatus } from './academic-plan.model';
@@ -14,14 +15,14 @@ import {
   buildEligibleDaysContext, listEligibleDays, nextEligibleDay, reserveExamBlocks,
   fillChaptersIntoDays, isoDate, schoolDateKey, periodRanges, countDone,
 } from './academic-plan.util';
-import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, MoveDayInput, MonthlyRowInput, BulkDayStatusInput, ChecklistQueryInput } from './academic-plan.validation';
+import { PlanTargetInput, GeneratePlanInput, SetDayStatusInput, EditDayInput, AddDayInput, MoveDayInput, MonthlyRowInput, BulkDayStatusInput, ChecklistQueryInput } from './academic-plan.validation';
 
 // ── Teacher scope guard — same shape/reasoning as Teacher Planner v2's
 // assertTeacherCanManagePlanner (Teacher and User link only by email; a
 // teacher's real subject assignment lives in the Timetable, not
 // Teacher.subjects, which only the Teachers workspace UI keeps current). ──
 
-async function assertTeacherCanManagePlan(ctx: AuthContext, cls: string, subject: string): Promise<void> {
+export async function assertTeacherCanManagePlan(ctx: AuthContext, cls: string, subject: string): Promise<void> {
   if (ctx.role !== 'teacher') return;
 
   const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
@@ -189,9 +190,14 @@ export const academicPlanService = {
     return updated;
   },
 
-  /** The signed-in teacher's lessons across every class between two dates. */
+  /** The signed-in teacher's lessons across every class between two dates.
+   *  Lessons from days the teacher was marked absent are first moved to the
+   *  next teaching day, so nothing stays overdue behind an absence. */
   async getMyChecklist({ from, to }: ChecklistQueryInput, ctx: AuthContext) {
-    const plans = await academicPlanRepository.findAllByTeacher(ctx.schoolId, ctx.userId);
+    let plans = await academicPlanRepository.findAllByTeacher(ctx.schoolId, ctx.userId);
+    if (ctx.role === 'teacher' && (await academicPlanService.carryOverAbsentDays(plans, ctx))) {
+      plans = await academicPlanRepository.findAllByTeacher(ctx.schoolId, ctx.userId);
+    }
     return plans
       .flatMap((plan) => plan.days
         .map((d) => ({ d, dateKey: schoolDateKey(new Date(d.date)) }))
@@ -201,8 +207,86 @@ export const academicPlanService = {
           date: new Date(d.date).toISOString(), dateKey, blockType: d.blockType, status: d.status,
           chapterName: d.chapterName, topicTitle: d.topicTitle, examName: d.examName,
           classWork: d.classWork, homeWork: d.homeWork,
+          carriedFromDate: d.carriedFromDate ? new Date(d.carriedFromDate).toISOString() : undefined,
         })))
       .sort((a, b) => a.dateKey.localeCompare(b.dateKey) || `${a.class}${a.section}`.localeCompare(`${b.class}${b.section}`));
+  },
+
+  /** Teaching lessons still un-ticked on a past day the teacher was absent get
+   *  marked carried-forward and re-queued on the next open teaching day.
+   *  Returns true when anything moved. */
+  async carryOverAbsentDays(plans: IAcademicPlan[], ctx: AuthContext): Promise<boolean> {
+    const today = schoolDateKey(new Date());
+    const since = new Date(Date.parse(`${today}T00:00:00Z`) - 45 * 86_400_000).toISOString().slice(0, 10);
+    const isOverdue = (d: IAcademicPlanDay) => {
+      const key = schoolDateKey(new Date(d.date));
+      return d.blockType === 'teach' && d.status === 'pending' && key < today && key >= since;
+    };
+    const candidates = plans.filter((p) => p.days.some(isOverdue));
+    if (candidates.length === 0) return false;
+
+    const user = await User.findById(ctx.userId).select('email').lean() as { email?: string } | null;
+    if (!user?.email) return false;
+    const teacher = await Teacher.findOne({ schoolId: ctx.schoolId, email: user.email, isDeleted: false })
+      .select('employeeId').lean() as { employeeId?: string } | null;
+    if (!teacher?.employeeId) return false;
+    const absent = await StaffAttendanceRecord.find({
+      schoolId: ctx.schoolId, employeeId: teacher.employeeId, status: 'absent', date: { $gte: since, $lt: today },
+    }).select('date').lean<{ date: string }[]>();
+    if (absent.length === 0) return false;
+    const absentDates = new Set(absent.map((a) => a.date));
+
+    const academicYear = await academicYearService.getOrSeedCurrent(ctx);
+    const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86_400_000);
+    let moved = false;
+    for (const plan of candidates) {
+      const lessons = plan.days
+        .filter((d) => isOverdue(d) && absentDates.has(schoolDateKey(new Date(d.date))))
+        .sort((a, b) => +new Date(a.date) - +new Date(b.date));
+      if (lessons.length === 0) continue;
+      const eligible = await buildEligibleDaysContext(ctx.schoolId, academicYear, plan.class, plan.section, plan.subject, []);
+      const taken = new Set(plan.days.map((d) => isoDate(new Date(d.date))));
+      let after = yesterday;
+      for (const lesson of lessons) {
+        const next = nextEligibleDay(eligible, after, academicYear.endDate, taken);
+        if (!next) break;
+        taken.add(isoDate(next));
+        after = next;
+        await academicPlanRepository.markCarriedAndAppend(String(plan._id), ctx.schoolId, isoDate(new Date(lesson.date)), {
+          date: next, blockType: 'teach', chapterId: lesson.chapterId, chapterName: lesson.chapterName,
+          topicTitle: lesson.topicTitle, classWork: lesson.classWork, homeWork: lesson.homeWork,
+          status: 'pending', carriedFromDate: new Date(lesson.date),
+        } as IAcademicPlanDay);
+        moved = true;
+      }
+    }
+    return moved;
+  },
+
+  /** Teacher adds a task: fills a free period on that date, or adds a new day. */
+  async addDay(planId: string, data: AddDayInput, ctx: AuthContext): Promise<IAcademicPlan> {
+    const existing = await academicPlanRepository.findById(planId, ctx.schoolId);
+    if (!existing) throw new NotFoundError('Plan');
+    await assertTeacherCanManagePlan(ctx, existing.class, existing.subject);
+
+    const dateKey = isoDate(data.date);
+    const day = existing.days.find((d) => isoDate(new Date(d.date)) === dateKey);
+    if (day && day.blockType !== 'buffer') {
+      throw new ValidationError('That date already has a lesson for this class - edit it instead.');
+    }
+    const content = {
+      blockType: 'teach' as const, chapterName: data.chapterName || data.topicTitle, topicTitle: data.topicTitle,
+      classWork: data.classWork, homeWork: data.homeWork,
+    };
+    const historyEntry = { version: 0, changedBy: ctx.displayName, changedAt: new Date(), reason: `Added task on ${dateKey}` };
+    const updated = day
+      ? await academicPlanRepository.editDay(planId, ctx.schoolId, dateKey, content, historyEntry)
+      : await academicPlanRepository.addManualDay(
+        planId, ctx.schoolId,
+        { ...content, date: data.date, status: 'pending', manuallyEdited: true } as IAcademicPlanDay, historyEntry,
+      );
+    if (!updated) throw new NotFoundError('Plan');
+    return updated;
   },
 
   /** Teacher hand-edits a single day — fix a wrong auto-assignment, or fill

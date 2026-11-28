@@ -5597,6 +5597,17 @@ export interface AcademicPlanChecklistItem {
   examName?: string;
   classWork?: string;
   homeWork?: string;
+  /** Set when this lesson was moved here from an earlier day (teacher absent). */
+  carriedFromDate?: string;
+}
+
+/** Teacher adds a lesson/task to one of their plans on a date (or fills a free one). */
+export interface AddPlanDayPayload {
+  date: string;
+  chapterName?: string;
+  topicTitle?: string;
+  classWork?: string;
+  homeWork?: string;
 }
 
 export interface AcademicPlanDoneCount {
@@ -5912,4 +5923,70 @@ export interface ParentMockTestSummary {
   totalMarks: number;
   /** Whether this parent's linked child already has a ranked attempt on record. */
   alreadyAttempted?: boolean;
+}
+
+// ── Admin (school owner) overview ─────────────────────────────────────────────
+
+export interface AdminMonthlyTrendPoint {
+  /** e.g. "Aug 2026" */
+  label: string;
+  collected: number;
+  /** Salary paid + approved expenses in that month. */
+  spent: number;
+}
+
+export interface AdminDefaulterClass {
+  class: string;
+  section: string;
+  students: number;
+  balance: number;
+}
+
+export interface AdminOverviewData {
+  generatedAt: string;
+  money: {
+    collectedThisMonth: number;
+    collectedLastMonth: number;
+    totalCharged: number;
+    totalCollected: number;
+    totalOutstanding: number;
+    overdueCount: number;
+    /** 0–100, share of charged fees actually collected. */
+    collectionRate: number;
+    salaryPaidThisMonth: number;
+    salaryPendingThisMonth: number;
+    expensesThisMonth: number;
+    /** collectedThisMonth − salaryPaidThisMonth − expensesThisMonth */
+    netThisMonth: number;
+    /** 0–100, (salary paid + pending) as share of this month's collection; null when nothing collected. */
+    salaryShareOfCollection: number | null;
+    trend: AdminMonthlyTrendPoint[];
+    topDefaulterClasses: AdminDefaulterClass[];
+  };
+  growth: {
+    totalStudents: number;
+    activeStudents: number;
+    newStudentsThisMonth: number;
+    enquiriesTotal: number;
+    enquiriesThisMonth: number;
+    convertedThisMonth: number;
+    pendingFollowUps: number;
+    funnel: { stage: string; count: number }[];
+  };
+  people: {
+    teachersTotal: number;
+    teachersPresentToday: number;
+    staffTotal: number;
+    staffPresentToday: number;
+    attendanceTodayRate: number;
+    attendanceWeeklyRate: number;
+    attendanceMarkedToday: boolean;
+  };
+  attention: {
+    pendingLeaves: number;
+    pendingExpenses: number;
+    pendingExpenseAmount: number;
+    pendingPurchaseRequests: number;
+  };
+  alerts: PrincipalAlert[];
 }

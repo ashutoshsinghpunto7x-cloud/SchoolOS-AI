@@ -47,6 +47,14 @@ export const editDaySchema = z.object({
   { message: 'Provide at least one field to change besides date' },
 );
 
+export const addDaySchema = z.object({
+  date:        z.coerce.date(),
+  chapterName: z.string().trim().max(200).optional(),
+  topicTitle:  z.string().trim().max(300).optional(),
+  classWork:   z.string().trim().max(1000).optional(),
+  homeWork:    z.string().trim().max(1000).optional(),
+}).refine((d) => !!(d.chapterName || d.topicTitle), { message: 'Give the task a title' });
+
 export const monthlyRowSchema = z.object({
   monthKey:       z.string().regex(/^\d{4}-\d{2}$/),
   chapterName:    z.string().trim().min(1).max(200),
@@ -67,5 +75,6 @@ export type SetDayStatusInput = z.infer<typeof setDayStatusSchema>;
 export type BulkDayStatusInput = z.infer<typeof bulkDayStatusSchema>;
 export type ChecklistQueryInput = z.infer<typeof checklistQuerySchema>;
 export type EditDayInput = z.infer<typeof editDaySchema>;
+export type AddDayInput = z.infer<typeof addDaySchema>;
 export type MonthlyRowInput = z.infer<typeof monthlyRowSchema>;
 export type MoveDayInput = z.infer<typeof moveDaySchema>;
