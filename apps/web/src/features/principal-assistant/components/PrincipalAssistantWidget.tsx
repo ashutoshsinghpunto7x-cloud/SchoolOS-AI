@@ -74,7 +74,7 @@ export const PrincipalAssistantWidget = () => {
     [speakReplies],
   );
 
-  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading, error } = usePrincipalAssistant({
+  const { messages, sendMessage, onEditField, onApprove, onCancel, isLoading, stop, error } = usePrincipalAssistant({
     onAssistantText,
   });
 
@@ -279,14 +279,26 @@ export const PrincipalAssistantWidget = () => {
                   {voice.listening ? <Square className="w-4 h-4 fill-current" /> : <Mic className="w-6 h-6" />}
                 </button>
               )}
-              <button
-                type="submit"
-                disabled={!input.trim() || isLoading || voice.listening}
-                aria-label="Send"
-                className="w-9 h-9 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-25 transition-opacity"
-              >
-                <ArrowUp className="w-4 h-4" strokeWidth={2.2} />
-              </button>
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={stop}
+                  aria-label="Stop"
+                  title="Stop"
+                  className="w-9 h-9 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 cursor-pointer hover:bg-red-600 transition-colors"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim() || voice.listening}
+                  aria-label="Send"
+                  className="w-9 h-9 rounded-full bg-[#1B2A4E] text-white flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-25 transition-opacity"
+                >
+                  <ArrowUp className="w-4 h-4" strokeWidth={2.2} />
+                </button>
+              )}
             </div>
           </form>
           </div>

@@ -40,9 +40,9 @@ export interface ActionExecuteResponse {
 }
 
 export const principalAssistantApi = {
-  async sendMessage(message: string, history?: ChatHistoryTurn[]): Promise<ChatReply> {
+  async sendMessage(message: string, history?: ChatHistoryTurn[], signal?: AbortSignal): Promise<ChatReply> {
     try {
-      const res = await apiClient.post<ApiResponse<ChatReply>>('/principal-assistant/chat', { message, history });
+      const res = await apiClient.post<ApiResponse<ChatReply>>('/principal-assistant/chat', { message, history }, { signal });
       return res.data.data!;
     } catch (err) {
       throw new Error(extractErrorMessage(err));

@@ -234,6 +234,13 @@ export const principalAssistantService = {
     // Step 2 — fetch only the data this intent needs (backend does all the math).
     const data = await intent.fetchData(ctx, message);
 
+    // A fetcher that needs the Principal to pick (e.g. two students with one name)
+    // returns the question + options; show them as tap-to-answer chips, no AI pass.
+    const clarify = (data as { clarify?: { question: string; options: string[] } } | null)?.clarify;
+    if (clarify?.options?.length) {
+      return { type: 'text', reply: clarify.question, quickReplies: clarify.options };
+    }
+
     // Step 3 — OpenAI formats the pre-computed data into a natural-language answer.
     const userPrompt = `Data (JSON):\n${JSON.stringify(data, null, 2)}\n\nPrincipal's question: ${message}`;
 
