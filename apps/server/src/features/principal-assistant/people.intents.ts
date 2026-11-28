@@ -30,7 +30,7 @@ export const peopleIntents: IntentDefinition<AuthContext, unknown>[] = [
     'WHO / the NAMES of students absent today, optionally for one class — "which students are absent in class 5", "absent bachon ki list". (Just a count → STUDENT_ABSENT_COUNT.)',
     peopleAssistantData.getAbsentStudents),
   def('STUDENT_LOOKUP',
-    'Anything about ONE named student, including a full profile (marks, attendance, fees, parent): marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
+    'Anything about ONE student — named, OR identified by admission number / roll number / student ID ("FNIC-2021-0101 details", "roll no 12 class 6A attendance") — including a full profile (marks, attendance, fees, parent): marks/score/result in a subject or exam, their attendance, fees due, class or parent — "how many marks did Arav score in Hindi", "Riya ka maths result", "Rohan\'s attendance", "what does Aman owe".',
     peopleAssistantData.getStudentLookup),
 
   def('CLASS_ATTENDANCE_PERIOD',

@@ -180,7 +180,7 @@ export function idCandidates(message: string): string[] {
 
 /** "Aarav" must also find "Arav": vowel runs are interchangeable, doubled consonants collapse. */
 export function looseNameRegex(token: string): RegExp {
-  const t = token.toLowerCase().replace(/[^a-z\u0900-\u097f]/g, '');
+  const t = token.toLowerCase().replace(/[^\p{L}\p{M}]/gu, '');
   if (!t) return new RegExp(escapeRegex(token), 'i');
   const body = t.replace(/([aeiou]+)|([^aeiou])\2*/g, (_m, v, c) => (v ? '[aeiouyh]*' : `${escapeRegex(c)}+`));
   return new RegExp(body, 'i');
@@ -318,7 +318,7 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
         grade: m.grade,
         result: m.result,
       }));
-    const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g, '');
+    const norm = (x: string) => x.toLowerCase().replace(/[^\p{L}\p{M}\p{N}]/gu, '');
     const filtered = allMarks
       .filter((m) => !subjectWanted || norm(m.subject).includes(norm(subjectWanted)) || norm(subjectWanted).includes(norm(m.subject)))
       .filter((m) => !examWanted || norm(m.exam).includes(norm(examWanted)) || norm(examWanted).includes(norm(m.exam)));
