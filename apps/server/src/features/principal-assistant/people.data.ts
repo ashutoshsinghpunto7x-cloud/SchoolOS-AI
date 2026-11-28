@@ -124,6 +124,8 @@ export interface StudentLookupResult {
   message?: string;
   /** Several students share the name: the service shows this question + tap-to-pick chips instead of an AI answer. */
   clarify?: { question: string; options: string[] };
+  /** Ready-made reply for a one-day attendance question; the service uses it verbatim. */
+  directAnswer?: string;
   matches?: {
     name: string;
     class: string;
@@ -152,7 +154,7 @@ export interface StudentLookupResult {
 function studentFocus(message: string, hasSubjectOrExam: boolean): StudentFocus[] {
   const m = message.toLowerCase();
   const focus: StudentFocus[] = [];
-  if (/attend|present|absent|absence|hazir|haazir|leave|उपस्थिति|हाज़िर|हाजिर|गैरहाज़िर/.test(m)) focus.push('attendance');
+  if (/attend|present|absent|absence|hazir|haazir|aaya|aayi|aaye|came|late|leave|उपस्थिति|हाज़िर|हाजिर|गैरहाज़िर/.test(m)) focus.push('attendance');
   if (hasSubjectOrExam || /mark|score|result|percent|grade|rank|number|pass|fail|अंक|नंबर|परिणाम|रिज़ल्ट/.test(m)) focus.push('marks');
   if (/\bfees?\b|dues?|owe|pending|balance|outstanding|बकाया|फीस|फ़ीस/.test(m)) focus.push('fees');
   // "report" / "details" only mean "the whole record" when no specific part was named;
@@ -190,7 +192,7 @@ async function findStudents(
   ctx: AuthContext,
   message: string,
   q: { studentName: string | null; className: string | null; section: string | null },
-): Promise<{ students: LeanStudent[]; relaxedClass: boolean }> {
+): Promise<{ students: LeanStudent[]; relaxedClass: boolean; partial?: boolean }> {
   const base = { schoolId: ctx.schoolId, isDeleted: false };
   const run = (f: Record<string, unknown>) =>
     Student.find({ ...base, ...f }).sort({ fullName: 1 }).limit(8).select('fullName class section rollNumber fatherName').lean<LeanStudent[]>();
@@ -217,37 +219,53 @@ async function findStudents(
 
   // Strict name (+class) → loose spelling (+class) → same two without the class
   // (the AI-extracted class can be wrong; a name match beats "not found").
-  const attempts: [Record<string, unknown>, boolean][] = [[exactAll, true], [looseAll, true], [exactAll, false], [looseAll, false]];
+  const startsAll = { $and: tokens.map((t) => ({ fullName: new RegExp(String.raw`(^|\s)` + escapeRegex(t), 'i') })) };
+  // Whole-word starts win over substrings ("Ansh Chauhan" must not also pull in "Reyansh Chauhan").
+  const attempts: [Record<string, unknown>, boolean][] = [
+    [startsAll, true], [exactAll, true], [looseAll, true], [startsAll, false], [exactAll, false], [looseAll, false],
+  ];
   for (const [filter, withClass] of attempts) {
     if (withClass && !hasClass) continue;
     const found = await run({ ...filter, ...(withClass ? classFilter : {}) });
     if (found.length) return { students: found, relaxedClass: hasClass && !withClass };
   }
-  // Any single name word (surname only, partial full name).
+  // Any single name word (surname only, partial full name). These are only *guesses*:
+  // the caller must ask "did you mean…?" rather than answer about a different child.
   if (tokens.length > 1) {
-    const any = await run({ $or: tokens.map((t) => ({ fullName: looseNameRegex(t) })) });
-    if (any.length) return { students: any, relaxedClass: hasClass };
+    const anchored = (t: string) => new RegExp(String.raw`(^|\s)` + looseNameRegex(t).source, 'i');
+    const any = await run({ $or: tokens.filter((t) => t.replace(/[^\p{L}]/gu, '').length >= 3).map((t) => ({ fullName: anchored(t) })) });
+    if (any.length) return { students: any, relaxedClass: hasClass, partial: true };
   }
   return { students: [], relaxedClass: false };
 }
 
-async function getStudentLookup(ctx: AuthContext, message = ''): Promise<StudentLookupResult> {
+export async function getStudentLookup(ctx: AuthContext, message = ''): Promise<StudentLookupResult> {
   const q = await extractQueryParams(message, ctx);
   if (!q.studentName && !idCandidates(message).length) {
     return { found: false, message: "No student name was found in the question. Ask the Principal to say the student's name (or admission / roll number)." };
   }
   const focus = studentFocus(message, !!(q.subject || q.exam));
 
-  const { students, relaxedClass } = await findStudents(ctx, message, q);
+  const { students, relaxedClass, partial } = await findStudents(ctx, message, q);
   const label = q.studentName ?? idCandidates(message).join(', ');
 
   if (!students.length) {
     return { found: false, message: `No student matching "${label}" was found in this school's records${q.className ? ` (also tried without class ${q.className}${q.section ?? ''})` : ''}. Ask the Principal to check the spelling or give the admission number.` };
   }
 
-  // More than one student with that name: don't dump everyone's records, ask which one.
-  if (students.length > 1) {
-    const topic = focus.length === 1 ? ` ${FOCUS_WORD[focus[0]]}` : '';
+  // More than one student with that name (or only a loose, partial match): don't answer
+  // about a possibly-wrong child — ask which one.
+  if (students.length > 1 || partial) {
+    const topic = (focus.length === 1 ? ` ${FOCUS_WORD[focus[0]]}` : '') + (/\btoday\b|\baaj\b|आज/i.test(message) ? ' today' : '');
+    if (partial) {
+      return {
+        found: true,
+        clarify: {
+          question: `I couldn't find a student named "${label}". Did you mean one of these?`,
+          options: students.slice(0, 6).map((s) => `${s.fullName} class ${s.class}${s.section}${topic}`),
+        },
+      };
+    }
     return {
       found: true,
       clarify: {
@@ -286,7 +304,8 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
   let attRows = attendance;
   let attRange = range;
   let attNote: string | undefined;
-  if (want('attendance') && !attRows.length) {
+  const singleDay = range.from === range.to;
+  if (want('attendance') && !attRows.length && !singleDay) {
     const wide = { from: shiftDays(todayISO, -365), to: todayISO, label: 'last 12 months' };
     const widened = await Attendance.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, date: { $gte: wide.from, $lte: wide.to }, isDeleted: false })
       .select('studentId status date')
@@ -336,7 +355,20 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
       ...(!focus.length ? { parentName: s.fatherName } : {}),
       ...(want('marks') ? { marks: studentMarks } : {}),
       ...(want('attendance')
-        ? { attendance: { period: attRange, ...computeAttendanceStats(att), ...(attNote ? { note: attNote } : {}) } }
+        ? {
+            attendance: {
+              period: attRange,
+              ...computeAttendanceStats(att),
+              // A one-day question ("present today?") gets the actual status of that day, not a percentage.
+              ...(singleDay
+                ? {
+                    note: att.length
+                      ? `Status on ${range.from} (${range.label}): ${att[0].status.replace('_', ' ')}.`
+                      : `Attendance has not been marked for this student on ${range.from} (${range.label}) yet.`,
+                  }
+                : attNote ? { note: attNote } : {}),
+            },
+          }
         : {}),
       ...(want('fees')
         ? { fees: { totalOutstanding: feeRows.reduce((sum, f) => sum + f.balance, 0), pendingRecords: feeRows.length } }
@@ -345,7 +377,21 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
   });
 
   logger.info('[PrincipalAssistant] Student lookup', { schoolId: ctx.schoolId, matches: matches.length });
-  return { found: true, matches };
+
+  // "Is X present today?" → one fixed sentence from the record itself.
+  let directAnswer: string | undefined;
+  if (singleDay && matches.length === 1 && focus.length === 1 && focus[0] === 'attendance') {
+    const m = matches[0];
+    const row = attRows.find((a) => a.studentId === String(students[0]._id));
+    const who = `${m.name} (class ${m.class}${m.section})`;
+    const isToday = range.from === todayISO;
+    const day = isToday ? 'today' : `on ${range.from} (${range.label})`;
+    const STATUS: Record<string, string> = { present: 'present', absent: 'absent', late: 'present (marked late)', half_day: 'present for a half day', leave_approved: 'on approved leave' };
+    directAnswer = row
+      ? `${who} ${isToday ? 'is' : 'was'} ${STATUS[row.status] ?? row.status} ${day}.`
+      : `Attendance hasn't been marked for ${who} ${day} yet, so I can't say whether they're present.`;
+  }
+  return { found: true, matches, ...(directAnswer ? { directAnswer } : {}) };
 }
 
 export const peopleAssistantData = { getAbsentTeachers, getAbsentStudents, getStudentLookup };

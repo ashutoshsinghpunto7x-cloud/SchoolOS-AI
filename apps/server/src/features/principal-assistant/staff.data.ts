@@ -67,13 +67,16 @@ async function loadSchedule(ctx: AuthContext) {
 
 async function getTeacherSchedule(ctx: AuthContext, message = '') {
   const { p, date } = await resolveDate(ctx, message);
-  if (!p.teacherName) return { found: false, note: "No teacher name was found in the question." };
+  // The extractor sometimes files a staff name under studentName; a real Teacher match settles it.
+  const name = p.teacherName ?? p.studentName;
+  if (!name) return { found: false, note: "No teacher name was found in the question." };
   const dow = dayOfWeekFor(date);
   const { slots, tables } = await loadSchedule(ctx);
-  const rx = new RegExp(escapeRegex(p.teacherName), 'i');
+  const words = name.split(/\s+/).filter(Boolean).slice(0, 4);
 
-  const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false, fullName: rx }).select('fullName').limit(3).lean<{ fullName: string }[]>();
-  if (!teachers.length) return { found: false, note: `No teacher matching "${p.teacherName}" was found.` };
+  const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false, $and: words.map((w) => ({ fullName: new RegExp(escapeRegex(w), 'i') })) })
+    .select('fullName').limit(3).lean<{ fullName: string }[]>();
+  if (!teachers.length) return { found: false, note: `No teacher matching "${name}" was found.` };
   const t = teachers[0];
 
   const busy = new Map<string, string>();

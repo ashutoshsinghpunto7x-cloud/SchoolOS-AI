@@ -58,6 +58,7 @@ Today is ${today}. Respond ONLY with JSON with exactly these fields, using null 
  "date": string|null, "limit": number|null, "order": "top"|"bottom"|null, "threshold": number|null}
 Rules:
 - studentName / teacherName: the person's name only, no titles like "Mrs", "sir", "madam", "student", "beta".
+  Always write names in English/Latin letters, transliterating Hindi (Devanagari) names ("आशुतोष सिंह" → "Ashutosh Singh").
 - className: the grade alone, e.g. "5", "10", "LKG" (never "class 5"). section: a single letter like "B".
 - subject: English subject name (Hindi, Maths, Science, English, SST...). exam: exam name like "Half Yearly" or "Unit Test 1".
   secondExam: only when two exams are being compared.

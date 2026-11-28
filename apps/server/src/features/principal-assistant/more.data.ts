@@ -224,6 +224,8 @@ async function getFeeTrend(ctx: AuthContext) {
 
 async function getTeacherProfile(ctx: AuthContext, message = '') {
   const p = await extractQueryParams(message, ctx);
+  // The extractor sometimes files a staff name under studentName; the caller already decided this is a teacher question.
+  p.teacherName = p.teacherName ?? p.studentName;
   if (!p.teacherName) return { found: false, note: 'No teacher name was found in the question. Ask the Principal to say the teacher name.' };
   const tokens = p.teacherName.split(/\s+/).filter(Boolean).slice(0, 4);
   const teachers = await Teacher.find({ schoolId: ctx.schoolId, isDeleted: false, $and: tokens.map((t) => ({ fullName: new RegExp(escapeRegex(t), 'i') })) })
@@ -243,9 +245,15 @@ async function getTeacherProfile(ctx: AuthContext, message = '') {
         .lean<{ class: string; section?: string; subject: string; days: { blockType: string; status: string; date: Date }[] }[]>(),
     ]);
     const now = new Date(`${today()}T00:00:00`);
+    const todayRec = t.employeeId
+      ? await StaffAttendanceRecord.findOne({ schoolId: ctx.schoolId, employeeId: t.employeeId, date: today() }).select('status').lean<{ status: string }>()
+      : null;
     const count = (st: string) => att.filter((x) => x.status === st).length;
     out.push({
       teacher: t.fullName, subjects: t.subjects ?? [], classes: t.assignedClasses ?? [],
+      attendanceToday: todayRec
+        ? { date: today(), status: todayRec.status }
+        : { date: today(), status: 'not checked in yet (the daily briefing counts this as absent)' },
       attendanceLast30Days: { present: count('present'), late: count('late'), absent: count('absent'), recordsFound: att.length },
       approvedLeavesLast90Days: leaves.map((l) => ({ from: l.dateFrom, to: l.dateTo, type: l.leaveType })),
       substitutePeriodsTakenLast30Days: subs,

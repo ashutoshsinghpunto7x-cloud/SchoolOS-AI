@@ -59,6 +59,9 @@ export function parseDateRange(message: string, today: string): DateRange | null
   if (/\bthis\s+week\b|is\s+(?:hafte|saptah)|इस\s+सप्ताह/.test(m)) {
     return { from: shiftDays(today, -6), to: today, label: 'last 7 days' };
   }
+  if (/\btoday\b|\baaj\b|आज/.test(m)) {
+    return { from: today, to: today, label: 'today' };
+  }
   if (/\byesterday\b|बीते\s+कल/.test(m)) {
     const d = shiftDays(today, -1);
     return { from: d, to: d, label: 'yesterday' };

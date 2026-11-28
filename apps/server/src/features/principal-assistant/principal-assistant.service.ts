@@ -20,7 +20,9 @@ import {
 } from './conversation-state';
 import { assertIntentAllowed, isIntentAllowed, SENSITIVE_INTENTS } from './intent-access';
 import { parseAttendanceClaim, checkAttendanceConsistency } from './attendance-math';
-import { extractQueryParams } from './query-params';
+import { extractQueryParams, escapeRegex } from './query-params';
+import { peopleAssistantData } from './people.data';
+import { Teacher } from '../teachers/teacher.model';
 import { auditService } from '../audit/audit.service';
 import { attendanceRepository } from '../attendance/attendance.repository';
 import { AuthContext } from '../../lib/auth-context';
@@ -166,6 +168,12 @@ async function remember(
   await conversationStateStore.save(ctx.schoolId, ctx.userId, next);
 }
 
+/** Words that make a question about a named person an attendance question. */
+const WHO_ABSENT_BARE = /^\s*(who|which|kaun)\b.*\b(absent|gair\s?hazir|nahi\s+aaya)\b/i;
+const NAMED_ATTENDANCE_WORDS = /\b(present|absent|attend\w*|hazir|haazir|gair\s?hazir|came|aaya|aayi|aaye|late)\b|उपस्थित|हाज़िर|हाजिर|गैरहाज़िर/i;
+/** …unless it is clearly asking for a LIST / count of people, which other tools own. */
+const LIST_QUESTION_WORDS = /\b(who|which|list|kaun|kitne|kitni|how\s+many|count|total|all\s+students|teachers?)\b|कौन|कितने/i;
+
 export const principalAssistantService = {
   /** Forget the remembered student / class / period (the "new chat" button). */
   async resetConversation(ctx: AuthContext): Promise<void> {
@@ -248,11 +256,61 @@ export const principalAssistantService = {
       ? { ...state, student: null, teacher: null, className: null, section: null, dateRange: null }
       : state;
 
+    // Step 0a — a NAMED student + an attendance word ("ansh singh present today") is
+    // always a one-student question. The LLM router kept sending these to the whole-school
+    // count/list tools, whose numbers the formatter then pinned on the named child. Decide it
+    // in code, and only when that student can really be found (otherwise normal routing runs,
+    // e.g. for a teacher's name).
+    let forcedIntent: 'STUDENT_LOOKUP' | 'TEACHER_PROFILE' | null = null;
+
+    // "who is absent today" names neither students nor teachers: ask instead of guessing one list.
+    if (WHO_ABSENT_BARE.test(message) && !/teacher|staff|student|bachch|class|section|\d/i.test(message)) {
+      const reply = 'Which list do you want — absent students or absent teachers?';
+      await remember(ctx, stateForTurn, { message, topicChanged: resolution.topicChanged, reply, intentId: null });
+      return { type: 'text', reply, quickReplies: ['Absent students today', 'Absent teachers today'] };
+    }
+
+    if (NAMED_ATTENDANCE_WORDS.test(message) && !LIST_QUESTION_WORDS.test(message) && isIntentAllowed('STUDENT_LOOKUP', ctx.role)) {
+      try {
+        const qp = await extractQueryParams(message, ctx);
+        const person = qp.studentName ?? qp.teacherName;
+        if (person) {
+          const probe = await peopleAssistantData.getStudentLookup(ctx, message);
+          // A student only counts when the name matched for real, not as a "did you mean" guess.
+          const exactStudent = probe.found && !probe.clarify?.question.startsWith("I couldn't find");
+          if (exactStudent) {
+            forcedIntent = 'STUDENT_LOOKUP';
+          } else {
+            // Not a student — maybe a teacher ("is Imran Qureshi absent today").
+            const words = person.split(/\s+/).filter(Boolean).slice(0, 3);
+            const teacher = await Teacher.findOne({
+              schoolId: ctx.schoolId, isDeleted: false,
+              $and: words.map((w) => ({ fullName: new RegExp(escapeRegex(w), 'i') })),
+            }).select('_id').lean();
+            if (teacher && isIntentAllowed('TEACHER_PROFILE', ctx.role)) {
+              forcedIntent = 'TEACHER_PROFILE';
+            } else if (qp.studentName && !qp.teacherName) {
+              // Nobody by that name: say so plainly. Falling through would let a whole-school
+              // count tool answer, and the model could pin those numbers on a stranger.
+              const reply = `I couldn't find anyone named "${person}" in the student or teacher records. Please check the spelling, or give the admission number.`;
+              await remember(ctx, stateForTurn, { message, topicChanged: resolution.topicChanged, reply, intentId: null });
+              return { type: 'text', reply };
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('[PrincipalAssistant] Named-person probe failed; using normal routing', { err: (err as Error).message });
+      }
+    }
+    const forcedStudent = forcedIntent !== null;
+
     // Step 0 — ONE routing call decides: open a screen, perform an action
     // (preview/approve), answer a data question, or unsupported.
-    let routing;
+    let routing: Awaited<ReturnType<typeof routeMessage>>;
     try {
-      routing = await routeMessage(message, {
+      routing = forcedStudent
+        ? { decision: { kind: 'intent', id: forcedIntent }, usage: { content: '', model: 'none', promptTokens: 0, completionTokens: 0, totalTokens: 0, durationMs: 0 } } as unknown as Awaited<ReturnType<typeof routeMessage>>
+        : await routeMessage(message, {
         navigation: NAVIGATION_TARGETS.map((t) => ({ id: t.id, description: `${t.label} — ${t.description}` })),
         actions: principalAssistantActionService.listActions(),
         // Only intents this role may use are even offered to the router.
@@ -266,7 +324,7 @@ export const principalAssistantService = {
         'AI_UNAVAILABLE',
       );
     }
-    recordUsage(routing.usage, ctx.schoolId);
+    if (!forcedStudent) recordUsage(routing.usage, ctx.schoolId);
     const { kind, id: routedId } = routing.decision;
 
     const baseOutcome = { message, topicChanged: resolution.topicChanged };
@@ -354,6 +412,20 @@ export const principalAssistantService = {
       const clarify = (data as { clarify?: { question: string; options: string[] } } | null)?.clarify;
       if (clarify?.options?.length) {
         return { type: 'text', reply: clarify.question, quickReplies: clarify.options };
+      }
+
+      // A one-day attendance answer is stated by code, not by the model: "is X present today"
+      // must never be phrased from numbers it could mix up with the rest of the class.
+      const direct = (data as { directAnswer?: string } | null)?.directAnswer;
+      if (direct && !HAS_DEVANAGARI.test(message)) {
+        const matched = (data as { matches?: StudentMatch[] }).matches;
+        await remember(ctx, stateForTurn, {
+          ...baseOutcome, reply: direct, intentId,
+          params: await extractQueryParams(message, ctx).catch(() => undefined),
+          matchedStudent: matched?.length === 1 ? { name: matched[0].name, className: matched[0].class, section: matched[0].section } : null,
+          dateRange: null,
+        });
+        return { type: 'text', reply: direct };
       }
 
       // Step 3 — OpenAI formats the pre-computed data into a natural-language answer.

@@ -4,6 +4,7 @@ import { classNameVariants } from '../../lib/class-name';
 import { AuthContext } from '../../lib/auth-context';
 import { extractQueryParams } from './query-params';
 import { defaultRange, parseDateRange } from './date-range';
+import { getStudentLookup } from './people.data';
 
 // ── Class / whole-school attendance over a period ────────────────────────────
 // "Show attendance for Class 6A" → "last month". The existing class fetchers
@@ -19,6 +20,9 @@ interface Row { class: string; section: string; status: string; date: string }
 async function getClassAttendancePeriod(ctx: AuthContext, message = '') {
   const today = attendanceRepository.todayString();
   const p = await extractQueryParams(message, ctx);
+  // The router can pick this class-level tool for "ansh singh present today". A named
+  // person is a student question, never a class one — answer it about that student.
+  if (p.studentName) return getStudentLookup(ctx, message);
   const range = parseDateRange(message, today) ?? defaultRange(today);
 
   const query: Record<string, unknown> = {
