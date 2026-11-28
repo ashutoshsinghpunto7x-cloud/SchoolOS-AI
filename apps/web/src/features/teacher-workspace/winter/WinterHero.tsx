@@ -14,6 +14,8 @@ interface Props {
   /** Context-aware lines Frosty cycles through (built from the teacher's real day). */
   tips: string[];
   onTurnOff: () => void;
+  /** Slim banner for other dashboards: no chips / level bar, much shorter. */
+  compact?: boolean;
 }
 
 const SILLY = [
@@ -30,7 +32,7 @@ const STARS = Array.from({ length: 34 }, (_, i) => {
 });
 const PINES: Array<[number, number]> = [[60, 1], [120, 0.8], [170, 1.1], [880, 0.9], [940, 1.2], [1000, 0.8], [1050, 1], [520, 0.7]];
 
-export function WinterHero({ greeting, firstName, dateStr, streak, nextLabel, level, points, tips, onTurnOff }: Props) {
+export function WinterHero({ greeting, firstName, dateStr, streak, nextLabel, level, points, tips, onTurnOff, compact }: Props) {
   const heroRef = useRef<HTMLElement>(null);
   const [tipIdx, setTipIdx] = useState(0);
   const [bubble, setBubble] = useState(tips[0] ?? 'Brr! Have a great day ❄');
@@ -100,7 +102,7 @@ export function WinterHero({ greeting, firstName, dateStr, streak, nextLabel, le
   return (
     <section
       ref={heroRef}
-      className="tw-hero"
+      className={compact ? 'tw-hero tw-hero-compact' : 'tw-hero'}
       onPointerMove={onPointer}
       onPointerUp={reset}
       onPointerLeave={reset}
@@ -132,18 +134,18 @@ export function WinterHero({ greeting, firstName, dateStr, streak, nextLabel, le
       <div className="tw-hero-text">
         <h1>{greeting}{firstName ? `, ${firstName}` : ''}</h1>
         <p>{dateStr}</p>
-        <div className="tw-chips">
+        {!compact && <div className="tw-chips">
           {streak > 0 && <span className="tw-chip">🔥 {streak}-day streak</span>}
           {nextLabel && <span className="tw-chip">⏱ {nextLabel}</span>}
-        </div>
-        <div className="tw-lvl">
+        </div>}
+        {!compact && <div className="tw-lvl">
           <div className="tw-lvl-row">
             <span>Lv {level.level} · {level.name}</span>
             <span>{level.into}/{level.span} ❄</span>
           </div>
           <div className="tw-lvl-track"><i style={{ width: `${level.pct}%` }} /></div>
           <span className="sr-only">{points} snowflakes in total</span>
-        </div>
+        </div>}
       </div>
 
       <div className={`tw-bubble${bubbleOut ? ' tw-bubble-out' : ''}`} role="status" aria-live="polite">{bubble}</div>

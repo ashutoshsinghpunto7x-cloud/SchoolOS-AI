@@ -17,6 +17,7 @@ import { ModuleRestrictedNotice } from '@/components/ModuleRestrictedNotice';
 import { MobileDock } from './MobileDock';
 import { SnowCanvas } from '@/features/teacher-workspace/winter/SnowCanvas';
 import { useAmbientWinter } from '@/features/winter-ambient/useAmbientWinter';
+import { WinterBanner } from '@/features/winter-ambient/WinterBanner';
 import { WinterToggle } from '@/features/winter-ambient/WinterToggle';
 import '@/features/winter-ambient/winterAmbient.css';
 
@@ -116,6 +117,7 @@ function AppLayoutInner() {
                 <Loader2 className="w-7 h-7 text-blue-500 animate-spin" />
               </div>
             }>
+              {winterOn && <WinterBanner firstName={user?.firstName ?? ''} onTurnOff={() => ambient.toggle(false)} />}
               <Outlet />
             </Suspense>
           )}

@@ -81,3 +81,23 @@
 /* Snow canvas: its base rule otherwise lives in the teacher-only stylesheet,
    which is not loaded here (without it the canvas becomes an in-flow flex item). */
 .tw-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; }
+
+/* Slim banner (WinterHero in compact mode) — keeps dashboards from growing much. */
+.tw-ambient-banner { padding: 10px 12px 0; max-width: 1280px; width: 100%; margin: 0 auto; }
+.tw-hero-compact { height: 128px; border-radius: 20px; }
+.tw-hero-compact .tw-hero-text { left: 16px; top: 16px; right: 120px; }
+.tw-hero-compact .tw-hero-text h1 { font-size: 20px; max-width: 100%; }
+.tw-hero-compact .tw-hero-text p { margin: 3px 0 0; font-size: 12px; }
+.tw-hero-compact .tw-moon { width: 30px; height: 30px; top: 10px; right: 26%; }
+.tw-hero-compact .tw-frosty-btn { width: 74px; bottom: 10px; right: 14px; }
+.tw-hero-compact .tw-bubble { display: none; }
+.tw-hero-compact .tw-off { bottom: 6px; right: auto; left: 12px; padding: 3px 9px; min-height: 24px; }
+@media (min-width: 640px) {
+  .tw-ambient-banner { padding: 14px 24px 0; }
+  .tw-hero-compact { height: 140px; }
+  .tw-hero-compact .tw-hero-text { left: 28px; top: 22px; }
+  .tw-hero-compact .tw-hero-text h1 { font-size: 26px; }
+  .tw-hero-compact .tw-frosty-btn { width: 86px; right: 40px; }
+  .tw-hero-compact .tw-moon { right: 30%; }
+  .tw-hero-compact .tw-bubble { display: block; right: calc(40px + 92px); bottom: 56px; width: 200px; }
+}
