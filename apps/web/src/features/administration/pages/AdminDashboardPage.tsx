@@ -4,19 +4,22 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useAdminOverview } from '../hooks/useAdminOverview';
 import type { AdminOverviewData } from '@schoolos/types';
 
-const TOOLS: { label: string; path: string }[] = [
-  { label: 'Users & access', path: '/administration/users' },
-  { label: 'Roles', path: '/administration/roles' },
-  { label: 'Classes', path: '/administration/classes' },
-  { label: 'Employees', path: '/admin/employees' },
-  { label: 'Payroll', path: '/admin/payroll' },
-  { label: 'Staff QR scan', path: '/admin/attendance-qr' },
-  { label: 'ID cards', path: '/admin/id-cards' },
-  { label: 'Timetable', path: '/timetable' },
-  { label: 'Transport', path: '/transport' },
-  { label: 'Automation', path: '/administration/automation' },
-  { label: 'Recovery requests', path: '/administration/recovery-requests' },
-  { label: 'Settings', path: '/settings' },
+const QUICK_LINKS: { label: string; path: string; d: string }[] = [
+  { label: 'Users', path: '/administration/users', d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+  { label: 'Roles', path: '/administration/roles', d: 'M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6zM9 12l2 2 4-4' },
+  { label: 'Classes', path: '/administration/classes', d: 'M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5' },
+  { label: 'Employees', path: '/admin/employees', d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6M19 8v6' },
+  { label: 'Payroll', path: '/admin/payroll', d: 'M6 3h12M6 8h12M6 13l7 8M6 13h5a4 4 0 0 0 0-8H6' },
+  { label: 'Reception', path: '/reception', d: 'M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1zM9 21v-6h6v6' },
+  { label: 'Enquiries', path: '/enquiries', d: 'M3 5h18v12H8l-5 4zM8 10h8M8 13h5' },
+  { label: 'Attendance', path: '/attendance', d: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+  { label: 'Timetable', path: '/timetable', d: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2' },
+  { label: 'Transport', path: '/transport', d: 'M5 4h14v13H5zM5 11h14M8 17v3M16 17v3' },
+  { label: 'QR Scan', path: '/admin/attendance-qr', d: 'M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10' },
+  { label: 'ID Cards', path: '/admin/id-cards', d: 'M3 5h18v14H3zM7 10h4M7 14h6M15 10h2v4h-2z' },
+  { label: 'Automation', path: '/administration/automation', d: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z' },
+  { label: 'Recovery', path: '/administration/recovery-requests', d: 'M15 7a4 4 0 1 1-7.8 1.2L3 12.4V16h3.6l1.2-1.2H10v-2.2l1.4-1.4A4 4 0 0 1 15 7z' },
+  { label: 'Settings', path: '/settings', d: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4' },
 ];
 
 const STAGE_LABEL: Record<string, string> = {
@@ -55,7 +58,7 @@ function inrShort(n: number): string {
 function SectionTitle({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <h2 className="text-[18px] md:text-[20px] font-bold text-[#1B2A4E] m-0">{children}</h2>
+      <h2 className="text-[16px] font-bold text-[#1B2A4E] m-0">{children}</h2>
       {hint && <span className="text-[12px] text-[#55607A] text-right">{hint}</span>}
     </div>
   );
@@ -129,25 +132,44 @@ export const AdminDashboardPage = () => {
   const firstName = user?.firstName ?? '';
 
   return (
-    <div className="flex-1 w-full bg-[#FBF8F3] font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
+    <div className="flex-1 w-full font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]">
       <div className="w-full max-w-[1100px] mx-auto px-4 py-6 md:py-8 space-y-7">
         {/* Greeting */}
-        <div className="flex items-end justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
-              {greeting()}
-              {firstName ? `, ${firstName}` : ''}
-            </h1>
-            <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1 mb-0">Here is how your school is doing today.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            disabled={isFetching}
-            className="text-[13px] font-semibold text-[#254A9A] border border-[#D5DCEE] rounded-full px-4 py-1.5 bg-white cursor-pointer disabled:opacity-60"
-          >
-            {isFetching ? 'Refreshing…' : 'Refresh'}
-          </button>
+        <div className="text-center">
+          <h1 className="text-[26px] md:text-[34px] font-medium text-[#1B2A4E] tracking-tight m-0">
+            {greeting()}
+            {firstName ? `, ${firstName}` : ''}
+          </h1>
+          <p className="text-[14px] md:text-[16px] text-[#55607A] mt-1">
+            Pick up where you left off.{' '}
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              className="text-[13px] font-semibold text-[#D9822B] hover:underline cursor-pointer disabled:opacity-60"
+            >
+              {isFetching ? 'Refreshing…' : 'Refresh numbers'}
+            </button>
+          </p>
+        </div>
+
+        {/* Quick launch */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-x-2 gap-y-3 sm:gap-x-3">
+          {QUICK_LINKS.map((q) => (
+            <button
+              key={q.label}
+              type="button"
+              onClick={() => navigate(q.path)}
+              className="group flex flex-col items-center gap-1.5 text-[11px] sm:text-[12px] text-[#1B2A4E] font-medium cursor-pointer"
+            >
+              <span className="w-[52px] h-[52px] sm:w-[58px] sm:h-[58px] rounded-full bg-[#EEF1F8] flex items-center justify-center transition-all group-hover:-translate-y-[2px] group-hover:bg-[#E2E8F5]">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#254A9A" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={q.d} />
+                </svg>
+              </span>
+              <span className="text-center leading-tight">{q.label}</span>
+            </button>
+          ))}
         </div>
 
         {isLoading && (
@@ -169,23 +191,6 @@ export const AdminDashboardPage = () => {
         )}
 
         {data && <Overview data={data} onGo={navigate} />}
-
-        {/* Administration tools — secondary */}
-        <section className="space-y-3">
-          <SectionTitle hint="Day-to-day admin">Tools</SectionTitle>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-            {TOOLS.map((t) => (
-              <button
-                key={t.path}
-                type="button"
-                onClick={() => navigate(t.path)}
-                className={`${card} px-4 py-3 text-left text-[14px] font-medium text-[#1B2A4E] cursor-pointer hover:shadow-md transition-shadow`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );

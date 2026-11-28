@@ -17,6 +17,7 @@ export const getHomePathForRole = (role: UserRole): string => {
   if (role === 'operations_manager') return '/operations';
   if (role === 'academic_coordinator') return '/coordinator';
   if (role === 'principal' || role === 'incharge') return '/principal';
+  if (role === 'admin') return '/administration';
   if (role === 'parent') return '/parent';
   if (role === 'driver') return '/driver';
   if (OPS_ROLES.includes(role)) return '/ops';
