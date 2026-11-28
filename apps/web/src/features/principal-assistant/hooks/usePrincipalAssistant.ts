@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { principalAssistantApi, ActionPreview } from '../api/principal-assistant.api';
@@ -25,9 +25,21 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
   const onAssistantText = options?.onAssistantText;
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
+  const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
   const mutation = useMutation({
-    mutationFn: (message: string) => principalAssistantApi.sendMessage(message),
+    mutationFn: (vars: { message: string; signal: AbortSignal }) =>
+      principalAssistantApi.sendMessage(vars.message, undefined, vars.signal),
   });
+
+  /** Cancels the in-flight question; its answer is discarded even if it already left the server. */
+  const stop = useCallback(() => {
+    requestIdRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    mutation.reset();
+  }, [mutation]);
 
   const sendMessage = useCallback(
     (text: string) => {
@@ -37,8 +49,13 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
       const userMessage: AssistantMessage = { id: crypto.randomUUID(), role: 'user', type: 'text', content: trimmed };
       setMessages((prev) => [...prev, userMessage]);
 
-      mutation.mutate(trimmed, {
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const requestId = ++requestIdRef.current;
+
+      mutation.mutate({ message: trimmed, signal: controller.signal }, {
         onSuccess: (result) => {
+          if (requestId !== requestIdRef.current) return; // stopped by the user
           if (result.type === 'navigate') {
             setMessages((prev) => [
               ...prev,
@@ -160,6 +177,7 @@ export const usePrincipalAssistant = (options?: { onAssistantText?: (text: strin
     onApprove,
     onCancel,
     isLoading: mutation.isPending,
+    stop,
     error: mutation.error,
   };
 };

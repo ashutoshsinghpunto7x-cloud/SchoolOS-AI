@@ -115,55 +115,97 @@ async function getAbsentStudents(ctx: AuthContext, message = ''): Promise<Absent
 
 // ── Student lookup (marks / attendance / fees for one named student) ─────────
 
+type StudentFocus = 'marks' | 'attendance' | 'fees';
+
 export interface StudentLookupResult {
   found: boolean;
   message?: string;
+  /** Several students share the name: the service shows this question + tap-to-pick chips instead of an AI answer. */
+  clarify?: { question: string; options: string[] };
   matches?: {
     name: string;
     class: string;
     section: string;
     rollNumber?: string;
     parentName?: string;
-    marks: { exam: string; subject: string; total?: number; percentage?: number; grade?: string; result: string }[];
-    attendance: { last30DaysPresentPercent: number | null; daysMarked: number; absentDays: number };
-    fees: { totalOutstanding: number; pendingRecords: number };
+    marks?: { exam: string; subject: string; total?: number; percentage?: number; grade?: string; result: string }[];
+    attendance?: { last30DaysPresentPercent: number | null; daysMarked: number; absentDays: number };
+    fees?: { totalOutstanding: number; pendingRecords: number };
   }[];
 }
+
+/** Which part of a student's record was actually asked for; empty = a full profile. */
+function studentFocus(message: string, hasSubjectOrExam: boolean): StudentFocus[] {
+  const m = message.toLowerCase();
+  const focus: StudentFocus[] = [];
+  if (/attend|present|absent|absence|hazir|haazir|leave|उपस्थिति|हाज़िर|हाजिर|गैरहाज़िर/.test(m)) focus.push('attendance');
+  if (hasSubjectOrExam || /mark|score|result|percent|grade|rank|number|pass|fail|अंक|नंबर|परिणाम|रिज़ल्ट/.test(m)) focus.push('marks');
+  if (/\bfees?\b|dues?|owe|pending|balance|outstanding|बकाया|फीस|फ़ीस/.test(m)) focus.push('fees');
+  const isProfile = /profile|report|details|everything|all about|poori|puri|पूरी|प्रोफ़ाइल|प्रोफाइल/.test(m);
+  return isProfile ? [] : focus;
+}
+
+const FOCUS_WORD: Record<StudentFocus, string> = { marks: 'marks', attendance: 'attendance', fees: 'fees' };
 
 async function getStudentLookup(ctx: AuthContext, message = ''): Promise<StudentLookupResult> {
   const q = await extractQueryParams(message, ctx);
   if (!q.studentName) {
     return { found: false, message: 'No student name was found in the question. Ask the Principal to say the student\'s name.' };
   }
+  const focus = studentFocus(message, !!(q.subject || q.exam));
 
   // Every name word must appear, in any order ("Arav Sharma" / "Sharma Arav" / just "Arav").
   const tokens = q.studentName.split(/\s+/).filter(Boolean).slice(0, 4);
-  const students = await Student.find({
+  const filter: Record<string, unknown> = {
     schoolId: ctx.schoolId,
     isDeleted: false,
     $and: tokens.map((t) => ({ fullName: new RegExp(escapeRegex(t), 'i') })),
-  })
+  };
+  if (q.className) filter.class = { $in: classNameVariants(q.className) };
+  if (q.section) filter.section = q.section;
+  const students = await Student.find(filter)
     .sort({ fullName: 1 })
-    .limit(5)
+    .limit(8)
     .lean<{ _id: unknown; fullName: string; class: string; section: string; rollNumber?: string; fatherName?: string }[]>();
 
   if (!students.length) {
-    return { found: false, message: `No student matching "${q.studentName}" was found.` };
+    return { found: false, message: `No student matching "${q.studentName}" was found${q.className ? ` in class ${q.className}${q.section ?? ''}` : ''}.` };
+  }
+
+  // More than one student with that name: don't dump everyone's records, ask which one.
+  if (students.length > 1) {
+    const topic = focus.length === 1 ? ` ${FOCUS_WORD[focus[0]]}` : '';
+    return {
+      found: true,
+      clarify: {
+        question: q.className
+          ? `I found ${students.length} students matching "${q.studentName}" in class ${q.className}${q.section ?? ''}. Which one do you mean?`
+          : `I found ${students.length} students matching "${q.studentName}". Which one do you mean?`,
+        options: students.slice(0, 6).map((s) => `${s.fullName} class ${s.class}${s.section}${topic}`),
+      },
+    };
   }
 
   const ids = students.map((s) => String(s._id));
   const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
 
+  const want = (f: StudentFocus) => !focus.length || focus.includes(f);
   const [marks, attendance, fees] = await Promise.all([
-    Marks.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, isDeleted: false })
-      .select('studentId examId subjectName total percentage grade result')
-      .lean<{ studentId: string; examId: string; subjectName: string; total?: number; percentage?: number; grade?: string; result: string }[]>(),
-    Attendance.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, date: { $gte: since }, isDeleted: false })
-      .select('studentId status')
-      .lean<{ studentId: string; status: string }[]>(),
-    FeeRecord.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, isDeleted: false, balance: { $gt: 0 } })
-      .select('studentId balance')
-      .lean<{ studentId: string; balance: number }[]>(),
+    want('marks')
+      ? Marks.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, isDeleted: false })
+          .select('studentId examId subjectName total percentage grade result')
+          .lean<{ studentId: string; examId: string; subjectName: string; total?: number; percentage?: number; grade?: string; result: string }[]>()
+      : Promise.resolve([] as { studentId: string; examId: string; subjectName: string; total?: number; percentage?: number; grade?: string; result: string }[]),
+    want('attendance')
+      ? Attendance.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, date: { $gte: since }, isDeleted: false })
+          .select('studentId status')
+          .lean<{ studentId: string; status: string }[]>()
+      : Promise.resolve([] as { studentId: string; status: string }[]),
+    want('fees')
+      ? FeeRecord.find({ schoolId: ctx.schoolId, studentId: { $in: ids }, isDeleted: false, balance: { $gt: 0 } })
+          .select('studentId balance')
+          .lean<{ studentId: string; balance: number }[]>()
+      : Promise.resolve([] as { studentId: string; balance: number }[]),
   ]);
 
   const exams = await Exam.find({ schoolId: ctx.schoolId, _id: { $in: [...new Set(marks.map((m) => m.examId))] } })
@@ -196,14 +238,21 @@ async function getStudentLookup(ctx: AuthContext, message = ''): Promise<Student
       class: s.class,
       section: s.section,
       rollNumber: s.rollNumber,
-      parentName: s.fatherName,
-      marks: studentMarks,
-      attendance: {
-        last30DaysPresentPercent: att.length ? Math.round((presentLike / att.length) * 100) : null,
-        daysMarked: att.length,
-        absentDays: att.filter((a) => a.status === 'absent').length,
-      },
-      fees: { totalOutstanding: feeRows.reduce((sum, f) => sum + f.balance, 0), pendingRecords: feeRows.length },
+      // Only the sections that were asked about are included, so the reply can't wander into the rest.
+      ...(!focus.length ? { parentName: s.fatherName } : {}),
+      ...(want('marks') ? { marks: studentMarks } : {}),
+      ...(want('attendance')
+        ? {
+            attendance: {
+              last30DaysPresentPercent: att.length ? Math.round((presentLike / att.length) * 100) : null,
+              daysMarked: att.length,
+              absentDays: att.filter((a) => a.status === 'absent').length,
+            },
+          }
+        : {}),
+      ...(want('fees')
+        ? { fees: { totalOutstanding: feeRows.reduce((sum, f) => sum + f.balance, 0), pendingRecords: feeRows.length } }
+        : {}),
     };
   });
 
