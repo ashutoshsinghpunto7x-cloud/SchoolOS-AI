@@ -192,7 +192,11 @@ export const TeacherAssistantWidget = () => {
           role="dialog"
           aria-labelledby={titleId}
           style={{ bottom: `calc(${orbBottom + SIRI_ORB_SIZE + 12}px + env(safe-area-inset-bottom, 0px))` }}
-          className="fixed right-4 sm:right-6 z-50 w-[370px] max-w-[calc(100vw-32px)] h-[492px] max-h-[calc(100vh-120px)] p-[2px] rounded-[22px] bg-gradient-to-br from-[#1B2A4E] via-[#254A9A] to-[#D9822B] shadow-[0_14px_42px_rgba(27,42,78,0.18)] flex flex-col font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]"
+          className={cn(
+            // Phone: compact sheet (short while empty, ~55% of the screen once chatting or in FAQ).
+            'fixed right-3 sm:right-6 z-50 w-[370px] max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-32px)] sm:h-[492px] max-h-[calc(100dvh-120px)] p-[2px] rounded-[22px] bg-gradient-to-br from-[#1B2A4E] via-[#254A9A] to-[#D9822B] shadow-[0_14px_42px_rgba(27,42,78,0.18)] flex flex-col font-[\'DM_Sans\',\'Plus_Jakarta_Sans\',sans-serif]',
+            view === 'chat' && turns.length === 0 ? 'h-auto' : 'h-[min(55dvh,420px)]',
+          )}
         >
           <div className="flex-1 min-h-0 bg-white dark:bg-[#141722] rounded-[20px] flex flex-col overflow-hidden">
           {/* Minimalist Header */}
@@ -271,13 +275,13 @@ export const TeacherAssistantWidget = () => {
                         ? "Tell me what to change in your plan, by voice or text. I'll ask before saving."
                         : 'How can I help you with your classes today?'}
                     </p>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none]">
                       {(plan.active ? PLAN_SUGGESTIONS : SUGGESTIONS).map((s) => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => ask(s)}
-                          className="px-3 py-1.5 rounded-full text-[12px] font-medium bg-white dark:bg-white/5 border border-[#E8E2D6] dark:border-white/10 text-[#1B2A4E] dark:text-white hover:bg-[#F5F1E8] dark:hover:bg-white/10 transition-colors cursor-pointer"
+                          className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-white dark:bg-white/5 border border-[#E8E2D6] dark:border-white/10 text-[#1B2A4E] dark:text-white hover:bg-[#F5F1E8] dark:hover:bg-white/10 transition-colors cursor-pointer"
                         >
                           {s}
                         </button>

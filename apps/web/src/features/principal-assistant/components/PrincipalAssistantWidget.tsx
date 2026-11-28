@@ -88,6 +88,8 @@ export const PrincipalAssistantWidget = () => {
     },
   });
   speakRef.current = voice.speak;
+  const emptyRef = useRef(true);
+  emptyRef.current = messages.length === 0;
 
   const send = useCallback(
     (text?: string) => {
@@ -110,11 +112,21 @@ export const PrincipalAssistantWidget = () => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    // The assistant stays open until the user closes it (X button, Escape, or
-    // the orb) — clicking elsewhere must not dismiss it mid-task.
+    // Once a conversation exists the assistant stays open until the user closes it (X, Escape,
+    // or the orb) — clicking elsewhere must not dismiss it mid-task. While it is still empty
+    // (e.g. opened by a stray tap) a tap outside simply dismisses it.
+    const onPointerDown = (e: PointerEvent) => {
+      if (!emptyRef.current) return;
+      const target = e.target as Element | null;
+      if (!target) return;
+      if (panelRef.current?.contains(target) || target.closest('[data-siri-orb="true"]')) return;
+      setOpen(false);
+    };
     window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointerDown);
     return () => {
       window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointerDown);
     };
   }, [open]);
 
@@ -150,7 +162,12 @@ export const PrincipalAssistantWidget = () => {
           role="dialog"
           aria-labelledby={titleId}
           style={{ bottom: `calc(${orbBottom + SIRI_ORB_SIZE + 12}px + env(safe-area-inset-bottom, 0px))` }}
-          className="fixed right-4 sm:right-6 z-50 w-[374px] max-w-[calc(100vw-32px)] h-[502px] max-h-[calc(100vh-120px)] p-[2px] rounded-[22px] bg-gradient-to-br from-[#1B2A4E] via-[#254A9A] to-[#D9822B] shadow-[0_14px_42px_rgba(27,42,78,0.18)] flex flex-col font-['DM_Sans','Plus_Jakarta_Sans',sans-serif]"
+          className={cn(
+            // Phone: compact sheet (short while empty, capped at ~55% of the screen once chatting) so an
+            // accidental tap on the orb never covers the dashboard. Tablet/desktop keep the full panel.
+            'fixed right-3 sm:right-6 z-50 w-[374px] max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-32px)] sm:h-[502px] max-h-[calc(100dvh-120px)] p-[2px] rounded-[22px] bg-gradient-to-br from-[#1B2A4E] via-[#254A9A] to-[#D9822B] shadow-[0_14px_42px_rgba(27,42,78,0.18)] flex flex-col font-[\'DM_Sans\',\'Plus_Jakarta_Sans\',sans-serif]',
+            messages.length === 0 ? 'h-auto' : 'h-[min(55dvh,420px)]',
+          )}
         >
           <div className="flex-1 min-h-0 bg-white rounded-[20px] flex flex-col overflow-hidden">
           {/* Minimalist White Header */}
@@ -207,14 +224,14 @@ export const PrincipalAssistantWidget = () => {
                       ? 'कुछ भी पूछिए, स्क्रीन खोलिए या शेड्यूल कीजिए।'
                       : 'Ask a question, jump to any screen, or schedule an update.'}
                 </p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex gap-1.5 overflow-x-auto sm:flex-wrap sm:overflow-visible -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none]">
                   {(planActive ? PLAN_SUGGESTIONS : lang === 'hi-IN' ? SUGGESTIONS_HI : SUGGESTIONS).map((s) => (
                     <button
                       key={s}
                       type="button"
                       disabled={isLoading}
                       onClick={() => send(s)}
-                      className="px-3 py-1.5 rounded-full text-[12px] font-medium bg-white border border-[#E8E2D6] text-[#1B2A4E] hover:bg-[#F5F1E8] transition-colors cursor-pointer disabled:opacity-50"
+                      className="shrink-0 whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-medium bg-white border border-[#E8E2D6] text-[#1B2A4E] hover:bg-[#F5F1E8] transition-colors cursor-pointer disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -276,7 +293,7 @@ export const PrincipalAssistantWidget = () => {
                   aria-label="Voice input"
                   aria-pressed={voice.listening}
                   className={cn(
-                    'w-11 h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40 transition-colors shadow-sm',
+                    'w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 cursor-pointer disabled:opacity-40 transition-colors shadow-sm',
                     voice.listening
                       ? 'bg-red-500 text-white animate-pulse'
                       : 'bg-[#1B2A4E] text-white hover:bg-[#2A3C6A]',
