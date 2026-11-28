@@ -77,3 +77,7 @@
 @media (prefers-reduced-motion: reduce) {
   .tw-ambient * { transition: none !important; }
 }
+
+/* Snow canvas: its base rule otherwise lives in the teacher-only stylesheet,
+   which is not loaded here (without it the canvas becomes an in-flow flex item). */
+.tw-fx { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; }
